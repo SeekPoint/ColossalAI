@@ -41,6 +41,7 @@ def init_ddpv2(module: torch.nn.Module) -> ZeroDDP:
 class Net(torch.nn.Module):
 
     def __init__(self) -> None:
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         self.fc1 = torch.nn.Linear(3, 3, bias=False)
         self.fc2 = torch.nn.Linear(3, 1, bias=False)

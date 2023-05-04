@@ -30,6 +30,7 @@ class BertLayer(nn.Module):
                  fp32_residual_connection=False,
                  bias_dropout_fusion: bool = True,
                  convert_fp16_to_fp32_in_softmax: bool = False):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         self.layer_number = layer_number
 

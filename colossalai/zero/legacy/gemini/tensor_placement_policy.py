@@ -16,6 +16,7 @@ from .tensor_utils import colo_model_data_tensor_move_inline, colo_tensor_mem_us
 class TensorPlacementPolicy(ABC):
 
     def __init__(self, device: Optional[torch.device], mem_stats_collector: Optional[MemStatsCollector] = None) -> None:
+        print('%s __init__ called', self.__classs__.__name__)
         self.device: Optional[torch.device] = device
         self.mem_stats_collector: Optional[MemStatsCollector] = mem_stats_collector
 
@@ -27,6 +28,7 @@ class TensorPlacementPolicy(ABC):
 class CPUTensorPlacementPolicy(TensorPlacementPolicy):
 
     def __init__(self, mem_stats_collector: Optional[MemStatsCollector] = None) -> None:
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__(torch.device('cpu'), mem_stats_collector=mem_stats_collector)
 
     def evict_tensors(self, hold_cuda_tensor_list: List[StatefulTensor], **kwargs) -> int:
@@ -40,6 +42,7 @@ class CPUTensorPlacementPolicy(TensorPlacementPolicy):
 class CUDATensorPlacementPolicy(TensorPlacementPolicy):
 
     def __init__(self, mem_stats_collector: Optional[MemStatsCollector] = None) -> None:
+        print('%s __init__ called', self.__classs__.__name__)
         assert torch.cuda.is_available(), 'Cannot use CUDATensorPlacementPolicy when CUDA is not available'
         super().__init__(get_current_device(), mem_stats_collector=mem_stats_collector)
 
@@ -50,6 +53,7 @@ class CUDATensorPlacementPolicy(TensorPlacementPolicy):
 class AutoTensorPlacementPolicy(TensorPlacementPolicy):
 
     def __init__(self, mem_stats_collector: Optional[MemStatsCollector] = None) -> None:
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__(None, mem_stats_collector=mem_stats_collector)
         # model data will use 1-self._warmup_non_model_data_ratio CUDA memory in warmup phase
         # TODO(ver217): make these args configurable

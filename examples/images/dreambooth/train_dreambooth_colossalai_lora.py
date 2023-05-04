@@ -253,6 +253,7 @@ class DreamBoothDataset(Dataset):
         size=512,
         center_crop=False,
     ):
+        print('%s __init__ called', self.__classs__.__name__)
         self.size = size
         self.center_crop = center_crop
         self.tokenizer = tokenizer

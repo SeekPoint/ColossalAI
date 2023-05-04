@@ -53,7 +53,7 @@ class LayerNorm3D(ParallelLayer):
     """
 
     def __init__(self, normalized_shape: int, eps: float = 1e-12, bias=True, dtype=None):
-
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         self.input_parallel_mode = get_parallel_mode_from_env(INPUT_GROUP_3D)
         self.weight_parallel_mode = get_parallel_mode_from_env(WEIGHT_GROUP_3D)
@@ -187,6 +187,7 @@ class Linear3D(ParallelLayer):
                  skip_bias_add: bool = False,
                  weight_initializer: Callable = init.kaiming_uniform_(a=math.sqrt(5)),
                  bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1)):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features

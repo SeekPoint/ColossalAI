@@ -4,6 +4,7 @@ __all__ = ['Registry']
 class Registry:
 
     def __init__(self, name):
+        print('%s __init__ called', self.__classs__.__name__)
         self.name = name
         self.store = {}
 

@@ -24,6 +24,7 @@ class OPTActor(Actor):
                  checkpoint: bool = False,
                  lora_rank: int = 0,
                  lora_train_bias: str = 'none') -> None:
+        print('%s __init__ called', self.__classs__.__name__)
         if pretrained is not None:
             model = OPTForCausalLM.from_pretrained(pretrained)
         elif config is not None:

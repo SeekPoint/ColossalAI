@@ -10,6 +10,7 @@ PIPELINE_SIZE = 2
 class MLP(torch.nn.Module):
 
     def __init__(self, dim: int = 256):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         intermediate_dim = dim * 4
         self.dense_1 = torch.nn.Linear(dim, intermediate_dim)

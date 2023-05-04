@@ -27,6 +27,7 @@ class Chain:
             btmp (List[int]): The temporary backward memory of each node, can be used to control memory budget.
             check_consistency (bool, optional): Check the lengths consistency for the `Chain`. Defaults to True.
         """
+        print('%s __init__ called', self.__classs__.__name__)
         self.ftime = ftime
         self.btime = btime
         self.x = x
@@ -78,6 +79,7 @@ class Forward(Operation):
     name = "F"
 
     def __init__(self, index):
+        print('%s __init__ called', self.__classs__.__name__)
         self.index = index
 
     def cost(self, chain: Chain):
@@ -102,6 +104,7 @@ class ForwardCheck(Forward):
 class Forwards(Operation):
 
     def __init__(self, start, end):
+        print('%s __init__ called', self.__classs__.__name__)
         self.index = (start, end)
 
     def __repr__(self):
@@ -122,6 +125,7 @@ class Backward(Operation):
     name = "B"
 
     def __init__(self, index):
+        print('%s __init__ called', self.__classs__.__name__)
         self.index = index
 
     def cost(self, chain: Chain):
@@ -147,6 +151,7 @@ class MemoryAccess(Operation):
     name = "MA"
 
     def __init__(self, index):
+        print('%s __init__ called', self.__classs__.__name__)
         self.index = index
 
     def cost(self, chain: Chain):
@@ -168,6 +173,7 @@ class DiscardMemory(MemoryAccess):
 class Sequence(list):
 
     def __init__(self):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
 
     def __repr__(self):

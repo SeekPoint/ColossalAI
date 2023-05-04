@@ -179,6 +179,7 @@ def set_cuda_arch_list(cuda_dir):
 
             arch_list_str = ';'.join(arch_list)
             os.environ["TORCH_CUDA_ARCH_LIST"] = arch_list_str
+            print("yk--- arch_list_str", arch_list_str)
         return False
     return True
 

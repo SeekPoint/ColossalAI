@@ -22,6 +22,7 @@ class StatefulTensorMgr(object):
     """
 
     def __init__(self, tensor_placement_policy: TensorPlacementPolicy) -> None:
+        print('%s __init__ called', self.__classs__.__name__)
         self._tensor_placement_policy: TensorPlacementPolicy = tensor_placement_policy
         self._stateful_tensor_list: List[StatefulTensor] = []
 

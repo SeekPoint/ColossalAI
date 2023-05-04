@@ -65,6 +65,7 @@ def flop_count(module: Union[torch.nn.Module, Callable] = None, *args, verbose: 
     class DummyModule(torch.nn.Module):
 
         def __init__(self, func):
+            print('%s __init__ called', self.__classs__.__name__)
             super().__init__()
             self.func = func
             self.__name__ = func.__name__

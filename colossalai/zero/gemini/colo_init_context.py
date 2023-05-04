@@ -78,6 +78,7 @@ class ColoInitContext(InsertPostInitMethodToModuleSubClasses):
             default_pg (ProcessGroup): the default process group for all initialized parameters.
             default_dist_spec: the default distributed specifications.
         """
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         self._device = device
         self._dtype = dtype
@@ -99,6 +100,7 @@ class ColoInitContext(InsertPostInitMethodToModuleSubClasses):
         The function to call at the end of the constructor of each module.
         FIXME(fjr) The module may be passed to this function multiple times?
         """
+        print('%s _post_init_ called', self.__classs__.__name__)
         name_list = []
         for name, param in _named_params_with_replica(module):
             if type(param) is ColoParameter:

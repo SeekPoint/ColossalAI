@@ -33,6 +33,7 @@ class DynamicGradScaler(BaseGradScaler):
                  max_scale: Optional[float] = None,
                  hysteresis: int = 2,
                  verbose: bool = False):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__(initial_scale, verbose)
         if min_scale:
             self._min_scale = torch.cuda.FloatTensor([min_scale])

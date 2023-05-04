@@ -6,6 +6,7 @@ __all__ = ['LossForPretraining']
 class LossForPretraining(torch.nn.Module):
 
     def __init__(self, vocab_size):
+        print('%s __init__ called', self.__classs__.__name__)
         super(LossForPretraining, self).__init__()
         self.loss_fn = torch.nn.CrossEntropyLoss(ignore_index=-1)
         self.vocab_size = vocab_size

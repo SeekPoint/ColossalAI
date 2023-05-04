@@ -22,6 +22,7 @@ class OutputGenerator(OutputStrategyGenerator):
 
     def __init__(self, operation_data_mapping: Dict[str, OperationData], device_mesh: DeviceMesh,
                  predecessor_nodes: List[Node], output_option: str):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__(operation_data_mapping, device_mesh, predecessor_nodes)
         self.output_option = output_option
 

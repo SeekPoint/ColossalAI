@@ -36,6 +36,7 @@ class MoeLayer(nn.Module):
     """
 
     def __init__(self, dim_model: int, num_experts: int, router: MoeRouter, experts: MoeExperts):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         self.d_model = dim_model
         self.num_experts = num_experts
@@ -149,6 +150,7 @@ class MoeModule(nn.Module):
                  expert_instance: Optional[MoeExperts] = None,
                  expert_cls: Optional[Type[nn.Module]] = None,
                  **expert_args):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
 
         noisy_func = None

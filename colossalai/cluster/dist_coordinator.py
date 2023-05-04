@@ -36,6 +36,7 @@ class DistCoordinator(metaclass=SingletonMeta):
     """
 
     def __init__(self):
+        print('%s __init__ called', self.__classs__.__name__)
         assert dist.is_initialized(
         ), 'Distributed is not initialized. Please call `torch.distributed.init_process_group` or `colossalai.launch` first.'
         self._rank = dist.get_rank()

@@ -49,6 +49,7 @@ class Solver:
             solution_numbers: If solution_numbers is larger than one, solver will us a serious of solutions based on different memory budget.
             memory_increasing_coefficient: If solution_numbers is larger than one, we will use this coefficient to generate new memory budget.
         '''
+        print('%s __init__ called', self.__classs__.__name__)
         self.graph = graph
         self.strategies_constructor = strategies_constructor
         self.cost_graph = cost_graph

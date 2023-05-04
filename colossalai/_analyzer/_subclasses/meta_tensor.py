@@ -177,6 +177,7 @@ class MetaTensorMode(object):
     """
 
     def __init__(self):
+        print('%s __init__ called', self.__classs__.__name__)
         self.torch_overrides = {}    # override torch.xxx
         self.dist_overrides = {}    # override torch.distributed.xxx
 

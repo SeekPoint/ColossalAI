@@ -38,6 +38,7 @@ class NodeHandler(ABC):
                  strategies_vector: StrategiesVector,
                  shard_option: ShardOption = ShardOption.STANDARD,
                  solver_perference: SolverPerference = SolverPerference.STANDARD) -> None:
+        print('%s __init__ called', self.__classs__.__name__)
         self.node = node
         self.predecessor_node = list(node._input_nodes.keys())
         self.successor_node = list(node.users.keys())
@@ -286,6 +287,7 @@ class MetaInfoNodeHandler(NodeHandler):
 class ModuleHandler(NodeHandler):
 
     def __init__(self, *args, **kwargs) -> None:
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__(*args, **kwargs)
 
         # set attributes to access module parameters for convenience

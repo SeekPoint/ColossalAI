@@ -14,6 +14,7 @@ class ConstantGradScaler(BaseGradScaler):
     """
 
     def __init__(self, initial_scale: int, verbose: bool):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__(initial_scale, verbose)
         self.log(f"Constant Gradient Scaler is initialized with scale {self.scale}", ranks=[0])
 

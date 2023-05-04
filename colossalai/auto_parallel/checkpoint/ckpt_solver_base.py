@@ -59,6 +59,7 @@ class CheckpointSolverBase(ABC):
         # super-dainiu: this graph is a temporary graph which can refer to
         # the owning module, but we will return another deepcopy of it after
         # the solver is executed.
+        print('%s __init__ called', self.__classs__.__name__)
         self.graph = deepcopy(graph)
         self.graph.owning_module = graph.owning_module
         _copy_output(graph, self.graph)

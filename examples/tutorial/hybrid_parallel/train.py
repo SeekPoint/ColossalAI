@@ -17,6 +17,7 @@ from colossalai.utils import is_using_pp
 class DummyDataloader():
 
     def __init__(self, length, batch_size):
+        print('%s __init__ called', self.__classs__.__name__)
         self.length = length
         self.batch_size = batch_size
 

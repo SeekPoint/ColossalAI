@@ -8,6 +8,7 @@ class ReorderGraph(object):
     """
 
     def __init__(self, trace_indice: TraceIndice, node_mgr: NodeMgr) -> None:
+        print('%s __init__ called', self.__classs__.__name__)
         self.trace_indice = trace_indice
         self.node_mgr = node_mgr
         self.all_reorder_map = {i: i for i in range(len(self.node_mgr.get_node_list()))}

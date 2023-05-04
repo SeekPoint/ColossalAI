@@ -128,6 +128,7 @@ class IndexedDataset(torch.utils.data.Dataset):
     _HDR_MAGIC = b'TNTIDX\x00\x00'
 
     def __init__(self, path):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         self.path = path
         self.data_file = None
@@ -210,6 +211,7 @@ class IndexedDataset(torch.utils.data.Dataset):
 class IndexedCachedDataset(IndexedDataset):
 
     def __init__(self, path):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__(path)
         self.cache = None
         self.cache_index = {}
@@ -272,6 +274,7 @@ class IndexedDatasetBuilder(object):
     }
 
     def __init__(self, out_file, dtype=np.int32):
+        print('%s __init__ called', self.__classs__.__name__)
         self.out_file = open(out_file, 'wb')
         self.dtype = dtype
         self.data_offsets = [0]

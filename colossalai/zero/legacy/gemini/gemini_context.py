@@ -4,6 +4,7 @@ from enum import EnumMeta
 class GeminiMemoryManager(object):
 
     def __init__(self, states_cls: EnumMeta):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         self.states_cls = states_cls
         self._cnter = 0    # the counter of instances

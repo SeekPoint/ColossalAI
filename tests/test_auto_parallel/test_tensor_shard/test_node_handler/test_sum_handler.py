@@ -18,6 +18,7 @@ from tests.test_auto_parallel.test_tensor_shard.test_node_handler.utils import n
 class LinearSumModel(nn.Module):
 
     def __init__(self, sum_dims, keepdim):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         self.sum_dims = sum_dims
         self.keepdim = keepdim

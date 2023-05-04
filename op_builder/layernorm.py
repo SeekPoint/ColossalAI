@@ -9,6 +9,7 @@ class LayerNormBuilder(Builder):
     PREBUILT_IMPORT_PATH = "colossalai._C.layernorm"
 
     def __init__(self):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__(name=LayerNormBuilder.NAME, prebuilt_import_path=LayerNormBuilder.PREBUILT_IMPORT_PATH)
 
     def sources_files(self):

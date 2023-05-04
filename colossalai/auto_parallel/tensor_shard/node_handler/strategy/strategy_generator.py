@@ -28,6 +28,7 @@ class StrategyGenerator(ABC):
     """
 
     def __init__(self, operation_data_mapping: Dict[str, OperationData], device_mesh: DeviceMesh):
+        print('%s __init__ called', self.__classs__.__name__)
         self.op_data = operation_data_mapping
         self.device_mesh = device_mesh
 
@@ -282,6 +283,7 @@ class FollowingStrategyGenerator(StrategyGenerator):
 
     def __init__(self, operation_data_mapping: Dict[str, OperationData], device_mesh: DeviceMesh,
                  predecessor_node: Node):
+        print('%s __init__ called', self.__classs__.__name__)
         self.op_data = operation_data_mapping
         self.device_mesh = device_mesh
         self.predecessor_node = predecessor_node

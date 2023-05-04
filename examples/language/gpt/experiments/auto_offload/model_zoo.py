@@ -10,6 +10,7 @@ class GPTLMModel(nn.Module):
                  num_attention_heads=12,
                  max_seq_len=1024,
                  vocab_size=50257):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         self.model = GPT2LMHeadModel(
             GPT2Config(n_embd=hidden_size,
@@ -27,6 +28,7 @@ class GPTLMModel(nn.Module):
 class GPTLMLoss(nn.Module):
 
     def __init__(self):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         self.loss_fn = nn.CrossEntropyLoss()
 

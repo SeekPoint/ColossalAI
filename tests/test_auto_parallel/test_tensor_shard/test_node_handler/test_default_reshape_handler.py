@@ -14,6 +14,7 @@ from colossalai.testing import clear_cache_before_run, run_on_environment_flag
 class ReshapeModel(nn.Module):
 
     def __init__(self):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
 
     def forward(self, input, other):

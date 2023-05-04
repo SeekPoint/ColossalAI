@@ -18,6 +18,7 @@ class ListCache:
             list_size (int): Value list size.
             fixed_keys (List[Hashable], optional): The keys which won't be removed. Defaults to [].
         """
+        print('%s __init__ called', self.__classs__.__name__)
         self.cache_size = cache_size
         self.list_size = list_size
         self.cache: OrderedDict[Hashable, List[Any]] = OrderedDict()

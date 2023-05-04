@@ -15,6 +15,7 @@ def quantize(x, scale, zero, maxq):
 class Quantizer(nn.Module):
 
     def __init__(self, shape=1):
+        print('%s __init__ called', self.__classs__.__name__)
         super(Quantizer, self).__init__()
         self.register_buffer('maxq', torch.tensor(0))
         self.register_buffer('scale', torch.zeros(shape))
@@ -131,6 +132,7 @@ except:
 class QuantLinear(nn.Module):
 
     def __init__(self, bits, groupsize, infeatures, outfeatures):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         if bits not in [2, 3, 4, 8]:
             raise NotImplementedError("Only 2,3,4,8 bits are supported.")

@@ -20,6 +20,7 @@ class MoeParallelInfo:
     """
 
     def __init__(self, ep_size: int, dp_size: int):
+        print('%s __init__ called', self.__classs__.__name__)
         _check_sanity()
         self.ep_size = ep_size
         self.dp_size = dp_size
@@ -34,6 +35,7 @@ class MoeContext(metaclass=SingletonMeta):
     """
 
     def __init__(self):
+        print('%s __init__ called', self.__classs__.__name__)
         self.world_size = 1
         # Users may want to set maximum expert parallel size smaller than the world size
         # since very low bandwidth across nodes may constrain the performance of MoE

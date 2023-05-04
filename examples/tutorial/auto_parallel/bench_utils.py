@@ -107,6 +107,7 @@ class GPTLMModel(nn.Module):
                  max_seq_len=1024,
                  vocab_size=50257,
                  checkpoint=False):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         self.checkpoint = checkpoint
         self.model = GPT2LMHeadModel(
@@ -130,6 +131,7 @@ class GPTLMLoss(nn.Module):
     """
 
     def __init__(self):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         self.loss_fn = nn.CrossEntropyLoss()
 

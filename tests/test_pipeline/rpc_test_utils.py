@@ -25,6 +25,7 @@ def color_debug(text, prefix=' ', color='blue'):
 class MLP(nn.Module):
 
     def __init__(self, dim: int, layers: int):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         self.layers = torch.nn.ModuleList()
 
@@ -40,6 +41,7 @@ class MLP(nn.Module):
 class DAG_MLP(nn.Module):
 
     def __init__(self, dim: int, layers: int):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         self.layers = torch.nn.ModuleList()
         self.dag_layer = nn.Linear(dim, dim, bias=False)
@@ -57,6 +59,7 @@ class DAG_MLP(nn.Module):
 class RpcTestModel(nn.Module):
 
     def __init__(self, stage_id, actual_stage_num, feat_num, h) -> None:
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         self.rank = stage_id
         self.is_last_rank = stage_id == actual_stage_num - 1

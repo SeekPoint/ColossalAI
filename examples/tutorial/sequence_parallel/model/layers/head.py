@@ -23,7 +23,7 @@ class BertLMHead(nn.Module):
                  vocab_size,
                  hidden_size,
                  ):
-
+        print('%s __init__ called', self.__classs__.__name__)
         super(BertLMHead, self).__init__()
         self.bias = torch.nn.Parameter(torch.zeros(vocab_size))
 
@@ -45,6 +45,7 @@ class BertLMHead(nn.Module):
 class BertBinaryHead(nn.Module):
 
     def __init__(self, hidden_size):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         self.pooler = Pooler(hidden_size)
         self.dense = Linear(hidden_size, 2)
@@ -61,6 +62,7 @@ class BertBinaryHead(nn.Module):
 class BertDualHead(nn.Module):
 
     def __init__(self, hidden_size, vocab_size, add_binary_head):
+        print('%s __init__ called', self.__classs__.__name__)
         super().__init__()
         self.lm_head = BertLMHead(vocab_size, hidden_size)
         self.add_binary_head = add_binary_head
