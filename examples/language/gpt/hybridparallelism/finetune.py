@@ -188,7 +188,7 @@ def main():
     args = parser.parse_args()
 
     if args.model_type == "gpt2":
-        model_name = "gpt2"
+        model_name = "/share/hf_model/gpt2"
     else:
         raise RuntimeError
     # ==============================
@@ -216,7 +216,7 @@ def main():
         # modify the param accordingly for finetuning test cases
         plugin = HybridParallelPlugin(
             tp_size=1,
-            pp_size=2,
+            pp_size=1,
             num_microbatches=None,
             microbatch_size=1,
             enable_all_optimization=True,
@@ -243,7 +243,11 @@ def main():
 
     cfg = AutoConfig.from_pretrained(model_name, num_labels=data_builder.num_labels)
 
-    if model_name == "gpt2":
+    # https://stackoverflow.com/questions/68084302/assertionerror-cannot-handle-batch-sizes-1-if-no-padding-token-is-defined
+    # "AssertionError: Cannot handle batch sizes > 1 if no padding token is > defined" and pad_token = eos_token
+    cfg.pad_token_id = cfg.eos_token_id
+
+    if model_name == "/share/hf_model/gpt2":
         model = GPT2ForSequenceClassification.from_pretrained(model_name, config=cfg).cuda()
     else:
         raise RuntimeError

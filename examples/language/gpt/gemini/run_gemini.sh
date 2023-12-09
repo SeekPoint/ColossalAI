@@ -3,10 +3,11 @@ set -x
 export DISTPLAN=${DISTPLAN:-"CAI_Gemini"}
 
 # The following options only valid when DISTPLAN="colossalai"
-export GPUNUM=${GPUNUM:-1}
-export BATCH_SIZE=${BATCH_SIZE:-16}
+export GPUNUM=${GPUNUM:-2}
+export BATCH_SIZE=${BATCH_SIZE:-8}
 export MODEL_TYPE=${MODEL_TYPE:-"gpt2_medium"}
-export TRAIN_STEP=${TRAIN_STEP:-10}
+# step must be even !
+export TRAIN_STEP=${TRAIN_STEP:-8}
 # export PYTHONPATH=$PWD:$PYTHONPATH
 
 

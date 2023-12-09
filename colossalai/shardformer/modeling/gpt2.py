@@ -785,7 +785,7 @@ def get_gpt2_flash_attention_forward():
         attention = ColoAttention(
             embed_dim=self.embed_dim, num_heads=self.num_heads, dropout=self.attn_dropout.p, scale=scale
         )
-
+        # print(f'flash_attention_mask={flash_attention_mask}')  a tensor
         attn_output = attention(query, key, value, attn_mask=flash_attention_mask, attn_mask_type=attn_mask_type)
 
         attn_output = self.c_proj(attn_output)

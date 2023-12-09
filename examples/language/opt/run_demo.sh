@@ -1,5 +1,5 @@
 set -xe
-pip install -r requirements.txt
+#pip install -r requirements.txt
 
 # model name or path
 MODEL="/share/hf_model/opt-350m/"

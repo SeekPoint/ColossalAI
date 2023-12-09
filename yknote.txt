@@ -18,10 +18,12 @@ sudo docker run --gpus=all -it -v /home/amd00:/workspace -v /data:/share -w /wor
 
 在Docker容器退出时，默认容器内部的文件系统仍然被保留，加上--rm就会被删除
 
+所有pip可以用加速
+-i https://pypi.tuna.tsinghua.edu.cn/simple
+         pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+Collecting transformers>=4.23
 
-
-
-
+====================================================================================================
 root@83dccafe7db4:/workspace/yk_repo/ColossalAI/examples/language/opt# bash run_demo.sh
 错误
 ImportError: /opt/conda/lib/python3.9/site-packages/_cffi_backend.cpython-39-x86_64-linux-gnu.so: undefined symbol: ffi_type_uint32, version LIBFFI_BASE_7.0
@@ -30,3 +32,37 @@ root@83dccafe7db4:/workspace/yk_repo/ColossalAI/examples/language/opt# pip insta
 Collecting cffi==1.14.0
 目前卡在
 RuntimeError: FlashAttention only supports Ampere GPUs or newer.
+
+===================================================================================================
+
+root@83dccafe7db4:/workspace/yk_repo/ColossalAI/examples/language/gpt/hybridparallelism# bash run.sh
+---修改若干参数后可以到达
+    out, q, k, v, out_padded, softmax_lse, S_dmask, rng_state = flash_attn_cuda.fwd(
+RuntimeError: FlashAttention only supports Ampere GPUs or newer.
+----只能暂时强制屏蔽！
+
+
+====================================================================================================
+
+root@83dccafe7db4:/workspace/yk_repo/ColossalAI/examples/language/gpt/gemini# bash run_gemini.sh
++ export DISTPLAN=CAI_Gemini
++ DISTPLAN=CAI_Gemini
++ export GPUNUM=1
+====跑通！@
+===================================================================================================
+warnings.warn("please install xformers from https://github.com/facebookresearch/xformers")
+必须修正
+root@83dccafe7db4:/workspace/yk_repo/ColossalAI#
+pip install -v -U git+https://github.com/facebookresearch/xformers.git@main#egg=xformers
+或者源码安装
+git clone https://github.com/facebookresearch/xformers.git
+cd xformers
+git submodule update --init --recursive
+pip install -r requirements.txt
+pip install -e .
+
+===================================================================================================
+错误
+    # https://stackoverflow.com/questions/68084302/assertionerror-cannot-handle-batch-sizes-1-if-no-padding-token-is-defined
+    # "AssertionError: Cannot handle batch sizes > 1 if no padding token is > defined" and pad_token = eos_token
+修正    cfg.pad_token_id = cfg.eos_token_id

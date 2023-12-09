@@ -9,8 +9,8 @@ from .flash_attn_2 import HAS_FLASH_ATTN
 from .mem_eff_attn import HAS_MEM_EFF_ATTN
 from .utils import Repad, SeqLenInfo, Unpad
 
-if HAS_FLASH_ATTN:
-    from .flash_attn_2 import flash_attention
+# if HAS_FLASH_ATTN:
+#     from .flash_attn_2 import flash_attention
 if HAS_MEM_EFF_ATTN:
     from .mem_eff_attn import mem_eff_attention
 
@@ -48,6 +48,7 @@ class ColoAttention(torch.nn.Module):
         bias: Optional[torch.Tensor] = None,
     ):
         attn = None
+
         if HAS_FLASH_ATTN and query.dtype in [torch.float16, torch.bfloat16] and bias == None:
             attn = flash_attention
         else:

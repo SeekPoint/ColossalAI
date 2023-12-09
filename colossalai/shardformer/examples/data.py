@@ -66,7 +66,7 @@ class GLUEDataBuilder:
         self.setup()
 
     def setup(self):
-        self.dataset = datasets.load_dataset("glue", self.task_name)
+        self.dataset = datasets.load_dataset("/share/hf_model/glue", self.task_name)
 
         for split in self.dataset.keys():
             self.dataset[split] = self.dataset[split].map(
@@ -80,7 +80,7 @@ class GLUEDataBuilder:
         self.eval_splits = [x for x in self.dataset.keys() if "validation" in x]
 
     def prepare_data(self):
-        datasets.load_dataset("glue", self.task_name)
+        datasets.load_dataset("/share/hf_model/glue", self.task_name)
         AutoTokenizer.from_pretrained(self.model_name_or_path, use_fast=True)
 
     def train_dataloader(self):
