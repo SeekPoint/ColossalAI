@@ -199,7 +199,7 @@ def main():
     # ==============================
     # Initialize Tokenizer, Dataset and Dataloader
     # ==============================
-    tokenizer = LlamaTokenizer.from_pretrained("hf-internal-testing/llama-tokenizer")
+    tokenizer = LlamaTokenizer.from_pretrained("/share/hf_model/llama-tokenizer")
     # follows fast chat: https://github.com/lm-sys/FastChat/blob/main/fastchat/train/train.py#L257
     tokenizer.pad_token = tokenizer.unk_token
 

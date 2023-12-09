@@ -66,3 +66,22 @@ pip install -e .
     # https://stackoverflow.com/questions/68084302/assertionerror-cannot-handle-batch-sizes-1-if-no-padding-token-is-defined
     # "AssertionError: Cannot handle batch sizes > 1 if no padding token is > defined" and pad_token = eos_token
 修正    cfg.pad_token_id = cfg.eos_token_id
+
+========================
+
+module 'torch' has no attribute 'fx' 错误，
+解决
+root@83dccafe7db4:/workspace/yk_repo/ColossalAI/examples/language/llama2# pip install transformers==4.34.0 -i https://pypi.tuna.tsinghua.edu.cn/simple
+more tests:
+4.35.0-4.35.2: same error
+4.34.0-4.34.1: succeed
+
+
+===================
+跑通
+root@83dccafe7db4:/workspace/yk_repo/ColossalAI/examples/language/llama2# colossalai run --nproc_per_node 3 pretrain.py
+Epoch 0:   2%|▏         | 45/2423
+root@83dccafe7db4:/workspace/yk_repo/ColossalAI/examples/language/llama2# colossalai run --nproc_per_node 2 pretrain.py
+Epoch 0:  12%|█▏        | 445/3634
+可以看出，同样bs下，增加显卡数量可以减少迭代次数，
+
