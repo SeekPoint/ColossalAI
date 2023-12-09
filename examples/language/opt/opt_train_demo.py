@@ -50,7 +50,7 @@ def train_epoch(epoch, model, optimizer, _criterion, lr_scheduler, dataloader, b
                     pbar.set_postfix({"loss": loss.item()})
             else:
                 data = next(dataloader)
-                data = move_to_cuda(data)
+                data = move_to_cuda(data, device='cuda')
                 outputs = model(**data)
                 loss = _criterion(outputs, None)
                 # Backward
@@ -102,7 +102,7 @@ def main():
         # modify the param accordingly for finetuning test cases
         plugin = HybridParallelPlugin(
             tp_size=2,
-            pp_size=2,
+            pp_size=1,
             num_microbatches=2,
             enable_all_optimization=True,
             zero_stage=0,

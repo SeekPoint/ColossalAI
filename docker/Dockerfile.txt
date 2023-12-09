@@ -1,0 +1,77 @@
+FROM hpcaitech/cuda-conda:11.3
+
+# metainformation
+LABEL org.opencontainers.image.source = "https://github.com/hpcaitech/ColossalAI"
+LABEL org.opencontainers.image.licenses = "Apache License 2.0"
+LABEL org.opencontainers.image.base.name = "docker.io/library/hpcaitech/cuda-conda:11.3"
+
+# enable passwordless ssh
+RUN mkdir ~/.ssh && \
+    printf "Host * \n    ForwardAgent yes\nHost *\n    StrictHostKeyChecking no" > ~/.ssh/config && \
+    ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa && \
+    cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+
+# enable RDMA support
+RUN apt-get update && \
+    apt-get install -y infiniband-diags perftest ibverbs-providers libibumad3 libibverbs1 libnl-3-200 libnl-route-3-200 librdmacm1 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# install torch
+RUN conda install -y pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.3 -c pytorch
+
+# install ninja
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ninja-build && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# install apex
+RUN git clone https://github.com/NVIDIA/apex && \
+    cd apex && \
+    git checkout 91fcaa && \
+    pip install packaging -i https://pypi.tuna.tsinghua.edu.cn/simple && \
+    pip install -v --disable-pip-version-check --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" --global-option="--fast_layer_norm" ./
+
+# install titans  ==这一步会修改pytorch的版本！！！！
+RUN pip install --no-cache-dir titans -i https://pypi.tuna.tsinghua.edu.cn/simple
+
+# install tensornvme
+RUN conda install -y cmake && \
+    git clone https://github.com/hpcaitech/TensorNVMe.git && \
+    cd TensorNVMe && \
+    apt update -y && apt install -y libaio-dev && \
+    pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple && \
+    pip install -v --no-cache-dir .
+
+#     ===========================
+# 不知道为什么，放在里面就不行， 启动后单独运行即可
+# # install apex
+# RUN git clone https://github.com/NVIDIA/apex && \
+#     cd apex && \
+#     git checkout 91fcaa && \
+#     pip install packaging -i https://pypi.tuna.tsinghua.edu.cn/simple && \
+#     pip install -v --disable-pip-version-check --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" --global-option="--fast_layer_norm" ./
+
+
+
+# amd00@MZ32-00:~/yk_repo/ColossalAI$ git branch
+#   main
+# * tag_v0.3.4
+#
+# root@045a7bedc69c:/workspace/yk_repo/ColossalAI/examples/language/llama2#
+# pip install -r requirements.txt  -i https://pypi.tuna.tsinghua.edu.cn/simple
+# pip install torch==1.13.1  -i https://pypi.tuna.tsinghua.edu.cn/simple
+# ===
+#     && mkdir /root/.pip \
+#     && cd /root/.pip \
+#     && echo "[global]\nindex-url = https://pypi.tuna.tsinghua.edu.cn/simple\n[install]trusted-host = https://pypi.tuna.tsinghua.edu.cn" > pip.config
+# 好像不work！
+
+# 因为 module 'torch' has no attribute 'fx' 错误，
+# 升级到 torch 1.13.1, 但是他没有cu113配套的，只有cu117的，修改dockerfile，重修编译
+# cudatoolkit=11.7 11.6 并不存在， cudatoolkit=11.8无法和 torch 1.13.1 配套
+# 折腾了半天回到源点
+# 经验，加上 -i https://pypi.tuna.tsinghua.edu.cn/simple 速度快！！！！
+
+# pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117

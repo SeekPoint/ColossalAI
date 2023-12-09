@@ -3,7 +3,7 @@ export DISTPAN="colossalai"
 
 # The following options only valid when DISTPAN="colossalai"
 export TPDEGREE=1
-export GPUNUM=4
+export GPUNUM=2
 export PLACEMENT='cpu'
 export USE_SHARD_INIT=False
 export BATCH_SIZE=1

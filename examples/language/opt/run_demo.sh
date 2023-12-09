@@ -2,7 +2,7 @@ set -xe
 pip install -r requirements.txt
 
 # model name or path
-MODEL="facebook/opt-350m"
+MODEL="/share/hf_model/opt-350m/"
 
 # path for saving model
 OUTPUT_PATH="./output_model.bin"
@@ -12,7 +12,7 @@ OUTPUT_PATH="./output_model.bin"
 PLUGIN="hybrid_parallel"
 
 # number of gpus to use
-GPUNUM=4
+GPUNUM=2
 
 # batch size per gpu
 BS=16
@@ -21,7 +21,7 @@ BS=16
 LR="5e-5"
 
 # number of epoch
-EPOCH=10
+EPOCH=2
 
 # weight decay
 WEIGHT_DECAY=0.01

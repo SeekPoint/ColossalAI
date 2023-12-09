@@ -1,0 +1,32 @@
+https://github.com/SeekPoint/ColossalAI
+
+amd00@MZ32-00:~/yk_repo/ColossalAI$
+sudo docker pull hpcaitech/colossalai:0.3.0
+
+
+
+d00@MZ32-00:~/yk_repo/ColossalAI$ sudo docker build -t colossalai ./docker
+
+
+amd00@MZ32-00:~/yk_repo/ColossalAI$ sudo docker images
+REPOSITORY                    TAG                            IMAGE ID       CREATED          SIZE
+colossalai                    latest                         1f2f6a3e1dcf   15 minutes ago   17.2GB
+
+# 浅析Docker容器的两种运行模式及 docker run 的 --rm 参数的作用及与 docker rm 的区别
+sudo docker run --gpus=all --rm -it -v /home/amd00:/workspace -v /data:/share -w /workspace/yk_repo/ColossalAI --ipc=host --name colossal --shm-size="100G" colossalai:latest  #1f2f6a3e1dcf
+sudo docker run --gpus=all -it -v /home/amd00:/workspace -v /data:/share -w /workspace/yk_repo/ColossalAI --ipc=host --name colossal --shm-size="100G" colossalai:latest  #1f2f6a3e1dcf
+
+在Docker容器退出时，默认容器内部的文件系统仍然被保留，加上--rm就会被删除
+
+
+
+
+
+root@83dccafe7db4:/workspace/yk_repo/ColossalAI/examples/language/opt# bash run_demo.sh
+错误
+ImportError: /opt/conda/lib/python3.9/site-packages/_cffi_backend.cpython-39-x86_64-linux-gnu.so: undefined symbol: ffi_type_uint32, version LIBFFI_BASE_7.0
+解决
+root@83dccafe7db4:/workspace/yk_repo/ColossalAI/examples/language/opt# pip install --upgrade cffi==1.14.0
+Collecting cffi==1.14.0
+目前卡在
+RuntimeError: FlashAttention only supports Ampere GPUs or newer.
