@@ -1,5 +1,7 @@
 import argparse
 import warnings
+import sys
+sys.path.append('./')
 
 import torch
 import torch.distributed as dist
@@ -91,11 +93,21 @@ def train(args):
     else:
         raise ValueError(f'Unsupported loss function "{args.loss_fn}"')
 
+    print(f"args.dataset={args.dataset}")
+    #"Anthropic/hh-rlhf", "Dahoas/rm-static"
+
+    if args.dataset == "Anthropic/hh-rlhf":
+        data_path = '/share/hf_model/hh-rlhf'
+    elif args.dataset == "Dahoas/rm-static":
+        data_path = '/share/hf_model/rm-static'
+    else:
+        data_path = args.dataset
+
     # prepare for data and dataset
     if args.subset is not None:
-        data = load_dataset(args.dataset, data_dir=args.subset)
+        data = load_dataset(data_path, data_dir=args.subset)
     else:
-        data = load_dataset(args.dataset)
+        data = load_dataset(data_path)
 
     train_data = data["train"].select(range(min(args.max_datasets_size, len(data["train"]))))
     eval_data = data["test"].select(range(min(args.max_datasets_size, len(data["test"]))))

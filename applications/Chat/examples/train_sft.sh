@@ -28,15 +28,14 @@ torchrun --standalone --nproc_per_node=3 /workspace/yk_repo/ColossalAI/applicati
     --max_epochs 1
 
 
-torchrun --standalone --nproc_per_node=3 train_sft.py \
+torchrun --standalone --nproc_per_node=3 /workspace/yk_repo/ColossalAI/applications/Chat/examples/train_sft.py \
     --pretrain "/share/hf_model/llama-7b-hf" \
     --model 'llama' \
     --strategy colossalai_zero2_cpu \
-    --log_interval 10 \
     --save_path  /workspace/ColossalAI/Saved/Coati-llama-7b-sft \
     --dataset /share/hf_model/instinwild_ch.json \
     --batch_size 1 \
     --accumulation_steps 8 \
     --lr 2e-5 \
     --max_datasets_size 50 \
-    --max_epochs 1 \
+    --max_epochs 2
