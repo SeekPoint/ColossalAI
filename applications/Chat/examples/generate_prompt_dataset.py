@@ -3,7 +3,7 @@ import json
 import random
 
 random.seed(42)
-
+from pydebug import gd, infoTensor
 
 def sample(args):
     with open(args.dataset_path, mode="r") as f:

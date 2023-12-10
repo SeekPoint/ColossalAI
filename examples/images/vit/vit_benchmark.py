@@ -13,6 +13,7 @@ from colossalai.cluster import DistCoordinator
 from colossalai.logging import disable_existing_loggers, get_dist_logger
 from colossalai.nn.optimizer import HybridAdam
 
+from pydebug import gd, infoTensor
 
 def format_num(num: int, bytes=False):
     """Scale bytes to its proper format, e.g. 1253656 => '1.20MB'"""

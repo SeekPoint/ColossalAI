@@ -86,9 +86,10 @@ Epoch 0:  12%|█▏        | 445/3634
 可以看出，同样bs下，增加显卡数量可以减少迭代次数，
 
 
-=========================
+=========================可行的例子！！！！！！！！！
 https://zhuanlan.zhihu.com/p/636605130
 算法框架-LLM-4-ColossalAI源码分析(ing)
+=========================================
 root@83dccafe7db4:/workspace/yk_repo/ColossalAI/applications/Chat# pip install -e .
 
 root@83dccafe7db4:/workspace/yk_repo/ColossalAI/applications/Chat#

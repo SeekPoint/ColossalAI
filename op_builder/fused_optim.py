@@ -1,6 +1,6 @@
 from .builder import Builder
 from .utils import get_cuda_cc_flag
-
+from pydebug import gd, infoTensor
 
 class FusedOptimBuilder(Builder):
     NAME = "fused_optim"

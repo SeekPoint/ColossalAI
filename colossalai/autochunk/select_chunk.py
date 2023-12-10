@@ -2,7 +2,7 @@ from .estimate_memory import EstimateMemory
 from .reorder_graph import ReorderGraph
 from .trace_indice import TraceIndice
 from .utils import NodeMgr, is_non_compute_node
-
+from pydebug import gd, infoTensor
 
 class SelectChunk(object):
     def __init__(

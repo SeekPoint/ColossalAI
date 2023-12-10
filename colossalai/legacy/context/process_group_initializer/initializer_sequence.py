@@ -8,7 +8,7 @@ from ..parallel_mode import ParallelMode
 from .initializer_tensor import Initializer_Tensor
 from .process_group_initializer import ProcessGroupInitializer
 
-
+from pydebug import gd, infoTensor
 @DIST_GROUP_INITIALIZER.register_module
 class Initializer_Sequence_DP(ProcessGroupInitializer):
     """A ProcessGroupInitializer for sequence parallelism all-reduce.

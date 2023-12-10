@@ -11,7 +11,7 @@ from torch.optim import Optimizer
 from .callbacks import Callback
 from .strategies import Strategy
 from .utils import is_rank_0
-
+from pydebug import gd, infoTensor
 
 class SLTrainer(ABC):
     """

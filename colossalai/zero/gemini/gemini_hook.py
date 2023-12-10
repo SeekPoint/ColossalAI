@@ -9,7 +9,7 @@ from colossalai.tensor.param_op_hook import ColoParamOpHook
 from colossalai.utils import is_ddp_ignored
 from colossalai.zero.gemini import TensorState
 from colossalai.zero.gemini.gemini_mgr import GeminiManager
-
+from pydebug import gd, infoTensor
 
 class TrainingPhase(Enum):
     FORWARD = 0

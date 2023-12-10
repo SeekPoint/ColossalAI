@@ -4,7 +4,7 @@ import torch
 import torch.fx
 from torch.fx import GraphModule
 from torch.utils._pytree import tree_map
-
+from pydebug import gd, infoTensor
 from colossalai.fx import ColoTracer, is_compatible_with_meta
 from colossalai.fx.passes.meta_info_prop import MetaInfoProp
 

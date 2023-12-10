@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 import colossal_eval.evaluate.gpt_evaluate as gpt_evaluate
 
 from .utils import get_data_per_category
-
+from pydebug import gd, infoTensor
 
 class Evaluator(object):
     """

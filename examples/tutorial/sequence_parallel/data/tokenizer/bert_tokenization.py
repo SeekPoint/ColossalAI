@@ -22,7 +22,7 @@ import re
 import unicodedata
 
 import six
-
+from pydebug import gd, infoTensor
 
 def validate_case_matches_checkpoint(do_lower_case, init_checkpoint):
     """Checks whether the casing config is consistent with the checkpoint name."""

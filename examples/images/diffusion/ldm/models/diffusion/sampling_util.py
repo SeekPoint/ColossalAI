@@ -1,3 +1,5 @@
+from pydebug import gd, infoTensor
+
 def append_dims(x, target_dims):
     """Appends dimensions to the end of a tensor until it has target_dims dimensions.
     From https://github.com/crowsonkb/k-diffusion/blob/master/k_diffusion/utils.py"""

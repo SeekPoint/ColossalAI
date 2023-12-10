@@ -2,7 +2,7 @@ from typing import Dict, List
 
 from colossalai.legacy.tensor import ComputePattern
 from colossalai.legacy.tensor.distspec import _DistSpec
-
+from pydebug import gd, infoTensor
 
 class ColoModule(object):
     def __init__(self):

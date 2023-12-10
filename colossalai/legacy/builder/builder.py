@@ -4,7 +4,7 @@
 import inspect
 
 from colossalai.legacy.registry import *
-
+from pydebug import gd, infoTensor
 
 def build_from_config(module, config: dict):
     """Returns an object of :class:`module` constructed from `config`.

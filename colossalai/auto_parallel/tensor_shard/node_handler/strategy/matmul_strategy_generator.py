@@ -1,7 +1,7 @@
 import operator
 from functools import reduce
 from typing import List
-
+from pydebug import gd, infoTensor
 from colossalai.auto_parallel.tensor_shard.options import SolverPerference
 from colossalai.auto_parallel.tensor_shard.sharding_strategy import (
     CommType,

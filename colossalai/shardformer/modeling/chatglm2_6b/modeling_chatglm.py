@@ -54,7 +54,7 @@ from transformers.modeling_utils import PreTrainedModel
 from transformers.utils import logging
 
 from .configuration_chatglm import ChatGLMConfig
-
+from pydebug import gd, infoTensor
 # flags required to enable jit fusion kernels
 
 if sys.platform != "darwin":

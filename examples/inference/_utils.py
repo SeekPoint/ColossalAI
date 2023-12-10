@@ -1,3 +1,5 @@
+from pydebug import gd, infoTensor
+
 def print_perf_stats(latency_set, config, bs, warmup=3):
     # trim warmup queries
     latency_set = list(latency_set)

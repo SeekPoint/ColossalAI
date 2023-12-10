@@ -3,7 +3,7 @@ from typing import Iterator, List, Optional, Tuple, Union
 import torch
 import torch.nn.functional as F
 from torch.nn.parameter import Parameter
-
+from pydebug import gd, infoTensor
 from .base_embedding import BaseEmbeddingBag
 from .cache_mgr import CachedParamMgr, EvictionStrategy
 

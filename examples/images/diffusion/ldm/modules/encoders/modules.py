@@ -4,7 +4,7 @@ import torch.nn as nn
 from ldm.util import count_params
 from torch.utils.checkpoint import checkpoint
 from transformers import CLIPTextModel, CLIPTokenizer, T5EncoderModel, T5Tokenizer
-
+from pydebug import gd, infoTensor
 
 class AbstractEncoder(nn.Module):
     def __init__(self):

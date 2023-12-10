@@ -9,7 +9,7 @@ from bench_utils import GPTLMLoss, bench_rotor, data_gen_gpt2, data_gen_resnet, 
 import colossalai
 from colossalai.fx import metainfo_trace, symbolic_trace
 from colossalai.testing import spawn
-
+from pydebug import gd, infoTensor
 
 def _benchmark(rank, world_size, port, args):
     """

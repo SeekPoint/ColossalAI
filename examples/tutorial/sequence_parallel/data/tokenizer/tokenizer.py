@@ -20,7 +20,7 @@ from colossalai.legacy.context import ParallelMode
 from colossalai.legacy.core import global_context as gpc
 
 from .bert_tokenization import FullTokenizer as FullBertTokenizer
-
+from pydebug import gd, infoTensor
 
 def build_tokenizer(vocab_file, tokenizer_type, vocab_extra_ids=0):
     """Initialize tokenizer."""

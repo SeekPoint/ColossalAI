@@ -1,5 +1,5 @@
 from transformers import PretrainedConfig
-
+from pydebug import gd, infoTensor
 
 class ChatGLMConfig(PretrainedConfig):
     model_type = "chatglm"

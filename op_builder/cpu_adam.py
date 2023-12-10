@@ -1,6 +1,6 @@
 from .builder import Builder
 from .utils import append_nvcc_threads
-
+from pydebug import gd, infoTensor
 
 class CPUAdamBuilder(Builder):
     NAME = "cpu_adam"

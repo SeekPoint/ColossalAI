@@ -19,7 +19,7 @@ from utils import ChatPromptProcessor, Dialogue, LockedIterator, load_json, samp
 CONTEXT = "Below is an instruction that describes a task. Write a response that appropriately completes the request. Do not generate new instructions."
 MAX_LEN = 512
 running_lock = Lock()
-
+from pydebug import gd, infoTensor
 
 class GenerationTaskReq(BaseModel):
     max_new_tokens: int = Field(gt=0, le=512, example=64)

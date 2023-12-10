@@ -3,7 +3,7 @@ from typing import Optional
 import torch
 import torch.nn as nn
 from torch.fx import symbolic_trace
-
+from pydebug import gd, infoTensor
 from colossalai.fx.passes.meta_info_prop import MetaInfoProp
 from colossalai.fx.profiler import calculate_fwd_out, calculate_fwd_tmp, is_compatible_with_meta
 from colossalai.zero.gemini.chunk import ChunkManager

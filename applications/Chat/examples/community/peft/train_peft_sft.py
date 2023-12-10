@@ -17,7 +17,7 @@ from transformers.models.gpt2.tokenization_gpt2 import GPT2Tokenizer
 from colossalai.logging import get_dist_logger
 from colossalai.nn.optimizer import HybridAdam
 from colossalai.tensor import ColoParameter
-
+from pydebug import gd, infoTensor
 
 def train(args):
     # configure strategy

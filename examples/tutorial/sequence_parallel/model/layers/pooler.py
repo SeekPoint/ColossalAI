@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from .linear import Linear
-
+from pydebug import gd, infoTensor
 
 class Pooler(nn.Module):
     """Pooler layer.

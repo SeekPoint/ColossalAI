@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from colossalai.kernel.jit import bias_gelu_impl
 
 from .linear import Linear
-
+from pydebug import gd, infoTensor
 
 class TransformerMLP(nn.Module):
     """MLP.

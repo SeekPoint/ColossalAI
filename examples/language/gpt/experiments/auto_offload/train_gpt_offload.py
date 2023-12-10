@@ -14,7 +14,7 @@ from colossalai.fx.profiler import parameter_size
 from colossalai.nn.optimizer import HybridAdam
 from colossalai.testing import spawn
 from colossalai.utils import get_current_device
-
+from pydebug import gd, infoTensor
 
 def parse_args():
     parser = argparse.ArgumentParser()

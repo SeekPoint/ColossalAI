@@ -1,7 +1,7 @@
 from typing import Callable
 
 import torch
-
+from pydebug import gd, infoTensor
 TORCH_MAJOR = int(torch.__version__.split(".")[0])
 TORCH_MINOR = int(torch.__version__.split(".")[1])
 

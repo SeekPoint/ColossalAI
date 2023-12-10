@@ -5,7 +5,7 @@ from transformers.models.opt.configuration_opt import OPTConfig
 from transformers.models.opt.modeling_opt import OPTModel
 
 from ..base import Critic
-
+from pydebug import gd, infoTensor
 
 class OPTCritic(Critic):
     """

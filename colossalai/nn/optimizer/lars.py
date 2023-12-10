@@ -4,7 +4,7 @@ from typing import Iterable
 
 import torch
 from torch.optim import Optimizer
-
+from pydebug import gd, infoTensor
 
 class Lars(Optimizer):
     r"""Implements the LARS optimizer from `"Large batch training of convolutional networks"

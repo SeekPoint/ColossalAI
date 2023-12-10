@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import torch
 from torch.autograd.profiler_util import _format_memory
 from torch.fx import Node
-
+from pydebug import gd, infoTensor
 from colossalai._analyzer.envs import MeshConfig
 
 

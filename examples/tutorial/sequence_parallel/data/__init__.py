@@ -7,7 +7,7 @@ from colossalai.logging import get_dist_logger
 
 from .datasets.builder import build_train_valid_test_datasets
 from .datasets.data_samplers import build_pretraining_data_loader
-
+from pydebug import gd, infoTensor
 
 def cyclic_iter(iter):
     while True:

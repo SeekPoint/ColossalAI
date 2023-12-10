@@ -16,7 +16,7 @@ from colossalai.legacy.utils import is_using_pp
 from colossalai.logging import get_dist_logger
 from colossalai.nn.optimizer import FusedAdam
 from colossalai.utils import MultiTimer
-
+from pydebug import gd, infoTensor
 
 def process_batch_data(batch_data):
     tokens, types, sentence_order, loss_mask, lm_labels, padding_mask = batch_data

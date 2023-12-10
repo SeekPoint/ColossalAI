@@ -7,7 +7,7 @@ from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 from colossalai.logging import get_dist_logger
-
+from pydebug import gd, infoTensor
 
 class Config(dict):
     """This is a wrapper class for dict objects so that values of which can be

@@ -8,7 +8,7 @@ import torch.nn as nn
 
 from colossalai.kernel.op_builder.scaled_masked_softmax import ScaledMaskedSoftmaxBuilder
 from colossalai.kernel.op_builder.scaled_upper_triangle_masked_softmax import ScaledUpperTrainglemaskedSoftmaxBuilder
-
+from pydebug import gd, infoTensor
 try:
     from colossalai._C import scaled_masked_softmax, scaled_upper_triang_masked_softmax
 except ImportError:

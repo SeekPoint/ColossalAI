@@ -7,7 +7,7 @@ from colossalai.legacy.registry import DIST_GROUP_INITIALIZER
 
 from ..parallel_mode import ParallelMode
 from .process_group_initializer import ProcessGroupInitializer
-
+from pydebug import gd, infoTensor
 
 def _check_summa_env_var(summa_dim):
     # check environment variable for SUMMA

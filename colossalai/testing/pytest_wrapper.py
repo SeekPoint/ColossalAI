@@ -5,7 +5,7 @@ explicitly import this file `from colossalai.testing.pytest_wrapper import <func
 """
 
 import os
-
+from pydebug import gd, infoTensor
 
 def run_on_environment_flag(name: str):
     """

@@ -8,7 +8,7 @@ from colossalai.legacy.core import global_context as gpc
 from colossalai.logging import get_dist_logger
 from colossalai.nn.lr_scheduler import CosineAnnealingWarmupLR
 from colossalai.nn.optimizer import Lamb, Lars
-
+from pydebug import gd, infoTensor
 
 class DummyDataloader:
     def __init__(self, length, batch_size):

@@ -9,7 +9,7 @@ from colossalai.amp.naive_amp.grad_scaler import DynamicGradScaler
 from colossalai.utils import get_current_device
 
 from .base import MixedPrecisionMixin
-
+from pydebug import gd, infoTensor
 
 class OptimState(Enum):
     SCALED = 0

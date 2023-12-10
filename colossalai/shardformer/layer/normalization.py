@@ -4,7 +4,7 @@
 import torch.nn as nn
 
 from colossalai.lazy import LazyInitContext
-
+from pydebug import gd, infoTensor
 __all__ = ["FusedLayerNorm", "FusedRMSNorm"]
 
 FAST_LAYERNORM_SUPPORTED_SIZE = [

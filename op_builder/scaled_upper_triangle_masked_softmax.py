@@ -1,6 +1,6 @@
 from .builder import Builder
 from .utils import append_nvcc_threads, get_cuda_cc_flag
-
+from pydebug import gd, infoTensor
 
 class ScaledUpperTrainglemaskedSoftmaxBuilder(Builder):
     NAME = "scaled_upper_triangle_masked_softmax"

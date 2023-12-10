@@ -15,7 +15,7 @@ from colossalai.utils import MultiTimer
 
 from ._base_hook import BaseHook
 from ._commons_ import _format_number
-
+from pydebug import gd, infoTensor
 
 class LogByEpochHook(BaseHook):
     """Hook to log by epoch.

@@ -6,7 +6,7 @@ from torch.nn.modules.loss import _Loss
 from colossalai.legacy.context import ParallelMode
 from colossalai.legacy.core import global_context as gpc
 from colossalai.legacy.registry import LOSSES
-
+from pydebug import gd, infoTensor
 
 class _VocabParallelCrossEntropy1D(torch.autograd.Function):
     @staticmethod

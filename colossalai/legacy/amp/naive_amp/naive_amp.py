@@ -16,7 +16,7 @@ from colossalai.legacy.context import ParallelMode
 from colossalai.legacy.core import global_context as gpc
 
 from ._fp16_optimizer import FP16Optimizer
-
+from pydebug import gd, infoTensor
 
 class NaiveAMPOptimizer(OptimizerWrapper):
     """A wrapper class for optimizer to cast all parameters to fp16

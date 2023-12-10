@@ -1,6 +1,6 @@
 import torch
 from diffusers import DiffusionPipeline
-
+from pydebug import gd, infoTensor
 model_id = "<Your Model Path>"
 print(f"Loading model... from{model_id}")
 

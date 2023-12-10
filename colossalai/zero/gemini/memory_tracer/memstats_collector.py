@@ -3,7 +3,7 @@ from typing import Optional
 
 from .memory_monitor import SyncCudaMemoryMonitor
 from .memory_stats import MemStats
-
+from pydebug import gd, infoTensor
 
 class MemStatsCollector:
     """

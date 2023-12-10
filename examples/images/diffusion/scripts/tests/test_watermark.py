@@ -1,7 +1,7 @@
 import cv2
 import fire
 from imwatermark import WatermarkDecoder
-
+from pydebug import gd, infoTensor
 
 def testit(img_path):
     bgr = cv2.imread(img_path)

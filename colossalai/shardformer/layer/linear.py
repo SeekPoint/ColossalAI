@@ -32,7 +32,7 @@ from ._operation import (
 )
 from .parallel_module import ParallelModule
 from .utils import create_randomizer_with_offset
-
+from pydebug import gd, infoTensor
 __all__ = ["Linear1D_Col", "Linear1D_Row"]
 
 

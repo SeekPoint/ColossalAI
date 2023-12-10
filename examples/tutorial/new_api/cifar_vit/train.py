@@ -27,7 +27,7 @@ from colossalai.utils import get_current_device
 NUM_EPOCHS = 60
 WARMUP_EPOCHS = 5
 LEARNING_RATE = 1e-3
-
+from pydebug import gd, infoTensor
 
 def vit_cifar(**kwargs):
     pretrained_cfg = _cfg(num_classes=10, input_size=(3, 32, 32), crop_pct=1.0)

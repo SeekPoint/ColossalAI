@@ -5,7 +5,7 @@ import torch
 
 from colossalai.context.singleton_meta import SingletonMeta
 from colossalai.fx.profiler import calculate_fwd_out, calculate_fwd_tmp
-
+from pydebug import gd, infoTensor
 from .region import Region
 
 

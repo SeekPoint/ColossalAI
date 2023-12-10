@@ -1,3 +1,5 @@
+from pydebug import gd, infoTensor
+
 class SingletonMeta(type):
     """
     The Singleton class can be implemented in different ways in Python. Some

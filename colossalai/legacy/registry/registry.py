@@ -3,7 +3,7 @@
 
 from types import ModuleType
 from typing import List
-
+from pydebug import gd, infoTensor
 
 class Registry:
     """This is a registry class used to register classes and modules so that a universal

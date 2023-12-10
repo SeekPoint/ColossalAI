@@ -2,7 +2,7 @@ import functools
 import types
 from time import time
 from typing import List
-
+from pydebug import gd, infoTensor
 from colossalai.utils.cuda import get_current_device
 
 from .stateful_tensor import StatefulTensor, TensorState

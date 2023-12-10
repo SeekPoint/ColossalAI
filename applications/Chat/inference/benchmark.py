@@ -6,7 +6,7 @@ from time import time
 import torch
 from coati.quant import llama_load_quant, low_resource_init
 from transformers import AutoTokenizer, GenerationConfig, LlamaConfig, LlamaForCausalLM
-
+from pydebug import gd, infoTensor
 
 def generate_prompt(instruction, input=None):
     if input:

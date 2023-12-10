@@ -9,7 +9,7 @@ import colossalai
 from colossalai.auto_parallel.checkpoint import CheckpointSolverRotor
 from colossalai.fx import metainfo_trace, symbolic_trace
 from colossalai.testing import spawn
-
+from pydebug import gd, infoTensor
 
 def _benchmark(rank, world_size, port):
     """Auto activation checkpoint batchsize benchmark

@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from torch.nn.modules.utils import _pair, _single, _triple
 
 from .tracer import register_tracer_impl
-
+from pydebug import gd, infoTensor
 __all__ = []
 
 

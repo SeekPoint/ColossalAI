@@ -6,7 +6,7 @@ from datasets import load_dataset
 from transformers import LlamaTokenizer
 
 from colossalai.inference.quant.smoothquant.models.llama import SmoothLlamaForCausalLM
-
+from pydebug import gd, infoTensor
 
 def build_model_and_tokenizer(model_name):
     tokenizer = LlamaTokenizer.from_pretrained(model_name, model_max_length=512)

@@ -5,7 +5,7 @@ from colossalai.legacy.tensor.distspec import DistPlacementPattern, _DistSpec
 from colossalai.legacy.tensor.process_group import ProcessGroup
 
 from .compute_spec import ComputeSpec
-
+from pydebug import gd, infoTensor
 
 @dataclass
 class ColoTensorSpec:

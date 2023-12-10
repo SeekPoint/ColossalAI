@@ -12,6 +12,7 @@ import colossalai
 from colossalai.inference.tensor_parallel.engine import TPInferEngine
 from colossalai.shardformer import ShardConfig
 from colossalai.testing import free_port
+from pydebug import gd, infoTensor
 
 logger = logging.getLogger(__name__)
 logger.info("Transformers version %s", transformers.__version__)

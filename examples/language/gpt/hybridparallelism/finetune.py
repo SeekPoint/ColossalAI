@@ -18,6 +18,7 @@ from colossalai.booster.plugin import GeminiPlugin, HybridParallelPlugin, LowLev
 from colossalai.cluster import DistCoordinator
 from colossalai.nn.optimizer import HybridAdam
 from colossalai.utils import get_current_device
+from pydebug import gd, infoTensor
 
 # ==============================
 # Prepare Hyperparameters

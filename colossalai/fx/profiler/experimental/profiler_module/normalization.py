@@ -6,7 +6,7 @@ from typing import Tuple, Union
 import torch
 
 from ..registry import meta_profiler_module
-
+from pydebug import gd, infoTensor
 
 @meta_profiler_module.register(torch.nn.InstanceNorm1d)
 @meta_profiler_module.register(torch.nn.InstanceNorm2d)

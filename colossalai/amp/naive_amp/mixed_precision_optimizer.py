@@ -9,7 +9,7 @@ from colossalai.interface import OptimizerWrapper
 
 from .mixed_precision_mixin import BF16MixedPrecisionMixin, FP16MixedPrecisionMixin
 
-
+from pydebug import gd, infoTensor
 class NaiveFP16MixedPrecisionMixin(FP16MixedPrecisionMixin):
     def __init__(
         self,

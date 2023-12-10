@@ -1,6 +1,6 @@
 from .trace_indice import TraceIndice
 from .utils import NodeMgr
-
+from pydebug import gd, infoTensor
 
 class ReorderGraph(object):
     """

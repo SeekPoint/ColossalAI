@@ -15,7 +15,7 @@ from colossalai.legacy.context.parallel_mode import ParallelMode
 from colossalai.legacy.core import global_context as gpc
 from colossalai.legacy.nn.layer.parallel_sequence._operation import RingAV, RingQK
 from colossalai.legacy.registry import LAYERS
-
+from pydebug import gd, infoTensor
 
 @LAYERS.register_module
 class TransformerSelfAttentionRing(nn.Module):

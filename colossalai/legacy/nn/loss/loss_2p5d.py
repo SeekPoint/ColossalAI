@@ -10,7 +10,7 @@ from colossalai.legacy.nn.layer.parallel_2p5d import reduce_by_batch_2p5d, split
 from colossalai.legacy.nn.layer.parallel_2p5d._utils import assert_tesseract_initialization
 from colossalai.legacy.registry import LOSSES
 from colossalai.utils import get_current_device
-
+from pydebug import gd, infoTensor
 
 @LOSSES.register_module
 class CrossEntropyLoss2p5D(_Loss):

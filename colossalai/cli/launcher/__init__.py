@@ -1,5 +1,5 @@
 import click
-
+from pydebug import gd, infoTensor
 from colossalai.context import Config
 
 from .run import launch_multi_processes

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import torch
 from torch import nn
 from torch.autograd import Function
-
+from pydebug import gd, infoTensor
 
 def check_config(config):
     if config.hidden_size % config.nhead != 0:

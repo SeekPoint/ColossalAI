@@ -13,7 +13,7 @@ from colossalai.pipeline.stage_manager import PipelineStageManager
 
 from ..layer.parallel_module import ParallelModule
 from ..shard.shard_config import ShardConfig
-
+from pydebug import gd, infoTensor
 __all__ = ["ParallelModule", "SubModuleReplacementDescription", "ModulePolicyDescription", "Policy"]
 
 

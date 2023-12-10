@@ -1,7 +1,7 @@
 from typing import Callable, List, Tuple
 
 import torch
-
+from pydebug import gd, infoTensor
 from colossalai._analyzer._subclasses.flop_tensor import ewise_flop_counter as elementwise_flop_counter
 from colossalai._analyzer.fx.node_util import compute_size_in_bytes as activation_size
 from colossalai.auto_parallel.tensor_shard.sharding_strategy import MemoryCost, OperationDataType, TrainCycleItem

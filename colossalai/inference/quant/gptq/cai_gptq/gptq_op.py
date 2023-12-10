@@ -1,7 +1,7 @@
 import torch
 
 from colossalai.kernel.triton import gptq_fused_linear_triton
-
+from pydebug import gd, infoTensor
 
 class CaiGPTQLinearOp(torch.nn.Module):
     def __init__(self, gptq_group_size, gptq_quant_bits):

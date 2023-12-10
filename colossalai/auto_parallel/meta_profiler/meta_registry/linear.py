@@ -2,7 +2,7 @@ from functools import reduce
 from typing import List, Tuple
 
 import torch
-
+from pydebug import gd, infoTensor
 from colossalai._analyzer._subclasses.flop_tensor import flop_mapping
 from colossalai._analyzer.fx.node_util import compute_size_in_bytes
 from colossalai.auto_parallel.tensor_shard.sharding_strategy import MemoryCost, TrainCycleItem

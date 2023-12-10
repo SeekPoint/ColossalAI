@@ -14,7 +14,7 @@ from colossalai.lazy import LazyInitContext
 from colossalai.shardformer.layer import ParallelModule
 
 from .gptq_op import CaiGPTQLinearOp
-
+from pydebug import gd, infoTensor
 HAS_GPTQ_CUDA = False
 try:
     from colossalai.kernel.op_builder.gptq import GPTQBuilder

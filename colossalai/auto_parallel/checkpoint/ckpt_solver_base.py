@@ -14,7 +14,7 @@ from colossalai.fx.codegen.activation_checkpoint_codegen import ActivationCheckp
 
 __all___ = ["CheckpointSolverBase"]
 
-
+from pydebug import gd, infoTensor
 def _copy_output(src: Graph, dst: Graph):
     """Copy the output node from src to dst"""
     for n_src, n_dst in zip(src.nodes, dst.nodes):

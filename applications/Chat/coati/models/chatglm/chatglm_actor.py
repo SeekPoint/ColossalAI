@@ -3,7 +3,7 @@ from typing import Optional
 from ..base import Actor
 from .configuration_chatglm import ChatGLMConfig
 from .modeling_chatglm import ChatGLMForConditionalGeneration
-
+from pydebug import gd, infoTensor
 
 class ChatGLMActor(Actor):
     """

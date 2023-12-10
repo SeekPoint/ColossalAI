@@ -8,7 +8,7 @@ from typing import Any, Optional, Tuple, Union
 import torch
 
 from ..registry import meta_profiler_function
-
+from pydebug import gd, infoTensor
 
 def _elementwise_flops_compute(input, other):
     # copied from https://github.com/microsoft/DeepSpeed/blob/master/deepspeed/profiling/flops_profiler/profiler.py#L763

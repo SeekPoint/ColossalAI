@@ -19,6 +19,8 @@ from colossalai.logging import disable_existing_loggers, get_dist_logger
 from colossalai.nn.optimizer import HybridAdam
 from colossalai.utils import get_current_device
 
+from pydebug import gd, infoTensor
+
 CAI_VERSION = colossalai.__version__
 
 

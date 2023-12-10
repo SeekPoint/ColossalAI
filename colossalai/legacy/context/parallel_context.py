@@ -19,7 +19,7 @@ from colossalai.logging import get_dist_logger
 
 from .parallel_mode import ParallelMode
 from .random import add_seed, get_seeds, set_mode
-
+from pydebug import gd, infoTensor
 
 class ParallelContext(metaclass=SingletonMeta):
     """This class provides interface functions for users to get the parallel context,

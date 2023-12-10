@@ -12,7 +12,7 @@ from tqdm import tqdm
 from .callbacks import TrainerCallback
 from .detached_replay_buffer import DetachedReplayBuffer
 from .utils import is_rank_0
-
+from pydebug import gd, infoTensor
 
 class DetachedTrainer(ABC):
     """

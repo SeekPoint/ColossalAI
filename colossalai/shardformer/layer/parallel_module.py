@@ -22,7 +22,7 @@ from colossalai.tensor.d_tensor import (
 )
 
 __all__ = ["ParallelModule"]
-
+from pydebug import gd, infoTensor
 
 class ParallelModule(nn.Module, ABC):
     @abstractmethod

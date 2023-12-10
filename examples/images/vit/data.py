@@ -1,7 +1,7 @@
 import torch
 from datasets import load_dataset
 from torch.utils.data import Dataset
-
+from pydebug import gd, infoTensor
 
 class BeansDataset(Dataset):
     def __init__(self, image_processor, tp_size=1, split="train"):

@@ -8,7 +8,7 @@ from colossalai.legacy.utils import is_no_pp_or_last_stage
 
 from ._fp16_optimizer import FP16Optimizer
 from .naive_amp import NaiveAMPModel, NaiveAMPOptimizer
-
+from pydebug import gd, infoTensor
 
 def convert_to_naive_amp(model: nn.Module, optimizer: Optimizer, amp_config):
     """A helper function to wrap training components with naive AMP modules. In this mode,

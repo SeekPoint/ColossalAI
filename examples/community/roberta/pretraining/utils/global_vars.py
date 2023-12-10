@@ -1,7 +1,7 @@
 import time
 
 import torch
-
+from pydebug import gd, infoTensor
 from .WandbLog import TensorboardLog
 
 _GLOBAL_TIMERS = None

@@ -4,7 +4,7 @@ import torch.nn as nn
 from transformers import OPTConfig, OPTModel
 
 from ..base import RewardModel
-
+from pydebug import gd, infoTensor
 
 class OPTRM(RewardModel):
     """

@@ -2,7 +2,7 @@ import torch
 from torch.fx.graph_module import GraphModule
 
 from colossalai.legacy.pipeline.middleware.topo import Partition, PartitionInputVal, PartitionOutputVal, Topo
-
+from pydebug import gd, infoTensor
 
 def partition_name_to_id(partition_name, is_input=False, is_output=False):
     if is_input:

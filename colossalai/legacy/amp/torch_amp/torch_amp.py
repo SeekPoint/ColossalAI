@@ -11,7 +11,7 @@ from colossalai.interface import OptimizerWrapper
 from colossalai.legacy.utils import clip_grad_norm_fp32
 
 from ._grad_scaler import GradScaler
-
+from pydebug import gd, infoTensor
 
 class TorchAMPOptimizer(OptimizerWrapper):
     """A wrapper class which integrate Pytorch AMP with an optimizer

@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-
+from pydebug import gd, infoTensor
 
 class AbstractDistribution:
     def sample(self):

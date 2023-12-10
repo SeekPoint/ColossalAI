@@ -9,7 +9,7 @@ Licensed under the MIT License.
 import torch
 
 from colossalai.utils import multi_tensor_applier
-
+from pydebug import gd, infoTensor
 
 class FusedAdam(torch.optim.Optimizer):
     """Implements Adam algorithm.

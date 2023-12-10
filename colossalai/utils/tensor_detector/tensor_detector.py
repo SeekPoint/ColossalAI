@@ -8,7 +8,7 @@ import torch.nn as nn
 
 LINE_WIDTH = 108
 LINE = "-" * LINE_WIDTH + "\n"
-
+from pydebug import gd, infoTensor
 
 class TensorDetector:
     def __init__(

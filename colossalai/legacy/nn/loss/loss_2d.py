@@ -10,7 +10,7 @@ from colossalai.legacy.nn.layer.parallel_2d import reduce_by_batch_2d, split_bat
 from colossalai.legacy.nn.layer.parallel_2d._utils import assert_summa_initialization
 from colossalai.legacy.registry import LOSSES
 from colossalai.utils import get_current_device
-
+from pydebug import gd, infoTensor
 
 @LOSSES.register_module
 class CrossEntropyLoss2D(_Loss):

@@ -9,7 +9,7 @@ from colossalai.fx.profiler import calculate_fwd_in, calculate_fwd_tmp
 from .ckpt_solver_base import CheckpointSolverBase
 
 __all__ = ["CheckpointSolverChen"]
-
+from pydebug import gd, infoTensor
 
 class CheckpointSolverChen(CheckpointSolverBase):
     def __init__(self, graph: Graph, cnode: List[str] = None, num_grids: int = 6):

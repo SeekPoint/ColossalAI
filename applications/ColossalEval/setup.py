@@ -1,5 +1,5 @@
 from setuptools import find_packages, setup
-
+from pydebug import gd, infoTensor
 
 def fetch_requirements(path):
     with open(path, "r") as fd:

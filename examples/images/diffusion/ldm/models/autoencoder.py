@@ -7,7 +7,7 @@ from ldm.modules.distributions.distributions import DiagonalGaussianDistribution
 from ldm.modules.ema import LitEma
 from torch.nn import Identity
 from torch.nn import functional as F
-
+from pydebug import gd, infoTensor
 
 class AutoencoderKL(pl.LightningModule):
     def __init__(

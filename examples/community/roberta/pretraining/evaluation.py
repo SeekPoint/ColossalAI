@@ -5,7 +5,7 @@ import torch
 from nvidia_bert_dataset_provider import NvidiaBertDatasetProvider
 from tqdm import tqdm
 from utils.global_vars import get_tensorboard_writer, get_timers
-
+from pydebug import gd, infoTensor
 
 def evaluate(model, args, logger, global_step, criterion):
     evaluate_dataset_provider = NvidiaBertDatasetProvider(args, evaluate=True)

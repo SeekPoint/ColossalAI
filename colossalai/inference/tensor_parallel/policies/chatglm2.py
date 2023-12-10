@@ -1,5 +1,5 @@
 from functools import partial
-
+from pydebug import gd, infoTensor
 from colossalai.shardformer.modeling.chatglm2_6b.modeling_chatglm import (
     ChatGLMForConditionalGeneration,
     ChatGLMModel,

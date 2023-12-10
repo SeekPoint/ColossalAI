@@ -4,7 +4,7 @@ from einops import rearrange
 from torch import nn
 
 # helper function
-
+from pydebug import gd, infoTensor
 
 def exists(val):
     return val is not None

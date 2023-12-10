@@ -8,7 +8,7 @@ from colossalai.legacy.core import global_context as gpc
 from colossalai.legacy.global_variables import tensor_parallel_env as env
 
 from ..utils import divide
-
+from pydebug import gd, infoTensor
 
 def set_parallel_input(input_parallel: bool):
     env.parallel_input_1d = input_parallel

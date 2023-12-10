@@ -23,7 +23,7 @@ from colossalai.tensor.d_tensor.api import (
 from ._operation import gather_forward_split_backward, reduce_forward
 from .parallel_module import ParallelModule
 from .utils import create_randomizer_with_offset
-
+from pydebug import gd, infoTensor
 __all__ = ["Embedding1D", "VocabParallelEmbedding1D"]
 
 

@@ -7,7 +7,7 @@ from typing import Dict, List
 from colossalai.logging import DistributedLogger
 
 from .base import BaseDataset
-
+from pydebug import gd, infoTensor
 multi_choice_datasets = [
     "Chinese Lang and Usage MCQs",
     "Chinese Modern Lit",

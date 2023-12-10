@@ -23,7 +23,7 @@ from .gemini_ddp import GeminiDDP
 __all__ = ["GeminiOptimizer", "GeminiAdamOptimizer"]
 
 _AVAIL_OPTIM_LIST = {FusedAdam, CPUAdam, HybridAdam}
-
+from pydebug import gd, infoTensor
 
 class GeminiFP16MixedPrecisionMixin(FP16MixedPrecisionMixin):
     def __init__(

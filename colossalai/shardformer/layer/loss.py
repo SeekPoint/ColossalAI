@@ -4,7 +4,7 @@ from torch.autograd import Function
 from torch.distributed import ProcessGroup
 
 __all__ = ["DistCrossEntropy", "cross_entropy_1d"]
-
+from pydebug import gd, infoTensor
 
 class DistCrossEntropy(Function):
     r"""

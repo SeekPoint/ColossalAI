@@ -1,7 +1,7 @@
 import os
 
 from setuptools import Extension, setup
-
+from pydebug import gd, infoTensor
 this_dir = os.path.dirname(os.path.abspath(__file__))
 ext_modules = [
     Extension(

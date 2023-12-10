@@ -6,7 +6,7 @@ import time
 from typing import Dict
 
 import triton
-
+from pydebug import gd, infoTensor
 
 class CustomizedTritonAutoTuner(triton.KernelInterface):
     def __init__(

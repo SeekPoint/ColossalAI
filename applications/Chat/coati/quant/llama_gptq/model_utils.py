@@ -1,7 +1,7 @@
 # copied from https://github.com/qwopqwop200/GPTQ-for-LLaMa/blob/past/modelutils.py
 
 import torch.nn as nn
-
+from pydebug import gd, infoTensor
 
 def find_layers(module, layers=[nn.Conv2d, nn.Linear], name=""):
     if type(module) in layers:

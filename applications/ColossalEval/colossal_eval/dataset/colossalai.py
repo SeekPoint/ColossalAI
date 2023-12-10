@@ -7,7 +7,7 @@ from colossal_eval.utils import jload
 from colossalai.logging import DistributedLogger
 
 from .base import BaseDataset
-
+from pydebug import gd, infoTensor
 default_inference_kwargs = {
     "calculate_loss": False,
     "all_classes": None,

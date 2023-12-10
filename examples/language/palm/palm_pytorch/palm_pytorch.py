@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from einops import rearrange
 from torch import matmul, nn
-
+from pydebug import gd, infoTensor
 # normalization
 # they use layernorm without bias, something that pytorch does not offer
 

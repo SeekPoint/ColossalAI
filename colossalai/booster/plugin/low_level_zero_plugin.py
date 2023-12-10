@@ -4,7 +4,7 @@ from functools import partial
 from pathlib import Path
 from types import MethodType
 from typing import Callable, Iterator, List, Optional, Tuple
-
+from pydebug import gd, infoTensor
 import torch
 import torch.nn as nn
 from torch.optim import Optimizer

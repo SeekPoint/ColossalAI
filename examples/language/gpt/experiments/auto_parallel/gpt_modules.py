@@ -5,7 +5,7 @@ import torch.nn as nn
 from transformers.activations import ACT2FN
 from transformers.models.gpt2.modeling_gpt2 import BaseModelOutputWithPastAndCrossAttentions, GPT2PreTrainedModel
 from transformers.pytorch_utils import Conv1D
-
+from pydebug import gd, infoTensor
 
 class GPT2MLP(nn.Module):
     def __init__(self, intermediate_size, config):

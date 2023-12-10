@@ -1,5 +1,5 @@
 from locust import HttpUser, task
-
+from pydebug import gd, infoTensor
 samples = [
     [
         dict(

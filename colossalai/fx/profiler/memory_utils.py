@@ -2,7 +2,7 @@ from typing import Dict, List, Tuple, Union
 
 import torch
 from torch.fx import Node
-
+from pydebug import gd, infoTensor
 from .._compatibility import compatibility, is_compatible_with_meta
 
 __all__ = ["activation_size", "parameter_size", "is_inplace"]

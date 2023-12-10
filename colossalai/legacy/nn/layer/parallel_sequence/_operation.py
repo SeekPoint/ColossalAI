@@ -10,7 +10,7 @@ from colossalai.legacy.context.parallel_mode import ParallelMode
 from colossalai.legacy.core import global_context as gpc
 from colossalai.legacy.nn.layer.parallel_sequence._utils import _calc_current_device_range, _calc_incoming_device_range
 from colossalai.utils import get_current_device
-
+from pydebug import gd, infoTensor
 
 class RingQK(torch.autograd.Function):
     """

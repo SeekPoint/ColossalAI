@@ -7,7 +7,7 @@ import torch
 from .chunk import Chunk, ChunkManager
 from .memory_tracer import ChunkMemStatsCollector, MemStats
 from .placement_policy import PlacementPolicyFactory
-
+from pydebug import gd, infoTensor
 
 class GeminiManager:
     """

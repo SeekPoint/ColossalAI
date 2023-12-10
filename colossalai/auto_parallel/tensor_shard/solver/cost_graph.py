@@ -1,7 +1,7 @@
 import torch
 
 from colossalai.auto_parallel.tensor_shard.constants import INFINITY_COST
-
+from pydebug import gd, infoTensor
 
 class CostGraph:
     """

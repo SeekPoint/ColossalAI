@@ -9,7 +9,7 @@ from transformers import GPT2Config, GPT2LMHeadModel
 
 from colossalai.auto_parallel.checkpoint import CheckpointSolverRotor
 from colossalai.fx import metainfo_trace
-
+from pydebug import gd, infoTensor
 
 def bench(
     gm: torch.fx.GraphModule, criterion: torch.nn.Module, data_gen: Callable, num_steps: int = 5

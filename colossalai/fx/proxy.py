@@ -2,7 +2,7 @@ from typing import Any
 
 import torch
 from torch.fx.proxy import Proxy
-
+from pydebug import gd, infoTensor
 from colossalai.fx.tracer.meta_patch import meta_patched_function
 
 __all__ = ["ColoProxy"]

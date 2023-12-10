@@ -14,7 +14,7 @@ from colossalai.shardformer import ShardConfig
 from colossalai.testing import clear_cache_before_run, rerun_if_address_is_in_use, spawn
 
 os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = "true"
-
+from pydebug import gd, infoTensor
 
 def bench_bloom(args):
     pretrained_model_dir = args.path

@@ -9,7 +9,7 @@ from typing import Tuple
 import torch
 
 from ..registry import meta_profiler_module
-
+from pydebug import gd, infoTensor
 
 @meta_profiler_module.register(torch.nn.Conv1d)
 def torch_nn_conv1d(self: torch.nn.Conv1d, input: torch.Tensor) -> Tuple[int, int]:

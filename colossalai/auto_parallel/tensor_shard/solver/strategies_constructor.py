@@ -1,6 +1,6 @@
 import torch
 from torch.fx import Graph
-
+from pydebug import gd, infoTensor
 from colossalai.auto_parallel.tensor_shard.node_handler import (
     GetattrHandler,
     OutputHandler,

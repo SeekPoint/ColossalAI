@@ -3,7 +3,7 @@ from typing import Dict, List, Union
 
 import torch
 from torch.fx.node import Node
-
+from pydebug import gd, infoTensor
 from colossalai._analyzer.fx.node_util import MetaInfo
 from colossalai.auto_parallel.tensor_shard.constants import RESHAPE_FUNC_OP
 from colossalai.auto_parallel.tensor_shard.sharding_strategy import CommType, OperationDataType

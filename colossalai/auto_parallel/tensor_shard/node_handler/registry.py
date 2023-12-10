@@ -1,3 +1,5 @@
+from pydebug import gd, infoTensor
+
 class Registry:
     def __init__(self, name):
         self.name = name

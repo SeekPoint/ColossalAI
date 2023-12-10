@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, Optional, Union
 import torch
 from torch.fx import Tracer
 from torch.utils._pytree import tree_map
-
+from pydebug import gd, infoTensor
 from colossalai._analyzer._subclasses import MetaTensor
 
 try:

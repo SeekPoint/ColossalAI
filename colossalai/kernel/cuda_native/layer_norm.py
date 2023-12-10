@@ -10,7 +10,7 @@ from torch.nn import init
 from torch.nn.parameter import Parameter
 
 from colossalai.kernel.op_builder.layernorm import LayerNormBuilder
-
+from pydebug import gd, infoTensor
 try:
     from colossalai._C import layer_norm
 except ImportError:

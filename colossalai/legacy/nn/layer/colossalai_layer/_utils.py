@@ -5,7 +5,7 @@ from ..parallel_2d._operation import split_batch_2d
 from ..parallel_2p5d._operation import split_batch_2p5d
 from ..parallel_3d._operation import split_batch_3d
 from ..utils import get_tensor_parallel_mode
-
+from pydebug import gd, infoTensor
 _parallel_split_batch = {"2d": split_batch_2d, "2.5d": split_batch_2p5d, "3d": split_batch_3d}
 
 

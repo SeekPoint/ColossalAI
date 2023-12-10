@@ -5,7 +5,7 @@ from colossalai.zero.gemini.chunk import ChunkManager
 
 from .memory_stats import MemStats
 from .memstats_collector import MemStatsCollector
-
+from pydebug import gd, infoTensor
 
 class ChunkMemStatsCollector(MemStatsCollector):
     def __init__(self, chunk_manager: ChunkManager, memstats: Optional[MemStats] = None) -> None:

@@ -17,7 +17,7 @@ from colossalai.shardformer import ShardConfig
 from colossalai.testing import free_port
 
 ray_serve_logger = logging.getLogger("ray.serve")
-
+from pydebug import gd, infoTensor
 
 class GenConfigArgs(BaseModel):
     """Config for generation"""

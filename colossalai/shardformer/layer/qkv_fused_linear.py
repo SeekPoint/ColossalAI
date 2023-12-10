@@ -35,7 +35,7 @@ from ._operation import (
 )
 from .parallel_module import ParallelModule
 from .utils import create_randomizer_with_offset
-
+from pydebug import gd, infoTensor
 __all__ = ["FusedLinear1D_Col", "FusedLinear1D_Row", "GPT2FusedLinearConv1D_Col", "GPT2FusedLinearConv1D_Row"]
 
 # ====================================

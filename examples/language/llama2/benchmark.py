@@ -19,6 +19,7 @@ from colossalai.cluster import DistCoordinator
 from colossalai.lazy import LazyInitContext
 from colossalai.nn.optimizer import HybridAdam
 from colossalai.utils import get_current_device
+from pydebug import gd, infoTensor
 
 # ==============================
 # Constants

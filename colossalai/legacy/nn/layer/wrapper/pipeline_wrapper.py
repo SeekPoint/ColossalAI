@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from colossalai.legacy.context import ParallelMode
 from colossalai.legacy.core import global_context as gpc
-
+from pydebug import gd, infoTensor
 
 class PipelineSharedModuleWrapper:
     def __init__(self, pipeline_ranks: Union[List[int], Tuple[int]]) -> None:

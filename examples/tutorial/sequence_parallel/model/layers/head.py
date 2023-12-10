@@ -9,7 +9,7 @@ from colossalai.legacy.core import global_context as gpc
 
 from .linear import Linear
 from .pooler import Pooler
-
+from pydebug import gd, infoTensor
 
 class BertLMHead(nn.Module):
     """Masked LM head for Bert

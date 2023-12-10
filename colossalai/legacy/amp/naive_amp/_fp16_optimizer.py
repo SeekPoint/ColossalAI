@@ -15,7 +15,7 @@ from colossalai.logging import get_dist_logger
 from colossalai.utils import multi_tensor_applier
 
 from ._utils import has_inf_or_nan, zero_gard_by_list
-
+from pydebug import gd, infoTensor
 try:
     from colossalai._C import fused_optim
 except:

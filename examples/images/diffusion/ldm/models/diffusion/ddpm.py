@@ -9,7 +9,7 @@ https://github.com/CompVis/taming-transformers
 import numpy as np
 import torch
 import torch.nn as nn
-
+from pydebug import gd, infoTensor
 try:
     import lightning.pytorch as pl
     from lightning.pytorch.utilities import rank_zero_info, rank_zero_only

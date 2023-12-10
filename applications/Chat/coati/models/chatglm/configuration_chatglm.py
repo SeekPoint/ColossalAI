@@ -6,7 +6,7 @@ This code is copied from https://huggingface.co/THUDM/chatglm-6b/resolve/main/co
 
 from transformers.configuration_utils import PretrainedConfig
 from transformers.utils import logging
-
+from pydebug import gd, infoTensor
 logger = logging.get_logger(__name__)
 
 

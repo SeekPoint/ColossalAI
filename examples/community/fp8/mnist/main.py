@@ -10,7 +10,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
 from torchvision import datasets, transforms
-
+from pydebug import gd, infoTensor
 try:
     from transformer_engine import pytorch as te
 

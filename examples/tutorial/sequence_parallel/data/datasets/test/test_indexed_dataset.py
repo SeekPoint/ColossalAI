@@ -11,7 +11,7 @@ from megatron.tokenizer import build_tokenizer
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(script_dir, "../../../"))
-
+from pydebug import gd, infoTensor
 
 def test_indexed_dataset(args):
     ds = indexed_dataset.make_dataset(args.data, args.dataset_impl)

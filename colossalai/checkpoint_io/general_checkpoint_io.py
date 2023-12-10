@@ -4,7 +4,7 @@ import os
 from functools import reduce
 from pathlib import Path
 from typing import Optional
-
+from pydebug import gd, infoTensor
 import torch.nn as nn
 from torch.optim import Optimizer
 

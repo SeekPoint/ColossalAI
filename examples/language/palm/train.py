@@ -20,7 +20,7 @@ from colossalai.lazy import LazyInitContext
 from colossalai.logging import disable_existing_loggers, get_dist_logger
 from colossalai.nn import HybridAdam
 from colossalai.utils import get_current_device
-
+from pydebug import gd, infoTensor
 # constants
 
 NUM_BATCHES = int(10)

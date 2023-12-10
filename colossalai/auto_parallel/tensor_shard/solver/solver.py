@@ -16,7 +16,7 @@ from colossalai.auto_parallel.tensor_shard.constants import INFINITY_COST
 from .cost_graph import CostGraph
 from .graph_analysis import GraphAnalyser
 from .strategies_constructor import StrategiesConstructor
-
+from pydebug import gd, infoTensor
 try:
     import pulp
     from pulp import LpMinimize, LpProblem, LpStatus, LpVariable, lpDot, lpSum

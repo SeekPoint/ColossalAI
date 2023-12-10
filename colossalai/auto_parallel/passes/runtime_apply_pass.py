@@ -2,7 +2,7 @@ from typing import Dict, List
 
 import torch
 from torch.fx.node import Node
-
+from pydebug import gd, infoTensor
 from colossalai._analyzer.fx.node_util import MetaInfo
 from colossalai.auto_parallel.tensor_shard.sharding_strategy import CommType, OperationDataType
 from colossalai.tensor.comm_spec import CommSpec

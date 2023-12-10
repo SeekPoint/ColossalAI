@@ -10,7 +10,7 @@ from .dynamic_batching.req_queue import ReqQueue
 from .dynamic_batching.sampling_params import SamplingParams
 from .dynamic_batching.stats import Stats
 from .tensor_parallel import TPInferEngine
-
+from pydebug import gd, infoTensor
 
 class DynamicBatchManager:
     def __init__(

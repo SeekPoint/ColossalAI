@@ -12,7 +12,7 @@ from colossalai.legacy.engine import Engine
 from colossalai.utils.cuda import get_current_device
 
 from ._pipeline_schedule import PipelineSchedule
-
+from pydebug import gd, infoTensor
 
 def pack_return_tensors(return_tensors):
     output, label = tuple(zip(*return_tensors))

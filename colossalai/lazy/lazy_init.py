@@ -12,7 +12,7 @@ from colossalai.logging import get_dist_logger
 
 from .construction import ConstructorManager
 from .pretrained import PretrainedManager
-
+from pydebug import gd, infoTensor
 import colossalai._analyzer._subclasses._meta_registration  # noqa
 
 # reference: https://pytorch.org/cppdocs/notes/tensor_creation.html

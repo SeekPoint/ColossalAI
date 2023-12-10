@@ -8,7 +8,7 @@ from colossalai.device.device_mesh import DeviceMesh
 from colossalai.legacy.core import global_context as gpc
 from colossalai.logging import get_dist_logger
 from colossalai.nn.lr_scheduler import CosineAnnealingLR
-
+from pydebug import gd, infoTensor
 
 def synthesize_data():
     img = torch.rand(gpc.config.BATCH_SIZE, 3, 32, 32)

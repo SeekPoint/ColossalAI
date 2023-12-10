@@ -2,7 +2,7 @@ from torch.optim.lr_scheduler import ExponentialLR as _ExponentialLR
 from torch.optim.lr_scheduler import LambdaLR as _LambdaLR
 from torch.optim.lr_scheduler import MultiplicativeLR as _MultiplicativeLR
 from torch.optim.lr_scheduler import StepLR as _StepLR
-
+from pydebug import gd, infoTensor
 
 class LambdaLR(_LambdaLR):
     """Sets the learning rate of each parameter group to the initial lr

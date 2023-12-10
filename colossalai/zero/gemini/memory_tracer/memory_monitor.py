@@ -6,7 +6,7 @@ from time import sleep, time
 import torch
 
 from colossalai.utils import get_current_device
-
+from pydebug import gd, infoTensor
 
 class MemoryMonitor:
     """Base class for all types of memory monitor.

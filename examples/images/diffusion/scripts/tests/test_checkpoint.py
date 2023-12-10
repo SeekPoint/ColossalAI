@@ -2,7 +2,7 @@ import torch
 import yaml
 from diffusers import StableDiffusionPipeline
 from ldm.modules.diffusionmodules.openaimodel import UNetModel
-
+from pydebug import gd, infoTensor
 if __name__ == "__main__":
     with torch.no_grad():
         yaml_path = "../../train_colossalai.yaml"

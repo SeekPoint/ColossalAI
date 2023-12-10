@@ -2,7 +2,7 @@ from torch.fx import GraphModule
 
 from .passes import ShapeProp, graph_profile_pass, shape_prop_pass
 from .passes.graph_profile import FlopProfiler
-
+from pydebug import gd, infoTensor
 
 def register_flop_count_impl(func):
     def wrapper(impl):

@@ -15,7 +15,7 @@ from colossalai.logging import get_dist_logger
 from colossalai.utils.cuda import get_current_device
 
 from ._base_schedule import BaseSchedule
-
+from pydebug import gd, infoTensor
 
 def get_tensor_shape():
     if hasattr(gpc.config, "TENSOR_SHAPE"):

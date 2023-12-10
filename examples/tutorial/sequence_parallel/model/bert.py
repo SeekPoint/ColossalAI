@@ -13,7 +13,7 @@ from colossalai.logging import get_dist_logger
 
 from .layers import BertDualHead, BertLayer, Embedding, PreProcessor, VocabEmbedding
 from .layers.init_method import init_normal, output_init_normal
-
+from pydebug import gd, infoTensor
 
 class BertForPretrain(nn.Module):
     def __init__(

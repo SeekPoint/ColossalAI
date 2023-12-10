@@ -7,7 +7,7 @@ import torch.nn as nn
 
 from .base_model import BaseModel
 from .blocks import FeatureFusionBlock, Interpolate, _make_encoder
-
+from pydebug import gd, infoTensor
 
 class MidasNet(BaseModel):
     """Network for monocular depth estimation."""

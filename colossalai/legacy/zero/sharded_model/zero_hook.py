@@ -12,7 +12,7 @@ from colossalai.logging import get_dist_logger
 from colossalai.utils import get_current_device
 from colossalai.zero.gemini.memory_tracer import MemStatsCollector
 
-
+from pydebug import gd, infoTensor
 @OPHOOKS.register_module
 class ZeroHook(BaseOpHook):
     """

@@ -1,7 +1,7 @@
 import collections
 import logging
 import random
-
+from pydebug import gd, infoTensor
 import jieba
 
 jieba.setLogLevel(logging.CRITICAL)

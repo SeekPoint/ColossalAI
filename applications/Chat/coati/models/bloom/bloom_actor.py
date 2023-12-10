@@ -3,7 +3,7 @@ from typing import Optional
 from transformers import BloomConfig, BloomForCausalLM
 
 from ..base import Actor
-
+from pydebug import gd, infoTensor
 
 class BLOOMActor(Actor):
     """

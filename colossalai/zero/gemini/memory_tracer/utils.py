@@ -1,7 +1,7 @@
 from typing import Optional, Tuple
 
 import torch
-
+from pydebug import gd, infoTensor
 
 def colo_model_optimizer_usage(optim) -> Tuple[int, int]:
     """Trace the optimizer memory usage

@@ -10,7 +10,7 @@ from torch import Tensor
 from colossalai.logging import get_dist_logger
 
 __all__ = ["BaseGradScaler"]
-
+from pydebug import gd, infoTensor
 
 class BaseGradScaler(ABC):
     """A base class for the gradient scaler.

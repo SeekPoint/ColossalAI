@@ -13,7 +13,7 @@ from colossalai.legacy.pipeline.middleware.adaptor import get_fx_topology
 from colossalai.legacy.pipeline.rpc._pipeline_schedule import FillDrainPipelineEngine
 from colossalai.legacy.pipeline.rpc.utils import rpc_run
 from colossalai.logging import disable_existing_loggers, get_dist_logger
-
+from pydebug import gd, infoTensor
 
 def parse_args():
     parser = argparse.ArgumentParser()

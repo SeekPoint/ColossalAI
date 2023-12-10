@@ -8,7 +8,7 @@ from ldm.modules.midas.midas.midas_net import MidasNet
 from ldm.modules.midas.midas.midas_net_custom import MidasNet_small
 from ldm.modules.midas.midas.transforms import NormalizeImage, PrepareForNet, Resize
 from torchvision.transforms import Compose
-
+from pydebug import gd, infoTensor
 ISL_PATHS = {
     "dpt_large": "midas_models/dpt_large-midas-2f21e586.pt",
     "dpt_hybrid": "midas_models/dpt_hybrid-midas-501f0c75.pt",

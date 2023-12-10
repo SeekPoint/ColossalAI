@@ -6,7 +6,7 @@ import torch
 from colossalai.legacy.context.parallel_mode import ParallelMode
 from colossalai.legacy.core import global_context as gpc
 from colossalai.utils import get_current_device, synchronize
-
+from pydebug import gd, infoTensor
 
 def ring_forward(tensor_send_next: torch.Tensor, parallel_mode: ParallelMode) -> torch.Tensor:
     """Sends a tensor to the next member and receives a tensor from the previous member.

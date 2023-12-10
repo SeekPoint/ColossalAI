@@ -12,7 +12,7 @@ from colossal_eval.utils import get_json_list
 from colossalai.logging import DistributedLogger
 
 from .base import BaseDataset
-
+from pydebug import gd, infoTensor
 # define the datasets
 english_qa_datasets = [
     "lsat-ar",

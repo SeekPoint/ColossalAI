@@ -5,7 +5,7 @@ import triton
 import triton.language as tl
 
 from .custom_autotune import autotune, matmul248_kernel_config_pruner
-
+from pydebug import gd, infoTensor
 
 @triton.jit
 def tanh(x):

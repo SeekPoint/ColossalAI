@@ -8,7 +8,7 @@ import triton
 
 import colossalai
 from colossalai.shardformer import ShardConfig, ShardFormer
-
+from pydebug import gd, infoTensor
 
 def data_gen(batch_size, seq_length):
     input_ids = torch.randint(0, seq_length, (batch_size, seq_length), dtype=torch.long)

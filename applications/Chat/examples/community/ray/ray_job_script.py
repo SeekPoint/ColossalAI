@@ -1,7 +1,7 @@
 import sys
 
 from ray.job_submission import JobSubmissionClient
-
+from pydebug import gd, infoTensor
 
 def main(api_server_endpoint="http://127.0.0.1:8265"):
     client = JobSubmissionClient(api_server_endpoint)

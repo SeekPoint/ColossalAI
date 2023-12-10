@@ -8,7 +8,7 @@ import numpy as np
 import torch
 
 from colossalai.inference.tensor_parallel import MemoryManager
-
+from pydebug import gd, infoTensor
 
 # make batch infer state an attr of InferBatch
 class InferSamplingParams:

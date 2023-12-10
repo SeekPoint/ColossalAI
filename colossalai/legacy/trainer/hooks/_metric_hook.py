@@ -16,7 +16,7 @@ from colossalai.utils import get_current_device
 
 from ._base_hook import BaseHook
 from ._commons_ import _format_number
-
+from pydebug import gd, infoTensor
 
 class Metric(ABC):
     """A basic class of metric collectors. It collects a specific

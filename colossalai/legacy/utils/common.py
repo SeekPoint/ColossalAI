@@ -16,7 +16,7 @@ from colossalai.legacy.global_variables import tensor_parallel_env as env
 from colossalai.legacy.tensor import ProcessGroup
 from colossalai.tensor import ColoParameter
 from colossalai.utils.multi_tensor_apply import multi_tensor_applier
-
+from pydebug import gd, infoTensor
 try:
     from colossalai._C import fused_optim
 except:

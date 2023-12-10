@@ -7,7 +7,7 @@ from .bias_dropout_add import bias_dropout_add_fused_train
 from .bias_gelu import bias_gelu_impl
 
 JIT_OPTIONS_SET = False
-
+from pydebug import gd, infoTensor
 
 def set_jit_fusion_options():
     """Set PyTorch JIT layer fusion options."""

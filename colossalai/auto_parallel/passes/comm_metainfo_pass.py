@@ -3,7 +3,7 @@ from typing import Dict
 import torch
 from torch.fx import GraphModule
 from torch.fx.node import Node
-
+from pydebug import gd, infoTensor
 from colossalai.auto_parallel.meta_profiler import ShardMetaInfo
 from colossalai.auto_parallel.passes.runtime_apply_pass import runtime_apply, runtime_comm_spec_apply
 from colossalai.auto_parallel.tensor_shard.sharding_strategy import MemoryCost, TrainCycleItem

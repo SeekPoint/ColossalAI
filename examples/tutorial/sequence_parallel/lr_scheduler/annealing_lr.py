@@ -16,7 +16,7 @@
 """Learning rate decay functions."""
 
 import math
-
+from pydebug import gd, infoTensor
 
 class AnnealingLR(object):
     """Anneals the learning rate."""

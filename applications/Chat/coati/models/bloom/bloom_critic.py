@@ -4,7 +4,7 @@ import torch.nn as nn
 from transformers import BloomConfig, BloomModel
 
 from ..base import Critic
-
+from pydebug import gd, infoTensor
 
 class BLOOMCritic(Critic):
     """

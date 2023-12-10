@@ -2,7 +2,7 @@ import copy
 from typing import Dict, List, Tuple
 
 from torch.fx.node import Node
-
+from pydebug import gd, infoTensor
 from .estimate_memory import EstimateMemory
 from .reorder_graph import ReorderGraph
 from .select_chunk import SelectChunk

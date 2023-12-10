@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from transformers.models.llama import LlamaForCausalLM
-
+from pydebug import gd, infoTensor
 
 def freeze_non_embeds_parameters(model: LlamaForCausalLM) -> None:
     """Freeze all parameters except embeddings."""

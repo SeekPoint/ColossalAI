@@ -1,7 +1,7 @@
 import os
 
 from torchvision.datasets import CIFAR10
-
+from pydebug import gd, infoTensor
 
 def main():
     dir_path = os.path.dirname(os.path.realpath(__file__))

@@ -1,5 +1,5 @@
 import click
-
+from pydebug import gd, infoTensor
 from .check import check
 from .launcher import run
 

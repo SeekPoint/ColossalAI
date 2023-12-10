@@ -1,5 +1,5 @@
 import torch
-
+from pydebug import gd, infoTensor
 
 # Randomly Generated Data
 def get_data(batch_size, seq_len, vocab_size):

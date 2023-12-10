@@ -25,7 +25,7 @@ from transformers.trainer import get_scheduler
 
 from colossalai.logging import get_dist_logger
 from colossalai.nn.optimizer import HybridAdam
-
+from pydebug import gd, infoTensor
 
 def train(args):
     # configure strategy

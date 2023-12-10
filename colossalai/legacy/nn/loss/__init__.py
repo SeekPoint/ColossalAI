@@ -9,6 +9,7 @@ from .loss_1d import VocabParallelCrossEntropyLoss1D
 from .loss_2d import CrossEntropyLoss2D, VocabParallelCrossEntropyLoss2D
 from .loss_2p5d import CrossEntropyLoss2p5D, VocabParallelCrossEntropyLoss2p5D
 from .loss_3d import CrossEntropyLoss3D, VocabParallelCrossEntropyLoss3D
+from pydebug import gd, infoTensor
 
 _parallel_cross_entropy = {
     "2d": CrossEntropyLoss2D,

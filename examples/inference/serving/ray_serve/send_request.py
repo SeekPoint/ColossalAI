@@ -1,6 +1,7 @@
 import ray
 import requests
 
+from pydebug import gd, infoTensor
 
 @ray.remote
 def send_query(text):

@@ -25,7 +25,7 @@ from colossalai.utils import get_current_device
 # ==============================
 NUM_EPOCHS = 80
 LEARNING_RATE = 1e-3
-
+from pydebug import gd, infoTensor
 
 def build_dataloader(batch_size: int, coordinator: DistCoordinator, plugin: DPPluginBase):
     # transform

@@ -2,7 +2,7 @@ import torch.nn as nn
 from transformers.models.opt.modeling_opt import OPTAttention
 
 from .opt_attn import XOPTAttention
-
+from pydebug import gd, infoTensor
 
 def convert_to_xformer_model(model: nn.Module) -> nn.Module:
     for module in model.modules():

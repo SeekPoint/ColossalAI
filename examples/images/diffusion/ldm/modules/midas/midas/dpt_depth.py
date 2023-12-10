@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from .base_model import BaseModel
 from .blocks import FeatureFusionBlock_custom, Interpolate, _make_encoder, forward_vit
-
+from pydebug import gd, infoTensor
 
 def _make_fusion_block(features, use_bn):
     return FeatureFusionBlock_custom(

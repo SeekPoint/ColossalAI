@@ -28,7 +28,7 @@ from .registry import (
     meta_patched_function,
     meta_patched_module,
 )
-
+from pydebug import gd, infoTensor
 __all__ = ["ColoTracer"]
 
 

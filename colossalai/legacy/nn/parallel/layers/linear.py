@@ -1,7 +1,7 @@
 from colossalai.legacy.tensor import ComputePattern, ProcessGroup, ShardSpec
 
 from .colo_module import ColoModule
-
+from pydebug import gd, infoTensor
 
 class ColoLinear(ColoModule):
     def __init__(self):

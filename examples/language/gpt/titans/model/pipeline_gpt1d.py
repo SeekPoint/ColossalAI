@@ -15,6 +15,7 @@ from colossalai.logging import get_dist_logger
 
 from .embed import HiddenParallelEmbedding, HiddenParallelGPTLMHead1D, VocabParallelEmbedding, VocabParallelGPTLMHead1D
 from .gpt1d import FusedGPTTransformerLayer1D, GPTTransformerLayer1D
+from pydebug import gd, infoTensor
 
 __all__ = [
     "GPT2_small_pipeline_1D",

@@ -2,7 +2,7 @@ import copy
 import operator
 from functools import reduce
 from typing import List
-
+from pydebug import gd, infoTensor
 from colossalai.auto_parallel.tensor_shard.sharding_strategy import MemoryCost, ShardingStrategy, TrainCycleItem
 from colossalai.auto_parallel.tensor_shard.utils import (
     enumerate_all_possible_1d_sharding,

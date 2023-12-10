@@ -4,7 +4,7 @@ import os
 from typing import Dict, List
 
 from colossalai.logging import DistributedLogger
-
+from pydebug import gd, infoTensor
 from .base import BaseDataset
 
 ceval_subject_mapping = {

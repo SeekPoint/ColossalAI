@@ -1,3 +1,5 @@
+from pydebug import gd, infoTensor
+
 class ProfilerRegistry:
     def __init__(self, name):
         self.name = name

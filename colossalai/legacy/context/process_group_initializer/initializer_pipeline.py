@@ -7,7 +7,7 @@ from colossalai.legacy.registry import DIST_GROUP_INITIALIZER
 
 from ..parallel_mode import ParallelMode
 from .process_group_initializer import ProcessGroupInitializer
-
+from pydebug import gd, infoTensor
 
 @DIST_GROUP_INITIALIZER.register_module
 class Initializer_Pipeline(ProcessGroupInitializer):

@@ -10,7 +10,7 @@ from colossalai.legacy.core import global_context as gpc
 from colossalai.legacy.registry import GRADIENT_HANDLER
 
 from ._base_gradient_handler import BaseGradientHandler
-
+from pydebug import gd, infoTensor
 
 @GRADIENT_HANDLER.register_module
 class PipelineSharedModuleGradientHandler(BaseGradientHandler):

@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from ldm.modules.diffusionmodules.util import extract_into_tensor, make_beta_schedule
 from ldm.util import default
-
+from pydebug import gd, infoTensor
 
 class AbstractLowScaleModel(nn.Module):
     # for concatenating a downsampled image to the latent representation

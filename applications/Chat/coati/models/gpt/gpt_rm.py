@@ -5,7 +5,7 @@ from transformers.models.gpt2.configuration_gpt2 import GPT2Config
 from transformers.models.gpt2.modeling_gpt2 import GPT2Model
 
 from ..base import RewardModel
-
+from pydebug import gd, infoTensor
 
 class GPTRM(RewardModel):
     """

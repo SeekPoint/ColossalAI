@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from transformers import GPT2Config, GPT2LMHeadModel
 
-
+from pydebug import gd, infoTensor
 class GPTLMModel(nn.Module):
     def __init__(self, hidden_size=768, num_layers=12, num_attention_heads=12, max_seq_len=1024, vocab_size=50257):
         super().__init__()

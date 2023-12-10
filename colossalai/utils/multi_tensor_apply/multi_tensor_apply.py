@@ -1,5 +1,5 @@
 # modified from https://github.com/NVIDIA/apex/blob/master/apex/multi_tensor_apply/multi_tensor_apply.py
-
+from pydebug import gd, infoTensor
 
 class MultiTensorApply(object):
     """

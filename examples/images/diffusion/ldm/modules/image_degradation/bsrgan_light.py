@@ -23,7 +23,7 @@ from scipy.linalg import orth
 # From 2019/03--2021/08
 # --------------------------------------------
 """
-
+from pydebug import gd, infoTensor
 
 def modcrop_np(img, sf):
     """

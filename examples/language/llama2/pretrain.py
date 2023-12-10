@@ -27,6 +27,7 @@ from colossalai.lazy import LazyInitContext
 from colossalai.nn.lr_scheduler import CosineAnnealingWarmupLR
 from colossalai.nn.optimizer import HybridAdam
 from colossalai.utils import get_current_device
+from pydebug import gd, infoTensor
 
 # ValueError: hidden_size must be divisible by num_heads (got `hidden_size`: 1024 and `num_heads`: 10).
 MODEL_CONFIGS = {

@@ -4,7 +4,7 @@ import os
 import openai
 from colossal_eval.evaluate.evaluator import Evaluator
 from colossal_eval.utils import jload
-
+from pydebug import gd, infoTensor
 
 def main(args):
     assert len(args.answer_file_list) == len(

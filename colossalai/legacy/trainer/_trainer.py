@@ -1,5 +1,5 @@
 from typing import Any, List, Union
-
+from pydebug import gd, infoTensor
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -9,7 +9,7 @@ from colossalai.legacy.trainer.hooks import BaseHook
 from colossalai.legacy.utils import is_dp_rank_0, is_no_pp_or_last_stage, is_tp_rank_0
 from colossalai.logging import DistributedLogger
 from colossalai.utils import MultiTimer
-
+from pydebug import gd, infoTensor
 
 class Trainer:
     r"""This is a class tending for easy deployments of users' training and evaluation instead of

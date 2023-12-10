@@ -64,7 +64,7 @@ require_version("datasets>=1.8.0", "To fix: pip install -r examples/pytorch/lang
 
 MODEL_CONFIG_CLASSES = list(MODEL_MAPPING.keys())
 MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
-
+from pydebug import gd, infoTensor
 
 def get_time_stamp():
     torch.cuda.synchronize()

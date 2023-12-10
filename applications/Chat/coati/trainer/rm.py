@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from .base import SLTrainer
 from .strategies import Strategy
 from .utils import is_rank_0
-
+from pydebug import gd, infoTensor
 
 class RewardModelTrainer(SLTrainer):
     """

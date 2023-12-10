@@ -7,7 +7,7 @@ from colossalai.legacy.nn.layer.parallel_sequence import TransformerSelfAttentio
 
 from .dropout import get_bias_dropout_add
 from .mlp import TransformerMLP
-
+from pydebug import gd, infoTensor
 
 def attention_mask_func(attention_scores, attention_mask):
     attention_scores.masked_fill_(attention_mask, -10000.0)

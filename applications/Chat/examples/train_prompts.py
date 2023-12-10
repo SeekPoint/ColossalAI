@@ -18,7 +18,7 @@ from torch.utils.data.distributed import DistributedSampler
 from transformers import AutoTokenizer, BloomTokenizerFast, GPT2Tokenizer, LlamaTokenizer
 
 from colossalai.nn.optimizer import HybridAdam
-
+from pydebug import gd, infoTensor
 
 def main(args):
     # configure strategy

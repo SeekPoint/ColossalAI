@@ -2,7 +2,7 @@ import math
 
 import cv2
 import numpy as np
-
+from pydebug import gd, infoTensor
 
 def apply_min_size(sample, size, image_interpolation_method=cv2.INTER_AREA):
     """Rezise the sample to ensure the given size. Keeps aspect ratio.

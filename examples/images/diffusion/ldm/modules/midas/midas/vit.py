@@ -5,7 +5,7 @@ import timm
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from pydebug import gd, infoTensor
 
 class Slice(nn.Module):
     def __init__(self, start_index=1):

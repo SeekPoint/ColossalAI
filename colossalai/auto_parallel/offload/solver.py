@@ -1,7 +1,7 @@
 import time
 from abc import ABC, abstractmethod
 from typing import Dict, List, Type
-
+from pydebug import gd, infoTensor
 NOT_NVML = False
 try:
     from pynvml import *

@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from colossalai.legacy.nn._ops._utils import dual_all_to_all
 from colossalai.legacy.tensor import ColoTensorSpec, ComputePattern, ProcessGroup, ShardSpec
 from colossalai.tensor import ColoTensor
-
+from pydebug import gd, infoTensor
 from .cache_mgr import EvictionStrategy
 from .cached_embedding import CachedEmbeddingBag
 

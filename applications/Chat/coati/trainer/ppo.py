@@ -16,7 +16,7 @@ from .base import OnPolicyTrainer
 from .callbacks import Callback
 from .strategies import GeminiStrategy, Strategy
 from .utils import CycledDataLoader, is_rank_0, to_device
-
+from pydebug import gd, infoTensor
 
 def _set_default_generate_kwargs(strategy: Strategy, generate_kwargs: dict, actor: Actor) -> Dict:
     unwrapped_model = strategy.unwrap_model(actor)

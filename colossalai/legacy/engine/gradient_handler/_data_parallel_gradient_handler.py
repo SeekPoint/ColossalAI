@@ -4,7 +4,7 @@ from colossalai.legacy.registry import GRADIENT_HANDLER
 
 from ._base_gradient_handler import BaseGradientHandler
 from .utils import bucket_allreduce
-
+from pydebug import gd, infoTensor
 
 @GRADIENT_HANDLER.register_module
 class DataParallelGradientHandler(BaseGradientHandler):

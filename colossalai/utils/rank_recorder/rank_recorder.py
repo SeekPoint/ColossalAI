@@ -14,7 +14,7 @@ cmap = list(mcolors.TABLEAU_COLORS.values())
 
 LOG_FOLDER = "record.log"
 MAX_WAIT_TIME = 20
-
+from pydebug import gd, infoTensor
 
 class Event:
     def __init__(self, start: int, end: int, name: str, rank: int) -> None:

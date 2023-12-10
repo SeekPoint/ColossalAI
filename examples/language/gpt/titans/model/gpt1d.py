@@ -16,6 +16,7 @@ from colossalai.legacy.nn.layer.base_layer import ParallelLayer
 from colossalai.legacy.nn.layer.utils import ACT2FN, divide
 from colossalai.legacy.utils.activation_checkpoint import checkpoint
 from colossalai.utils import checkpoint
+from pydebug import gd, infoTensor
 
 __all__ = [
     "GPTMLP1D",

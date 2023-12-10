@@ -3,6 +3,7 @@ torchrun --standalone --nproc_per_node=1 debug.py
 """
 
 from diffusers import AutoencoderKL
+from pydebug import gd, infoTensor
 
 import colossalai
 from colossalai.zero import ColoInitContext

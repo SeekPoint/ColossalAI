@@ -14,7 +14,7 @@ from colossalai.shardformer.modeling.chatglm2_6b.modeling_chatglm import ChatGLM
 from colossalai.testing import rerun_if_address_is_in_use, spawn
 
 os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = "true"
-
+from pydebug import gd, infoTensor
 
 def run_chatglm2_test(args):
     chatglm2_model_path = args.path

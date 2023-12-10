@@ -1,5 +1,5 @@
 __all__ = ["Registry"]
-
+from pydebug import gd, infoTensor
 
 class Registry:
     def __init__(self, name):

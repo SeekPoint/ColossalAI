@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Callable, List, Optional
 
 import torch
-
+from pydebug import gd, infoTensor
 
 class BaseOpHook(ABC):
     """This class allows users to add customized operations

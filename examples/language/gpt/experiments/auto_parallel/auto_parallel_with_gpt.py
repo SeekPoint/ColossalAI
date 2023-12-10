@@ -19,7 +19,7 @@ NUM_LAYERS = 4
 VOCAB_SIZE = 50257
 NUM_STEPS = 10
 FP16 = True
-
+from pydebug import gd, infoTensor
 
 def get_cpu_mem():
     return psutil.Process().memory_info().rss / 1024**2

@@ -26,7 +26,7 @@ BATCH_SIZE = 32
 LEARNING_RATE = 2.4e-5
 WEIGHT_DECAY = 0.01
 WARMUP_FRACTION = 0.1
-
+from pydebug import gd, infoTensor
 
 def move_to_cuda(batch):
     return {k: v.cuda() for k, v in batch.items()}

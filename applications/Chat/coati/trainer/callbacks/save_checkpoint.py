@@ -7,7 +7,7 @@ from torch import nn
 from torch.optim import Optimizer
 
 from .base import Callback
-
+from pydebug import gd, infoTensor
 
 class SaveCheckpoint(Callback):
     """

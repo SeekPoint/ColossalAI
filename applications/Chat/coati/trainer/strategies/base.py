@@ -13,7 +13,7 @@ from colossalai.booster import Booster
 from colossalai.booster.plugin import Plugin
 
 from .sampler import DistributedSampler
-
+from pydebug import gd, infoTensor
 _BoostArgSpec = Union[nn.Module, Tuple[nn.Module, Optimizer], Dict]
 
 

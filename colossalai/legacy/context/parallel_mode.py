@@ -2,7 +2,7 @@
 # -*- encoding: utf-8 -*-
 
 from enum import Enum
-
+from pydebug import gd, infoTensor
 
 # parallel modes
 class ParallelMode(Enum):

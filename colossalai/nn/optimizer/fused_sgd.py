@@ -3,7 +3,7 @@ import torch
 from torch.optim.optimizer import Optimizer, required
 
 from colossalai.utils import multi_tensor_applier
-
+from pydebug import gd, infoTensor
 
 class FusedSGD(Optimizer):
     r"""Implements stochastic gradient descent (optionally with momentum).

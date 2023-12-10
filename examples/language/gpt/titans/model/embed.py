@@ -13,7 +13,7 @@ from colossalai.legacy.nn.layer.parallel_1d.layers import Linear1D_Row
 from colossalai.legacy.nn.layer.utils import divide
 from colossalai.legacy.registry import LAYERS, LOSSES
 from colossalai.utils import get_current_device
-
+from pydebug import gd, infoTensor
 
 class VocabParallelEmbedding(torch.nn.Module):
     """Language model embeddings.

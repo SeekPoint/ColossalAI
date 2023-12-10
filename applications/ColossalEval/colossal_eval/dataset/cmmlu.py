@@ -6,7 +6,7 @@ from typing import Dict, List
 from colossalai.logging import DistributedLogger
 
 from .base import BaseDataset
-
+from pydebug import gd, infoTensor
 cmmlu_subject_mapping = {
     "agronomy": "农学",
     "anatomy": "解剖学",

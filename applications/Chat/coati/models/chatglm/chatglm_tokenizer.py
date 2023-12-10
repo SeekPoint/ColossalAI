@@ -10,7 +10,7 @@ import sentencepiece as spm
 from transformers.tokenization_utils import PreTrainedTokenizer
 from transformers.tokenization_utils_base import BatchEncoding, EncodedInput
 from transformers.utils import PaddingStrategy, logging
-
+from pydebug import gd, infoTensor
 logger = logging.get_logger(__name__)
 
 PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES = {

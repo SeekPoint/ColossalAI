@@ -14,7 +14,7 @@ from colossalai.cluster import DistCoordinator
 
 logger = getLogger("colossalai-booster-benchmark")
 _INVALID = float("nan")
-
+from pydebug import gd, infoTensor
 
 def format_num(num: int, bytes=False):
     """Scale bytes to its proper format, e.g. 1253656 => '1.20MB'"""

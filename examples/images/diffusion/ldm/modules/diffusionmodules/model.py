@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from einops import rearrange
-
+from pydebug import gd, infoTensor
 try:
     from lightning.pytorch.utilities import rank_zero_info
 except:
