@@ -17,9 +17,24 @@ set_n_least_used_CUDA_VISIBLE_DEVICES 2
 
 # torchrun --standalone --nproc_per_node=2 train_prompts.py prompts.csv --strategy colossalai_zero2
 
-torchrun --standalone --nproc_per_node=2 train_prompts.py \
-    --pretrain_dataset /path/to/data.json \
-    --prompt_dataset /path/to/data.json \
+torchrun --standalone --nproc_per_node=3 /workspace/yk_repo/ColossalAI/applications/Chat/examples/train_prompts.py \
+    --prompt_dataset /share/hf_model/instinwild_ch.json \
+    --pretrain_dataset /share/hf_model/instinwild_ch.json \
     --strategy colossalai_zero2 \
-    --num_episodes 1 --num_collect_steps 2 --num_update_steps 1 \
-    --train_batch_size 2
+    --pretrain Coati-bloom-560m-sft \
+    --save_path Coati-bloom-560m-rl \
+    --model 'bloom' \
+    --rm_pretrain Coati-bloom-560m-sft \
+    --rm_path Coati-bloom-560m-rw.pt \
+    --max_datasets_size 500 \
+    --num_episodes 1
+
+# 前面两个阶段就OOM
+#torchrun --standalone --nproc_per_node=4 train_prompts.py \
+#    --prompt_dataset /workspace/ColossalAI/data/InstructionWild/instinwild_ch.json \
+#    --pretrain_dataset /workspace/ColossalAI/data/InstructionWild/instinwild_ch.json \
+#    --strategy colossalai_zero2 \
+#    --pretrain /workspace/ColossalAI/Saved/Coati-7B-sft \
+#    --model 'llama' \
+#    --rm_pretrain /workspace/ColossalAI/Saved/Coati-7B-sft \
+#    --rm_path /workspace/ColossalAI/Saved/Coati-7B-rw.pt

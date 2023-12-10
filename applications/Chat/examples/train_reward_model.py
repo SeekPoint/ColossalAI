@@ -205,7 +205,7 @@ if __name__ == "__main__":
         "--dataset", type=str, choices=["Anthropic/hh-rlhf", "Dahoas/rm-static"], default="Dahoas/rm-static"
     )
     parser.add_argument("--subset", type=lambda x: None if x == "None" else x, default=None)
-    parser.add_argument("--max_datasets_size", type=int, default=1000000)
+    parser.add_argument("--max_datasets_size", type=int, default=3000)
     parser.add_argument("--save_path", type=str, default="rm_ckpt")
     parser.add_argument("--max_epochs", type=int, default=1)
     parser.add_argument("--batch_size", type=int, default=1)

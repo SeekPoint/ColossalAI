@@ -1,5 +1,7 @@
 import argparse
 import warnings
+import sys
+sys.path.append('./')
 
 import torch
 import torch.distributed as dist
