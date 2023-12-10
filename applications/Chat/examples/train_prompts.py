@@ -115,15 +115,15 @@ def main(args):
         tokenizer.pad_token = tokenizer.eos_token
     elif args.model == "bloom":
         tokenizer = BloomTokenizerFast.from_pretrained(
-            "bigscience/bloom-560m" if args.tokenizer is None else args.tokenizer
+            "/share/hf_model/bloom-560m" if args.tokenizer is None else args.tokenizer
         )
         tokenizer.pad_token = tokenizer.eos_token
     elif args.model == "opt":
-        tokenizer = AutoTokenizer.from_pretrained("facebook/opt-350m" if args.tokenizer is None else args.tokenizer)
+        tokenizer = AutoTokenizer.from_pretrained("/share/hf_model/opt-350m" if args.tokenizer is None else args.tokenizer)
         tokenizer.pad_token = tokenizer.eos_token
     elif args.model == "llama":
         tokenizer = LlamaTokenizer.from_pretrained(
-            "hf-internal-testing/llama-tokenizer" if args.tokenizer is None else args.tokenizer
+            "/share/hf_model/llama-tokenizer" if args.tokenizer is None else args.tokenizer
         )
         tokenizer.eos_token = "<\s>"
         tokenizer.pad_token = tokenizer.unk_token

@@ -136,7 +136,7 @@ def main(args):
         actor_optim = Adam(actor.parameters(), lr=5e-6)
         critic_optim = Adam(critic.parameters(), lr=5e-6)
 
-    tokenizer = AutoTokenizer.from_pretrained("facebook/opt-350m")
+    tokenizer = AutoTokenizer.from_pretrained("/share/hf_model/opt-350m")
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "left"
 

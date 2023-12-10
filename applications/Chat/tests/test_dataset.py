@@ -50,16 +50,16 @@ def make_tokenizer(model: str):
         tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
         tokenizer.pad_token = tokenizer.eos_token
     elif model == "bloom":
-        tokenizer = BloomTokenizerFast.from_pretrained("bigscience/bloom-560m")
+        tokenizer = BloomTokenizerFast.from_pretrained("/share/hf_model/bloom-560m")
         tokenizer.pad_token = tokenizer.eos_token
     elif model == "opt":
-        tokenizer = AutoTokenizer.from_pretrained("facebook/opt-350m")
+        tokenizer = AutoTokenizer.from_pretrained("/share/hf_model/opt-350m")
         tokenizer.pad_token = tokenizer.eos_token
     elif model == "llama":
-        tokenizer = LlamaTokenizer.from_pretrained("hf-internal-testing/llama-tokenizer")
+        tokenizer = LlamaTokenizer.from_pretrained("/share/hf_model/llama-tokenizer")
         tokenizer.pad_token = tokenizer.unk_token
     elif model == "chatglm":
-        tokenizer = ChatGLMTokenizer.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True)
+        tokenizer = ChatGLMTokenizer.from_pretrained("/share/hf_model/chatglm-6b", trust_remote_code=True)
     else:
         raise ValueError(f"Unsupported model '{model}'")
     return tokenizer

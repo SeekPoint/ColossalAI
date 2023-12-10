@@ -159,3 +159,7 @@ coverage.xml
 # ignore testmon and coverage files
 .coverage
 .testmondata*
+
+
+examples/language/llama2/checkpoint/
+examples/language/llama2/tb_logs/

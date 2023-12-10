@@ -6,7 +6,7 @@ def parse_demo_args():
     parser.add_argument(
         "--model_name_or_path",
         type=str,
-        default="facebook/opt-350m",
+        default="/share/hf_model/opt-350m",
         help="Path to pretrained model or model identifier from huggingface.co/models.",
     )
     parser.add_argument(

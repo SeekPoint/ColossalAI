@@ -57,10 +57,10 @@ def train(args):
         tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
         tokenizer.pad_token = tokenizer.eos_token
     elif args.model == "bloom":
-        tokenizer = BloomTokenizerFast.from_pretrained("bigscience/bloom-560m")
+        tokenizer = BloomTokenizerFast.from_pretrained("/share/hf_model/bloom-560m")
         tokenizer.pad_token = tokenizer.eos_token
     elif args.model == "opt":
-        tokenizer = AutoTokenizer.from_pretrained("facebook/opt-350m")
+        tokenizer = AutoTokenizer.from_pretrained("/share/hf_model/opt-350m")
         tokenizer.pad_token = tokenizer.eos_token
     elif args.model == "llama":
         tokenizer = AutoTokenizer.from_pretrained(

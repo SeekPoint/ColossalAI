@@ -85,3 +85,14 @@ root@83dccafe7db4:/workspace/yk_repo/ColossalAI/examples/language/llama2# coloss
 Epoch 0:  12%|█▏        | 445/3634
 可以看出，同样bs下，增加显卡数量可以减少迭代次数，
 
+
+=========================
+https://zhuanlan.zhihu.com/p/636605130
+算法框架-LLM-4-ColossalAI源码分析(ing)
+root@83dccafe7db4:/workspace/yk_repo/ColossalAI/applications/Chat# pip install -e .
+
+root@83dccafe7db4:/workspace/yk_repo/ColossalAI/applications/Chat#
+torchrun --standalone --nproc_per_node=3 /workspace/yk_repo/ColossalAI/applications/Chat/examples/train_sft.py     --pretrain "/share/hf_model/bloomz-560m/"     --model 'bloom'     --strategy colossalai_zero2     --save_path Coati-bloom-560m-sft     --dataset /share/hf_model/instinwild_ch.json     --batch_size 8     --accumulation_steps 8     --lr 2e-5     --max_datasets_size 512     --max_epochs 3
+passed
+
+

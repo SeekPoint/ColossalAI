@@ -87,9 +87,9 @@ def get_tokenizer_from_args(model: str, **kwargs):
     if model == "gpt2":
         tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
     elif model == "bloom":
-        tokenizer = BloomTokenizerFast.from_pretrained("bigscience/bloom-560m")
+        tokenizer = BloomTokenizerFast.from_pretrained("/share/hf_model/bloom-560m")
     elif model == "opt":
-        tokenizer = AutoTokenizer.from_pretrained("facebook/opt-350m")
+        tokenizer = AutoTokenizer.from_pretrained("/share/hf_model/opt-350m")
     elif model == "llama":
         pretrain_path = kwargs["pretrain"]
         tokenizer = AutoTokenizer.from_pretrained(pretrain_path)
