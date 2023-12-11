@@ -9,6 +9,7 @@ from pydebug import gd, infoTensor
 
 class Slice(nn.Module):
     def __init__(self, start_index=1):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super(Slice, self).__init__()
         self.start_index = start_index
 
@@ -18,6 +19,7 @@ class Slice(nn.Module):
 
 class AddReadout(nn.Module):
     def __init__(self, start_index=1):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super(AddReadout, self).__init__()
         self.start_index = start_index
 
@@ -31,6 +33,7 @@ class AddReadout(nn.Module):
 
 class ProjectReadout(nn.Module):
     def __init__(self, in_features, start_index=1):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super(ProjectReadout, self).__init__()
         self.start_index = start_index
 
@@ -45,6 +48,7 @@ class ProjectReadout(nn.Module):
 
 class Transpose(nn.Module):
     def __init__(self, dim0, dim1):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super(Transpose, self).__init__()
         self.dim0 = dim0
         self.dim1 = dim1

@@ -37,6 +37,7 @@ class LoRAConstructor:
     """
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.lora_config_dict = None
 
     def register_lora_config(self, lora_config_dict: Dict[str, Any]):
@@ -47,7 +48,9 @@ class LoRAConstructor:
         xxx.lora_A, xxx.lora_B -->> xxx.weight
         Warning: the xxx.weight here is the increment actually.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if lora_config_dict is not None:
+            gd.debuginfo(prj="mt", info=f'')
             self.register_lora_config(lora_config_dict)
 
         state_dict_increase = OrderedDict()
@@ -73,7 +76,10 @@ class LoRAConstructor:
         def T(w):
             return w.T if config.fan_in_fan_out else w
 
+        gd.debuginfo(prj="mt", info=f'')
+
         if config.r > 0:
+            gd.debuginfo(prj="mt", info=f'')
             scaling = config.lora_alpha / config.r
             weight_data_increase = T(lora_B @ lora_A) * scaling
             return weight_data_increase
@@ -83,6 +89,7 @@ class LoRAConstructor:
         """
         The final reconstruction step
         """
+        gd.debuginfo(prj="mt", info=f'')
         # naive approach
         model.load_state_dict({k: v + model.state_dict()[k] for k, v in state_dict_increase.items()}, strict=False)
 
@@ -91,6 +98,7 @@ class LoRAConstructor:
         """
         if keep_non_lora, also return non_lora state_dict
         """
+        gd.debuginfo(prj="mt", info=f'')
         state_dict_lora = OrderedDict()
         state_dict_non_lora = OrderedDict()
         for k, v in state_dict.items():
@@ -109,6 +117,7 @@ class LoRAConstructor:
         extract LoraLinear model.
         return OrderedDict(): name -> LoRAConfig
         """
+        gd.debuginfo(prj="mt", info=f'')
         lora_config_dict = OrderedDict()
 
         for name, child in model.named_modules():

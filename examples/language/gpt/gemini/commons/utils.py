@@ -7,6 +7,7 @@ from pydebug import gd, infoTensor
 
 class DummyProfiler:
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.step_number = 0
 
     def step(self):

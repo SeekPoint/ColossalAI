@@ -28,12 +28,16 @@ def get_world_size() -> int:
 def get_actor_from_args(model: str, pretrained: str = None, config=None, lora_rank=0):
     if model == "gpt2":
         actor = GPTActor(pretrained=pretrained, config=config, lora_rank=lora_rank)
+        gd.debuginfo(prj="mt", info=f'')
     elif model == "bloom":
         actor = BLOOMActor(pretrained=pretrained, config=config, lora_rank=lora_rank)
+        gd.debuginfo(prj="mt", info=f'')
     elif model == "opt":
         actor = OPTActor(pretrained=pretrained, config=config, lora_rank=lora_rank)
+        gd.debuginfo(prj="mt", info=f'')
     elif model == "llama":
         actor = LlamaActor(pretrained=pretrained, config=config, lora_rank=lora_rank)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         raise ValueError(f'Unsupported actor model "{model}"')
     return actor
@@ -42,12 +46,16 @@ def get_actor_from_args(model: str, pretrained: str = None, config=None, lora_ra
 def get_critic_from_args(model: str, pretrained: str = None, config=None, lora_rank=0):
     if model == "gpt2":
         critic = GPTCritic(pretrained=pretrained, lora_rank=lora_rank, config=config)
+        gd.debuginfo(prj="mt", info=f'')
     elif model == "bloom":
         critic = BLOOMCritic(pretrained=pretrained, lora_rank=lora_rank, config=config)
+        gd.debuginfo(prj="mt", info=f'')
     elif model == "opt":
         critic = OPTCritic(pretrained=pretrained, lora_rank=lora_rank, config=config)
+        gd.debuginfo(prj="mt", info=f'')
     elif model == "llama":
         critic = LlamaCritic(pretrained=pretrained, lora_rank=lora_rank, config=config)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         raise ValueError(f'Unsupported reward model "{model}"')
     return critic
@@ -56,12 +64,16 @@ def get_critic_from_args(model: str, pretrained: str = None, config=None, lora_r
 def get_reward_model_from_args(model: str, pretrained: str = None, config=None):
     if model == "gpt2":
         reward_model = GPTRM(pretrained=pretrained, config=config)
+        gd.debuginfo(prj="mt", info=f'')
     elif model == "bloom":
         reward_model = BLOOMRM(pretrained=pretrained, config=config)
+        gd.debuginfo(prj="mt", info=f'')
     elif model == "opt":
         reward_model = OPTRM(pretrained=pretrained, config=config)
+        gd.debuginfo(prj="mt", info=f'')
     elif model == "llama":
         reward_model = LlamaRM(pretrained=pretrained, config=config)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         raise ValueError(f'Unsupported reward model "{model}"')
     return reward_model
@@ -70,14 +82,22 @@ def get_reward_model_from_args(model: str, pretrained: str = None, config=None):
 def get_strategy_from_args(strategy: str):
     if strategy == "ddp":
         strategy_ = DDPStrategy()
+        gd.debuginfo(prj="mt", info=f'')
     elif strategy == "colossalai_gemini":
         strategy_ = GeminiStrategy(placement_policy="static", initial_scale=2**5)
+        gd.debuginfo(prj="mt", info=f'')
     elif strategy == "colossalai_zero2":
         strategy_ = LowLevelZeroStrategy(stage=2, placement_policy="cuda")
+        gd.debuginfo(prj="mt", info=f'')
     elif strategy == "colossalai_gemini_cpu":
-        strategy_ = GeminiStrategy(placement_policy="static", offload_optim_frac=1.0, offload_param_frac=1.0, initial_scale=2**5)
+        strategy_ = GeminiStrategy(placement_policy="static",
+                                   offload_optim_frac=1.0,
+                                   offload_param_frac=1.0,
+                                   initial_scale=2**5)
+        gd.debuginfo(prj="mt", info=f'')
     elif strategy == "colossalai_zero2_cpu":
         strategy_ = LowLevelZeroStrategy(stage=2, placement_policy="cpu")
+        gd.debuginfo(prj="mt", info=f'')
     else:
         raise ValueError(f'Unsupported strategy "{strategy}"')
     return strategy_
@@ -86,13 +106,17 @@ def get_strategy_from_args(strategy: str):
 def get_tokenizer_from_args(model: str, **kwargs):
     if model == "gpt2":
         tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+        gd.debuginfo(prj="mt", info=f'')
     elif model == "bloom":
         tokenizer = BloomTokenizerFast.from_pretrained("/share/hf_model/bloom-560m")
+        gd.debuginfo(prj="mt", info=f'')
     elif model == "opt":
         tokenizer = AutoTokenizer.from_pretrained("/share/hf_model/opt-350m")
+        gd.debuginfo(prj="mt", info=f'')
     elif model == "llama":
         pretrain_path = kwargs["pretrain"]
         tokenizer = AutoTokenizer.from_pretrained(pretrain_path)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         raise ValueError(f'Unsupported model "{model}"')
 
@@ -116,12 +140,14 @@ def get_model_numel(model: nn.Module) -> int:
 def get_receivers_per_sender(sender_idx: int, num_senders: int, num_receivers: int, allow_idle_sender: bool) -> list:
     target_receivers = []
     if num_senders <= num_receivers or allow_idle_sender:
+        gd.debuginfo(prj="mt", info=f'')
         # a sender will send data to one or more receivers
         # a receiver only has one sender
         for i in range(num_receivers):
             if i % num_senders == sender_idx:
                 target_receivers.append(i)
     else:
+        gd.debuginfo(prj="mt", info=f'')
         # a sender will send data to one receiver
         # a receiver may have more than one sender
         target_receivers.append(sender_idx % num_receivers)

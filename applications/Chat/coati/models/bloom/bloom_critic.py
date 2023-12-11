@@ -26,10 +26,13 @@ class BLOOMCritic(Critic):
         **kwargs,
     ) -> None:
         if pretrained is not None:
+            gd.debuginfo(prj="mt", info=f'')
             model = BloomModel.from_pretrained(pretrained)
         elif config is not None:
+            gd.debuginfo(prj="mt", info=f'')
             model = BloomModel(config)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             model = BloomModel(BloomConfig())
 
         value_head = nn.Linear(model.config.hidden_size, 1)

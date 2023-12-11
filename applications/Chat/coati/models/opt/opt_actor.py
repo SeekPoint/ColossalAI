@@ -28,10 +28,14 @@ class OPTActor(Actor):
     ) -> None:
         if pretrained is not None:
             model = OPTForCausalLM.from_pretrained(pretrained)
+            gd.debuginfo(prj="mt", info=f'')
         elif config is not None:
             model = OPTForCausalLM(config)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             model = OPTForCausalLM(OPTConfig())
+            gd.debuginfo(prj="mt", info=f'')
         if checkpoint:
             model.gradient_checkpointing_enable()
+            gd.debuginfo(prj="mt", info=f'')
         super().__init__(model, lora_rank, lora_train_bias)

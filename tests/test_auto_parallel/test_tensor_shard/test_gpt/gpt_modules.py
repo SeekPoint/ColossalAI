@@ -263,6 +263,7 @@ class GPT2LMHeadModel(GPT2PreTrainedModel):
 
 class GPTLMLoss(nn.Module):
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.loss_fn = nn.CrossEntropyLoss()
 

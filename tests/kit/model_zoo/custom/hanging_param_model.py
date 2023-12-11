@@ -13,6 +13,7 @@ class HangingParamModule(CheckpointModule):
     """
 
     def __init__(self, checkpoint=False) -> None:
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(checkpoint=checkpoint)
         self.proj1 = nn.Linear(4, 8)
         self.weight = nn.Parameter(torch.randn(8, 8))

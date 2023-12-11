@@ -13,6 +13,7 @@ from colossalai.testing import clear_cache_before_run
 
 class GetattrModel(nn.Module):
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.conv = nn.Conv2d(4, 16, 3, padding=1, bias=False)
 

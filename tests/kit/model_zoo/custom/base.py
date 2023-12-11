@@ -4,6 +4,7 @@ from torch.utils.checkpoint import checkpoint
 
 class CheckpointModule(nn.Module):
     def __init__(self, checkpoint: bool = False):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.checkpoint = checkpoint
         self._use_checkpoint = checkpoint

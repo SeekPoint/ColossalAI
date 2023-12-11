@@ -22,6 +22,7 @@ class DetachedReplayBuffer:
     """
 
     def __init__(self, sample_batch_size: int, limit: int = 0) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.sample_batch_size = sample_batch_size
         self.limit = limit
         self.items = Queue(self.limit, actor_options={"num_cpus": 1})
@@ -29,6 +30,7 @@ class DetachedReplayBuffer:
 
     @torch.no_grad()
     def append(self, experience: Experience) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         """
         Expected to be called remotely.
         """
@@ -40,6 +42,7 @@ class DetachedReplayBuffer:
         """
         Expected to be called remotely.
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.batch_collector.extend(items)
         while len(self.batch_collector) >= self.sample_batch_size:
             items = self.batch_collector[: self.sample_batch_size]
@@ -48,6 +51,7 @@ class DetachedReplayBuffer:
             self.batch_collector = self.batch_collector[self.sample_batch_size :]
 
     def clear(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         # self.items.close()
         self.items.shutdown()
         self.items = Queue(self.limit)
@@ -56,12 +60,14 @@ class DetachedReplayBuffer:
 
     @torch.no_grad()
     def sample(self, worker_rank=0, to_device="cpu") -> Experience:
+        gd.debuginfo(prj="mt", info=f'')
         ret = self._sample_and_erase()
         ret.to_device(to_device)
         return ret
 
     @torch.no_grad()
     def _sample_and_erase(self) -> Experience:
+        gd.debuginfo(prj="mt", info=f'')
         ret = self.items.get(block=True)
         return ret
 

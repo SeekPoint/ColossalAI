@@ -19,6 +19,7 @@ class NaiveExperienceBuffer(ExperienceBuffer):
     """
 
     def __init__(self, sample_batch_size: int, limit: int = 0, cpu_offload: bool = True) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(sample_batch_size, limit)
         self.cpu_offload = cpu_offload
         self.target_device = torch.device(f"cuda:{torch.cuda.current_device()}")
@@ -27,6 +28,7 @@ class NaiveExperienceBuffer(ExperienceBuffer):
 
     @torch.no_grad()
     def append(self, experience: Experience) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         if self.cpu_offload:
             experience.to_device(torch.device("cpu"))
         items = split_experience_batch(experience)
@@ -43,6 +45,7 @@ class NaiveExperienceBuffer(ExperienceBuffer):
 
     @torch.no_grad()
     def sample(self) -> Experience:
+        gd.debuginfo(prj="mt", info=f'')
         items = random.sample(self.items, self.sample_batch_size)
         experience = make_experience_batch(items)
         if self.cpu_offload:

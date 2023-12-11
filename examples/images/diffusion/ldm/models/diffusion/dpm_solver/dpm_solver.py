@@ -358,6 +358,7 @@ class DPM_Solver:
 
         [1] Chitwan Saharia, William Chan, Saurabh Saxena, Lala Li, Jay Whang, Emily Denton, Seyed Kamyar Seyed Ghasemipour, Burcu Karagol Ayan, S Sara Mahdavi, Rapha Gontijo Lopes, et al. Photorealistic text-to-image diffusion models with deep language understanding. arXiv preprint arXiv:2205.11487, 2022b.
         """
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.model = model_fn
         self.noise_schedule = noise_schedule
         self.predict_x0 = predict_x0

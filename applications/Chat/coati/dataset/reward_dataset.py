@@ -19,6 +19,7 @@ class RmStaticDataset(Dataset):
     """
 
     def __init__(self, dataset, tokenizer: Callable, max_length: int, special_token=None) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.end_token = tokenizer.eos_token if special_token is None else special_token
 
@@ -60,6 +61,7 @@ class HhRlhfDataset(Dataset):
     """
 
     def __init__(self, dataset, tokenizer: Callable, max_length: int, special_token=None) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.end_token = tokenizer.eos_token if special_token is None else special_token
 

@@ -4,6 +4,7 @@ import torch.nn as nn
 from pydebug import gd, infoTensor
 
 def find_layers(module, layers=[nn.Conv2d, nn.Linear], name=""):
+    gd.debuginfo(prj="mt", info=f'')
     if type(module) in layers:
         return {name: module}
     res = {}

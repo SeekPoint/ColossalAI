@@ -14,6 +14,7 @@ class MemoryMonitor:
     """
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.time_stamps = []
         self.mem_stats = []
 

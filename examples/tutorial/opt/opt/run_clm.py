@@ -259,6 +259,7 @@ def colo_memory_cap(size_in_GB):
 
 class DummyDataloader:
     def __init__(self, length, batch_size, seq_len, vocab_size):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.length = length
         self.batch_size = batch_size
         self.seq_len = seq_len

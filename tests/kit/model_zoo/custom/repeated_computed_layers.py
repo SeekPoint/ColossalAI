@@ -13,6 +13,7 @@ class NetWithRepeatedlyComputedLayers(CheckpointModule):
     """
 
     def __init__(self, checkpoint=False) -> None:
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(checkpoint=checkpoint)
         self.fc1 = nn.Linear(5, 5)
         self.fc2 = nn.Linear(5, 5)

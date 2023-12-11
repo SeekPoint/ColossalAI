@@ -20,6 +20,7 @@ from tests.test_auto_parallel.test_tensor_shard.test_node_handler.utils import n
 
 class AddmmModel(nn.Module):
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
 
     def forward(self, input, m1, m2):

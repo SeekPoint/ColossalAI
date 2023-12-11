@@ -83,6 +83,7 @@ class LSUNBase(Dataset):
 # The text file containing the paths to the images and the root directory where the images are stored are passed as arguments. Any additional keyword arguments passed to this class will be forwarded to the constructor of the parent class.
 class LSUNChurchesTrain(LSUNBase):
     def __init__(self, **kwargs):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(txt_file="data/lsun/church_outdoor_train.txt", data_root="data/lsun/churches", **kwargs)
 
 
@@ -90,6 +91,7 @@ class LSUNChurchesTrain(LSUNBase):
 # It is similar to LSUNChurchesTrain except that it uses a different text file and sets the flip probability to zero by default.
 class LSUNChurchesValidation(LSUNBase):
     def __init__(self, flip_p=0.0, **kwargs):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(
             txt_file="data/lsun/church_outdoor_val.txt", data_root="data/lsun/churches", flip_p=flip_p, **kwargs
         )
@@ -99,6 +101,7 @@ class LSUNChurchesValidation(LSUNBase):
 # It initializes by calling the constructor of LSUNBase class and passing the appropriate arguments.
 class LSUNBedroomsTrain(LSUNBase):
     def __init__(self, **kwargs):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(txt_file="data/lsun/bedrooms_train.txt", data_root="data/lsun/bedrooms", **kwargs)
 
 
@@ -106,6 +109,7 @@ class LSUNBedroomsTrain(LSUNBase):
 # It is similar to LSUNBedroomsTrain except that it uses a different text file and sets the flip probability to zero by default.
 class LSUNBedroomsValidation(LSUNBase):
     def __init__(self, flip_p=0.0, **kwargs):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(txt_file="data/lsun/bedrooms_val.txt", data_root="data/lsun/bedrooms", flip_p=flip_p, **kwargs)
 
 
@@ -114,6 +118,7 @@ class LSUNBedroomsValidation(LSUNBase):
 # The text file containing the paths to the images and the root directory where the images are stored are passed as arguments.
 class LSUNCatsTrain(LSUNBase):
     def __init__(self, **kwargs):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(txt_file="data/lsun/cat_train.txt", data_root="data/lsun/cats", **kwargs)
 
 
@@ -121,4 +126,5 @@ class LSUNCatsTrain(LSUNBase):
 # It is similar to LSUNCatsTrain except that it uses a different text file and sets the flip probability to zero by default.
 class LSUNCatsValidation(LSUNBase):
     def __init__(self, flip_p=0.0, **kwargs):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(txt_file="data/lsun/cat_val.txt", data_root="data/lsun/cats", flip_p=flip_p, **kwargs)

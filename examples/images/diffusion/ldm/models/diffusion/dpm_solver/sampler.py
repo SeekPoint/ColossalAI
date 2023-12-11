@@ -8,6 +8,7 @@ from pydebug import gd, infoTensor
 
 class DPMSolverSampler(object):
     def __init__(self, model, **kwargs):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.model = model
         to_torch = lambda x: x.clone().detach().to(torch.float32).to(model.device)

@@ -48,6 +48,7 @@ class ExperienceMakerPerformanceEvaluator(MakerCallback):
     def __init__(
         self, actor_num_params: int, critic_num_params: int, initial_model_num_params: int, reward_model_num_params: int
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.world_size = get_world_size()
         self.actor_num_params = actor_num_params

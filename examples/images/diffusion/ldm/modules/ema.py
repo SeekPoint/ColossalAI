@@ -4,6 +4,7 @@ from pydebug import gd, infoTensor
 
 class LitEma(nn.Module):
     def __init__(self, model, decay=0.9999, use_num_upates=True):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         if decay < 0.0 or decay > 1.0:
             raise ValueError("Decay must be between 0 and 1")

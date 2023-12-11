@@ -9,6 +9,7 @@ from pydebug import gd, infoTensor
 
 class GPT2MLP(nn.Module):
     def __init__(self, intermediate_size, config):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         embed_dim = config.hidden_size
         self.c_fc = Conv1D(intermediate_size, embed_dim)
@@ -30,6 +31,7 @@ class GPT2MLP(nn.Module):
 # order is same as megatron-lm gpt model.
 class GPT2Attention(nn.Module):
     def __init__(self, config, layer_idx=None):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
 
         max_positions = config.max_position_embeddings
@@ -116,6 +118,7 @@ class GPT2Attention(nn.Module):
 
 class GPT2Block(nn.Module):
     def __init__(self, config, layer_idx=None):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         hidden_size = config.hidden_size
         inner_dim = config.n_inner if config.n_inner is not None else 4 * hidden_size
@@ -150,6 +153,7 @@ class GPT2Block(nn.Module):
 
 class GPT2Model(GPT2PreTrainedModel):
     def __init__(self, config):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(config)
 
         self.embed_dim = config.hidden_size
@@ -212,6 +216,7 @@ class GPT2Model(GPT2PreTrainedModel):
 
 class GPT2LMHeadModel(GPT2PreTrainedModel):
     def __init__(self, config):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(config)
         self.transformer = GPT2Model(config)
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
@@ -235,6 +240,7 @@ class GPT2LMHeadModel(GPT2PreTrainedModel):
 
 class GPTLMLoss(nn.Module):
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.loss_fn = nn.CrossEntropyLoss()
 

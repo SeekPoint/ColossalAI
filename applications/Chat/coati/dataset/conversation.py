@@ -33,6 +33,7 @@ class Conversation:
     skip_next: bool = False
 
     def get_prompt(self):
+        gd.debuginfo(prj="mt", info=f'')
         if self.sep_style == SeparatorStyle.ADD_EOS_TOKEN:
             ret = self.system
             for role, message in self.messages:
@@ -45,9 +46,11 @@ class Conversation:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
     def append_message(self, role, message):
+        gd.debuginfo(prj="mt", info=f'')
         self.messages.append([role, message])
 
     def to_gradio_chatbot(self):
+        gd.debuginfo(prj="mt", info=f'')
         ret = []
         for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
@@ -57,6 +60,7 @@ class Conversation:
         return ret
 
     def copy(self):
+        gd.debuginfo(prj="mt", info=f'')
         return Conversation(
             system=self.system,
             roles=self.roles,
@@ -67,6 +71,7 @@ class Conversation:
         )
 
     def dict(self):
+        gd.debuginfo(prj="mt", info=f'')
         return {
             "system": self.system,
             "roles": self.roles,

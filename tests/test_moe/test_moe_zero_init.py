@@ -18,6 +18,7 @@ class MoeModel(nn.Module):
     def __init__(self, checkpoint: bool = False):
         class TestSubModule(CheckpointModule):
             def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
                 super().__init__(checkpoint)
                 expert_cls = nn.Linear
                 expert_args_dict = dict(in_features=16, out_features=16)

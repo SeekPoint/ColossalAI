@@ -97,6 +97,7 @@ class Upsample(nn.Module):
     """
 
     def __init__(self, channels, use_conv, dims=2, out_channels=None, padding=1):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.channels = channels
         self.out_channels = out_channels or channels
@@ -120,6 +121,7 @@ class TransposedUpsample(nn.Module):
     "Learned 2x upsampling without padding"
 
     def __init__(self, channels, out_channels=None, ks=5):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.channels = channels
         self.out_channels = out_channels or channels
@@ -140,6 +142,7 @@ class Downsample(nn.Module):
     """
 
     def __init__(self, channels, use_conv, dims=2, out_channels=None, padding=1):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.channels = channels
         self.out_channels = out_channels or channels
@@ -342,6 +345,7 @@ class QKVAttentionLegacy(nn.Module):
     """
 
     def __init__(self, n_heads):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.n_heads = n_heads
 
@@ -372,6 +376,7 @@ class QKVAttention(nn.Module):
     """
 
     def __init__(self, n_heads):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.n_heads = n_heads
 

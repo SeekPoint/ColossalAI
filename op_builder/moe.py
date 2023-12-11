@@ -7,6 +7,7 @@ class MOEBuilder(Builder):
     PREBUILT_IMPORT_PATH = "colossalai._C.moe"
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(name=MOEBuilder.NAME, prebuilt_import_path=MOEBuilder.PREBUILT_IMPORT_PATH)
 
     def include_dirs(self):

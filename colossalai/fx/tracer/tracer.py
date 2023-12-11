@@ -46,6 +46,7 @@ class ColoTracer(Tracer):
 
         class Model(nn.Module):
             def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
                 super().__init__()
                 self.linear1 = nn.Linear(10, 10)
                 self.linear2 = nn.Linear(10, 10)

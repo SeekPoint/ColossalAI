@@ -13,6 +13,7 @@ class ExperienceBuffer(ABC):
     """
 
     def __init__(self, sample_batch_size: int, limit: int = 0) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.sample_batch_size = sample_batch_size
         # limit <= 0 means unlimited

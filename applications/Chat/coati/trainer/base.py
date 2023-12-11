@@ -31,6 +31,7 @@ class SLTrainer(ABC):
         model: nn.Module,
         optimizer: Optimizer,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.strategy = strategy
         self.max_epochs = max_epochs
@@ -75,6 +76,7 @@ class OnPolicyTrainer(ABC):
         dataloader_pin_memory: bool,
         callbacks: List[Callback] = [],
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.strategy = strategy
         self.data_buffer = data_buffer
@@ -142,12 +144,14 @@ class OnPolicyTrainer(ABC):
         raise NotImplementedError()
 
     def _collect_phase(self, collect_step: int):
+        gd.debuginfo(prj="mt", info=f'')
         self._on_make_experience_start()
         experience = self._make_experience(collect_step)
         self._on_make_experience_end(experience)
         self.data_buffer.append(experience)
 
     def _update_phase(self, update_step: int):
+        gd.debuginfo(prj="mt", info=f'')
         self._on_learn_epoch_start(update_step)
         self._learn(update_step)
         self._on_learn_epoch_end(update_step)
@@ -171,6 +175,7 @@ class OnPolicyTrainer(ABC):
             num_collect_steps (int): the number of collect steps per episode
             num_update_steps (int): the number of update steps per episode
         """
+        gd.debuginfo(prj="mt", info=f'')
         self._before_fit(*args, **kwargs)
         with self._fit_ctx():
             for episode in tqdm.trange(num_episodes, desc="Episodes", disable=not is_rank_0()):

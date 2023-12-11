@@ -12,6 +12,7 @@ class Txt2ImgIterableBaseDataset(IterableDataset):
     """
 
     def __init__(self, file_path: str, rank, world_size):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.file_path = file_path
         self.folder_list = []

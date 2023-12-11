@@ -34,6 +34,7 @@ class Experience:
 
     @torch.no_grad()
     def to_device(self, device: torch.device) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.sequences = self.sequences.to(device)
         self.action_log_probs = self.action_log_probs.to(device)
         self.values = self.values.to(device)
@@ -45,6 +46,7 @@ class Experience:
             self.action_mask = self.action_mask.to(device)
 
     def pin_memory(self):
+        gd.debuginfo(prj="mt", info=f'')
         self.sequences = self.sequences.pin_memory()
         self.action_log_probs = self.action_log_probs.pin_memory()
         self.values = self.values.pin_memory()
@@ -60,6 +62,7 @@ class Experience:
 class ExperienceMaker(ABC):
     def __init__(self, actor: Actor, critic: Critic, reward_model: RewardModel, initial_model: Actor) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
         self.actor = actor
         self.critic = critic
         self.reward_model = reward_model

@@ -5,6 +5,7 @@ from pydebug import gd, infoTensor
 
 class ColoEmbedding(ColoModule):
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super(ColoEmbedding, self).__init__()
         self._register_shard_params(["weight"])
 

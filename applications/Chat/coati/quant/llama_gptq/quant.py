@@ -8,18 +8,21 @@ import torch.nn as nn
 from pydebug import gd, infoTensor
 
 def quantize(x, scale, zero, maxq):
+    gd.debuginfo(prj="mt", info=f'')
     q = torch.clamp(torch.round(x / scale) + zero, 0, maxq)
     return scale * (q - zero)
 
 
 class Quantizer(nn.Module):
     def __init__(self, shape=1):
+        gd.debuginfo(prj="mt", info=f'')
         super(Quantizer, self).__init__()
         self.register_buffer("maxq", torch.tensor(0))
         self.register_buffer("scale", torch.zeros(shape))
         self.register_buffer("zero", torch.zeros(shape))
 
     def configure(self, bits, perchannel=False, sym=True, mse=False, norm=2.4, grid=100, maxshrink=0.8):
+        gd.debuginfo(prj="mt", info=f'')
         self.maxq = torch.tensor(2**bits - 1)
         self.perchannel = perchannel
         self.sym = sym
@@ -35,8 +38,10 @@ class Quantizer(nn.Module):
         shape = x.shape
         if self.perchannel:
             if weight:
+                gd.debuginfo(prj="mt", info=f'')
                 x = x.flatten(1)
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 if len(shape) == 4:
                     x = x.permute([1, 0, 2, 3])
                     x = x.flatten(1)
@@ -45,6 +50,7 @@ class Quantizer(nn.Module):
                 if len(shape) == 2:
                     x = x.t()
         else:
+            gd.debuginfo(prj="mt", info=f'')
             x = x.flatten().unsqueeze(0)
 
         tmp = torch.zeros(x.shape[0], device=dev)
@@ -67,6 +73,7 @@ class Quantizer(nn.Module):
             self.zero = torch.round(-xmin / self.scale)
 
         if self.mse:
+            gd.debuginfo(prj="mt", info=f'')
             best = torch.full([x.shape[0]], float("inf"), device=dev)
             for i in range(int(self.maxshrink * self.grid)):
                 p = 1 - i / self.grid
@@ -86,8 +93,10 @@ class Quantizer(nn.Module):
                     self.zero[tmp] = zero1[tmp]
         if not self.perchannel:
             if weight:
+                gd.debuginfo(prj="mt", info=f'')
                 tmp = shape[0]
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 tmp = shape[1] if len(shape) != 3 else shape[2]
             self.scale = self.scale.repeat(tmp)
             self.zero = self.zero.repeat(tmp)
@@ -108,6 +117,7 @@ class Quantizer(nn.Module):
             self.zero = self.zero.unsqueeze(0)
 
     def quantize(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         if self.ready():
             return quantize(x, self.scale, self.zero, self.maxq)
         return x
@@ -129,6 +139,7 @@ except:
 
 class QuantLinear(nn.Module):
     def __init__(self, bits, groupsize, infeatures, outfeatures):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         if bits not in [2, 3, 4, 8]:
             raise NotImplementedError("Only 2,3,4,8 bits are supported.")
@@ -148,11 +159,13 @@ class QuantLinear(nn.Module):
         self._initialized_quant_state = False
 
     def pack(self, linear, scales, zeros):
+        gd.debuginfo(prj="mt", info=f'')
         scales = scales.t().contiguous()
         zeros = zeros.t().contiguous()
         scale_zeros = zeros * scales
         self.scales = scales.clone()
         if linear.bias is not None:
+            gd.debuginfo(prj="mt", info=f'')
             self.bias = linear.bias.clone()
 
         intweight = []
@@ -237,14 +250,18 @@ class QuantLinear(nn.Module):
         self.qzeros = torch.from_numpy(qzeros)
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         intermediate_dtype = torch.float32
 
         if not self._initialized_quant_state:
+            gd.debuginfo(prj="mt", info=f'')
             # Do we even have a bias? Check for at least one non-zero element.
             if self.bias is not None and bool(torch.any(self.bias != 0)):
                 # Then make sure it's the right type.
+                gd.debuginfo(prj="mt", info=f'')
                 self.bias.data = self.bias.data.to(intermediate_dtype)
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 self.bias = None
 
         outshape = list(x.shape)
@@ -252,8 +269,10 @@ class QuantLinear(nn.Module):
         x = x.reshape(-1, x.shape[-1])
         if self.bias is None:
             y = torch.zeros(x.shape[0], outshape[-1], dtype=intermediate_dtype, device=x.device)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             y = self.bias.clone().repeat(x.shape[0], 1)
+            gd.debuginfo(prj="mt", info=f'')
 
         output_dtype = x.dtype
         x = x.to(intermediate_dtype)
@@ -272,7 +291,9 @@ class QuantLinear(nn.Module):
 
 
 def make_quant(module, names, bits, groupsize, name=""):
+    gd.debuginfo(prj="mt", info=f'')
     if isinstance(module, QuantLinear):
+        gd.debuginfo(prj="mt", info=f'')
         return
     for attr in dir(module):
         tmp = getattr(module, attr)

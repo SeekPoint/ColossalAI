@@ -144,6 +144,7 @@ class MiDaSInference(nn.Module):
     ]
 
     def __init__(self, model_type):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         assert model_type in self.MODEL_TYPES_ISL
         model, _ = load_model(model_type)

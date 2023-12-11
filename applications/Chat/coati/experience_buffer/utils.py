@@ -32,6 +32,7 @@ class BufferItem:
 
 
 def split_experience_batch(experience: Experience) -> List[BufferItem]:
+    gd.debuginfo(prj="mt", info=f'')
     batch_size = experience.sequences.size(0)
     batch_kwargs = [{} for _ in range(batch_size)]
     keys = ("sequences", "action_log_probs", "values", "reward", "advantages", "attention_mask", "action_mask")

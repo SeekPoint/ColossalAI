@@ -121,6 +121,7 @@ class Interpolate(nn.Module):
             scale_factor (float): scaling
             mode (str): interpolation mode
         """
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super(Interpolate, self).__init__()
 
         self.interp = nn.functional.interpolate
@@ -152,6 +153,7 @@ class ResidualConvUnit(nn.Module):
         Args:
             features (int): number of features
         """
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
 
         self.conv1 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1, bias=True)
@@ -186,6 +188,7 @@ class FeatureFusionBlock(nn.Module):
         Args:
             features (int): number of features
         """
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super(FeatureFusionBlock, self).__init__()
 
         self.resConfUnit1 = ResidualConvUnit(features)
@@ -218,6 +221,7 @@ class ResidualConvUnit_custom(nn.Module):
         Args:
             features (int): number of features
         """
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
 
         self.bn = bn
@@ -273,6 +277,7 @@ class FeatureFusionBlock_custom(nn.Module):
         Args:
             features (int): number of features
         """
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super(FeatureFusionBlock_custom, self).__init__()
 
         self.deconv = deconv

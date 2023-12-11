@@ -8,6 +8,7 @@ from pydebug import gd, infoTensor
 
 class AbstractEncoder(nn.Module):
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
 
     def encode(self, *args, **kwargs):
@@ -21,6 +22,7 @@ class IdentityEncoder(AbstractEncoder):
 
 class ClassEmbedder(nn.Module):
     def __init__(self, embed_dim, n_classes=1000, key="class", ucg_rate=0.1):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.key = key
         self.embedding = nn.Embedding(n_classes, embed_dim)

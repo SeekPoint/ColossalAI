@@ -20,6 +20,8 @@ class MidasNet(BaseModel):
             features (int, optional): Number of features. Defaults to 256.
             backbone (str, optional): Backbone network for encoder. Defaults to resnet50
         """
+
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         print("Loading weights: ", path)
 
         super(MidasNet, self).__init__()

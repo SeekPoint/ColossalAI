@@ -22,6 +22,7 @@ class Builder(ABC):
     """
 
     def __init__(self, name: str, prebuilt_import_path: str):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.name = name
         self.prebuilt_import_path = prebuilt_import_path
         self.version_dependent_macros = ["-DVERSION_GE_1_1", "-DVERSION_GE_1_3", "-DVERSION_GE_1_5"]

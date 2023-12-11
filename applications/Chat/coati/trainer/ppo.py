@@ -19,6 +19,7 @@ from .utils import CycledDataLoader, is_rank_0, to_device
 from pydebug import gd, infoTensor
 
 def _set_default_generate_kwargs(strategy: Strategy, generate_kwargs: dict, actor: Actor) -> Dict:
+    gd.debuginfo(prj="mt", info=f'')
     unwrapped_model = strategy.unwrap_model(actor)
     hf_model = get_base_model(unwrapped_model)
     new_kwargs = {**generate_kwargs}
@@ -83,6 +84,7 @@ class PPOTrainer(OnPolicyTrainer):
         callbacks: List[Callback] = [],
         **generate_kwargs,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         if isinstance(strategy, GeminiStrategy):
             assert not offload_inference_models, "GeminiPlugin is not compatible with manual model.to('cpu')"
 
@@ -119,6 +121,7 @@ class PPOTrainer(OnPolicyTrainer):
             prompt_dataloader (DataLoader): the dataloader to use for prompt data
             pretrain_dataloader (DataLoader): the dataloader to use for pretrain data
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.prompt_dataloader = CycledDataLoader(prompt_dataloader)
         self.pretrain_dataloader = CycledDataLoader(pretrain_dataloader)
 
@@ -139,6 +142,7 @@ class PPOTrainer(OnPolicyTrainer):
             self.writer = SummaryWriter(log_dir=log_dir)
 
     def _make_experience(self, collect_step: int) -> Experience:
+        gd.debuginfo(prj="mt", info=f'')
         prompts = self.prompt_dataloader.next()
         if self.offload_inference_models:
             # TODO(ver217): this may be controlled by strategy if they are prepared by strategy
@@ -148,6 +152,7 @@ class PPOTrainer(OnPolicyTrainer):
         return self.experience_maker.make_experience(**prompts, **self.generate_kwargs)
 
     def _training_step(self, experience: Experience):
+        gd.debuginfo(prj="mt", info=f'')
         self.actor.train()
         self.critic.train()
         # policy loss
@@ -162,6 +167,7 @@ class PPOTrainer(OnPolicyTrainer):
 
         # ptx loss
         if self.ptx_coef != 0:
+            gd.debuginfo(prj="mt", info=f'')
             batch = self.pretrain_dataloader.next()
             batch = to_device(batch, self.device)
             ptx_log_probs = self.actor(batch["input_ids"], batch["attention_mask"])["logits"]
@@ -181,17 +187,20 @@ class PPOTrainer(OnPolicyTrainer):
 
     def _learn(self, update_step: int):
         if self.offload_inference_models:
+            gd.debuginfo(prj="mt", info=f'')
             self.experience_maker.initial_model.to("cpu")
             self.experience_maker.reward_model.to("cpu")
 
         # buffer may be empty at first, we should rebuild at each training
         if self.sample_buffer:
+            gd.debuginfo(prj="mt", info=f'')
             experience = self.data_buffer.sample()
             self._on_learn_batch_start()
             experience.to_device(self.device)
             self._training_step(experience)
             self._on_learn_batch_end(experience)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             if isinstance(self.dataloader.sampler, DistributedSampler):
                 self.dataloader.sampler.set_epoch(update_step)
             pbar = tqdm(self.dataloader, desc=f"Train epoch [{update_step + 1}]", disable=not is_rank_0())

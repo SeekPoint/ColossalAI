@@ -56,6 +56,7 @@ def Normalize(in_channels, num_groups=32):
 
 class Upsample(nn.Module):
     def __init__(self, in_channels, with_conv):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.with_conv = with_conv
         if self.with_conv:
@@ -70,6 +71,7 @@ class Upsample(nn.Module):
 
 class Downsample(nn.Module):
     def __init__(self, in_channels, with_conv):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.with_conv = with_conv
         if self.with_conv:
@@ -88,6 +90,7 @@ class Downsample(nn.Module):
 
 class ResnetBlock(nn.Module):
     def __init__(self, *, in_channels, out_channels=None, conv_shortcut=False, dropout, temb_channels=512):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.in_channels = in_channels
         out_channels = in_channels if out_channels is None else out_channels
@@ -132,6 +135,7 @@ class ResnetBlock(nn.Module):
 
 class AttnBlock(nn.Module):
     def __init__(self, in_channels):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.in_channels = in_channels
 
@@ -177,6 +181,7 @@ class MemoryEfficientAttnBlock(nn.Module):
 
     #
     def __init__(self, in_channels):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.in_channels = in_channels
 
@@ -627,6 +632,7 @@ class Decoder(nn.Module):
 
 class SimpleDecoder(nn.Module):
     def __init__(self, in_channels, out_channels, *args, **kwargs):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.model = nn.ModuleList(
             [
@@ -657,6 +663,7 @@ class SimpleDecoder(nn.Module):
 
 class UpsampleDecoder(nn.Module):
     def __init__(self, in_channels, out_channels, ch, num_res_blocks, resolution, ch_mult=(2, 2), dropout=0.0):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         # upsampling
         self.temb_ch = 0
@@ -701,6 +708,7 @@ class UpsampleDecoder(nn.Module):
 
 class LatentRescaler(nn.Module):
     def __init__(self, factor, in_channels, mid_channels, out_channels, depth=2):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         # residual block, interpolate, residual block
         self.factor = factor
@@ -828,6 +836,7 @@ class MergedRescaleDecoder(nn.Module):
 
 class Upsampler(nn.Module):
     def __init__(self, in_size, out_size, in_channels, out_channels, ch_mult=2):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         assert out_size >= in_size
         num_blocks = int(np.log2(out_size // in_size)) + 1
@@ -857,6 +866,7 @@ class Upsampler(nn.Module):
 
 class Resize(nn.Module):
     def __init__(self, in_channels=None, learned=False, mode="bilinear"):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.with_conv = learned
         self.mode = mode

@@ -17,6 +17,7 @@ class ProcessGroupManager:
     """
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.pg_store = dict()
 
     def create_process_group(self, name: str, ranks: List[int], backend: str = "nccl") -> ProcessGroup:

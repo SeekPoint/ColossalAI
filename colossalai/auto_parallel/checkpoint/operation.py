@@ -138,6 +138,7 @@ class Backward(Operation):
 
 class Loss(Operation):
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         pass
 
     def __repr__(self):
@@ -171,6 +172,7 @@ class DiscardMemory(MemoryAccess):
 
 class Sequence(list):
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
 
     def __repr__(self):

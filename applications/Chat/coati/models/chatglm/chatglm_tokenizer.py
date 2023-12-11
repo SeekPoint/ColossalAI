@@ -20,6 +20,7 @@ PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES = {
 
 class TextTokenizer:
     def __init__(self, model_path):
+        gd.debuginfo(prj="mt", info=f'')
         self.sp = spm.SentencePieceProcessor()
         self.sp.Load(model_path)
         self.num_tokens = self.sp.vocab_size()
@@ -57,6 +58,7 @@ class SPTokenizer:
         max_blank_length=80,
         byte_fallback=True,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         assert vocab_file is not None
         self.vocab_file = vocab_file
         self.num_image_tokens = num_image_tokens
@@ -191,6 +193,7 @@ class ChatGLMTokenizer(PreTrainedTokenizer):
         num_image_tokens=20000,
         **kwargs,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(
             do_lower_case=do_lower_case,
             remove_space=remove_space,
@@ -331,6 +334,7 @@ class ChatGLMTokenizer(PreTrainedTokenizer):
         Returns:
             `List[int]`: List of [input IDs](../glossary#input-ids) with the appropriate special tokens.
         """
+        gd.debuginfo(prj="mt", info=f'')
         gmask_id = self.sp_tokenizer[self.gmask_token]
         self.sp_tokenizer[self.eos_token]
         token_ids_0 = token_ids_0 + [gmask_id, self.sp_tokenizer[self.bos_token]]
@@ -369,6 +373,7 @@ class ChatGLMTokenizer(PreTrainedTokenizer):
             return_attention_mask:
                 (optional) Set to False to avoid returning attention mask (default: set to model specifics)
         """
+        gd.debuginfo(prj="mt", info=f'')
         # Load from model defaults
         bos_token_id = self.sp_tokenizer[self.bos_token]
         mask_token_id = self.sp_tokenizer[self.mask_token]

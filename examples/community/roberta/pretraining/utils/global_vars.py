@@ -99,6 +99,7 @@ class Timers:
     """Group of timers."""
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.timers = {}
 
     def __call__(self, name):

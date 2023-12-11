@@ -320,6 +320,7 @@ class PromptDataset(Dataset):
     "A simple dataset to prepare the prompts to generate class images on multiple GPUs."
 
     def __init__(self, prompt, num_samples):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.prompt = prompt
         self.num_samples = num_samples
 

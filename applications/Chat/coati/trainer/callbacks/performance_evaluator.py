@@ -75,6 +75,7 @@ class PerformanceEvaluator(Callback):
         enable_grad_checkpoint: bool = False,
         ignore_episodes: int = 0,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.world_size = get_world_size()
         self.actor_num_params = actor_num_params
@@ -110,6 +111,7 @@ class PerformanceEvaluator(Callback):
         self.make_experience_timer.start()
 
     def on_make_experience_end(self, experience: Experience) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         if self.disable:
             return
         self.make_experience_timer.end()
@@ -138,6 +140,7 @@ class PerformanceEvaluator(Callback):
         self.learn_timer.start()
 
     def on_learn_batch_end(self, experience: Experience) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         if self.disable:
             return
         self.learn_timer.end()
@@ -152,6 +155,7 @@ class PerformanceEvaluator(Callback):
         self.learn_flop += self.critic_num_params * batch_size * seq_len * 2 * (3 + int(self.enable_grad_checkpoint))
 
     def on_fit_end(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         avg_make_experience_duration = all_reduce_mean(self.make_experience_timer.duration, self.world_size)
         avg_learn_duration = all_reduce_mean(self.learn_timer.duration, self.world_size)
         avg_overall_duration = all_reduce_mean(self.overall_timer.duration, self.world_size)

@@ -9,6 +9,7 @@ from pydebug import gd, infoTensor
 
 class PLMSSampler(object):
     def __init__(self, model, schedule="linear", **kwargs):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.model = model
         self.ddpm_num_timesteps = model.num_timesteps

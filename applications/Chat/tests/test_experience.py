@@ -58,6 +58,7 @@ def make_and_consume_experience(strategy):
 
     class MockTokenizer:
         def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
             self.padding_side = "left"
             self.eos_token_id = 0
             self.pad_token_id = 0

@@ -34,6 +34,7 @@ def top_k(logits, thres=0.9):
 
 class AutoregressiveWrapper(nn.Module):
     def __init__(self, net, max_seq_len=2048, pad_value=0):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.max_seq_len = max_seq_len
         self.pad_value = pad_value

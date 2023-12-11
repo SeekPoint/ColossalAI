@@ -22,7 +22,9 @@ class Strategy(ABC):
     Base class for training strategies.
     """
 
-    def __init__(self, plugin_initializer: Callable[..., Optional[Plugin]] = lambda: None) -> None:
+    def __init__(self,
+                 plugin_initializer: Callable[..., Optional[Plugin]] = lambda: None) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         # NOTE: dist must be initialized before Booster
         self.setup_distributed()
@@ -68,7 +70,7 @@ class Strategy(ABC):
         Returns:
             Union[List[_BoostArgSpec], _BoostArgSpec]: [model | (model, optimizer) | Dict] in the original order.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         rets = []
         for arg in boost_args:
             if isinstance(arg, nn.Module):

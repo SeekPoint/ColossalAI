@@ -53,6 +53,7 @@ def symbolic_trace(
 
         class MyModule(torch.nn.Module):
             def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
                 super().__init__()
                 self.linear = torch.nn.Linear(2, 2)
 
@@ -82,6 +83,7 @@ def symbolic_trace(
 
         class MyModule(torch.nn.Module):
             def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
                 super().__init__()
                 self.linear = torch.nn.Linear(2, 2)
 
@@ -107,6 +109,7 @@ def symbolic_trace(
 
         class MyModule(torch.nn.Module):
             def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
                 super().__init__()
                 self.linear = torch.nn.Linear(2, 2, bias=True)
 

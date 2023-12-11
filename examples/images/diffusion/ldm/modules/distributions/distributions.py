@@ -12,6 +12,7 @@ class AbstractDistribution:
 
 class DiracDistribution(AbstractDistribution):
     def __init__(self, value):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.value = value
 
     def sample(self):
@@ -23,6 +24,7 @@ class DiracDistribution(AbstractDistribution):
 
 class DiagonalGaussianDistribution(object):
     def __init__(self, parameters, deterministic=False):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.parameters = parameters
         self.mean, self.logvar = torch.chunk(parameters, 2, dim=1)
         self.logvar = torch.clamp(self.logvar, -30.0, 20.0)

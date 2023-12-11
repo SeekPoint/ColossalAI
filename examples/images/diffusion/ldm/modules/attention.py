@@ -45,6 +45,7 @@ def init_(tensor):
 # feedforward
 class GEGLU(nn.Module):
     def __init__(self, dim_in, dim_out):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.proj = nn.Linear(dim_in, dim_out * 2)
 
@@ -55,6 +56,7 @@ class GEGLU(nn.Module):
 
 class FeedForward(nn.Module):
     def __init__(self, dim, dim_out=None, mult=4, glu=False, dropout=0.0):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         inner_dim = int(dim * mult)
         dim_out = default(dim_out, dim)
@@ -81,6 +83,7 @@ def Normalize(in_channels):
 
 class SpatialSelfAttention(nn.Module):
     def __init__(self, in_channels):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.in_channels = in_channels
 
@@ -118,6 +121,7 @@ class SpatialSelfAttention(nn.Module):
 
 class CrossAttention(nn.Module):
     def __init__(self, query_dim, context_dim=None, heads=8, dim_head=64, dropout=0.0):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         inner_dim = dim_head * heads
         context_dim = default(context_dim, query_dim)
@@ -161,6 +165,7 @@ class CrossAttention(nn.Module):
 class MemoryEfficientCrossAttention(nn.Module):
     # https://github.com/MatthieuTPHR/diffusers/blob/d80b531ff8060ec1ea982b65a1b8df70f73aa67c/src/diffusers/models/attention.py#L223
     def __init__(self, query_dim, context_dim=None, heads=8, dim_head=64, dropout=0.0):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         print(
             f"Setting up {self.__class__.__name__}. Query dim is {query_dim}, context_dim is {context_dim} and using "

@@ -10,6 +10,7 @@ class Timer:
     """A timer object which helps to log the execution times, and provides different tools to assess the times."""
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self._started = False
         self._start_time = time.time()
         self._elapsed = 0

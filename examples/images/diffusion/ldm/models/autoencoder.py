@@ -230,6 +230,7 @@ class AutoencoderKL(pl.LightningModule):
 
 class IdentityFirstStage(torch.nn.Module):
     def __init__(self, *args, vq_interface=False, **kwargs):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.vq_interface = vq_interface
         super().__init__()
 

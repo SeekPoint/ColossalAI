@@ -10,6 +10,7 @@ class BaseOpHook(ABC):
     before and after the execution of a PyTorch submodule"""
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         pass
 
     @abstractmethod

@@ -58,7 +58,7 @@ class LowLevelZeroStrategy(DDPStrategy):
         assert stage in (1, 2), f'Unsupported stage "{stage}"'
         assert placement_policy in ("cpu", "cuda"), f'Unsupported placement policy "{placement_policy}"'
         assert precision in ("fp32", "fp16"), f'Unsupported precision "{precision}"'
-
+        gd.debuginfo(prj="mt", info=f'')
         plugin_initializer = lambda: LowLevelZeroPlugin(
             stage=stage,
             precision=precision,
@@ -84,9 +84,11 @@ class LowLevelZeroStrategy(DDPStrategy):
         ), f"{type(self).__name__}'s plugin is not initialized properly."
 
     def setup_distributed(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         colossalai.launch_from_torch({}, seed=self.seed)
 
     def unwrap_model(self, model: nn.Module) -> nn.Module:
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(model, LowLevelZeroModel)
         return model.module
 
@@ -148,6 +150,8 @@ class GeminiStrategy(DDPStrategy):
         max_norm: float = 0.0,
         norm_type: float = 2.0,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
+
         # TODO(ver217): support shard_init when using from_pretrained()
         if shard_init:
             warnings.warn(

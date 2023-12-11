@@ -12,6 +12,7 @@ from pydebug import gd, infoTensor
 @DATASETS.register_module
 class WebtextDataset(Dataset):
     def __init__(self, path: Optional[str] = None, seq_len=1024) -> None:
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         if path is not None:
             root = os.path.dirname(path)

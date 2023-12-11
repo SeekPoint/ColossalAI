@@ -13,6 +13,7 @@ from colossalai.testing import clear_cache_before_run, run_on_environment_flag
 
 class ReLuModel(nn.Module):
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.act = torch.nn.ReLU()
 

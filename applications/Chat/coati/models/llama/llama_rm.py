@@ -26,10 +26,13 @@ class LlamaRM(RewardModel):
     ) -> None:
         if pretrained is not None:
             model = LlamaModel.from_pretrained(pretrained)
+            gd.debuginfo(prj="mt", info=f'')
         elif config is not None:
             model = LlamaModel(config)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             model = LlamaModel(LlamaConfig())
+            gd.debuginfo(prj="mt", info=f'')
 
         value_head = nn.Linear(model.config.hidden_size, 1)
         value_head.weight.data.normal_(mean=0.0, std=1 / (model.config.hidden_size + 1))

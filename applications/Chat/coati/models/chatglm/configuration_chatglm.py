@@ -45,6 +45,7 @@ class ChatGLMConfig(PretrainedConfig):
         Example:
 
     ```python
+
     >>> from configuration_chatglm import ChatGLMConfig
     >>> from modeling_chatglm import ChatGLMModel
 
@@ -57,6 +58,7 @@ class ChatGLMConfig(PretrainedConfig):
     >>> # Accessing the model configuration
     >>> configuration = model.config
     ```"""
+    gd.debuginfo(prj="mt", info=f'')
     model_type = "chatglm"
 
     def __init__(
@@ -80,6 +82,7 @@ class ChatGLMConfig(PretrainedConfig):
         prefix_projection=False,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         self.num_layers = num_layers
         self.vocab_size = vocab_size
         self.hidden_size = hidden_size

@@ -7,6 +7,7 @@ class CPUAdamBuilder(Builder):
     PREBUILT_IMPORT_PATH = "colossalai._C.cpu_adam"
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(name=CPUAdamBuilder.NAME, prebuilt_import_path=CPUAdamBuilder.PREBUILT_IMPORT_PATH)
         self.version_dependent_macros = ["-DVERSION_GE_1_1", "-DVERSION_GE_1_3", "-DVERSION_GE_1_5"]
 

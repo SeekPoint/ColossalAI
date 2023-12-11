@@ -20,6 +20,7 @@ class PromptDataset(Dataset):
         max_datasets_size: int = None,
         max_length: int = 96,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super(PromptDataset, self).__init__()
         self.keyed_prompt = defaultdict(list)
         self.logger = get_dist_logger()
@@ -36,7 +37,9 @@ class PromptDataset(Dataset):
             instructions, return_tensors="pt", max_length=max_length, padding="max_length", truncation=True
         )
         for k, tensor in tokens.items():
-            self.keyed_prompt[k] = tensor.to(torch.cuda.current_device()).unbind()
+            tmp = tensor.to(torch.cuda.current_device()).unbind()
+            self.keyed_prompt[k] = tmp
+            gd.debuginfo(prj="mt", info=f'self.keyed_prompt[{k}]={infoTensor(tmp)}')
 
     def __len__(self):
         return len(self.keyed_prompt["input_ids"])

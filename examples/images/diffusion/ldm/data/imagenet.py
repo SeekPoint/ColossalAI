@@ -28,6 +28,7 @@ def synset2idx(path_to_yaml="data/index_synset.yaml"):
 
 class ImageNetBase(Dataset):
     def __init__(self, config=None):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.config = config or OmegaConf.create()
         if not type(self.config) == dict:
             self.config = OmegaConf.to_container(self.config)
@@ -148,6 +149,7 @@ class ImageNetTrain(ImageNetBase):
     ]
 
     def __init__(self, process_images=True, data_root=None, **kwargs):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.process_images = process_images
         self.data_root = data_root
         super().__init__(**kwargs)
@@ -214,6 +216,7 @@ class ImageNetValidation(ImageNetBase):
     ]
 
     def __init__(self, process_images=True, data_root=None, **kwargs):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.data_root = data_root
         self.process_images = process_images
         super().__init__(**kwargs)
@@ -291,6 +294,7 @@ class ImageNetSR(Dataset):
         :param data_root:
         :param random_crop:
         """
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.base = self.get_base()
         assert size
         assert (size / downscale_f).is_integer()
@@ -377,6 +381,7 @@ class ImageNetSR(Dataset):
 
 class ImageNetSRTrain(ImageNetSR):
     def __init__(self, **kwargs):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(**kwargs)
 
     def get_base(self):
@@ -390,6 +395,7 @@ class ImageNetSRTrain(ImageNetSR):
 
 class ImageNetSRValidation(ImageNetSR):
     def __init__(self, **kwargs):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(**kwargs)
 
     def get_base(self):

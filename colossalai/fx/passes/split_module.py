@@ -66,6 +66,7 @@ def split_module(
             from colossalai.fx.passes.split_module import split_module
             class MyModule(torch.nn.Module):
                 def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
                     super().__init__()
                     self.param = torch.nn.Parameter(torch.rand(3, 4))
                     self.linear = torch.nn.Linear(4, 5)

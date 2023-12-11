@@ -44,6 +44,7 @@ class ExperienceMakerHolder:
         update_lora_weights: bool = False,
         **generate_kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         # set environment variables
         if env_info:
             set_dist_env(env_info=env_info)
@@ -91,6 +92,7 @@ class ExperienceMakerHolder:
                 print(f"[maker{get_rank()}] Waiting for INIT")
 
     def _get_ready(self):
+        gd.debuginfo(prj="mt", info=f'')
         while not self._fully_initialized():
             time.sleep(1.0)
 
@@ -98,6 +100,7 @@ class ExperienceMakerHolder:
         return self._is_fully_initialized
 
     def _init_target_trainer_list(self):
+        gd.debuginfo(prj="mt", info=f'')
         if len(self.target_trainer_list) > 0:
             return
         for name in self._detached_trainer_name_list:
@@ -115,6 +118,7 @@ class ExperienceMakerHolder:
 
     @ray.method(concurrency_group="experience_io")
     def _send_items(self, experience: Experience) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self._init_target_trainer_list()
         items = split_experience_batch(experience)
         items_per_trainer = [[] for _ in range(len(self.target_trainer_list))]
@@ -126,6 +130,7 @@ class ExperienceMakerHolder:
                 target_trainer.buffer_extend.remote(items_per_trainer[i])
 
     def _inference_step(self, batch) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self._on_batch_start()
         with self._model_visit_lock:
             self._on_make_experience_start()
@@ -146,10 +151,12 @@ class ExperienceMakerHolder:
             num_epochs (int, optional): Iterate the dataloader for number of epochs. Defaults to 1.
             num_steps (int, optional): Iterate the dataloader for number if steps. If this value > 0, num_epochs will be ignored. Defaults to 0.
         """
+        gd.debuginfo(prj="mt", info=f'')
         self._get_ready()
         self._on_loop_start()
         dataloader = dataloader_fn()
         if num_steps > 0:
+            gd.debuginfo(prj="mt", info=f'')
             # ignore num epochs
             it = iter(dataloader)
             for _ in tqdm(range(num_steps), desc="ExperienceMaker", disable=not is_rank_0()):
@@ -160,6 +167,7 @@ class ExperienceMakerHolder:
                     batch = next(it)
                 self._inference_step(batch)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             with tqdm(total=num_epochs * len(dataloader), desc="ExperienceMaker", disable=not is_rank_0()) as pbar:
                 for _ in range(num_epochs):
                     for batch in dataloader:
@@ -186,6 +194,7 @@ class ExperienceMakerHolder:
 
         TODO: load_state_dict integrate with model-sharding strategy
         """
+        gd.debuginfo(prj="mt", info=f'')
         _watch_memory = self._debug
         if chunk_start:
             if self._debug:
@@ -197,8 +206,10 @@ class ExperienceMakerHolder:
         with torch.no_grad():
             if new_actor_state_dict is not None:
                 if not self._update_lora_weights or fully_update:
+                    gd.debuginfo(prj="mt", info=f'')
                     self.experience_maker.actor.model.load_state_dict(new_actor_state_dict, strict=False)
                 else:
+                    gd.debuginfo(prj="mt", info=f'')
                     new_actor_state_dict = state_dict_to(new_actor_state_dict, device=torch.cuda.current_device())
                     state_dict_increase = self.actor_lora_constructor.reconstruct_increase(
                         new_actor_state_dict, new_actor_lora_config_dict
@@ -208,8 +219,10 @@ class ExperienceMakerHolder:
                     )
             if new_critic_state_dict is not None:
                 if not self._update_lora_weights or fully_update:
+                    gd.debuginfo(prj="mt", info=f'')
                     self.experience_maker.critic.load_state_dict(new_critic_state_dict, strict=False)
                 else:
+                    gd.debuginfo(prj="mt", info=f'')
                     new_critic_state_dict = state_dict_to(new_critic_state_dict, device=torch.cuda.current_device())
                     state_dict_increase = self.critic_lora_constructor.reconstruct_increase(
                         new_critic_state_dict, new_critic_lora_config_dict
@@ -262,6 +275,7 @@ class ExperienceMakerHolder:
 
 
 def _set_default_generate_kwargs(generate_kwargs: dict, actor: Actor) -> None:
+    gd.debuginfo(prj="mt", info=f'')
     origin_model = actor.model
     new_kwargs = {**generate_kwargs}
     # use huggingface models method directly

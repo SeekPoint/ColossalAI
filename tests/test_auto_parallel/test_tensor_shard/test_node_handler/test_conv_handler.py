@@ -144,6 +144,7 @@ def check_conv_module_handler(rank, world_size, port, bias):
 
 class ConvModel(nn.Module):
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
 
     def forward(self, input, others, bias=None):

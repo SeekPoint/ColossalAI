@@ -20,6 +20,7 @@ class XOPTAttention(OPTAttention):
         layer_head_mask: Optional[Tensor] = None,
         output_attentions: bool = False,
     ) -> Tuple[Tensor, Optional[Tensor], Optional[Tuple[Tensor]]]:
+        gd.debuginfo(prj="mt", info=f'')
         if not self.training:
             return super().forward(
                 hidden_states, key_value_states, past_key_value, attention_mask, layer_head_mask, output_attentions

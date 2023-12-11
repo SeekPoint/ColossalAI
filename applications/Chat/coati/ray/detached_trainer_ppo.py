@@ -56,6 +56,7 @@ class DetachedPPOTrainer(DetachedTrainer):
         debug: bool = False,
         update_lora_weights: bool = False,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         # set environment variables
         if env_info:
             set_dist_env(env_info=env_info)
@@ -102,6 +103,7 @@ class DetachedPPOTrainer(DetachedTrainer):
     @ray.method(concurrency_group="model_io")
     @torch.no_grad()
     def _update_remote_makers(self, fully_update: bool = False, **config):
+        gd.debuginfo(prj="mt", info=f'')
         # TODO: balance duties
         if not fully_update:
             config["requires_grad_only"] = True
@@ -140,6 +142,7 @@ class DetachedPPOTrainer(DetachedTrainer):
 
     @ray.method(concurrency_group="compute")
     def training_step(self, experience: Experience) -> Dict[str, float]:
+        gd.debuginfo(prj="mt", info=f'')
         self.actor.train()
         self.critic.train()
 
@@ -185,6 +188,7 @@ class DetachedPPOTrainer(DetachedTrainer):
                 yield state_dict_to(state_dict_lora)
 
     def _get_model_lora_config_dict(self, model: torch.nn.Module):
+        gd.debuginfo(prj="mt", info=f'')
         if not self._update_lora_weights:
             return None
         unwrapped_model = self.strategy.unwrap_model(model)

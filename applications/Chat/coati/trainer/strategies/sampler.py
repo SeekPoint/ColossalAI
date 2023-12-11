@@ -5,6 +5,7 @@ from pydebug import gd, infoTensor
 
 class DistributedSampler:
     def __init__(self, dataset, num_replicas: int, rank: int) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.dataset = dataset
         self.num_replicas = num_replicas
         self.rank = rank
@@ -27,5 +28,6 @@ class DistributedSampler:
         self.indices = indices
 
     def sample(self, batch_size: int) -> list:
+        gd.debuginfo(prj="mt", info=f'')
         sampled_indices = np.random.choice(self.indices, batch_size, replace=False)
         return [self.dataset[idx] for idx in sampled_indices]

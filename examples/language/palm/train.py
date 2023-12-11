@@ -126,6 +126,7 @@ print("generate dataset ready!")
 
 class TextSamplerDataset(Dataset):
     def __init__(self, data, seq_len):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.data = data
         self.seq_len = seq_len

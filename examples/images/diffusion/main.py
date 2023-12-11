@@ -174,6 +174,7 @@ class WrappedDataset(Dataset):
     """Wraps an arbitrary object with __len__ and __getitem__ into a pytorch dataset"""
 
     def __init__(self, dataset):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.data = dataset
 
     def __len__(self):
@@ -319,6 +320,7 @@ class SetupCallback(Callback):
     # Initialize the callback with the necessary parameters
 
     def __init__(self, resume, now, logdir, ckptdir, cfgdir, config, lightning_config):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.resume = resume
         self.now = now

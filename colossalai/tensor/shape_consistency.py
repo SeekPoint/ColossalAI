@@ -45,6 +45,7 @@ def set_shape_consistency_options(options: ShapeConsistencyOptions):
 
 class ShapeConsistencyManager(metaclass=SingletonMeta):
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self._options = None
         self._forward_only = False
         self.total_communication_cost = 0

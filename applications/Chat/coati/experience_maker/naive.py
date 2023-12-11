@@ -22,12 +22,14 @@ class NaiveExperienceMaker(ExperienceMaker):
         tokenizer: PreTrainedTokenizer,
         kl_coef: float = 0.1,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(actor, critic, reward_model, initial_model)
         self.tokenizer = tokenizer
         self.kl_coef = kl_coef
 
     @torch.no_grad()
     def make_experience(self, input_ids: torch.Tensor, **generate_kwargs) -> Experience:
+        gd.debuginfo(prj="mt", info=f'')
         self.actor.eval()
         self.critic.eval()
         self.initial_model.eval()

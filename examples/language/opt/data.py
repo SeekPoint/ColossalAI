@@ -5,6 +5,7 @@ from pydebug import gd, infoTensor
 
 class NetflixDataset(Dataset):
     def __init__(self, tokenizer):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
 
         self.tokenizer = tokenizer

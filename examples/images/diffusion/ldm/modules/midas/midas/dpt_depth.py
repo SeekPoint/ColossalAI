@@ -78,6 +78,7 @@ class DPT(BaseModel):
 
 class DPTDepthModel(DPT):
     def __init__(self, path=None, non_negative=True, **kwargs):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         features = kwargs["features"] if "features" in kwargs else 256
 
         head = nn.Sequential(

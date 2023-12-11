@@ -3,6 +3,7 @@ from pydebug import gd, infoTensor
 
 class DummyDataloader:
     def __init__(self, batch_size, vocab_size, seq_length):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.batch_size = batch_size
         self.vocab_size = vocab_size
         self.seq_length = seq_length

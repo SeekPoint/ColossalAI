@@ -61,6 +61,7 @@ class DeviceMeshManager:
     """
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.device_mesh_store: Dict[str, DeviceMesh] = dict()
 
     def create_device_mesh(self, name, device_mesh_info: DeviceMeshInfo) -> DeviceMesh:

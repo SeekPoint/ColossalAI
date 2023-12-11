@@ -38,6 +38,7 @@ class DistCoordinator(metaclass=SingletonMeta):
     """
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         assert (
             dist.is_initialized()
         ), "Distributed is not initialized. Please call `torch.distributed.init_process_group` or `colossalai.launch` first."

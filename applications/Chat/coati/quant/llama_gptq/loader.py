@@ -6,6 +6,7 @@ from .quant import make_quant
 from pydebug import gd, infoTensor
 
 def load_quant(model: nn.Module, checkpoint: str, wbits: int, groupsize: int):
+    gd.debuginfo(prj="mt", info=f'')
     model = model.eval()
     layers = find_layers(model)
 

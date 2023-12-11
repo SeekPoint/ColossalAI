@@ -28,6 +28,7 @@ from colossalai.nn.optimizer import HybridAdam
 from pydebug import gd, infoTensor
 
 def train(args):
+    gd.debuginfo(prj="mt")
     # configure strategy
     if args.strategy == "ddp":
         strategy = DDPStrategy()
@@ -220,4 +221,6 @@ if __name__ == "__main__":
     parser.add_argument("--use_wandb", default=False, action="store_true")
     parser.add_argument("--grad_checkpoint", default=False, action="store_true")
     args = parser.parse_args()
+
+    gd.debuginfo(prj="mt")
     train(args)

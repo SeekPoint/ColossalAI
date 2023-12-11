@@ -49,6 +49,7 @@ def check_torch_ddp_plugin():
 
 class DummyModel(nn.Module):
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.weight = nn.Parameter(torch.rand(1))
 

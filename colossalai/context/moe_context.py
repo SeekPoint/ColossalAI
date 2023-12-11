@@ -32,6 +32,7 @@ class MoeContext(metaclass=SingletonMeta):
     """
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.world_size = 1
         # Users may want to set maximum expert parallel size smaller than the world size
         # since very low bandwidth across nodes may constrain the performance of MoE

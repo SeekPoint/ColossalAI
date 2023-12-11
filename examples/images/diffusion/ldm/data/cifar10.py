@@ -170,6 +170,7 @@ def hf_dataset(
 
 class TextOnly(Dataset):
     def __init__(self, captions, output_size, image_key="image", caption_key="txt", n_gpus=1):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         """Returns only captions with dummy images"""
         self.output_size = output_size
         self.image_key = image_key

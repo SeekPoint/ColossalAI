@@ -22,6 +22,7 @@ from pydebug import gd, infoTensor
 
 # TODO Move this to a util.py   (Moving to ray.util introduces ringed import)
 def get_grad_required_state_dict(model: nn.Module):
+    gd.debuginfo(prj="mt", info=f'')
     state_dict = OrderedDict()
     for name, parameter in model.named_parameters():
         if parameter.requires_grad:
@@ -35,10 +36,12 @@ class DDPStrategy(Strategy):
     """
 
     def __init__(self, seed: int = 42, plugin_initializer: Callable = TorchDDPPlugin) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.seed = seed
         super().__init__(plugin_initializer)
 
     def _try_init_dist(self, force: bool = False) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         try:
             rank = int(os.environ["RANK"])
             local_rank = int(os.environ["LOCAL_RANK"])
@@ -60,15 +63,18 @@ class DDPStrategy(Strategy):
         assert isinstance(self.plugin, TorchDDPPlugin), f"{type(self).__name__}'s plugin is not initialized properly."
 
     def setup_distributed(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self._try_init_dist(force=True)
         self.set_seed(self.seed)
 
     def set_seed(self, seed: int) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         random.seed(seed)
         np.random.seed(seed)
         torch.manual_seed(seed)
 
     def setup_dataloader(self, data_buffer: ExperienceBuffer, pin_memory: bool = False) -> DataLoader:
+        gd.debuginfo(prj="mt", info=f'')
         return self.plugin.prepare_dataloader(
             data_buffer,
             batch_size=data_buffer.sample_batch_size,
@@ -89,6 +95,7 @@ class DDPStrategy(Strategy):
     def save_pretrained(
         self, model: nn.Module, path: str, shard: bool = False, tokenizer: Optional[PreTrainedTokenizerBase] = None
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         if dist.get_rank() == 0:
             unwrapped_model = self.unwrap_model(model)
             assert isinstance(unwrapped_model, (Actor, Critic, RewardModel))
@@ -116,10 +123,13 @@ class DDPStrategy(Strategy):
         model = self.unwrap_model(model)
         if "requires_grad_only" in config and config["requires_grad_only"] == True:
             state_dict = get_grad_required_state_dict(model)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             state_dict = model.state_dict()
+            gd.debuginfo(prj="mt", info=f'')
 
         if "shard_size" in config:
+            gd.debuginfo(prj="mt", info=f'')
             shard_size = config["shard_size"]
             accumulate_size = 0
             state_dict_shard = OrderedDict()
@@ -133,4 +143,5 @@ class DDPStrategy(Strategy):
             if accumulate_size > 0:
                 yield state_dict_shard
         else:
+            gd.debuginfo(prj="mt", info=f'')
             yield state_dict

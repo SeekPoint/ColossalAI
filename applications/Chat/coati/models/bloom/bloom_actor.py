@@ -26,11 +26,15 @@ class BLOOMActor(Actor):
         lora_train_bias: str = "none",
     ) -> None:
         if pretrained is not None:
+            gd.debuginfo(prj="mt", info=f'')
             model = BloomForCausalLM.from_pretrained(pretrained)
         elif config is not None:
+            gd.debuginfo(prj="mt", info=f'')
             model = BloomForCausalLM(config)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             model = BloomForCausalLM(BloomConfig())
         if checkpoint:
+            gd.debuginfo(prj="mt", info=f'')
             model.gradient_checkpointing_enable()
         super().__init__(model, lora_rank, lora_train_bias)

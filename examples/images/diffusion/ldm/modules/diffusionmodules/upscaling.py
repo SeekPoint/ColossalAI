@@ -10,6 +10,7 @@ from pydebug import gd, infoTensor
 class AbstractLowScaleModel(nn.Module):
     # for concatenating a downsampled image to the latent representation
     def __init__(self, noise_schedule_config=None):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super(AbstractLowScaleModel, self).__init__()
         if noise_schedule_config is not None:
             self.register_schedule(**noise_schedule_config)
@@ -60,6 +61,7 @@ class AbstractLowScaleModel(nn.Module):
 class SimpleImageConcat(AbstractLowScaleModel):
     # no noise level conditioning
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super(SimpleImageConcat, self).__init__(noise_schedule_config=None)
         self.max_noise_level = 0
 
@@ -70,6 +72,7 @@ class SimpleImageConcat(AbstractLowScaleModel):
 
 class ImageConcatWithNoiseAugmentation(AbstractLowScaleModel):
     def __init__(self, noise_schedule_config, max_noise_level=1000, to_cuda=False):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(noise_schedule_config=noise_schedule_config)
         self.max_noise_level = max_noise_level
 

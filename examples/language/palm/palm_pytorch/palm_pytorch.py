@@ -9,6 +9,7 @@ from pydebug import gd, infoTensor
 
 class LayerNorm(nn.Module):
     def __init__(self, dim, eps=1e-5):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.eps = eps
         self.gamma = nn.Parameter(torch.ones(dim))
@@ -24,6 +25,7 @@ class LayerNorm(nn.Module):
 
 class ParallelResidual(nn.Module):
     def __init__(self, *fns):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.fns = nn.ModuleList(fns)
 
@@ -37,6 +39,7 @@ class ParallelResidual(nn.Module):
 
 class RotaryEmbedding(nn.Module):
     def __init__(self, dim):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         inv_freq = 1.0 / (10000 ** (torch.arange(0, dim, 2).float() / dim))
         self.register_buffer("inv_freq", inv_freq)
@@ -84,6 +87,7 @@ def FeedForward(dim, mult=4):
 # attention
 class Attention(nn.Module):
     def __init__(self, dim, dim_head=64, heads=8):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         inner_dim = dim_head * heads
         self.norm = LayerNorm(dim)

@@ -7,6 +7,7 @@ class LambdaWarmUpCosineScheduler:
     """
 
     def __init__(self, warm_up_steps, lr_min, lr_max, lr_start, max_decay_steps, verbosity_interval=0):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.lr_warm_up_steps = warm_up_steps
         self.lr_start = lr_start
         self.lr_min = lr_min
@@ -41,6 +42,7 @@ class LambdaWarmUpCosineScheduler2:
     """
 
     def __init__(self, warm_up_steps, f_min, f_max, f_start, cycle_lengths, verbosity_interval=0):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         assert len(warm_up_steps) == len(f_min) == len(f_max) == len(f_start) == len(cycle_lengths)
         self.lr_warm_up_steps = warm_up_steps
         self.f_start = f_start

@@ -13,6 +13,7 @@ class ParallelLayer(nn.Module):
     global_state_dict: bool = True
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.data_parallel_rank = (
             0 if not gpc.is_initialized(ParallelMode.DATA) else gpc.get_local_rank(ParallelMode.DATA)

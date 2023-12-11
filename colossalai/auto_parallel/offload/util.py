@@ -36,6 +36,7 @@ class NvDevicePower:
 
 class GlobalRuntimeInfo(metaclass=SingletonMeta):
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.h2d_stream = torch.cuda.Stream()
         self.d2h_stream = torch.cuda.Stream()
         self.fwd_prefetch_event_map = {}

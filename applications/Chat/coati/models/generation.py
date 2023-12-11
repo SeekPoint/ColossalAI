@@ -52,7 +52,9 @@ def _sample(
     update_model_kwargs_fn: Optional[Callable[[dict, Any], dict]] = None,
     **model_kwargs,
 ) -> torch.Tensor:
+    gd.debuginfo(prj="mt", info=f'')
     if input_ids.size(1) >= max_length:
+        gd.debuginfo(prj="mt", info=f'')
         return input_ids
 
     logits_processor = _prepare_logits_processor(top_k, top_p, temperature)
@@ -127,6 +129,9 @@ def generate(
     is_greedy_gen_mode = (num_beams == 1) and do_sample is False
     is_sample_gen_mode = (num_beams == 1) and do_sample is True
     is_beam_gen_mode = (num_beams > 1) and do_sample is False
+
+    gd.debuginfo(prj="mt", info=f'')
+
     if is_greedy_gen_mode:
         # run greedy search
         raise NotImplementedError

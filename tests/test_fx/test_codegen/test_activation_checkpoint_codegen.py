@@ -22,6 +22,7 @@ except:
 
 class MLP(torch.nn.Module):
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.linear1 = torch.nn.Linear(4, 4)
         self.linear2 = torch.nn.Linear(4, 4)
@@ -41,6 +42,7 @@ class relu(torch.nn.Module):
 
 class MyModule(torch.nn.Module):
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.mlp1 = MLP()
         self.relu = relu()

@@ -1569,6 +1569,7 @@ class LatentDiffusion(DDPM):
 
 class DiffusionWrapper(pl.LightningModule):
     def __init__(self, diff_model_config, conditioning_key):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.sequential_cross_attn = diff_model_config.pop("sequential_crossattn", False)
         self.diffusion_model = UNetModel(**diff_model_config)
@@ -1611,6 +1612,7 @@ class DiffusionWrapper(pl.LightningModule):
 
 class LatentUpscaleDiffusion(LatentDiffusion):
     def __init__(self, *args, low_scale_config, low_scale_key="LR", noise_level_key=None, **kwargs):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(*args, **kwargs)
         # assumes that neither the cond_stage nor the low_scale_model contain trainable params
         assert not self.cond_stage_trainable
@@ -1952,6 +1954,7 @@ class LatentInpaintDiffusion(LatentFinetuneDiffusion):
     """
 
     def __init__(self, concat_keys=("mask", "masked_image"), masked_image_key="masked_image", *args, **kwargs):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(concat_keys, *args, **kwargs)
         self.masked_image_key = masked_image_key
         assert self.masked_image_key in concat_keys
@@ -2006,6 +2009,7 @@ class LatentDepth2ImageDiffusion(LatentFinetuneDiffusion):
     """
 
     def __init__(self, depth_stage_config, concat_keys=("midas_in",), *args, **kwargs):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(concat_keys=concat_keys, *args, **kwargs)
         self.depth_model = MiDaSInference(**depth_stage_config)
         self.depth_stage_key = concat_keys[0]

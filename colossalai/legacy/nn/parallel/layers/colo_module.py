@@ -6,6 +6,7 @@ from pydebug import gd, infoTensor
 
 class ColoModule(object):
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self._shard_params: List[str] = []
         self._allowed_patterns: Dict[ComputePattern, Dict[str, Dict[str, _DistSpec]]] = {}
 

@@ -29,6 +29,7 @@ __all__ = [
 
 class GenericPipelineGPT(nn.Module):
     def __init__(self, embedding=None, blocks=None, norm=None, head=None) -> None:
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.embedding = embedding
         self.blocks = blocks

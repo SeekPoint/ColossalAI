@@ -175,6 +175,7 @@ class VocabParallelEmbedding1D(torch.nn.Module):
     """
 
     def __init__(self, num_embeddings, embedding_dim, dtype=None, init_method=None):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super(VocabParallelEmbedding1D, self).__init__()
         # Keep the input dimensions.
         self.num_embeddings = num_embeddings
@@ -228,6 +229,7 @@ class VocabParallelEmbedding1D(torch.nn.Module):
 @LOSSES.register_module
 class vocab_parallel_cross_entropy(nn.Module):
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
 
     def forward(self, vocab_parallel_logits, target):
@@ -337,6 +339,7 @@ class VocabParallelGPTLMHead1D(ParallelLayer):
     """
 
     def __init__(self, embed=None, vocab_size=None, dtype=None, embed_dim=None):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         if embed is not None:
             self.head = embed
@@ -518,6 +521,7 @@ class HiddenParallelEmbedding1D(torch.nn.Module):
     """
 
     def __init__(self, num_embeddings, embedding_dim, dtype=torch.float, padding_idx: int = None, init_method=None):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super(HiddenParallelEmbedding1D, self).__init__()
         # Keep the input dimensions.
         self.num_embeddings = num_embeddings

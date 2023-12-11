@@ -180,6 +180,7 @@ class NormalizeImage(object):
     """Normlize image by given mean and std."""
 
     def __init__(self, mean, std):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.__mean = mean
         self.__std = std
 
@@ -193,6 +194,7 @@ class PrepareForNet(object):
     """Prepare sample for usage as network input."""
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         pass
 
     def __call__(self, sample):

@@ -46,6 +46,7 @@ class SaveCheckpoint(Callback):
         actor_optim: Optimizer = None,
         critic_optim: Optimizer = None,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.path = os.path.join(path, "checkpoint")
         self.interval = interval
@@ -53,7 +54,9 @@ class SaveCheckpoint(Callback):
         self.model_dict = {"actor": [actor, actor_optim], "critic": [critic, critic_optim]}
 
     def on_episode_end(self, episode: int) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         if (episode + 1) % self.interval != 0:
+            gd.debuginfo(prj="mt", info=f'')
             return
         base_path = os.path.join(self.path, f"episode_{episode}")
         if not os.path.exists(base_path):

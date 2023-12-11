@@ -27,10 +27,13 @@ class GPTRM(RewardModel):
     ) -> None:
         if pretrained is not None:
             model = GPT2Model.from_pretrained(pretrained)
+            gd.debuginfo(prj="mt", info=f'')
         elif config is not None:
             model = GPT2Model(config)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             model = GPT2Model(GPT2Config())
+            gd.debuginfo(prj="mt", info=f'')
 
         value_head = nn.Linear(model.config.n_embd, 1)
         value_head.weight.data.normal_(mean=0.0, std=1 / (model.config.n_embd + 1))

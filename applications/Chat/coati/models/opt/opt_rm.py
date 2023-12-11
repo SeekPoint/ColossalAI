@@ -26,10 +26,13 @@ class OPTRM(RewardModel):
     ) -> None:
         if pretrained is not None:
             model = OPTModel.from_pretrained(pretrained)
+            gd.debuginfo(prj="mt", info=f'')
         elif config is not None:
             model = OPTModel(config)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             model = OPTModel(OPTConfig())
+            gd.debuginfo(prj="mt", info=f'')
 
         value_head = nn.Linear(model.config.word_embed_proj_dim, 1)
         value_head.weight.data.normal_(mean=0.0, std=1 / (model.config.word_embed_proj_dim + 1))

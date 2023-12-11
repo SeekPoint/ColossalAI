@@ -177,6 +177,7 @@ class MetaTensorMode(object):
     """
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.torch_overrides = {}  # override torch.xxx
         self.dist_overrides = {}  # override torch.distributed.xxx
 

@@ -48,6 +48,7 @@ def _preprocess(
     tokenizer: PreTrainedTokenizer,
     max_length: int,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    gd.debuginfo(prj="mt", info=f'')
     """Preprocess the data by tokenizing."""
     sequences = [s + t for s, t in zip(sources, targets)]
     sequences_token = tokenizer(
@@ -85,6 +86,7 @@ def _preprocess_chatglm(
     Preprocess the data by tokenizing.
     None for attention mask, ChatGLM will calculate attention mask according to input ids
     """
+    gd.debuginfo(prj="mt", info=f'')
 
     labels = []
     input_ids = []
@@ -123,6 +125,7 @@ class SFTDataset(Dataset):
     """
 
     def __init__(self, dataset: Dict, tokenizer: PreTrainedTokenizer, max_length: int = 512) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.input_ids = []
 
@@ -160,6 +163,7 @@ class SupervisedDataset(Dataset):
         max_datasets_size: Optional[int] = None,
         max_length: int = 512,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         logger.info("Loading data...")
         list_data_dict = jload(data_path)

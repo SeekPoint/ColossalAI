@@ -24,6 +24,7 @@ class RewardModel(LoRAModule):
         lora_rank: int = 0,
         lora_train_bias: str = "none",
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(lora_rank=lora_rank, lora_train_bias=lora_train_bias)
         self.model = model
         self.convert_to_lora()
@@ -36,6 +37,7 @@ class RewardModel(LoRAModule):
             self.value_head = nn.Linear(model.config.n_embd, 1)
 
     def forward(self, sequences: torch.LongTensor, attention_mask: torch.Tensor) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         outputs = self.model(sequences, attention_mask=attention_mask)
         last_hidden_states = outputs["last_hidden_state"]
         sequence_lengths = torch.max(attention_mask * torch.arange(sequences.size(1), device=sequences.device), dim=1)[

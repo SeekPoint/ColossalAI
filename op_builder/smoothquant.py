@@ -9,6 +9,7 @@ class SmoothquantBuilder(Builder):
     PREBUILT_IMPORT_PATH = "colossalai._C.cu_smoothquant"
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(name=SmoothquantBuilder.NAME, prebuilt_import_path=SmoothquantBuilder.PREBUILT_IMPORT_PATH)
 
     def include_dirs(self):

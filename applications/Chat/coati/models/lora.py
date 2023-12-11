@@ -30,6 +30,7 @@ class LoraLinear(lora.LoRALayer, nn.Module):
         # Set this to True if the layer to replace stores weight like (fan_in, fan_out)
         fan_in_fan_out: bool = False,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         nn.Module.__init__(self)
         lora.LoRALayer.__init__(self, r=r, lora_alpha=lora_alpha, lora_dropout=lora_dropout, merge_weights=False)
         self.weight = weight
@@ -52,6 +53,7 @@ class LoraLinear(lora.LoRALayer, nn.Module):
             self.weight.data = self.weight.data.T
 
     def reset_parameters(self):
+        gd.debuginfo(prj="mt", info=f'')
         if hasattr(self, "lora_A"):
             # Initialize A with the default values for nn.Linear and set B to zero.
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
@@ -64,6 +66,7 @@ class LoraLinear(lora.LoRALayer, nn.Module):
         self.training = mode
         if LORA_MANAGER.merge_weights:
             if mode and self.merged:
+                gd.debuginfo(prj="mt", info=f'')
                 warnings.warn("Invoke module.train() would unmerge LoRA weights.")
                 raise NotImplementedError("LoRA unmerge is not tested.")
                 # Make sure that the weights are not merged
@@ -77,6 +80,7 @@ class LoraLinear(lora.LoRALayer, nn.Module):
                         self.weight.data -= T(self.lora_B @ self.lora_A) * self.scaling
                 self.merged = False
             elif not mode and not self.merged:
+                gd.debuginfo(prj="mt", info=f'')
                 warnings.warn("Invoke module.eval() would merge LoRA weights.")
                 # Merge the weights and mark it
                 if self.r > 0:
@@ -92,11 +96,13 @@ class LoraLinear(lora.LoRALayer, nn.Module):
             return w.T if self.fan_in_fan_out else w
 
         if self.r > 0 and not self.merged:
+            gd.debuginfo(prj="mt", info=f'')
             result = F.linear(x, T(self.weight), bias=self.bias)
             if self.r > 0:
                 result = result + (self.lora_dropout(x) @ self.lora_A.t() @ self.lora_B.t()) * self.scaling
             return result
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return F.linear(x, T(self.weight), bias=self.bias)
 
 
@@ -109,6 +115,7 @@ def _lora_linear_wrapper(linear: nn.Linear, lora_rank: int) -> LoraLinear:
 
 
 def _convert_to_lora_recursively(module: nn.Module, lora_rank: int) -> None:
+    gd.debuginfo(prj="mt", info=f'')
     for name, child in module.named_children():
         if isinstance(child, nn.Linear):
             setattr(module, name, _lora_linear_wrapper(child, lora_rank))
@@ -145,9 +152,11 @@ class LoRAModule(nn.Module):
     """
 
     def __init__(self, lora_rank: int = 0, lora_train_bias: str = "none") -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.lora_rank = lora_rank
         self.lora_train_bias = lora_train_bias
 
     def convert_to_lora(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         convert_to_lora_module(self, self.lora_rank, self.lora_train_bias)

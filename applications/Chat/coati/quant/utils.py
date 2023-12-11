@@ -9,6 +9,7 @@ def _noop(*args, **kwargs):
 
 @contextmanager
 def low_resource_init():
+    gd.debuginfo(prj="mt", info=f'')
     """This context manager disables weight initialization and sets the default float dtype to half."""
     old_kaiming_uniform_ = torch.nn.init.kaiming_uniform_
     old_uniform_ = torch.nn.init.uniform_

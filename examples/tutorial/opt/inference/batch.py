@@ -6,6 +6,7 @@ from energonai import BatchManager, SubmitEntry, TaskEntry
 
 class BatchManagerForGeneration(BatchManager):
     def __init__(self, max_batch_size: int = 1, pad_token_id: int = 0) -> None:
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.max_batch_size = max_batch_size
         self.pad_token_id = pad_token_id

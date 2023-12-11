@@ -106,6 +106,7 @@ def save_json(data, file_path: str):
 
 class RandomDataset(Dataset):
     def __init__(self, num_samples: int = 1000, max_length: int = 2048, vocab_size: int = 32000):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.num_samples = num_samples
         self.max_length = max_length
         self.input_ids = torch.randint(0, vocab_size, (num_samples, max_length), device=get_current_device())

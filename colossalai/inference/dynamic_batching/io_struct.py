@@ -118,6 +118,7 @@ class Batch:
 
 class BatchTokenIdOut:
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.reqs_infs: List[
             Tuple[str, int, Dict, bool, bool]
         ] = []  # [req_id, new_token_id, gen_metadata, finished_state, abort_state]
@@ -125,6 +126,7 @@ class BatchTokenIdOut:
 
 class BatchStrOut:
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.reqs_infs: List[
             Tuple[str, str, Dict, bool, bool]
         ] = []  # [req_id, token_str, gen_metadata, finished_state, abort_state]

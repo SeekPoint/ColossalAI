@@ -18,6 +18,7 @@ class barrier_context:
     """
 
     def __init__(self, executor_rank: int = 0, parallel_mode: ParallelMode = ParallelMode.GLOBAL):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         # the class name is lowercase by convention
         current_rank = gpc.get_local_rank(parallel_mode=parallel_mode)
         self.should_block = current_rank != executor_rank

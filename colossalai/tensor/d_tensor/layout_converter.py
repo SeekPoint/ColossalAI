@@ -41,6 +41,7 @@ class LayoutConverter(metaclass=SingletonMeta):
     """
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self._options = None
         self._forward_only = False
         self.cached_solution = {}

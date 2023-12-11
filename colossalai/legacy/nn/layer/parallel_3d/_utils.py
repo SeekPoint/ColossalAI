@@ -56,6 +56,7 @@ def dbg_check_shape(tensor: Tensor, shape: tuple):
 
 class AsyncGradientBucket(object):
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.bucket = OrderedDict()
 
     def __len__(self):

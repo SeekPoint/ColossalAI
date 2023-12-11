@@ -29,10 +29,14 @@ class GPTActor(Actor):
     ) -> None:
         if pretrained is not None:
             model = GPT2LMHeadModel.from_pretrained(pretrained)
+            gd.debuginfo(prj="mt", info=f'')
         elif config is not None:
             model = GPT2LMHeadModel(config)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             model = GPT2LMHeadModel(GPT2Config())
+            gd.debuginfo(prj="mt", info=f'')
         if checkpoint:
+            gd.debuginfo(prj="mt", info=f'')
             model.gradient_checkpointing_enable()
         super().__init__(model, lora_rank, lora_train_bias, **kwargs)

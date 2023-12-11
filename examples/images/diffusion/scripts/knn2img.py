@@ -60,6 +60,7 @@ def load_model_from_config(config, ckpt, verbose=False):
 
 class Searcher(object):
     def __init__(self, database, retriever_version="ViT-L/14"):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         assert database in DATABASES
         # self.database = self.load_database(database)
         self.database_name = database

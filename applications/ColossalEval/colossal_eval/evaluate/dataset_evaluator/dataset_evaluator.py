@@ -30,6 +30,7 @@ class DatasetEvaluator(object):
     """
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         pass
 
     def _calculate_label_metrics(self, metric: str, category: str):

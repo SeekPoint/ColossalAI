@@ -7,6 +7,7 @@ class ScaledUpperTrainglemaskedSoftmaxBuilder(Builder):
     PREBUILT_IMPORT_PATH = "colossalai._C.scaled_upper_triangle_masked_softmax"
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(
             name=ScaledUpperTrainglemaskedSoftmaxBuilder.NAME,
             prebuilt_import_path=ScaledUpperTrainglemaskedSoftmaxBuilder.PREBUILT_IMPORT_PATH,

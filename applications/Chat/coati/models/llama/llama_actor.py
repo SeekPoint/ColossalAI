@@ -27,12 +27,16 @@ class LlamaActor(Actor):
     ) -> None:
         if pretrained is not None:
             model = LlamaForCausalLM.from_pretrained(pretrained)
+            gd.debuginfo(prj="mt", info=f'')
         elif config is not None:
             model = LlamaForCausalLM(config)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             model = LlamaForCausalLM(LlamaConfig())
+            gd.debuginfo(prj="mt", info=f'')
 
         if checkpoint:
             model.gradient_checkpointing_enable()
+            gd.debuginfo(prj="mt", info=f'')
 
         super().__init__(model, lora_rank, lora_train_bias)

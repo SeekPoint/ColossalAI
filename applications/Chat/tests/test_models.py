@@ -44,6 +44,7 @@ from coati.models.utils import calc_action_log_probs, masked_mean
 def test_generation(actor_maker: Callable[[], Actor], batch_size: int, seq_len: int, generate_kwargs: Dict[str, Any]):
     class MockTokenizer:
         def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
             self.padding_side = "left"
             self.eos_token_id = 0
             self.pad_token_id = 0

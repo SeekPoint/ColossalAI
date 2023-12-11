@@ -18,6 +18,7 @@ class Critic(LoRAModule):
     def __init__(
         self, model: nn.Module, value_head: nn.Module, lora_rank: int = 0, lora_train_bias: str = "none"
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(lora_rank=lora_rank, lora_train_bias=lora_train_bias)
         self.model = model
         self.value_head = value_head

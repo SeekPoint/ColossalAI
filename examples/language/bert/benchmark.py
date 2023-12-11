@@ -34,6 +34,7 @@ DATASET_LEN = 1000
 
 class RandintDataset(Dataset):
     def __init__(self, dataset_length: int, sequence_length: int, vocab_size: int, n_class: int):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self._sequence_length = sequence_length
         self._vocab_size = vocab_size
         self._n_class = n_class

@@ -39,6 +39,7 @@ class DetachedTrainer(ABC):
         callbacks: List[TrainerCallback] = [],
         debug: bool = False,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.detached_replay_buffer = DetachedReplayBuffer(train_batch_size, limit=buffer_limit)
         self.dataloader_pin_memory = dataloader_pin_memory
@@ -49,6 +50,7 @@ class DetachedTrainer(ABC):
         self._debug = debug
 
     def update_target_holder_list(self):
+        gd.debuginfo(prj="mt", info=f'')
         # as the length of target_holder_list may be zero, we need to check it by a bool flag
         if not self._is_target_holder_initialized:
             for name in self.target_holder_name_list:
@@ -67,6 +69,7 @@ class DetachedTrainer(ABC):
         pass
 
     def _learn(self, update_steps: int, train_epochs: int) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         data = []
         # warmup
         pbar = tqdm(range(update_steps), desc=f"Train epoch [1/{train_epochs}]", disable=not is_rank_0())
@@ -84,6 +87,7 @@ class DetachedTrainer(ABC):
             self._on_epoch_end(epoch)
 
     def _learn_epoch(self, pbar: tqdm, data: List[Experience]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         is_warmup = len(data) == 0
         for x in pbar:
             if self._debug:
@@ -103,6 +107,7 @@ class DetachedTrainer(ABC):
             pbar.set_postfix(metrics)
 
     def fit(self, total_steps: int, update_steps: int, train_epochs: int = 1) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self._on_fit_start()
         for i in tqdm(range(total_steps // update_steps), desc="Trainer", disable=not is_rank_0()):
             self._on_episode_start(i)

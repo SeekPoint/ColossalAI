@@ -255,6 +255,7 @@ def avg_pool_nd(dims, *args, **kwargs):
 
 class HybridConditioner(nn.Module):
     def __init__(self, c_concat_config, c_crossattn_config):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.concat_conditioner = instantiate_from_config(c_concat_config)
         self.crossattn_conditioner = instantiate_from_config(c_crossattn_config)

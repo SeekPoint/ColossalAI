@@ -7,6 +7,7 @@ class LayerNormBuilder(Builder):
     PREBUILT_IMPORT_PATH = "colossalai._C.layernorm"
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__(name=LayerNormBuilder.NAME, prebuilt_import_path=LayerNormBuilder.PREBUILT_IMPORT_PATH)
 
     def sources_files(self):

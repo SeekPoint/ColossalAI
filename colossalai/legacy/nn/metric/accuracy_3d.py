@@ -12,6 +12,7 @@ class Accuracy3D(nn.Module):
     """Accuracy for 3D parallelism"""
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         self.input_parallel_mode = get_parallel_mode_from_env(INPUT_GROUP_3D)
         self.weight_parallel_mode = get_parallel_mode_from_env(WEIGHT_GROUP_3D)

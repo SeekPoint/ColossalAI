@@ -5,6 +5,7 @@ from .opt_attn import XOPTAttention
 from pydebug import gd, infoTensor
 
 def convert_to_xformer_model(model: nn.Module) -> nn.Module:
+    gd.debuginfo(prj="mt", info=f'')
     for module in model.modules():
         if isinstance(module, OPTAttention):
             module.__class__ = XOPTAttention
@@ -12,6 +13,7 @@ def convert_to_xformer_model(model: nn.Module) -> nn.Module:
 
 
 def recover_from_xformer_model(model: nn.Module) -> nn.Module:
+    gd.debuginfo(prj="mt", info=f'')
     for module in model.modules():
         if isinstance(module, XOPTAttention):
             module.__class__ = OPTAttention

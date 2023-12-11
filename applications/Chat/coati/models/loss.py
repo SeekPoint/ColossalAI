@@ -12,11 +12,13 @@ class GPTLMLoss(nn.Module):
     """
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         super().__init__()
         # NOTE: default ignore_index is -100, which is equal to IGNORE_INDEX in sft_dataset.py
         self.loss = nn.CrossEntropyLoss()
 
     def forward(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         shift_logits = logits[..., :-1, :].contiguous()
         shift_labels = labels[..., 1:].contiguous()
         # Flatten the tokens
@@ -29,6 +31,7 @@ class PolicyLoss(nn.Module):
     """
 
     def __init__(self, clip_eps: float = 0.2) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.clip_eps = clip_eps
 
@@ -39,6 +42,7 @@ class PolicyLoss(nn.Module):
         advantages: torch.Tensor,
         action_mask: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         ratio = (log_probs - old_log_probs).exp()
         surr1 = ratio * advantages
         surr2 = ratio.clamp(1 - self.clip_eps, 1 + self.clip_eps) * advantages
@@ -55,6 +59,7 @@ class ValueLoss(nn.Module):
     """
 
     def __init__(self, clip_eps: float = 0.4) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.clip_eps = clip_eps
 
@@ -65,6 +70,7 @@ class ValueLoss(nn.Module):
         reward: torch.Tensor,
         action_mask: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         values_clipped = old_values + (values - old_values).clamp(-self.clip_eps, self.clip_eps)
         surr1 = (values_clipped - reward) ** 2
         surr2 = (values - reward) ** 2
@@ -80,6 +86,7 @@ class LogSigLoss(nn.Module):
     """
 
     def forward(self, chosen_reward: torch.Tensor, reject_reward: torch.Tensor) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         probs = torch.sigmoid(chosen_reward - reject_reward)
         log_probs = torch.log(probs)
         loss = -log_probs.mean()
@@ -93,5 +100,6 @@ class LogExpLoss(nn.Module):
     """
 
     def forward(self, chosen_reward: torch.Tensor, reject_reward: torch.Tensor) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         loss = torch.log(1 + torch.exp(reject_reward - chosen_reward)).mean()
         return loss

@@ -18,6 +18,7 @@ class ListCache:
             list_size (int): Value list size.
             fixed_keys (List[Hashable], optional): The keys which won't be removed. Defaults to [].
         """
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self.cache_size = cache_size
         self.list_size = list_size
         self.cache: OrderedDict[Hashable, List[Any]] = OrderedDict()

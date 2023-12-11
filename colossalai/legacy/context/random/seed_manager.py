@@ -16,6 +16,7 @@ class SeedManager:
     """
 
     def __init__(self):
+        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
         self._current_mode = None
         self._seeds = dict()
         self._seed_states = dict()
