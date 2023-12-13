@@ -12,10 +12,12 @@ if HAS_TRITON:
     from .qkv_matmul_kernel import qkv_gemm_4d_kernel
     from .softmax import softmax_kernel
 
+    gd.debuginfo(prj="mt", info=f'')
     # adpeted from https://github.com/microsoft/DeepSpeed/blob/master/deepspeed/ops/transformer/inference/triton/triton_matmul_kernel.py#L312
     def self_attention_forward_without_fusion(
         q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, input_mask: torch.Tensor, scale: float
     ):
+        gd.debuginfo(prj="mt", info=f'')
         r"""A function to do QKV Attention calculation by calling GEMM and softmax triton kernels
         Args:
             q (torch.Tensor): Q embedding in attention layer, shape should be (batch, seq_len, num_heads, head_size)
@@ -72,7 +74,7 @@ if HAS_TRITON:
             BLOCK_SIZE_K=32,
             GROUP_SIZE_M=8,
         )
-
+        gd.debuginfo(prj="mt", info=f'')
         softmax_output = torch.empty(score_output.shape, device=score_output.device, dtype=score_output.dtype)
         score_output_shape = score_output.shape
 
@@ -100,6 +102,7 @@ if HAS_TRITON:
             )
 
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # NOTE: change softmax kernel functions to make it suitable for large size dimension
             softmax_output = torch.nn.functional.softmax(score_output, dim=-1)
             softmax_output = softmax_output.view(*score_output_shape)
@@ -146,6 +149,7 @@ if HAS_TRITON:
     def self_attention_compute_using_triton(
         qkv, input_mask, layer_past, alibi, scale, head_size, triangular=False, use_flash=False
     ):
+        gd.debuginfo(prj="mt", info=f'')
         assert qkv.is_contiguous()
         assert alibi is None, "current triton self-attention does not support alibi"
         batches = qkv.shape[0]

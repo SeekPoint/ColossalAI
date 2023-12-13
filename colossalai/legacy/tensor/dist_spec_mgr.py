@@ -28,6 +28,7 @@ def divide(numerator, denominator):
 class TransformDistSpec(torch.autograd.Function):
     @staticmethod
     def forward(ctx, tensor, old_dist_spec, dist_spec, pg, forward_trans_func, backward_trans_func):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.old_dist_spec = old_dist_spec
         ctx.dist_spec = dist_spec
         ctx.backward_trans_func = backward_trans_func
@@ -36,6 +37,7 @@ class TransformDistSpec(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_outputs):
+        gd.debuginfo(prj="mt", info=f'')
         return (
             ctx.backward_trans_func(grad_outputs, ctx.dist_spec, ctx.old_dist_spec, ctx.pg),
             None,
@@ -57,6 +59,7 @@ class DistSpecManager:
     def _shard_as(
         tensor: torch.Tensor, old_dist_spec: _DistSpec, dist_spec: _DistSpec, pg: ProcessGroup
     ) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         """_shard_as: shard the tensor w.r.t a distributed specification.
         Assuming the tensor passed in is a global (replicated) tensor.
         Args:
@@ -84,6 +87,7 @@ class DistSpecManager:
 
     @staticmethod
     def _gather(tensor: torch.Tensor, old_dist_spec: _DistSpec, pg: ProcessGroup) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         """_gather gather sharded tensors to a replicated one.
         Args:
             tensor (torch.Tensor): a shared torch tensor
@@ -121,6 +125,7 @@ class DistSpecManager:
     def _all_to_all(
         tensor: torch.Tensor, old_dist_spec: _DistSpec, dist_spec: _DistSpec, pg: ProcessGroup
     ) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         world_size = pg.tp_world_size()
         if world_size == 1:
             return tensor

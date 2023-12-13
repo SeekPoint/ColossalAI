@@ -66,6 +66,7 @@ class ColoTracer(Tracer):
     """
 
     def __init__(self, trace_act_ckpt: bool = False, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(*args, **kwargs)
         self.tracer_type = TracerType.META
         self.proxy_cls = ColoProxy
@@ -85,8 +86,9 @@ class ColoTracer(Tracer):
         """
         Create a proxy for different kinds of operations.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         if self.tracer_type == TracerType.DEFAULT:
+            gd.debuginfo(prj="mt", info=f'')
             # since meta_args is not given
             # we just fall back to the original torch.fx.Tracer
             proxy = super().create_proxy(kind, target, args, kwargs, name, type_expr, proxy_factory_fn)
@@ -104,24 +106,31 @@ class ColoTracer(Tracer):
         if kind == "call_function":
             if bias_addition_function.has(target):
                 if target == torch.nn.functional.linear:
+                    gd.debuginfo(prj="mt", info=f'')
                     if "bias" in kwargs and kwargs["bias"] is not None:
+                        gd.debuginfo(prj="mt", info=f'')
                         function_to_substitute = func_to_func_dict[target]
                         handle = bias_addition_function.get(target)(self, target, args, kwargs, function_to_substitute)
                 else:
+                    gd.debuginfo(prj="mt", info=f'')
                     function_to_substitute = func_to_func_dict[target]
                     handle = bias_addition_function.get(target)(self, target, args, kwargs, function_to_substitute)
             elif bias_addition_function.has(target.__name__):
+                gd.debuginfo(prj="mt", info=f'')
                 # use name for some builtin op like @ (matmul)
                 function_to_substitute = func_to_func_dict[target]
                 handle = bias_addition_function.get(target.__name__)(self, target, args, kwargs, function_to_substitute)
 
         elif kind == "call_method":
+            gd.debuginfo(prj="mt", info=f'')
             method = getattr(args_metas[0].__class__, target)
             if bias_addition_method.has(method):
+                gd.debuginfo(prj="mt", info=f'')
                 function_to_substitute = method_to_func_dict[method]
                 handle = bias_addition_method.get(method)(self, target, args, kwargs, function_to_substitute)
 
         elif kind == "call_module":
+            gd.debuginfo(prj="mt", info=f'')
             if not hasattr(self, "orig_forward"):
                 raise AttributeError(f"{self} does not have an attribute called orig_forward")
             self._disable_module_getattr = True
@@ -135,6 +144,7 @@ class ColoTracer(Tracer):
                 self._disable_module_getattr = False
 
         if handle is not None:
+            gd.debuginfo(prj="mt", info=f'')
             return handle.generate()
 
         # create nodes using patched arguments
@@ -152,8 +162,10 @@ class ColoTracer(Tracer):
 
     def _module_getattr(self, attr, attr_val, parameter_proxy_cache):
         if getattr(self, "_disable_module_getattr", False):
+            gd.debuginfo(prj="mt", info=f'')
             return attr_val
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # return super()._module_getattr(attr, attr_val, parameter_proxy_cache)
             def maybe_get_proxy_for_attr(attr_val, collection_to_search, parameter_proxy_cache):
                 for n, p in collection_to_search:
@@ -172,17 +184,21 @@ class ColoTracer(Tracer):
                 return None
 
             if isinstance(attr_val, torch.nn.Parameter):
+                gd.debuginfo(prj="mt", info=f'')
                 maybe_parameter_proxy = maybe_get_proxy_for_attr(
                     attr_val, self.root.named_parameters(), parameter_proxy_cache
                 )
                 if maybe_parameter_proxy is not None:
+                    gd.debuginfo(prj="mt", info=f'')
                     return maybe_parameter_proxy
 
             if self.proxy_buffer_attributes and isinstance(attr_val, torch.Tensor):
+                gd.debuginfo(prj="mt", info=f'')
                 maybe_buffer_proxy = maybe_get_proxy_for_attr(
                     attr_val, self.root.named_buffers(), parameter_proxy_cache
                 )
                 if maybe_buffer_proxy is not None:
+                    gd.debuginfo(prj="mt", info=f'')
                     return maybe_buffer_proxy
 
             return attr_val
@@ -196,32 +212,39 @@ class ColoTracer(Tracer):
         # if a customized or third-party module like apex.normalization.FusedRMSNorm is patched,
         # we should treat it as leaf module as well
         if meta_patched_module.has(m.__class__) or self.is_leaf_module(m, module_qualified_name):
+            gd.debuginfo(prj="mt", info=f'')
             return self.create_proxy("call_module", module_qualified_name, args, kwargs)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return forward(*args, **kwargs)
 
     def proxy(self, node) -> Proxy:
         """
         Returns a ColoProxy object.
         """
+        gd.debuginfo(prj="mt", info=f'')
         return self.proxy_cls(node, self)
 
     def _configure_tracer_type(self, tracer_type: TracerType):
         if tracer_type == TracerType.DEFAULT:
             self.proxy_cls = Proxy
             self.tracer_type = TracerType.DEFAULT
+            gd.debuginfo(prj="mt", info=f'')
         elif tracer_type == TracerType.META:
             self.proxy_cls = ColoProxy
             self.tracer_type = TracerType.META
+            gd.debuginfo(prj="mt", info=f'')
         else:
             raise ValueError(f"Unrecognized tracer type {tracer_type}")
 
     def _meta_data_computing(self, kind, target, args, kwargs):
         if kind == "placeholder" and target in self.meta_args and self.meta_args[target].is_meta:
             meta_out = self.meta_args[target]
+            gd.debuginfo(prj="mt", info=f'')
             return meta_out
 
         if target in self.orig_torch_tensor_methods:
+            gd.debuginfo(prj="mt", info=f'')
             # NOTE: tensor constructors in PyTorch define the `device` argument as
             # *kwargs-only*. That is why this works. If you add methods to
             # _TORCH_METHODS_TO_PATCH that do not define `device` as kwarg-only,
@@ -229,11 +252,13 @@ class ColoTracer(Tracer):
             # the size of the output.
             if "device" in kwargs:
                 kwargs["device"] = "meta"
+                gd.debuginfo(prj="mt", info=f'')
 
         try:
             args_metas, kwargs_metas = extract_meta(*args, **kwargs)
 
             if kind == "call_function":
+                gd.debuginfo(prj="mt", info=f'')
                 # Our meta data will not record the nn.parameter.Parameter attribute。
                 # It works fine in most of the case, but it may cause some problems after
                 # the bias addition manipulation.
@@ -247,19 +272,25 @@ class ColoTracer(Tracer):
                 # fetch patched function
                 if meta_patched_function.has(target):
                     meta_target = meta_patched_function.get(target)
+                    gd.debuginfo(prj="mt", info=f'')
                 elif meta_patched_function.has(target.__name__):
                     # use name for some builtin op like @ (matmul)
                     meta_target = meta_patched_function.get(target.__name__)
+                    gd.debuginfo(prj="mt", info=f'')
                 else:
                     meta_target = target
+                    gd.debuginfo(prj="mt", info=f'')
 
                 meta_out = meta_target(*args_metas, **kwargs_metas)
                 if isinstance(meta_out, torch.Tensor):
                     meta_out = meta_out.to(device="meta")
+                    gd.debuginfo(prj="mt", info=f'')
                 if convert_to_parameter:
                     meta_out = torch.nn.Parameter(meta_out)
+                    gd.debuginfo(prj="mt", info=f'')
 
             elif kind == "call_method":
+                gd.debuginfo(prj="mt", info=f'')
                 # Our meta data will not record the nn.parameter.Parameter attribute。
                 # It works fine in most of the case, but it may cause some problems after
                 # the bias addition manipulation.
@@ -268,18 +299,23 @@ class ColoTracer(Tracer):
                 convert_to_parameter = False
                 if target in (torch.Tensor.view,) and isinstance(args_metas[0], torch.nn.parameter.Parameter):
                     convert_to_parameter = True
+                    gd.debuginfo(prj="mt", info=f'')
+
                 method = getattr(args_metas[0].__class__, target)
 
                 # fetch patched method
                 if meta_patched_function.has(method):
                     meta_target = meta_patched_function.get(method)
+                    gd.debuginfo(prj="mt", info=f'')
                 else:
                     meta_target = method
+                    gd.debuginfo(prj="mt", info=f'')
 
                 meta_out = meta_target(*args_metas, **kwargs_metas)
                 if convert_to_parameter:
                     meta_out = torch.nn.Parameter(meta_out)
             elif kind == "call_module":
+                gd.debuginfo(prj="mt", info=f'')
                 if not hasattr(self, "orig_forward"):
                     raise AttributeError(f"{self} does not have an attribute called orig_forward")
                 self._disable_module_getattr = True
@@ -288,26 +324,34 @@ class ColoTracer(Tracer):
                     mod_type = type(mod)
                     if meta_patched_module.has(mod_type):
                         meta_out = meta_patched_module.get(mod_type)(mod, *args_metas, **kwargs_metas)
+                        gd.debuginfo(prj="mt", info=f'')
                     else:
                         meta_out = self.orig_forward(*args_metas, **kwargs_metas)
+                        gd.debuginfo(prj="mt", info=f'')
                 finally:
                     self._disable_module_getattr = False
             elif kind == "get_attr":
+                gd.debuginfo(prj="mt", info=f'')
                 self._disable_module_getattr = True
                 try:
                     attr_itr = self.root
                     atoms = target.split(".")
                     for atom in atoms:
                         attr_itr = getattr(attr_itr, atom)
+                        gd.debuginfo(prj="mt", info=f'')
                     if isinstance(attr_itr, torch.nn.parameter.Parameter):
                         meta_out = torch.nn.Parameter(attr_itr.to(device="meta"))
+                        gd.debuginfo(prj="mt", info=f'')
                     elif isinstance(attr_itr, torch.Tensor):
                         meta_out = attr_itr.to(device="meta")
+                        gd.debuginfo(prj="mt", info=f'')
                     else:
                         meta_out = attr_itr
+                        gd.debuginfo(prj="mt", info=f'')
                 finally:
                     self._disable_module_getattr = False
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 return None
 
         except Exception as e:
@@ -330,7 +374,9 @@ class ColoTracer(Tracer):
                 These arguments are the sample data fed to the model during actual computation, but just converted to meta tensors.
             concrete_args (Optional[Dict[str, Tensor]]): the concrete arguments that should not be treated as Proxies.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if meta_args is None:
+            gd.debuginfo(prj="mt", info=f'')
             meta_args = {}
 
         if concrete_args is None:
@@ -338,8 +384,10 @@ class ColoTracer(Tracer):
 
         if len(meta_args) == 0:
             self._configure_tracer_type(TracerType.DEFAULT)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             self._configure_tracer_type(TracerType.META)
+            gd.debuginfo(prj="mt", info=f'')
 
         # check concrete and meta args have valid names
         sig = inspect.signature(root.forward)
@@ -357,6 +405,7 @@ class ColoTracer(Tracer):
         non_concrete_arg_names = sig_names - concrete_arg_names
 
         def _check_arg_name_valid(names):
+            gd.debuginfo(prj="mt", info=f'')
             success, element = is_element_in_list(names, sig_names)
             if not success:
                 raise KeyError(
@@ -386,6 +435,7 @@ class ColoTracer(Tracer):
 
         self.patched_torch_tensor_methods = {}
         if self.tracer_type == TracerType.META:
+            gd.debuginfo(prj="mt", info=f'')
             # wrap the torch tensor constructing methods so that they are captured in the graph
             self.patched_torch_tensor_methods = {
                 target: wrap_tensor_constructor_method(getattr(torch, target))
@@ -447,12 +497,15 @@ class ColoTracer(Tracer):
 
     @contextmanager
     def trace_activation_checkpoint(self, enabled: bool):
+        gd.debuginfo(prj="mt", info=f'')
         if enabled:
+            gd.debuginfo(prj="mt", info=f'')
             orig_ckpt_func = torch.utils.checkpoint.CheckpointFunction
 
             class PatchedCheckpointFunction(torch.autograd.Function):
                 @staticmethod
                 def forward(ctx, run_function, preserve_rng_state, *args):
+                    gd.debuginfo(prj="mt", info=f'')
                     # signal that the current tracing occurs within activation checkpoint part
                     self.inside_torch_checkpoint_func = True
                     out = run_function(*args)
@@ -471,19 +524,23 @@ class ColoTracer(Tracer):
         yield
 
         if enabled:
+            gd.debuginfo(prj="mt", info=f'')
             # recover the checkpoint function upon exit
             torch.utils.checkpoint.CheckpointFunction = orig_ckpt_func
 
     def create_node(self, *args, **kwargs) -> Node:
+        gd.debuginfo(prj="mt", info=f'')
         node = super().create_node(*args, **kwargs)
 
         if self.inside_torch_checkpoint_func:
             # annotate the activation checkpoint module
             node.meta["activation_checkpoint"] = self.act_ckpt_region_count
+            gd.debuginfo(prj="mt", info=f'')
         return node
 
 
 def wrap_tensor_constructor_method(target):
+    gd.debuginfo(prj="mt", info=f'')
     def look_for_proxy(*args, **kwargs):
         # find in pos vars
         for arg in args:
@@ -502,18 +559,22 @@ def wrap_tensor_constructor_method(target):
 
     @functools.wraps(target)
     def wrapper(*args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         proxy = look_for_proxy(*args, **kwargs)
 
         if proxy is not None:
+            gd.debuginfo(prj="mt", info=f'')
             # if the arg is a proxy, then need to record this function called on this proxy
             # e.g. torch.ones(size) where size is an input proxy
             colo_proxy = proxy.tracer.create_proxy("call_function", target, args, kwargs)
             if not isinstance(colo_proxy, ColoProxy):
+                gd.debuginfo(prj="mt", info=f'')
                 meta_out = compute_meta_data_for_functions_proxy(target, args, kwargs)
                 colo_proxy = ColoProxy(proxy.node)
                 colo_proxy.meta_data = meta_out
             return colo_proxy
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # this is called directly when the inputs do not contain proxy
             # e.g. torch.ones(4) where the input is static
             return target(*args, **kwargs)
@@ -526,6 +587,7 @@ def wrap_tensor_constructor_method(target):
 for method in magic_methods:
 
     def _scope(method):
+        gd.debuginfo(prj="mt", info=f'')
         def impl(*args, **kwargs):
             tracer = args[0].tracer
             target = getattr(operator, method)
@@ -545,8 +607,10 @@ for method in magic_methods:
 
 def _define_reflectable(orig_method_name):
     method_name = f'__r{orig_method_name.strip("_")}__'
+    gd.debuginfo(prj="mt", info=f'method_name={method_name}')
 
     def impl(self, rhs):
+        gd.debuginfo(prj="mt", info=f'')
         target = getattr(operator, orig_method_name)
         proxy = self.tracer.create_proxy("call_function", target, (rhs, self), {})
         if not isinstance(proxy, ColoProxy):
@@ -561,4 +625,5 @@ def _define_reflectable(orig_method_name):
 
 
 for orig_method_name in reflectable_magic_methods:
+    gd.debuginfo(prj="mt", info=f'')
     _define_reflectable(orig_method_name)

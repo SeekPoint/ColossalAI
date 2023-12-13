@@ -15,6 +15,7 @@ class EstimateMemory(object):
         pass
 
     def _get_node_size(self, x: Node) -> float:
+        gd.debuginfo(prj="mt", info=f'')
         """
         return node size in MB
         """
@@ -30,11 +31,15 @@ class EstimateMemory(object):
         """
         add an active node and its shape to active node dict
         """
+
         if get_node_shape(n) is None:
+            gd.debuginfo(prj="mt", info=f'')
             return
         if n.op == "placeholder":
+            gd.debuginfo(prj="mt", info=f'')
             return
         if n not in active_nodes:
+            gd.debuginfo(prj="mt", info=f'')
             node_size = self._get_node_size(n) * chunk_ratio
             active_nodes[n] = node_size
 
@@ -42,6 +47,7 @@ class EstimateMemory(object):
         """
         build delete node dict, means node should be deleted at what time
         """
+        gd.debuginfo(prj="mt", info=f'')
         delete_node_dict = {}
         for idx, node in enumerate(node_mgr.get_node_list()):
             # skip non shape node
@@ -65,9 +71,12 @@ class EstimateMemory(object):
         """
         remove deactivate nodes from active nodes
         """
+        gd.debuginfo(prj="mt", info=f'')
         if kept_nodes is None:
             kept_nodes = []
+            gd.debuginfo(prj="mt", info=f'')
         if user.op in ("output",):
+            gd.debuginfo(prj="mt", info=f'')
             return
 
         for node in list(active_nodes.keys()):
@@ -81,24 +90,28 @@ class EstimateMemory(object):
     def _get_tmp_memory(self, node, not_contiguous_list, delete=False):
         mem = 0
         not_contiguous_ops = ["permute"]
-
+        gd.debuginfo(prj="mt", info=f'')
         if node.op == "call_function" and any(n in node.name for n in ["matmul", "reshape"]):
+            gd.debuginfo(prj="mt", info=f'')
             for n in node.args:
                 if n in not_contiguous_list:
                     # matmul won't change origin tensor, but create a tmp copy
                     mem += self._get_node_size(n)
         elif node.op == "call_module":
+            gd.debuginfo(prj="mt", info=f'')
             for n in node.args:
                 if n in not_contiguous_list:
                     # module will just make origin tensor to contiguous
                     if delete:
                         not_contiguous_list.remove(n)
         elif node.op == "call_method" and any(i in node.name for i in not_contiguous_ops):
+            gd.debuginfo(prj="mt", info=f'')
             if node not in not_contiguous_list:
                 not_contiguous_list.append(node)
         return mem
 
     def _get_chunk_ratio(self, node, chunk_node_dim, chunk_size):
+        gd.debuginfo(prj="mt", info=f'')
         if node not in chunk_node_dim:
             return 1.0
         node_shape = get_node_shape(node)
@@ -109,6 +122,7 @@ class EstimateMemory(object):
             return chunk_size / float(node_shape[chunk_dim])
 
     def _print_compute_op_mem_log(self, log, nodes, title=None):
+        gd.debuginfo(prj="mt", info=f'')
         if title:
             print(title)
         for idx, (l, n) in enumerate(zip(log, nodes)):
@@ -122,6 +136,7 @@ class EstimateMemory(object):
         print("\n")
 
     def _add_active_nodes_from_list(self, active_nodes: List, nodes: List) -> List:
+        gd.debuginfo(prj="mt", info=f'')
         """
         add active nodes from nodes
         """
@@ -132,6 +147,7 @@ class EstimateMemory(object):
         """
         sum all memory of active nodes
         """
+        gd.debuginfo(prj="mt", info=f'')
         out = [i for i in active_nodes.values()]
         out = sum(out)
         return out
@@ -151,6 +167,7 @@ class EstimateMemory(object):
             active_node_list_log (List): active nodes of every node. active nodes refer to
                 nodes generated but not deleted.
         """
+        gd.debuginfo(prj="mt", info=f'')
         act_memory = 0.0
         act_memory_peak_log = []
         act_memory_after_node_log = []
@@ -167,6 +184,7 @@ class EstimateMemory(object):
         chunk_inputs_all = []
 
         if use_chunk:
+            gd.debuginfo(prj="mt", info=f'')
             chunk_regions = [i["region"] for i in chunk_infos]
             chunk_starts = [i[0] for i in chunk_regions]
             chunk_ends = [i[1] for i in chunk_regions]

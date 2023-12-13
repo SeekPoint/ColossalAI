@@ -18,6 +18,7 @@ class SumHandler(NodeHandler):
     """
 
     def get_strategy_generator(self) -> List[StrategyGenerator]:
+        gd.debuginfo(prj="mt", info=f'')
         op_data_mapping = self.get_operation_data_mapping()
         generators = []
         generators.append(SumGenerator(op_data_mapping, self.device_mesh, self.node.args[0]))
@@ -27,19 +28,24 @@ class SumHandler(NodeHandler):
         # check if the input operand is a parameter
         if isinstance(self.node.args[0]._meta_data, torch.nn.parameter.Parameter):
             data_type = OperationDataType.PARAM
+            gd.debuginfo(prj="mt", info=f'')
         else:
             data_type = OperationDataType.ARG
+            gd.debuginfo(prj="mt", info=f'')
 
         input_data = self.node.args[0]._meta_data
         physical_input_operand = OperationData(name=str(self.node.args[0]), type=data_type, data=input_data)
 
         if len(self.node.args) > 1:
             sum_dims = self.node.args[1]
+            gd.debuginfo(prj="mt", info=f'')
         else:
             sum_dims = tuple(range(self.node.args[0]._meta_data.dim()))
+            gd.debuginfo(prj="mt", info=f'')
 
         if isinstance(sum_dims, int):
             sum_dims = (sum_dims,)
+            gd.debuginfo(prj="mt", info=f'')
 
         # recover negative value to positive
         num_dims = self.node.args[0]._meta_data.dim()
@@ -56,9 +62,11 @@ class SumHandler(NodeHandler):
         #   sum_mapping_dict[3] = 1 means the 1st dim of output is the 3rd dim of input
         sum_mapping_dict = {}
         if "keepdim" in self.node.kwargs and self.node.kwargs["keepdim"]:
+            gd.debuginfo(prj="mt", info=f'')
             for i in range(num_dims):
                 sum_mapping_dict.update({i: i})
         else:
+            gd.debuginfo(prj="mt", info=f'')
             output_index = 0
             for i in range(num_dims):
                 if i not in sum_dims:

@@ -32,6 +32,7 @@ def is_broadcastable(shape1: torch.Size, shape2: torch.Size) -> bool:
     """
     Check if two shapes are broadcastable to each other.
     """
+    gd.debuginfo(prj="mt", info=f'')
     for s1, s2 in zip(shape1[::-1], shape2[::-1]):
         if s1 == 1 or s2 == 1 or s1 == s2:
             pass
@@ -44,6 +45,7 @@ def get_broadcast_shape(shape1: torch.Size, shape2: torch.Size) -> List[int]:
     """
     Compute the broadcast shape given two shapes.
     """
+    gd.debuginfo(prj="mt", info=f'')
     assert is_broadcastable(shape1, shape2), f"{shape1} and {shape2} are not broadcastable"
     shape1_reverse = shape1[::-1]
     shape2_reverse = shape2[::-1]
@@ -62,7 +64,7 @@ def get_broadcast_dim_info(logical_shape, physical_shape):
     # get the number of dimensions
     logical_num_dims = len(logical_shape)
     physical_num_dims = len(physical_shape)
-
+    gd.debuginfo(prj="mt", info=f'')
     assert (
         logical_num_dims >= physical_num_dims
     ), "The number of dimensions in the logical shape is smaller than that of the physical shape, this tensor is not broadcast!"
@@ -80,10 +82,13 @@ def get_broadcast_dim_info(logical_shape, physical_shape):
             physical_dim_size = physical_shape[physical_dim_idx]
 
             if physical_dim_size == logical_dim_size:
+                gd.debuginfo(prj="mt", info=f'')
                 logical_dim_broadcast_info[logical_dim_idx] = BroadcastType.EQUAL
             elif physical_dim_size == 1 and physical_dim_size != logical_dim_size:
+                gd.debuginfo(prj="mt", info=f'')
                 logical_dim_broadcast_info[logical_dim_idx] = BroadcastType.MULTIPLE
         else:
+            gd.debuginfo(prj="mt", info=f'')
             logical_dim_broadcast_info[logical_dim_idx] = BroadcastType.PADDING
 
     return logical_dim_broadcast_info
@@ -100,12 +105,14 @@ def recover_sharding_spec_for_broadcast_shape(
         logical_shape (torch.Size): logical shape is the broadcast shape of a tensor
         physical_shape (torch.Size): the shape of the tensor before broadcasting
     """
+    gd.debuginfo(prj="mt", info=f'')
     # if the two shapes are the same, no broadcast occurs
     # we directly return the current sharding spec
 
     # recording the sharding dimensions removed during logical shape converting to physical one
     removed_dims = []
     if list(logical_shape) == list(physical_shape):
+        gd.debuginfo(prj="mt", info=f'')
         return logical_sharding_spec, removed_dims
 
     # get the number of dimensions
@@ -123,8 +130,10 @@ def recover_sharding_spec_for_broadcast_shape(
         logical_broadcast_type = logical_dim_broadcast_info[shape_dim]
 
         if logical_broadcast_type == BroadcastType.PADDING or logical_broadcast_type == BroadcastType.MULTIPLE:
+            gd.debuginfo(prj="mt", info=f'')
             removed_dims.extend(mesh_dim)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # get the corresponding physical dim
             physical_dim = physical_num_dims - (logical_num_dims - shape_dim)
             physical_dim_partition[physical_dim] = mesh_dim
@@ -146,6 +155,7 @@ def comm_actions_for_oprands(
     during convert logical shape to physical shape.
     """
     if len(removed_dims) == 1:
+        gd.debuginfo(prj="mt", info=f'')
         # if list length is 1, extract element from list to avoid using flatten device mesh
         removed_dims = removed_dims[0]
     comm_spec = CommSpec(
@@ -153,10 +163,14 @@ def comm_actions_for_oprands(
         sharding_spec=sharding_spec,
         logical_process_axis=removed_dims,
     )
+
     if op_data.type == OperationDataType.PARAM:
         comm_type = CommType.HOOK
+        gd.debuginfo(prj="mt", info=f'')
     else:
         comm_type = CommType.BEFORE
+        gd.debuginfo(prj="mt", info=f'')
+
     arg_index = -1
     for index, arg in enumerate(node.args):
         if op_data.name == str(arg):

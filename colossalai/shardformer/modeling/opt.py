@@ -31,6 +31,7 @@ class OPTPipelineForwards:
         # create causal mask
         # [bsz, seq_len] -> [bsz, 1, tgt_seq_len, src_seq_len]
         from transformers.models.opt.modeling_opt import _make_causal_mask
+        gd.debuginfo(prj="mt", info=f'')
 
         combined_attention_mask = None
         if input_shape[-1] > 1:
@@ -40,6 +41,7 @@ class OPTPipelineForwards:
                 device,
                 past_key_values_length=past_key_values_length,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         if attention_mask is not None:
             # [bsz, seq_len] -> [bsz, 1, tgt_seq_len, src_seq_len]
@@ -49,6 +51,7 @@ class OPTPipelineForwards:
             combined_attention_mask = (
                 expanded_attn_mask if combined_attention_mask is None else expanded_attn_mask + combined_attention_mask
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         return combined_attention_mask
 
@@ -57,6 +60,8 @@ class OPTPipelineForwards:
         """
         Expands attention_mask from `[bsz, seq_len]` to `[bsz, 1, tgt_seq_len, src_seq_len]`.
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         bsz, src_len = mask.size()
         tgt_len = tgt_len if tgt_len is not None else src_len
 
@@ -85,6 +90,7 @@ class OPTPipelineForwards:
         """
         This forward method is modified based on transformers.models.opt.modeling_opt.OPTModel.forward
         """
+        gd.debuginfo(prj="mt", info=f'')
 
         from transformers.modeling_outputs import BaseModelOutputWithPast
         from transformers.utils import logging
@@ -106,8 +112,10 @@ class OPTPipelineForwards:
             elif input_ids is not None:
                 input_shape = input_ids.size()
                 input_ids = input_ids.view(-1, input_shape[-1])
+                gd.debuginfo(prj="mt", info=f'')
             elif inputs_embeds is not None:
                 input_shape = inputs_embeds.size()[:-1]
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 raise ValueError("You have to specify either decoder_input_ids or decoder_inputs_embeds")
 
@@ -115,15 +123,21 @@ class OPTPipelineForwards:
 
             if inputs_embeds is None:
                 inputs_embeds = decoder.embed_tokens(input_ids)
+                gd.debuginfo(prj="mt", info=f'')
 
             if decoder.project_in is not None:
                 inputs_embeds = decoder.project_in(inputs_embeds)
+                gd.debuginfo(prj="mt", info=f'')
+
             device = input_ids.device if input_ids is not None else inputs_embeds.device
             _dtype = inputs_embeds.dtype
 
         else:
+            gd.debuginfo(prj="mt", info=f'')
+
             if hidden_states is None:
                 raise ValueError("hidden_states shouln't be None for intermediate stages.")
+
             input_shape = hidden_states.size()[:-1]
             batch_size, seq_length = input_shape[0], input_shape[1]
             device = hidden_states.device
@@ -132,9 +146,11 @@ class OPTPipelineForwards:
         past_key_values_length = past_key_values[0][0].shape[2] if past_key_values is not None else 0
         # required mask seq length can be calculated via length of past
         mask_seq_length = past_key_values_length + seq_length
+
         # embed positions
         if attention_mask is None:
             attention_mask = torch.ones(batch_size, mask_seq_length, device=device)
+            gd.debuginfo(prj="mt", info=f'')
         elif attention_mask.shape[1] != mask_seq_length:
             raise ValueError(
                 f"The provided attention mask has length {attention_mask.shape[1]}, but its length should be "
@@ -148,6 +164,7 @@ class OPTPipelineForwards:
         if stage_manager.is_first_stage():
             pos_embeds = decoder.embed_positions(attention_mask, past_key_values_length)
             hidden_states = inputs_embeds + pos_embeds
+            gd.debuginfo(prj="mt", info=f'')
 
         if decoder.gradient_checkpointing and decoder.training:
             if use_cache:
@@ -194,6 +211,7 @@ class OPTPipelineForwards:
 
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
+                gd.debuginfo(prj="mt", info=f'')
 
             dropout_probability = random.uniform(0, 1)
             if decoder.training and (dropout_probability < decoder.layerdrop):
@@ -202,6 +220,7 @@ class OPTPipelineForwards:
             past_key_value = past_key_values[idx] if past_key_values is not None else None
 
             if decoder.gradient_checkpointing and decoder.training:
+                gd.debuginfo(prj="mt", info=f'')
 
                 def create_custom_forward(module):
                     def custom_forward(*inputs):
@@ -217,6 +236,7 @@ class OPTPipelineForwards:
                     head_mask[idx] if head_mask is not None else None,
                     None,
                 )
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 layer_outputs = decoder_layer(
                     hidden_states,
@@ -226,29 +246,37 @@ class OPTPipelineForwards:
                     output_attentions=output_attentions,
                     use_cache=use_cache,
                 )
+                gd.debuginfo(prj="mt", info=f'')
 
             hidden_states = layer_outputs[0]
 
             if use_cache:
                 next_decoder_cache += (layer_outputs[2 if output_attentions else 1],)
+                gd.debuginfo(prj="mt", info=f'')
 
             if output_attentions:
                 all_self_attns += (layer_outputs[1],)
+                gd.debuginfo(prj="mt", info=f'')
 
         if stage_manager.is_last_stage():
             if decoder.final_layer_norm is not None:
                 hidden_states = decoder.final_layer_norm(hidden_states)
+                gd.debuginfo(prj="mt", info=f'')
             if decoder.project_out is not None:
                 hidden_states = decoder.project_out(hidden_states)
+                gd.debuginfo(prj="mt", info=f'')
 
         # add hidden states from the last decoder layer
         if output_hidden_states:
             all_hidden_states += (hidden_states,)
+            gd.debuginfo(prj="mt", info=f'')
 
         next_cache = next_decoder_cache if use_cache else None
 
         if stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             if not return_dict:
+                gd.debuginfo(prj="mt", info=f'')
                 return tuple(v for v in [hidden_states, next_cache, all_hidden_states, all_self_attns] if v is not None)
 
             return BaseModelOutputWithPast(
@@ -258,6 +286,7 @@ class OPTPipelineForwards:
                 attentions=all_self_attns,
             )
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": hidden_states}
 
     @staticmethod
@@ -287,6 +316,7 @@ class OPTPipelineForwards:
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        gd.debuginfo(prj="mt", info=f'')
 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
         outputs = OPTPipelineForwards.opt_model_forward(
@@ -304,9 +334,12 @@ class OPTPipelineForwards:
             hidden_states=hidden_states,
             stage_index=stage_index,
         )
+        gd.debuginfo(prj="mt", info=f'')
         if stage_manager.is_last_stage():
             logits = self.lm_head(outputs[0]).contiguous()
             loss = None
+            gd.debuginfo(prj="mt", info=f'')
+
             if labels is not None:
                 # move labels to correct device to enable model parallelism
                 labels = labels.to(logits.device)
@@ -316,7 +349,9 @@ class OPTPipelineForwards:
                 # Flatten the tokens
                 loss_fct = CrossEntropyLoss()
                 loss = loss_fct(shift_logits.view(-1, self.config.vocab_size), shift_labels.view(-1))
+                gd.debuginfo(prj="mt", info=f'')
             if not return_dict:
+                gd.debuginfo(prj="mt", info=f'')
                 output = (logits,) + outputs[1:]
                 return (loss,) + output if loss is not None else output
 
@@ -329,6 +364,7 @@ class OPTPipelineForwards:
             )
         else:
             hidden_states = outputs.get("hidden_states")
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": hidden_states}
 
     @staticmethod
@@ -372,8 +408,10 @@ class OPTPipelineForwards:
             hidden_states=hidden_states,
             stage_index=stage_index,
         )
+        gd.debuginfo(prj="mt", info=f'')
 
         if stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             hidden_states = transformer_outputs[0]
             logits = self.score(hidden_states)
 
@@ -381,9 +419,11 @@ class OPTPipelineForwards:
 
             if self.config.pad_token_id is None:
                 sequence_lengths = -1
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 if input_ids is not None:
                     sequence_lengths = (torch.ne(input_ids, self.config.pad_token_id).sum(-1) - 1).to(logits.device)
+                    gd.debuginfo(prj="mt", info=f'')
                 else:
                     sequence_lengths = -1
                     logger.warning(
@@ -395,28 +435,38 @@ class OPTPipelineForwards:
 
             loss = None
             if labels is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 if self.config.problem_type is None:
                     if self.num_labels == 1:
                         self.config.problem_type = "regression"
+                        gd.debuginfo(prj="mt", info=f'')
                     elif self.num_labels > 1 and (labels.dtype == torch.long or labels.dtype == torch.int):
                         self.config.problem_type = "single_label_classification"
+                        gd.debuginfo(prj="mt", info=f'')
                     else:
                         self.config.problem_type = "multi_label_classification"
+                        gd.debuginfo(prj="mt", info=f'')
 
                 if self.config.problem_type == "regression":
                     loss_fct = MSELoss()
+                    gd.debuginfo(prj="mt", info=f'')
                     if self.num_labels == 1:
                         loss = loss_fct(pooled_logits.squeeze(), labels.squeeze())
+                        gd.debuginfo(prj="mt", info=f'')
                     else:
                         loss = loss_fct(pooled_logits, labels)
+                        gd.debuginfo(prj="mt", info=f'')
                 elif self.config.problem_type == "single_label_classification":
                     loss_fct = CrossEntropyLoss()
                     loss = loss_fct(pooled_logits.view(-1, self.num_labels), labels.view(-1))
+                    gd.debuginfo(prj="mt", info=f'')
                 elif self.config.problem_type == "multi_label_classification":
                     loss_fct = BCEWithLogitsLoss()
                     loss = loss_fct(pooled_logits, labels)
+                    gd.debuginfo(prj="mt", info=f'')
 
             if not return_dict:
+                gd.debuginfo(prj="mt", info=f'')
                 output = (pooled_logits,) + transformer_outputs[1:]
                 return ((loss,) + output) if loss is not None else output
 
@@ -429,6 +479,7 @@ class OPTPipelineForwards:
             )
         else:
             hidden_states = transformer_outputs.get("hidden_states")
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": hidden_states}
 
     @staticmethod
@@ -454,6 +505,7 @@ class OPTPipelineForwards:
         Please refer to original code of transformers for more details.
         """
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        gd.debuginfo(prj="mt", info=f'')
 
         transformer_outputs = OPTPipelineForwards.opt_model_forward(
             self.model,
@@ -471,6 +523,7 @@ class OPTPipelineForwards:
             stage_index=stage_index,
         )
         if stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             hidden_states = transformer_outputs[0]
 
             logits = self.qa_outputs(hidden_states)
@@ -483,8 +536,10 @@ class OPTPipelineForwards:
                 # If we are on multi-GPU, split add a dimension
                 if len(start_positions.size()) > 1:
                     start_positions = start_positions.squeeze(-1)
+                    gd.debuginfo(prj="mt", info=f'')
                 if len(end_positions.size()) > 1:
                     end_positions = end_positions.squeeze(-1)
+                    gd.debuginfo(prj="mt", info=f'')
                 # sometimes the start/end positions are outside our model inputs, we ignore these terms
                 ignored_index = start_logits.size(1)
                 start_positions = start_positions.clamp(0, ignored_index)
@@ -494,9 +549,11 @@ class OPTPipelineForwards:
                 start_loss = loss_fct(start_logits, start_positions)
                 end_loss = loss_fct(end_logits, end_positions)
                 total_loss = (start_loss + end_loss) / 2
+                gd.debuginfo(prj="mt", info=f'')
 
             if not return_dict:
                 output = (start_logits, end_logits) + transformer_outputs[2:]
+                gd.debuginfo(prj="mt", info=f'')
                 return ((total_loss,) + output) if total_loss is not None else output
 
             return QuestionAnsweringModelOutput(
@@ -508,10 +565,12 @@ class OPTPipelineForwards:
             )
         else:
             hidden_states = transformer_outputs.get("hidden_states")
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": hidden_states}
 
 
 def get_opt_flash_attention_forward():
+    gd.debuginfo(prj="mt", info=f'')
     from transformers.models.opt.modeling_opt import OPTAttention
 
     from colossalai.kernel.cuda_native import AttnMaskType, ColoAttention
@@ -526,7 +585,7 @@ def get_opt_flash_attention_forward():
         output_attentions: bool = False,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
         """Input shape: Batch x Time x Channel"""
-
+        gd.debuginfo(prj="mt", info=f'')
         # if key_value_states are provided this layer is used as a cross-attention layer
         # for the decoder
         is_cross_attention = key_value_states is not None
@@ -534,26 +593,31 @@ def get_opt_flash_attention_forward():
 
         attention_input_shape = (bsz, -1, self.num_heads, self.head_dim)
         # get query proj
+
         query_states = self.q_proj(hidden_states).view(*attention_input_shape)
         # get key, value proj
         if is_cross_attention and past_key_value is not None:
             # reuse k, v, cross_attentions
             key_states = past_key_value[0].transpose(1, 2).contiguous().view(*attention_input_shape)
             value_states = past_key_value[1].transpose(1, 2).contiguous().view(*attention_input_shape)
+            gd.debuginfo(prj="mt", info=f'')
         elif is_cross_attention:
             # cross_attentions
             key_states = self.k_proj(key_value_states).view(*attention_input_shape)
             value_states = self.v_proj(key_value_states).view(*attention_input_shape)
+            gd.debuginfo(prj="mt", info=f'')
         elif past_key_value is not None:
             # reuse k, v, self_attention
             key_states = self.k_proj(hidden_states).view(*attention_input_shape)
             value_states = self.v_proj(hidden_states).view(*attention_input_shape)
             key_states = torch.cat([past_key_value[0], key_states], dim=1)
             value_states = torch.cat([past_key_value[1], value_states], dim=1)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             # self_attention
             key_states = self.k_proj(hidden_states).view(*attention_input_shape)
             value_states = self.v_proj(hidden_states).view(*attention_input_shape)
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.is_decoder:
             # if cross_attention save Tuple(torch.Tensor, torch.Tensor) of all cross attention key/value_states.
@@ -564,9 +628,11 @@ def get_opt_flash_attention_forward():
             # can concat previous decoder key/value_states to current projected key/value_states (third "elif" case)
             # if encoder bi-directional self-attention `past_key_value` is always `None`
             past_key_value = (key_states, value_states)
+            gd.debuginfo(prj="mt", info=f'')
 
         src_len = key_states.size(1)
         if layer_head_mask != None:
+            gd.debuginfo(prj="mt", info=f'')
             if layer_head_mask.size() != (self.num_heads,):
                 raise ValueError(
                     f"Head mask for a single layer should be of size {(self.num_heads,)}, but is"
@@ -576,6 +642,7 @@ def get_opt_flash_attention_forward():
         flash_attention_mask = None
         attn_mask_type = AttnMaskType.causal
         if attention_mask != None:
+            gd.debuginfo(prj="mt", info=f'')
             if attention_mask.size() != (bsz, 1, tgt_len, src_len):
                 raise ValueError(
                     f"Attention mask should be of size {(bsz, 1, tgt_len, src_len)}, but is {attention_mask.size()}"
@@ -598,6 +665,7 @@ def get_opt_flash_attention_forward():
 
 def get_jit_fused_opt_decoder_layer_forward():
     from transformers.models.opt.modeling_opt import OPTDecoderLayer
+    gd.debuginfo(prj="mt", info=f'')
 
     def forward(
         self: OPTDecoderLayer,
@@ -623,12 +691,13 @@ def get_jit_fused_opt_decoder_layer_forward():
                 (see `past_key_values`).
             past_key_value (`Tuple(torch.FloatTensor)`, *optional*): cached past key and value projection states
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         residual = hidden_states
 
         # 125m, 1.7B, ..., 175B applies layer norm BEFORE attention
         if self.do_layer_norm_before:
             hidden_states = self.self_attn_layer_norm(hidden_states)
+            gd.debuginfo(prj="mt", info=f'')
 
         # Self Attention
         hidden_states, self_attn_weights, present_key_value = self.self_attn(
@@ -644,6 +713,7 @@ def get_jit_fused_opt_decoder_layer_forward():
         # 350m applies layer norm AFTER attention
         if not self.do_layer_norm_before:
             hidden_states = self.self_attn_layer_norm(hidden_states)
+            gd.debuginfo(prj="mt", info=f'')
 
         # Fully Connected
         hidden_states_shape = hidden_states.shape
@@ -653,6 +723,7 @@ def get_jit_fused_opt_decoder_layer_forward():
         # 125m, 1.7B, ..., 175B applies layer norm BEFORE attention
         if self.do_layer_norm_before:
             hidden_states = self.final_layer_norm(hidden_states)
+            gd.debuginfo(prj="mt", info=f'')
 
         hidden_states = self.fc1(hidden_states)
         hidden_states = self.activation_fn(hidden_states)
@@ -669,9 +740,11 @@ def get_jit_fused_opt_decoder_layer_forward():
 
         if output_attentions:
             outputs += (self_attn_weights,)
+            gd.debuginfo(prj="mt", info=f'')
 
         if use_cache:
             outputs += (present_key_value,)
+            gd.debuginfo(prj="mt", info=f'')
 
         return outputs
 

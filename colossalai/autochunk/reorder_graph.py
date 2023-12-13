@@ -8,11 +8,13 @@ class ReorderGraph(object):
     """
 
     def __init__(self, trace_indice: TraceIndice, node_mgr: NodeMgr) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.trace_indice = trace_indice
         self.node_mgr = node_mgr
         self.all_reorder_map = {i: i for i in range(len(self.node_mgr.get_node_list()))}
 
     def _get_reorder_map(self, chunk_info):
+        gd.debuginfo(prj="mt", info=f'')
         reorder_map = {i: i for i in range(len(self.node_mgr.get_node_list()))}
 
         chunk_region_start = chunk_info["region"][0]
@@ -34,6 +36,8 @@ class ReorderGraph(object):
         return reorder_map
 
     def _reorder_chunk_info(self, chunk_info, reorder_map):
+        gd.debuginfo(prj="mt", info=f'')
+
         # update chunk info
         chunk_info["region"] = (
             chunk_info["region"][0] + len(chunk_info["args"]["prepose_nodes"]),
@@ -49,20 +53,25 @@ class ReorderGraph(object):
         return chunk_info
 
     def _update_all_reorder_map(self, reorder_map):
+        gd.debuginfo(prj="mt", info=f'')
         for origin_idx, map_idx in self.all_reorder_map.items():
             self.all_reorder_map[origin_idx] = reorder_map[map_idx]
 
     def _reorder_self_node_list(self, reorder_map):
+        gd.debuginfo(prj="mt", info=f'')
         new_node_list = [None for _ in range(len(self.node_mgr.get_node_list()))]
         for old_idx, new_idx in reorder_map.items():
             new_node_list[new_idx] = self.node_mgr.get_node_by_idx(old_idx)
         self.node_mgr.update_node_list(new_node_list)
 
     def _reorder_idx_trace(self, reorder_map):
+        gd.debuginfo(prj="mt", info=f'')
+
         # reorder list
         new_idx_trace_list = [None for _ in range(len(self.trace_indice.indice_trace_list))]
         for old_idx, new_idx in reorder_map.items():
             new_idx_trace_list[new_idx] = self.trace_indice.indice_trace_list[old_idx]
+
         self.trace_indice.indice_trace_list = new_idx_trace_list
         # update compute
         for idx_trace in self.trace_indice.indice_trace_list:
@@ -80,9 +89,12 @@ class ReorderGraph(object):
                 source[dim_idx] = new_dim_source
 
     def reorder_all(self, chunk_info):
+        gd.debuginfo(prj="mt", info=f'')
         if chunk_info is None:
+            gd.debuginfo(prj="mt", info=f'')
             return chunk_info
         if len(chunk_info["args"]["prepose_nodes"]) == 0:
+            gd.debuginfo(prj="mt", info=f'')
             return chunk_info
         reorder_map = self._get_reorder_map(chunk_info)
         self._update_all_reorder_map(reorder_map)
@@ -92,13 +104,16 @@ class ReorderGraph(object):
         return chunk_info
 
     def reorder_node_list(self, node_list):
+        gd.debuginfo(prj="mt", info=f'')
         new_node_list = [None for _ in range(len(node_list))]
         for old_idx, new_idx in self.all_reorder_map.items():
             new_node_list[new_idx] = node_list[old_idx]
         return new_node_list
 
     def tmp_reorder(self, node_list, chunk_info):
+        gd.debuginfo(prj="mt", info=f'')
         if len(chunk_info["args"]["prepose_nodes"]) == 0:
+            gd.debuginfo(prj="mt", info=f'')
             return node_list, chunk_info
         reorder_map = self._get_reorder_map(chunk_info)
 

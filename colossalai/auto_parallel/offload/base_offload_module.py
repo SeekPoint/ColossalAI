@@ -22,6 +22,7 @@ class BaseOffloadModule:
     """
 
     def __init__(self, model: nn.Module, region_manager: RegionManager, is_sync=True):
+        gd.debuginfo(prj="mt", info=f'')
         self.model = model
         self.region_manager = region_manager
         self.grad_hook_list = []
@@ -32,23 +33,28 @@ class BaseOffloadModule:
         self._cast_buffers()
 
     def register_grad_hook(self):
+        gd.debuginfo(prj="mt", info=f'')
         for p in self.model.parameters():
             if p.requires_grad:
                 self.grad_hook_list.append(p.register_hook(partial(self.grad_handle, p)))
 
     def remove_grad_hook(self):
+        gd.debuginfo(prj="mt", info=f'')
         for hook in self.grad_hook_list:
             hook.remove()
 
     def __call__(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         return self.forward(*args, **kwargs)
 
     def _pre_forward(self):
+        gd.debuginfo(prj="mt", info=f'')
         self.register_grad_hook()
         for region in self.region_manager.region_list:
             region.cpu_grad = None
 
     def forward(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         args, kwargs = _cast_float(args, torch.half), _cast_float(kwargs, torch.half)
         self.model.zero_grad(set_to_none=True)
         self._pre_forward()
@@ -56,10 +62,12 @@ class BaseOffloadModule:
         return outputs
 
     def backward(self, loss):
+        gd.debuginfo(prj="mt", info=f'')
         loss.backward()
         self._post_backward()
 
     def _post_backward(self):
+        gd.debuginfo(prj="mt", info=f'')
         torch.cuda.synchronize()
         self.remove_grad_hook()
 
@@ -70,6 +78,7 @@ class BaseOffloadModule:
         GlobalRuntimeInfo().bwd_prefetch_event_map.clear()
 
     def grad_handle(self, p, grad):
+        gd.debuginfo(prj="mt", info=f'')
         empty_grad = torch.empty_like(grad)
         free_storage(empty_grad)
         with torch._C.DisableTorchFunction():
@@ -84,22 +93,28 @@ class BaseOffloadModule:
         return empty_grad
 
     def _cast_buffers(self):
+        gd.debuginfo(prj="mt", info=f'')
         for buffer in self.model.buffers():
             buffer.data = buffer.cuda()
 
     def parameters(self, recurse: bool = True):
+        gd.debuginfo(prj="mt", info=f'')
         return self.model.parameters(recurse)
 
     def named_parameters(self, prefix: str = "", recurse: bool = True):
+        gd.debuginfo(prj="mt", info=f'')
         return self.model.named_parameters(prefix, recurse)
 
     def named_buffers(self, prefix: str = "", recurse: bool = True):
+        gd.debuginfo(prj="mt", info=f'')
         return self.model.named_buffers(prefix, recurse)
 
     def named_children(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self.model.named_children()
 
     def named_modules(
         self, memo: Optional[Set[torch.nn.Module]] = None, prefix: str = "", remove_duplicate: bool = True
     ):
+        gd.debuginfo(prj="mt", info=f'')
         return self.model.named_modules(memo, prefix, remove_duplicate)

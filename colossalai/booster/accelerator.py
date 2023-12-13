@@ -22,6 +22,7 @@ class Accelerator:
     """
 
     def __init__(self, device: str):
+        gd.debuginfo(prj="mt", info=f'')
         self.device = device
 
         assert (
@@ -33,8 +34,10 @@ class Accelerator:
         Set the default device for the current process.
         """
         if self.device == "cpu":
+            gd.debuginfo(prj="mt", info=f'')
             pass
         elif self.device == "cuda":
+            gd.debuginfo(prj="mt", info=f'')
             # TODO(FrankLeeeee): use global environment to check if it is a dist job
             # if is_distributed:
             #     local_rank = EnvTable().get_local_rank()
@@ -50,5 +53,6 @@ class Accelerator:
         Args:
             model (nn.Module): The model to be moved.
         """
+        gd.debuginfo(prj="mt", info=f'')
         model = model.to(torch.device(self.device))
         return model

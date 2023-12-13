@@ -18,6 +18,7 @@ class SplitHandler(NodeHandler):
     """
 
     def get_strategy_generator(self) -> List[StrategyGenerator]:
+        gd.debuginfo(prj="mt", info=f'')
         op_data_mapping = self.get_operation_data_mapping()
         generators = []
         generators.append(SplitGenerator(op_data_mapping, self.device_mesh, self.node.args[0]))
@@ -27,8 +28,10 @@ class SplitHandler(NodeHandler):
         # check if the input operand is a parameter
         if isinstance(self.node.args[0]._meta_data, torch.nn.parameter.Parameter):
             data_type = OperationDataType.PARAM
+            gd.debuginfo(prj="mt", info=f'')
         else:
             data_type = OperationDataType.ARG
+            gd.debuginfo(prj="mt", info=f'')
 
         input_data = self.node.args[0]._meta_data
         physical_input_operand = OperationData(name=str(self.node.args[0]), type=data_type, data=input_data)
@@ -36,15 +39,19 @@ class SplitHandler(NodeHandler):
         if len(self.node.args) == 3:
             # (input, split_size, split_dim)
             split_dim = self.node.args[2]
+            gd.debuginfo(prj="mt", info=f'')
         else:
             if self.node.kwargs:
+                gd.debuginfo(prj="mt", info=f'')
                 split_dim = self.node.kwargs["dim"]
             else:
                 split_dim = 0
+                gd.debuginfo(prj="mt", info=f'')
 
         num_dims = self.node.args[0]._meta_data.dim()
         # recover negative value to positive
         if split_dim < 0:
+            gd.debuginfo(prj="mt", info=f'')
             split_dim += num_dims
 
         split_info = (split_size, split_dim)

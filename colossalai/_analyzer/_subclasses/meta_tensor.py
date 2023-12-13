@@ -12,6 +12,7 @@ __all__ = ["MetaTensor", "MetaTensorMode"]
 
 
 def register_storage(r, data_ptr_fn=None):
+    gd.debuginfo(prj="mt", info=f'')
     if isinstance(r, torch.Tensor):
         if data_ptr_fn is not None:
             r.data_ptr = data_ptr_fn
@@ -48,6 +49,7 @@ class MetaTensor(torch.Tensor):
 
     @staticmethod
     def __new__(cls, elem, device=None, data_ptr_fn=None):
+        gd.debuginfo(prj="mt", info=f'')
         requires_grad = elem.requires_grad
         # Avoid multiple wrapping
         while isinstance(elem, MetaTensor):
@@ -88,6 +90,7 @@ class MetaTensor(torch.Tensor):
 
     @classmethod
     def __torch_dispatch__(cls, func, types, args=(), kwargs=None):
+        gd.debuginfo(prj="mt", info=f'')
         device = None
 
         def unwrap(x):
@@ -136,6 +139,7 @@ class MetaTensor(torch.Tensor):
             >>> tensor.to('vulkan')
             MetaTensor(tensor(..., device='meta', size=(10,)), device='vulkan')
         """
+        gd.debuginfo(prj="mt", info=f'')
         # this imitates c++ function in the way of @overload
         device = None
 
@@ -182,6 +186,7 @@ class MetaTensorMode(object):
         self.dist_overrides = {}  # override torch.distributed.xxx
 
     def __enter__(self):
+        gd.debuginfo(prj="mt", info=f'')
         def _dummy(*args, **kwargs):
             pass
 
@@ -199,6 +204,7 @@ class MetaTensorMode(object):
             setattr(dist, func, _dummy)
 
     def __exit__(self, exc_type, exc_value, traceback):
+        gd.debuginfo(prj="mt", info=f'')
         for func, func_impl in self.torch_overrides.items():
             setattr(torch, func, func_impl)
 

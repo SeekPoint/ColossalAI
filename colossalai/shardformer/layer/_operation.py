@@ -24,6 +24,7 @@ class FusedLayerNormAffineFunction1D(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input, weight, bias, normalized_shape, eps):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.normalized_shape = normalized_shape
         ctx.eps = eps
         input_ = input.contiguous()
@@ -37,6 +38,7 @@ class FusedLayerNormAffineFunction1D(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         input_, weight_, bias_, mean, invvar = ctx.saved_tensors
         grad_input = grad_weight = grad_bias = None
         grad_input, grad_weight, grad_bias = fused_mix_prec_layer_norm_cuda.backward_affine(
@@ -53,6 +55,7 @@ class MatmulWithAsyncCommunication(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input_, weight, bias, process_group, async_grad_allreduce):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.save_for_backward(input_, weight)
         ctx.use_bias = bias is not None
         ctx.process_group = process_group
@@ -62,10 +65,12 @@ class MatmulWithAsyncCommunication(torch.autograd.Function):
 
         if bias is not None:
             output = output + bias
+            gd.debuginfo(prj="mt", info=f'')
         return output
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         input, weight = ctx.saved_tensors
         use_bias = ctx.use_bias
 
@@ -76,6 +81,7 @@ class MatmulWithAsyncCommunication(torch.autograd.Function):
         if len(grad_output.shape) > 2:
             grad_output = grad_output.view(-1, grad_output.shape[-1])
             total_input = total_input.view(-1, total_input.shape[-1])
+            gd.debuginfo(prj="mt", info=f'')
 
         if ctx.async_grad_allreduce:
             # Asynchronous all-reduce
@@ -83,12 +89,14 @@ class MatmulWithAsyncCommunication(torch.autograd.Function):
             # Delay the start of weight gradient computation shortly (3us) to have
             # all-reduce scheduled first and have GPU resources allocated
             _ = torch.empty(1, device=grad_output.device) + 1
+            gd.debuginfo(prj="mt", info=f'')
 
         grad_weight = total_input.t().matmul(grad_output)
         grad_bias = grad_output.sum(dim=0) if use_bias else None
 
         if ctx.async_grad_allreduce:
             handle.wait()
+            gd.debuginfo(prj="mt", info=f'')
 
         return grad_input, grad_weight, grad_bias, None, None, None
 
@@ -100,6 +108,7 @@ class LinearWithAsyncCommunication(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input_, weight, bias, process_group, async_grad_allreduce):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.save_for_backward(input_, weight)
         ctx.use_bias = bias is not None
         ctx.process_group = process_group
@@ -107,12 +116,15 @@ class LinearWithAsyncCommunication(torch.autograd.Function):
 
         if bias is not None:
             output = F.linear(input_, weight, bias)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             output = F.linear(input_, weight)
+            gd.debuginfo(prj="mt", info=f'')
         return output
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         input, weight = ctx.saved_tensors
         use_bias = ctx.use_bias
 
@@ -123,6 +135,7 @@ class LinearWithAsyncCommunication(torch.autograd.Function):
         if len(grad_output.shape) > 2:
             grad_output = grad_output.view(-1, grad_output.shape[-1])
             total_input = total_input.view(-1, total_input.shape[-1])
+            gd.debuginfo(prj="mt", info=f'')
 
         if ctx.async_grad_allreduce:
             # Asynchronous all-reduce
@@ -130,6 +143,7 @@ class LinearWithAsyncCommunication(torch.autograd.Function):
             # Delay the start of weight gradient computation shortly (3us) to have
             # all-reduce scheduled first and have GPU resources allocated
             _ = torch.empty(1, device=grad_output.device) + 1
+            gd.debuginfo(prj="mt", info=f'')
 
         grad_weight = grad_output.t().matmul(total_input)
         grad_bias = grad_output.sum(dim=0) if use_bias else None
@@ -152,6 +166,7 @@ class _LinearWithGatherForwardReduceScatterBackward(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input_, weight, bias, process_group, async_grad_reduce_scatter, dim, overlap=True):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.save_for_backward(input_, weight)
         ctx.use_bias = bias is not None
         ctx.process_group = process_group
@@ -163,13 +178,16 @@ class _LinearWithGatherForwardReduceScatterBackward(torch.autograd.Function):
 
         if bias is not None:
             output = F.linear(input_parallel, weight, bias)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             output = F.linear(input_parallel, weight)
+            gd.debuginfo(prj="mt", info=f'')
 
         return output
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         input_, weight = ctx.saved_tensors
         use_bias = ctx.use_bias
         dim = ctx.dim
@@ -177,6 +195,7 @@ class _LinearWithGatherForwardReduceScatterBackward(torch.autograd.Function):
         overlap = ctx.overlap
 
         if not overlap:
+            gd.debuginfo(prj="mt", info=f'')
             input_parallel = _gather(input_, dim, process_group)
 
             total_input = input_parallel
@@ -186,6 +205,7 @@ class _LinearWithGatherForwardReduceScatterBackward(torch.autograd.Function):
             if len(grad_output.shape) > 2:
                 grad_output = grad_output.view(-1, grad_output.shape[-1])
                 total_input = total_input.view(-1, total_input.shape[-1])
+                gd.debuginfo(prj="mt", info=f'')
 
             if ctx.async_grad_reduce_scatter:
                 # Asynchronous reduce-scatter
@@ -199,14 +219,17 @@ class _LinearWithGatherForwardReduceScatterBackward(torch.autograd.Function):
                 # Delay the start of weight gradient computation shortly (3us) to have
                 # reduce-scatter scheduled first and have GPU resources allocated
                 _ = torch.empty(1, device=grad_output.device) + 1
+                gd.debuginfo(prj="mt", info=f'')
 
             grad_weight = grad_output.t().matmul(total_input)
             grad_bias = grad_output.sum(dim=0) if use_bias else None
 
             if ctx.async_grad_reduce_scatter:
                 handle.wait()
+                gd.debuginfo(prj="mt", info=f'')
 
         else:
+            gd.debuginfo(prj="mt", info=f'')
             input_ = input_.contiguous()
             world_size = dist.get_world_size(process_group)
             tensor_list = [torch.empty_like(input_) for _ in range(world_size)]
@@ -253,6 +276,7 @@ class _LinearWithReduceScatterForwardGatherBackward(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input_, process_group, dim):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.dim = dim
         ctx.process_group = process_group
 
@@ -270,6 +294,7 @@ class _LinearWithReduceScatterForwardGatherBackward(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         dim = ctx.dim
         process_group = ctx.process_group
 
@@ -289,6 +314,7 @@ class _MatmulWithGatherForwardReduceScatterBackward(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input_, weight, bias, process_group, async_grad_reduce_scatter, dim, overlap):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.save_for_backward(input_, weight)
         ctx.use_bias = bias is not None
         ctx.process_group = process_group
@@ -302,10 +328,12 @@ class _MatmulWithGatherForwardReduceScatterBackward(torch.autograd.Function):
 
         if bias is not None:
             output = output + bias
+            gd.debuginfo(prj="mt", info=f'')
         return output
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         input_, weight = ctx.saved_tensors
         use_bias = ctx.use_bias
         dim = ctx.dim
@@ -313,6 +341,7 @@ class _MatmulWithGatherForwardReduceScatterBackward(torch.autograd.Function):
         overlap = ctx.overlap
 
         if not overlap:
+            gd.debuginfo(prj="mt", info=f'')
             input_parallel = _gather(input_, dim, process_group)
 
             total_input = input_parallel
@@ -322,8 +351,10 @@ class _MatmulWithGatherForwardReduceScatterBackward(torch.autograd.Function):
             if len(grad_output.shape) > 2:
                 grad_output = grad_output.view(-1, grad_output.shape[-1])
                 total_input = total_input.view(-1, total_input.shape[-1])
+                gd.debuginfo(prj="mt", info=f'')
 
             if ctx.async_grad_reduce_scatter:
+                gd.debuginfo(prj="mt", info=f'')
                 # Asynchronous reduce-scatter
                 input_list = [
                     item.contiguous() for item in torch.chunk(grad_input, dist.get_world_size(process_group), dim=dim)
@@ -343,6 +374,7 @@ class _MatmulWithGatherForwardReduceScatterBackward(torch.autograd.Function):
                 handle.wait()
 
         else:
+            gd.debuginfo(prj="mt", info=f'')
             world_size = dist.get_world_size(process_group)
             tensor_list = [torch.empty_like(input_) for _ in range(world_size)]
 
@@ -390,12 +422,14 @@ class _SplitForwardGatherBackward(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input_, dim, process_group):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.process_group = process_group
         ctx.dim = dim
         return _split(input_, dim, process_group)
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return _gather(grad_output, ctx.dim, ctx.process_group), None, None
 
 
@@ -410,10 +444,12 @@ class _ReduceForward(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input_, process_group):
+        gd.debuginfo(prj="mt", info=f'')
         return _reduce(input_, process_group)
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return grad_output, None
 
 
@@ -428,11 +464,13 @@ class _ReduceBackward(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input_, process_group):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.process_group = process_group
         return input_
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return _reduce(grad_output, ctx.process_group), None
 
 
@@ -447,28 +485,34 @@ class _GatherForwardSplitBackward(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input_, dim, process_group):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.process_group = process_group
         ctx.dim = dim
         return _gather(input_, dim, process_group)
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return _split(grad_output, ctx.dim, ctx.process_group), None, None
 
 
 def _reduce(input_, process_group):
     # skip if only one rank involved
     if dist.get_world_size(process_group) == 1:
+        gd.debuginfo(prj="mt", info=f'')
         return input_
     else:
+        gd.debuginfo(prj="mt", info=f'')
         dist.all_reduce(input_, group=process_group)
         return input_
 
 
 def _split(input_, dim=-1, process_group=None):
+    gd.debuginfo(prj="mt", info=f'')
     # skip if only one rank involved
     world_size = dist.get_world_size(process_group)
     if world_size == 1:
+        gd.debuginfo(prj="mt", info=f'')
         return input_
 
     # Split along last dimension.
@@ -486,9 +530,11 @@ def _split(input_, dim=-1, process_group=None):
 
 
 def _gather(input_, dim=-1, process_group=None):
+    gd.debuginfo(prj="mt", info=f'')
     # skip if only one rank involved
     world_size = dist.get_world_size(process_group)
     if world_size == 1:
+        gd.debuginfo(prj="mt", info=f'')
         return input_
 
     # all gather
@@ -510,8 +556,11 @@ def _reduce_scatter(input_, dim=1, process_group=None):
         dim (int): The dimension to perform reduce-scatter.
         process_group (`torch.distributed.ProcessGroup`): The process group used for collective communication.
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     world_size = dist.get_world_size(process_group)
     if world_size == 1:
+        gd.debuginfo(prj="mt", info=f'')
         return input_
 
     # reduce-scatter
@@ -527,44 +576,55 @@ def _reduce_scatter(input_, dim=1, process_group=None):
 
 
 def matmul_with_async_comm(input_, weight, bias, process_group, async_grad_allreduce):
+    gd.debuginfo(prj="mt", info=f'')
     return MatmulWithAsyncCommunication.apply(input_, weight, bias, process_group, async_grad_allreduce)
 
 
 def linear_with_async_comm(input_, weight, bias, process_group, async_grad_allreduce):
+    gd.debuginfo(prj="mt", info=f'')
     return LinearWithAsyncCommunication.apply(input_, weight, bias, process_group, async_grad_allreduce)
 
 
-def linear_gather_forward_reducescatter_backward(
-    input_, weight, bias, process_group, async_grad_reduce_scatter, dim, overlap
-):
-    return _LinearWithGatherForwardReduceScatterBackward.apply(
-        input_, weight, bias, process_group, async_grad_reduce_scatter, dim, overlap
-    )
+def linear_gather_forward_reducescatter_backward(input_,
+                                                 weight,
+                                                 bias,
+                                                 process_group,
+                                                 async_grad_reduce_scatter,
+                                                 dim,
+                                                 overlap):
+    gd.debuginfo(prj="mt", info=f'')
+    return _LinearWithGatherForwardReduceScatterBackward.apply(input_, weight, bias, process_group, async_grad_reduce_scatter, dim, overlap)
 
 
 def linear_reducescatter_forward_gather_backward(input_, process_group, dim):
+    gd.debuginfo(prj="mt", info=f'')
     return _LinearWithReduceScatterForwardGatherBackward.apply(input_, process_group, dim)
 
 
 def matmul_gather_forward_reducescatter_backward(
     input_, weight, bias, process_group, async_grad_reduce_scatter, dim, overlap
 ):
+    gd.debuginfo(prj="mt", info=f'')
     return _MatmulWithGatherForwardReduceScatterBackward.apply(
         input_, weight, bias, process_group, async_grad_reduce_scatter, dim, overlap
     )
 
 
 def gather_forward_split_backward(input_, dim, process_group):
+    gd.debuginfo(prj="mt", info=f'')
     return _GatherForwardSplitBackward.apply(input_, dim, process_group)
 
 
 def split_forward_gather_backward(input_, dim, process_group):
+    gd.debuginfo(prj="mt", info=f'')
     return _SplitForwardGatherBackward.apply(input_, dim, process_group)
 
 
 def reduce_forward(input_, process_group):
+    gd.debuginfo(prj="mt", info=f'')
     return _ReduceForward.apply(input_, process_group)
 
 
 def reduce_backward(input_, process_group):
+    gd.debuginfo(prj="mt", info=f'')
     return _ReduceBackward.apply(input_, process_group)

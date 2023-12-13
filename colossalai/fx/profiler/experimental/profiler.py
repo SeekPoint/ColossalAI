@@ -93,18 +93,25 @@ def profile_function(target: "Target") -> Callable:
         assert meta_profiler_function.has(target) or meta_profiler_function.has(
             target.__name__
         ), CALL_FUNCTION_MSG.format(target)
+        gd.debuginfo(prj="mt", info=f'')
 
         fwd_tmp = 0
         fwd_out = 0
         out = func(*args, **kwargs)
         if target not in INPLACE_OPS and not kwargs.get("inplace", False):
             fwd_out = activation_size(out)
+            gd.debuginfo(prj="mt", info=f'')
         if meta_profiler_function.has(target):
             profiler = meta_profiler_function.get(target)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             profiler = meta_profiler_function.get(target.__name__)
+            gd.debuginfo(prj="mt", info=f'')
+
         fwd_flop, _ = profiler(*args, **kwargs)
         return out, GraphInfo(fwd_flop, fwd_flop * 2, fwd_tmp, fwd_out, fwd_tmp + fwd_out, 0)
+
+    gd.debuginfo(prj="mt", info=f'')
 
     f.__name__ = target.__name__
     func = target
@@ -122,6 +129,7 @@ def profile_method(target: "Target") -> Callable:
     """
 
     def f(*args: Tuple[Argument, ...], **kwargs: Dict[str, Any]) -> Any:
+        gd.debuginfo(prj="mt", info=f'')
         # args[0] is the `self` object for this method call
         self_obj, *args_tail = args
 
@@ -137,6 +145,7 @@ def profile_method(target: "Target") -> Callable:
         fwd_out = 0 if target not in INPLACE_METHOD else activation_size(out)
         return out, GraphInfo(0, 0, fwd_tmp, fwd_out, fwd_tmp + fwd_out, 0)
 
+    gd.debuginfo(prj="mt", info=f'')
     return f
 
 
@@ -157,6 +166,7 @@ def profile_module(module: torch.nn.Module) -> Callable:
     """
 
     def f(*args: Tuple[Argument, ...], **kwargs: Dict[str, Any]) -> Any:
+        gd.debuginfo(prj="mt", info=f'')
         assert meta_profiler_module.has(type(module)), CALL_MODULE_MSG.format(type(module))
 
         fwd_tmp = 0
@@ -164,9 +174,13 @@ def profile_module(module: torch.nn.Module) -> Callable:
         out = func(*args, **kwargs)
         if getattr(module, "inplace", False):
             fwd_out = activation_size(out)
+            gd.debuginfo(prj="mt", info=f'')
+
         profiler = meta_profiler_module.get(type(module))
         fwd_flop, _ = profiler(module, *args, **kwargs)
         return out, GraphInfo(fwd_flop, fwd_flop * 2, fwd_tmp, fwd_out, fwd_tmp + fwd_out, 0)
+
+    gd.debuginfo(prj="mt", info=f'')
 
     f.__name__ = module.__class__.__name__
     func = module.forward

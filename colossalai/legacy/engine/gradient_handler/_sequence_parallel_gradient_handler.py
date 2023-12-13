@@ -20,6 +20,7 @@ class SequenceParallelGradientHandler(BaseGradientHandler):
     """
 
     def handle_gradient(self):
+        gd.debuginfo(prj="mt", info=f'')
         """A method running a all-reduce operation in a data parallel group."""
         if gpc.get_world_size(ParallelMode.SEQUENCE_DP) > 1:
             bucket_allreduce(param_list=self._model.parameters(), group=gpc.get_group(ParallelMode.SEQUENCE_DP))

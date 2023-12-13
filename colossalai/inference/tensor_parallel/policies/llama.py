@@ -21,22 +21,28 @@ except:
 
 def get_triton_rmsnorm_forward():
     if HAS_TRITON_RMSNORM:
+        gd.debuginfo(prj="mt", info=f'')
         def _triton_rmsnorm_forward(self: LlamaRMSNorm, hidden_states: torch.Tensor):
+            gd.debuginfo(prj="mt", info=f'')
             return lightllm_rmsnorm_forward(hidden_states, self.weight.data, self.variance_epsilon)
 
         return _triton_rmsnorm_forward
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return None
 
 
 class LlamaModelInferPolicy(LlamaForCausalLMPolicy):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
 
         if self.shard_config.inference_gptq:
+            gd.debuginfo(prj="mt", info=f'')
             from colossalai.inference.quant.gptq.cai_gptq import ColCaiQuantLinear, RowCaiQuantLinear
 
             decoder_attribute_replacement = {
@@ -104,9 +110,11 @@ class LlamaModelInferPolicy(LlamaForCausalLMPolicy):
 
         infer_forward = None
         if HAS_TRITON_RMSNORM:
+            gd.debuginfo(prj="mt", info=f'')
             infer_forward = get_triton_rmsnorm_forward()
 
         if infer_forward is not None:
+            gd.debuginfo(prj="mt", info=f'')
             method_replacement = {"forward": partial(infer_forward)}
             self.append_or_create_method_replacement(
                 description=method_replacement, policy=policy, target_key=LlamaRMSNorm
@@ -115,5 +123,6 @@ class LlamaModelInferPolicy(LlamaForCausalLMPolicy):
         return policy
 
     def postprocess(self):
+        gd.debuginfo(prj="mt", info=f'')
         init_to_get_rotary(self.model.model)
         return self.model

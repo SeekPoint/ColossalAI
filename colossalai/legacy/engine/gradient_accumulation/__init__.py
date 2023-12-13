@@ -52,7 +52,7 @@ def accumulate_gradient(
     """
     optimizer = GradAccumOptimizer(optimizer, accumulate_size=accumulate_size, model=model)
     dataloader = GradAccumDataloader(dataloader, accumulate_size=accumulate_size)
-
+    gd.debuginfo(prj="mt", info=f'')
     if gradient_handlers is not None:
         gradient_handlers = [GradAccumGradientHandler(handler, accumulate_size) for handler in gradient_handlers]
 

@@ -34,6 +34,8 @@ def zero_model_wrapper(
                 >>> config_dict = dict(device=torch.cuda.current_device(), hidden_dim=1024, placement_policy='auto')
                 >>> model = zero_model_wrapper(model, zero_stage=3, gemini_config=config_dict)
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     assert zero_stage in [1, 2, 3], "The stage of ZeRO should be 1, 2 or 3"
 
     if gemini_config is None:
@@ -41,8 +43,10 @@ def zero_model_wrapper(
 
     if zero_stage in [1, 2]:
         wrapped_model = model
+        gd.debuginfo(prj="mt", info=f'')
     else:
         wrapped_model = GeminiDDP(model, **gemini_config, verbose=verbose)
+        gd.debuginfo(prj="mt", info=f'')
 
     setattr(wrapped_model, "_colo_zero_stage", zero_stage)
 
@@ -86,6 +90,7 @@ def zero_optim_wrapper(
                 >>> optim = zero_optim_wrapper(model, optim, optim_config=zero2_config)
         verbose (bool, optional): Whether to print the verbose info.
     """
+    gd.debuginfo(prj="mt", info=f'')
     assert hasattr(model, "_colo_zero_stage"), "You should use `zero_ddp_wrapper` first"
     zero_stage = getattr(model, "_colo_zero_stage")
 
@@ -105,12 +110,14 @@ def zero_optim_wrapper(
     config_dict["max_scale"] = max_scale
 
     if zero_stage in [1, 2]:
+        gd.debuginfo(prj="mt", info=f'')
         from colossalai.zero.low_level import LowLevelZeroOptimizer
 
         config_dict["partition_grad"] = zero_stage == 2
         config_dict["clip_grad_norm"] = max_norm
         return LowLevelZeroOptimizer(optimizer, **config_dict, verbose=verbose)
     else:
+        gd.debuginfo(prj="mt", info=f'')
         from colossalai.zero.gemini.gemini_optimizer import GeminiOptimizer
 
         config_dict["clipping_norm"] = max_norm

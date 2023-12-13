@@ -22,7 +22,7 @@ def benchmark_func(func, number=1, repeat=1, warmup=3):
     """
     benchmark data transfer cost.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     for i in range(warmup):
         func()
 
@@ -50,14 +50,20 @@ class Solver(ABC):
             It is used to reduce the memory budget. Due to some errors in the estimation of peak memory and execution time.
     """
 
-    def __init__(self, region_list: List[Region], memory_budget: float = -1.0, error_factor: float = 0.95) -> None:
+    def __init__(self,
+                 region_list: List[Region],
+                 memory_budget: float = -1.0,
+                 error_factor: float = 0.95) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.region_list = region_list
 
         self.error_factor: float = error_factor
         if memory_budget > 0:
             self.memory_budget = memory_budget * self.error_factor
+            gd.debuginfo(prj="mt", info=f'')
         else:
             self.memory_budget = torch.cuda.get_device_properties(get_current_device()).total_memory * self.error_factor
+            gd.debuginfo(prj="mt", info=f'')
 
         self.link_to_bandwidth: Dict[str, Dict[float, float]] = self._profile_bandwidth()
         self.comp_power: float = self._extract_computing_power()
@@ -89,6 +95,7 @@ class Solver(ABC):
         """
 
         if extra_cost == 0:
+            gd.debuginfo(prj="mt", info=f'')
             # means data transfer overhead can be completely overlapped
             return (float("inf"), total_mem_saving, peak_mem_saving)
         return (total_mem_saving / extra_cost, total_mem_saving, peak_mem_saving)
@@ -104,7 +111,7 @@ class Solver(ABC):
         Returns:
             bool: whether profit_a is greater than profit_b.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         for val1, val2 in zip(profit_a, profit_b):
             if val1 != val2:
                 return val1 > val2
@@ -114,7 +121,7 @@ class Solver(ABC):
         """
         Update the solver state.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         self.best_ts = best_ts
         self._update_node_mem_info(best_ts.fwd_node_mem, best_ts.bwd_node_mem)
 
@@ -126,7 +133,7 @@ class Solver(ABC):
             fwd_mem_info (Dict[Node, float]): the runtime memory of each node in forward pass.
             bwd_mem_info (Dict[Node, float]): the runtime memory of each node in backward pass.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         for node, mem in fwd_mem_info.items():
             assert hasattr(node, "node_info") and isinstance(node.node_info, NodeInfo)
             node.node_info.runtime_fwd_mem = mem
@@ -141,7 +148,7 @@ class Solver(ABC):
         Raises:
             TypeError: Unknown NVIDIA GPU device.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         nvmlInit()
         handle = nvmlDeviceGetHandleByIndex(0)
         device_name = nvmlDeviceGetName(handle)
@@ -167,7 +174,7 @@ class Solver(ABC):
         print("profiling bandwidth ......")
         link_to_bandwidth = {}
         links = ["h2d", "d2h"]
-
+        gd.debuginfo(prj="mt", info=f'')
         for link in links:
             t_size = 1024
             size_to_bandwidth = {}
@@ -199,6 +206,7 @@ class Solver(ABC):
 
 class SynGreedySolver(Solver):
     def __init__(self, region_list: List[Region], memory_budget: float = -1.0) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(region_list, memory_budget)
 
         self.best_ts: SynTrainingSimulator = None
@@ -208,7 +216,7 @@ class SynGreedySolver(Solver):
         """
         Initialize the solver state when without offloading.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         ts = SynTrainingSimulator(self.region_list, self.comp_power, self.link_to_bandwidth)
         ts.execute()
         self._update_state(ts)
@@ -221,8 +229,8 @@ class SynGreedySolver(Solver):
         Raises:
             NotImplementedError: Unable to find a solution for the given memory budget.
         """
+        gd.debuginfo(prj="mt", info=f'search offloading strategy ......')
 
-        print("search offloading strategy ......")
         while self.best_ts.peak_mem > self.memory_budget:
             offload_region = None
             best_ts = None
@@ -239,6 +247,7 @@ class SynGreedySolver(Solver):
                         best_ts = temp_ts
 
             if offload_region is not None and best_ts is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 offload_region.need_offload = True
                 offload_region.is_syn = True
                 self._update_state(best_ts)
@@ -252,12 +261,13 @@ class SynGreedySolver(Solver):
         """
         The layer-wise offload strategy.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         for region in self.region_list[:-1]:
             region.need_offload = True
             region.is_syn = True
 
     def _try_to_offload(self, offload_region: Region):
+        gd.debuginfo(prj="mt", info=f'')
         # record previous information
         orig_need_offload = offload_region.need_offload
         assert not orig_need_offload
@@ -280,7 +290,7 @@ class SynGreedySolver(Solver):
             SynTrainingSimulator: the training simulator corresponding to the current strategy.
             tuple: contains memory saving and cost information of the current strategy.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         ts = SynTrainingSimulator(self.region_list, self.comp_power, self.link_to_bandwidth)
         ts.execute()
 
@@ -294,7 +304,11 @@ class SynGreedySolver(Solver):
 
 
 class AsynGreedySolver(Solver):
-    def __init__(self, region_list: List[Region], memory_budget: float = -1.0, search_window_size: int = 3):
+    def __init__(self,
+                 region_list: List[Region],
+                 memory_budget: float = -1.0,
+                 search_window_size: int = 3):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(region_list, memory_budget)
 
         self.search_window_size = search_window_size
@@ -308,7 +322,7 @@ class AsynGreedySolver(Solver):
         """
         Initialize the solver state when without offloading.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         ts = AsynTrainingSimulator(self.region_list, self.comp_power, self.link_to_bandwidth)
         ts.execute()
         self._update_state(ts)
@@ -322,11 +336,12 @@ class AsynGreedySolver(Solver):
         Raises:
             NotImplementedError: Unable to find a solution for the given memory budget.
         """
+        gd.debuginfo(prj="mt", info=f'search for offloading strategy ......')
 
-        print("search for offloading strategy ......")
         # Records the prefetch execution location of the offloaded region
         region_to_region_map = {}
         while self.best_ts.peak_mem > self.memory_budget:
+            gd.debuginfo(prj="mt", info=f'')
             region_to_offload = None
             max_offload_profit = (0,)
             best_offl_ts = None
@@ -335,6 +350,7 @@ class AsynGreedySolver(Solver):
             # the last region does not need to be offloaded
             for region in self.region_list[:-1]:
                 if region.param_size and not region.need_offload:
+                    gd.debuginfo(prj="mt", info=f'')
                     max_prefetch_profit = (0,)
                     best_pref_ts = None
 
@@ -346,6 +362,7 @@ class AsynGreedySolver(Solver):
                         temp_ts, profit = self._try_to_offload(host_region, region)
 
                         if self._compare_profit(profit, max_prefetch_profit):
+                            gd.debuginfo(prj="mt", info=f'')
                             region_to_region_map[region.r_id] = host_region
                             max_prefetch_profit = profit
                             best_pref_ts = temp_ts
@@ -353,6 +370,7 @@ class AsynGreedySolver(Solver):
                                 break
 
                     if self._compare_profit(max_prefetch_profit, max_offload_profit):
+                        gd.debuginfo(prj="mt", info=f'')
                         region_to_offload = region
                         max_offload_profit = max_prefetch_profit
                         best_offl_ts = best_pref_ts
@@ -360,14 +378,17 @@ class AsynGreedySolver(Solver):
             if (region_to_offload is not None) and (best_offl_ts is not None):
                 region_to_offload.need_offload = True
                 if region_to_region_map[region_to_offload.r_id] == region_to_offload:
+                    gd.debuginfo(prj="mt", info=f'')
                     region_to_offload.is_syn = True
                 else:
+                    gd.debuginfo(prj="mt", info=f'')
                     region_to_region_map[region_to_offload.r_id].bwd_prefetch_region = region_to_offload
                     self.region_to_region_map[region_to_offload.r_id] = region_to_region_map[region_to_offload.r_id]
 
                 self._update_state(best_offl_ts)
 
             elif self.region_to_region_map.__len__() > 0:
+                gd.debuginfo(prj="mt", info=f'')
                 self._repair_strategy()
             else:
                 raise NotImplementedError(
@@ -388,9 +409,12 @@ class AsynGreedySolver(Solver):
         orig_need_offload = offload_region.need_offload
 
         if host_region == offload_region:
+            gd.debuginfo(prj="mt", info=f'')
             offload_region.is_syn = True
         else:
+            gd.debuginfo(prj="mt", info=f'')
             host_region.bwd_prefetch_region = offload_region
+
         offload_region.need_offload = True
 
         ts, profit = self._eval_one_choice()
@@ -406,7 +430,7 @@ class AsynGreedySolver(Solver):
         """
         Attempts to convert asynchronous prefetch into synchronous upload operations.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         # record previous information
         orig_prefetch = host_region.bwd_prefetch_region
         orig_is_syn = offload_region.is_syn
@@ -429,8 +453,7 @@ class AsynGreedySolver(Solver):
         It attempts to convert asynchronous prefetch into synchronous upload operations and selects the best one.
         The repair process does not end until peak memory is reduced or there is no asynchronous prefetch operation.
         """
-        print("repair strategy ......")
-
+        gd.debuginfo(prj="mt", info=f'repair strategy ......')
         peak_mem_saving = 0
         while len(self.region_to_region_map) and peak_mem_saving <= 0:
             max_profit = (0,)
@@ -474,7 +497,7 @@ class AsynGreedySolver(Solver):
             AsynTrainingSimulator: the training simulator corresponding to the current strategy.
             tuple: contains memory saving and cost information of the current strategy.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         ts = AsynTrainingSimulator(self.region_list, self.comp_power, self.link_to_bandwidth)
         ts.execute()
 
@@ -489,10 +512,12 @@ class SolverFactory:
 
     @staticmethod
     def create(solver_name: str) -> Type[Solver]:
+        gd.debuginfo(prj="mt", info=f'')
         if solver_name not in SolverFactory.solvers:
             raise TypeError(f"Unknown parameter offload policy {solver_name}")
         return SolverFactory.solvers[solver_name]
 
     @staticmethod
     def get_solver_names():
+        gd.debuginfo(prj="mt", info=f'')
         return tuple(SolverFactory.solvers.keys())

@@ -5,6 +5,7 @@ from colossalai.legacy.pipeline.middleware.topo import Partition, PartitionInput
 from pydebug import gd, infoTensor
 
 def partition_name_to_id(partition_name, is_input=False, is_output=False):
+    gd.debuginfo(prj="mt", info=f'')
     if is_input:
         partition_id = 0
     elif is_output:
@@ -26,6 +27,7 @@ def partition_name_to_id(partition_name, is_input=False, is_output=False):
 
 
 def find_input_in_partition(node, partitions, input_partitions=None):
+    gd.debuginfo(prj="mt", info=f'')
     p_input_val = None
     direct_def = not node.name.startswith("getitem")
     # search in input
@@ -55,6 +57,7 @@ def find_input_in_partition(node, partitions, input_partitions=None):
 
 
 def find_output_in_partition(node, partitions, output_partitions=None):
+    gd.debuginfo(prj="mt", info=f'')
     p_output_val = PartitionOutputVal()
     for user in node.users:
         direct_use = not user.name.startswith("getitem")
@@ -92,6 +95,7 @@ def find_output_in_partition(node, partitions, output_partitions=None):
 
 
 def get_topology(gm: GraphModule):
+    gd.debuginfo(prj="mt", info=f'')
     topo = Topo()
     topo_output_partition = Partition()
 

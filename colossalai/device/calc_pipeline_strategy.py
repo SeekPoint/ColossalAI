@@ -4,6 +4,7 @@ import numpy as np
 from pydebug import gd, infoTensor
 
 def get_submesh_choices(num_hosts, num_devices_per_host, mode="new"):
+
     submesh_choices = []
     i = 1
     p = -1
@@ -15,20 +16,26 @@ def get_submesh_choices(num_hosts, num_devices_per_host, mode="new"):
         f"while now num_devices_per_host = {num_devices_per_host}"
     )
     if mode == "alpa":
+        gd.debuginfo(prj="mt", info=f'')
         for i in range(p + 1):
             submesh_choices.append((1, pow(2, i)))
         for i in range(2, num_hosts + 1):
             submesh_choices.append((i, num_devices_per_host))
     elif mode == "new":
+        gd.debuginfo(prj="mt", info=f'')
         for i in range(p // 2 + 1):
             for j in range(i, p - i + 1):
                 submesh_choices.append((pow(2, i), pow(2, j)))
     return submesh_choices
 
 
-def alpa_dp_impl(
-    num_layers, num_devices, num_microbatches, submesh_choices, compute_cost, max_stage_cost, best_configs
-):
+def alpa_dp_impl(num_layers,
+                 num_devices,
+                 num_microbatches,
+                 submesh_choices,
+                 compute_cost,
+                 max_stage_cost,
+                 best_configs):
     """Implementation of Alpa DP for pipeline strategy
     Paper reference: https://www.usenix.org/system/files/osdi22-zheng-lianmin.pdf
 
@@ -39,6 +46,8 @@ def alpa_dp_impl(
             submesh_choices: List[(n_i,m_i)]
             compute_cost: t_intra
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     # For f, layer ID start from 0
     # f[#pipeline stages, layer id that is currently being considered, number of devices used]
     f = np.full((num_layers + 1, num_layers + 1, num_devices + 1), np.inf, dtype=np.float32)
@@ -89,9 +98,14 @@ def alpa_dp_impl(
     return total_cost, res
 
 
-def alpa_dp(
-    num_layers, num_devices, num_microbatches, submesh_choices, num_autosharding_configs, compute_cost, gap=1e-6
-):
+def alpa_dp(num_layers,
+            num_devices,
+            num_microbatches,
+            submesh_choices,
+            num_autosharding_configs,
+            compute_cost,
+            gap=1e-6):
+    gd.debuginfo(prj="mt", info=f'')
     """Alpa auto stage dynamic programming.
         Code reference: https://github.com/alpa-projects/alpa/blob/main/alpa/pipeline_parallel/stage_construction.py
 

@@ -6,13 +6,16 @@ from .experts import MoeExperts
 
 
 def save_moe_model(model: nn.Module, save_path: str):
+    gd.debuginfo(prj="mt", info=f'')
     state_dict = model.state_dict()
     if dist.get_rank() == 0:
+        gd.debuginfo(prj="mt", info=f'')
         torch.save(state_dict, save_path)
     dist.barrier()
 
 
 def load_moe_model(model: nn.Module, load_path: str):
+    gd.debuginfo(prj="mt", info=f'')
     state_dict = torch.load(load_path)
 
     for prefix, module in model.named_modules():

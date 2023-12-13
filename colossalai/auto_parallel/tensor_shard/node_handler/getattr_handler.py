@@ -13,12 +13,14 @@ class GetattrHandler(NodeHandler):
     """
 
     def get_strategy_generator(self) -> List[StrategyGenerator]:
+        gd.debuginfo(prj="mt", info=f'')
         op_data_mapping = self.get_operation_data_mapping()
         generators = []
         generators.append(GetattrGenerator(op_data_mapping, self.device_mesh))
         return generators
 
     def get_operation_data_mapping(self) -> Dict[str, OperationData]:
+        gd.debuginfo(prj="mt", info=f'')
         # use transposed shape for strategies
         # the strategies will be transformed back to its original shape in self.post_process
 
@@ -27,7 +29,9 @@ class GetattrHandler(NodeHandler):
         # 2. torch.nn.Module
         # temporarily, we just support first case in Tracer, so we don't have to worry about
         # issue related to the node._meta_data type.
-        physical_output = OperationData(name=str(self.node), type=OperationDataType.OUTPUT, data=self.node._meta_data)
+        physical_output = OperationData(name=str(self.node),
+                                        type=OperationDataType.OUTPUT,
+                                        data=self.node._meta_data)
 
         mapping = {"output": physical_output}
 

@@ -58,6 +58,7 @@ def _hijack_detach_and_clone(dtensor: torch.Tensor) -> torch.Tensor:
     Returns:
         torch.Tensor: The hijacked tensor.
     """
+    gd.debuginfo(prj="mt", info=f'')
     dtensor._old_detach = dtensor.detach
     dtensor._old_clone = dtensor.clone
 
@@ -117,6 +118,8 @@ def distribute_tensor(tensor: torch.Tensor, device_mesh: DeviceMesh, sharding_sp
     Returns:
         torch.Tensor: The distributed tensor.
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     assert not is_distributed_tensor(tensor), "The input tensor is already a distributed tensor."
     dist_layout = Layout(device_mesh=device_mesh, sharding_spec=sharding_spec, global_shape=tensor.shape)
 
@@ -139,6 +142,8 @@ def redistribute(dtensor: torch.Tensor, device_mesh: DeviceMesh, sharding_spec: 
         device_mesh (DeviceMesh): the device mesh for abstraction of the compute devices.
         target_layout (Layout): the target layout specification.
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     assert is_distributed_tensor(dtensor), "The input tensor is not a distributed tensor."
     global_shape = get_global_shape(dtensor)
     target_layout = Layout(device_mesh=device_mesh, sharding_spec=sharding_spec, global_shape=global_shape)
@@ -159,6 +164,8 @@ def to_global(dtensor: torch.Tensor) -> torch.Tensor:
     Returns:
         torch.Tensor: the global tensor.
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     assert is_distributed_tensor(dtensor), "The input tensor is not a distributed tensor."
     layout_converter = LayoutConverter()
 
@@ -188,15 +195,19 @@ def shard_rowwise(
     Returns:
         torch.Tensor: The sharded tensor.
     """
+    gd.debuginfo(prj="mt", info=f'')
     # if the group_or_device_mesh is None, we shard the tensor with respect to the global process group
     if group_or_device_mesh is None:
         group_or_device_mesh = dist.GroupMember.WORLD
+        gd.debuginfo(prj="mt", info=f'')
 
     if isinstance(group_or_device_mesh, ProcessGroup):
         device_mesh = DeviceMesh.from_process_group(group_or_device_mesh)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         assert len(group_or_device_mesh.shape) == 1, "Only 1D DeviceMesh is accepted for row-wise sharding."
         device_mesh = group_or_device_mesh
+        gd.debuginfo(prj="mt", info=f'')
 
     sharding_spec = ShardingSpec(dim_size=tensor.dim(), dim_partition_dict={0: [0]})
 
@@ -217,21 +228,26 @@ def shard_colwise(tensor: torch.Tensor, group_or_device_mesh: Union[ProcessGroup
     Returns:
         torch.Tensor: The sharded tensor.
     """
+    gd.debuginfo(prj="mt", info=f'')
     # if the group_or_device_mesh is None, we shard the tensor with respect to the global process group
     if group_or_device_mesh is None:
         group_or_device_mesh = dist.GroupMember.WORLD
+        gd.debuginfo(prj="mt", info=f'')
 
     if isinstance(group_or_device_mesh, ProcessGroup):
         device_mesh = DeviceMesh.from_process_group(group_or_device_mesh)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         assert len(group_or_device_mesh.shape) == 1, "Only 1D DeviceMesh is accepted for row-wise sharding."
         device_mesh = group_or_device_mesh
+        gd.debuginfo(prj="mt", info=f'')
     sharding_spec = ShardingSpec(dim_size=tensor.dim(), dim_partition_dict={-1: [0]})
 
     return distribute_tensor(tensor, device_mesh, sharding_spec)
 
 
 def sharded_tensor_to_param(dtensor: torch.Tensor, requires_grad: bool = True):
+    gd.debuginfo(prj="mt", info=f'')
     assert is_distributed_tensor(dtensor), "The input tensor is not a distributed tensor."
     param = torch.nn.Parameter(dtensor, requires_grad=requires_grad)
 
@@ -243,6 +259,7 @@ def sharded_tensor_to_param(dtensor: torch.Tensor, requires_grad: bool = True):
 
 
 def sharded_tensor_to_existing_param(dtensor: torch.Tensor, param: torch.nn.Parameter) -> None:
+    gd.debuginfo(prj="mt", info=f'')
     assert is_distributed_tensor(dtensor), "The input tensor is not a distributed tensor."
     param.data = dtensor
     # make it distributed as well
@@ -260,6 +277,7 @@ def compute_global_numel(dtensor: torch.Tensor) -> int:
     Returns:
         int: The global number of elements in the distributed tensor.
     """
+    gd.debuginfo(prj="mt", info=f'')
     assert is_distributed_tensor(dtensor), "The input tensor is not a distributed tensor."
     numel = reduce(operator.mul, dtensor.dist_layout.global_shape)
     return numel
@@ -276,6 +294,7 @@ def get_layout(dtensor: torch.Tensor) -> Layout:
         Layout: The layout of the distributed tensor.
 
     """
+    gd.debuginfo(prj="mt", info=f'')
     assert is_distributed_tensor(dtensor), "The input tensor is not a distributed tensor."
     return dtensor.dist_layout
 
@@ -290,6 +309,7 @@ def get_global_shape(dtensor: torch.Tensor) -> torch.Size:
     Returns:
         torch.Size: The global shape of the distributed tensor.
     """
+    gd.debuginfo(prj="mt", info=f'')
     assert is_distributed_tensor(dtensor), "The input tensor is not a distributed tensor."
     return dtensor.dist_layout.global_shape
 
@@ -304,6 +324,7 @@ def get_device_mesh(dtensor: torch.Tensor) -> DeviceMesh:
     Returns:
         DeviceMesh: The device mesh of the distributed tensor.
     """
+    gd.debuginfo(prj="mt", info=f'')
     assert is_distributed_tensor(dtensor), "The input tensor is not a distributed tensor."
     return dtensor.dist_layout.device_mesh
 
@@ -318,6 +339,7 @@ def get_sharding_spec(dtensor: torch.Tensor) -> ShardingSpec:
     Returns:
         ShardingSpec: The sharding spec of the distributed tensor.
     """
+    gd.debuginfo(prj="mt", info=f'')
     assert is_distributed_tensor(dtensor), "The input tensor is not a distributed tensor."
     return dtensor.dist_layout.sharding_spec
 
@@ -350,6 +372,8 @@ def _hijack_detach_and_clone_for_customized_distributed_tensor(dtensor: torch.Te
     Returns:
         torch.Tensor: The hijacked tensor.
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     dtensor._old_detach = dtensor.detach
     dtensor._old_clone = dtensor.clone
 
@@ -404,6 +428,7 @@ def distribute_tensor_with_customization(tensor: torch.Tensor, shard_fn, gather_
     Returns:
         torch.Tensor: The distributed tensor.
     """
+    gd.debuginfo(prj="mt", info=f'')
     assert callable(shard_fn), "The shard_fn must be callable."
     assert callable(gather_fn), "The gather_fn must be callable."
     assert not is_distributed_tensor(tensor), "The input tensor is already a distributed tensor."
@@ -430,6 +455,7 @@ def to_global_for_customized_distributed_tensor(dtensor: torch.Tensor) -> torch.
     Returns:
         torch.Tensor: The global tensor.
     """
+    gd.debuginfo(prj="mt", info=f'')
     assert is_customized_distributed_tensor(dtensor), "The input tensor is not a customized distributed tensor."
     return dtensor.gather_fn(dtensor)
 
@@ -438,6 +464,7 @@ def customized_distributed_tensor_to_param(dtensor: torch.Tensor, requires_grad:
     """
     Convert the given customized distributed tensor to a parameter.
     """
+    gd.debuginfo(prj="mt", info=f'')
     assert is_customized_distributed_tensor(dtensor), "The input tensor is not a customized distributed tensor."
 
     param = torch.nn.Parameter(dtensor, requires_grad=requires_grad)
@@ -453,6 +480,7 @@ def customized_distributed_tensor_to_existing_param(dtensor: torch.Tensor, param
     """
     Convert the given customized distributed tensor to an existing parameter.
     """
+    gd.debuginfo(prj="mt", info=f'')
     assert is_customized_distributed_tensor(dtensor), "The input tensor is not a customized distributed tensor."
 
     param.data = dtensor.data

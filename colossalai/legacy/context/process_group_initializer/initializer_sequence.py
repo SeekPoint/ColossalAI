@@ -26,6 +26,7 @@ class Initializer_Sequence_DP(ProcessGroupInitializer):
     """
 
     def __init__(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(*args, **kwargs)
         self.dp_size = self.world_size // self.pipeline_parallel_size
         self.num_group = self.pipeline_parallel_size
@@ -36,6 +37,7 @@ class Initializer_Sequence_DP(ProcessGroupInitializer):
         Returns:
             Tuple: A tuple (local_rank, group_world_size, process_group, ranks_in_group, mode).
         """
+        gd.debuginfo(prj="mt", info=f'')
         local_rank = None
         ranks_in_group = None
         process_group = None
@@ -72,6 +74,7 @@ class Initializer_Sequence(ProcessGroupInitializer):
     """
 
     def __init__(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(*args, **kwargs)
         # reuse tensor parallel initializer code
         self._sequence_initializer = Initializer_Tensor(*args, **kwargs)
@@ -88,7 +91,7 @@ class Initializer_Sequence(ProcessGroupInitializer):
             List[Tuple (local_rank, group_world_size, process_group, ranks_in_group, mode)]:
                 A Sequence parallelism's information in list of tuples.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         parallel_setting = []
 
         (

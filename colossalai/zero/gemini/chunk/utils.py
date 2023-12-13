@@ -24,14 +24,17 @@ def init_chunk_manager(
 ) -> ChunkManager:
     if hidden_dim:
         search_interval = hidden_dim
+        gd.debuginfo(prj="mt", info=f'')
     else:
         search_interval = 1024  # defaults to 1024
+        gd.debuginfo(prj="mt", info=f'')
     kwargs["search_interval"] = search_interval
 
     dist.barrier()
     begin = time()
 
     config_dict, total_size, wasted_size = search_chunk_configuration(model, **kwargs)
+    gd.debuginfo(prj="mt", info=f'')
 
     dist.barrier()
     end = time()

@@ -25,13 +25,17 @@ def _get_my_nowrap_functions() -> Set[Callable]:
 def _convert(output):
     if isinstance(output, torch.Tensor) and not isinstance(output, ColoTensor):
         output.__class__ = ColoTensor
+        gd.debuginfo(prj="mt", info=f'')
     elif isinstance(output, (list, tuple)):
         output = type(output)(_convert(o) for o in output)
+        gd.debuginfo(prj="mt", info=f'')
     return output
 
 
 def _convert_output(output, func):
+    gd.debuginfo(prj="mt", info=f'')
     if func in _get_my_nowrap_functions():
+        gd.debuginfo(prj="mt", info=f'')
         return output
     return _convert(output)
 
@@ -58,12 +62,14 @@ class ColoTensor(torch.Tensor):
         Returns:
             ColoTensor: a ColoTensor wrappers the data.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if data is None:
             data = torch.empty(0)
         return torch.Tensor._make_subclass(cls, data, data.requires_grad)
 
     @classmethod
     def __torch_function__(cls, func, types, args=(), kwargs=None):
+        gd.debuginfo(prj="mt", info=f'')
         if kwargs is None:
             kwargs = {}
 
@@ -93,8 +99,10 @@ class ColoTensor(torch.Tensor):
 
     def __deepcopy__(self, memo):
         if id(self) in memo:
+            gd.debuginfo(prj="mt", info=f'')
             return memo[id(self)]
         else:
+            gd.debuginfo(prj="mt", info=f'')
             with torch._C.DisableTorchFunction():
                 data = self.data.clone()
             tensor = ColoTensor(data)

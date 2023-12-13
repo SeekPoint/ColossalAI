@@ -13,12 +13,15 @@ from .chunk import Chunk
 
 def get_temp_total_chunk_on_cuda(chunk: Chunk, dtype: torch.dtype):
     if chunk.is_gathered:
+        gd.debuginfo(prj="mt", info=f'')
         return chunk.cuda_global_chunk
 
     if chunk.cuda_shard is not None:
         shard_temp = chunk.cuda_shard
+        gd.debuginfo(prj="mt", info=f'')
     else:
         shard_temp = chunk.cpu_shard.to(get_current_device())
+        gd.debuginfo(prj="mt", info=f'')
 
     shard_temp = shard_temp.to(dtype)
 
@@ -30,9 +33,12 @@ def get_temp_total_chunk_on_cuda(chunk: Chunk, dtype: torch.dtype):
 
 
 def _get_dfs_module_list(module: nn.Module, memo: Optional[Set[nn.Module]] = None, prefix: str = ""):
+    gd.debuginfo(prj="mt", info=f'')
     """Get a dfs module list of the given module. Its order is same as the order of creations of modules."""
     if memo is None:
         memo = set()
+        gd.debuginfo(prj="mt", info=f'')
+
     if module not in memo:
         for name, submodule in module._modules.items():
             if submodule is None:
@@ -49,6 +55,7 @@ def _get_shallow_copy_model(model: nn.Module):
     """Get a shallow copy of the given model. Each submodule is different from the original submodule.
     But the new submodule and the old submodule share all attributes.
     """
+    gd.debuginfo(prj="mt", info=f'')
     old_to_new = dict()
     for name, module in _get_dfs_module_list(model):
         new_module = copy(module)
@@ -78,6 +85,7 @@ def get_static_torch_model(
     Returns:
         torch.nn.Module: a static torch model used for saving checkpoints or numeric checks
     """
+    gd.debuginfo(prj="mt", info=f'')
     from colossalai.zero.gemini.gemini_ddp import GeminiDDP
 
     assert isinstance(zero_ddp_model, GeminiDDP)
@@ -87,6 +95,7 @@ def get_static_torch_model(
     torch_model = _get_shallow_copy_model(colo_model)
 
     if not only_rank_0 or dist.get_rank() == 0:
+        gd.debuginfo(prj="mt", info=f'')
         for (name, colo_module), (_, torch_module) in zip(
             _get_dfs_module_list(colo_model), _get_dfs_module_list(torch_model)
         ):

@@ -20,6 +20,8 @@ def _filter_exlarge_params(model: nn.Module, size_dict: Dict[int, List[int]]) ->
         model (nn.Module): the model.
         size_dict (Dict[int, List[int]]): the size dict of parameters.
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     agg_size_list = []
     for key in size_dict:
         agg_size_list.extend(size_dict[key])
@@ -50,6 +52,8 @@ def _get_unused_byte(size_list: List[int], chunk_size: int) -> int:
     Returns:
         int: the unused byte.
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     acc = 0
     left = 0
     for s in size_list:
@@ -72,6 +76,7 @@ def _tensor_numel(local_param: ColoParameter) -> int:
     Returns:
         int: the number of elements.
     """
+    gd.debuginfo(prj="mt", info=f'')
     # TODO(ver217): support dtensor here
     return local_param.numel()
 
@@ -91,6 +96,8 @@ def classify_params_by_dp_degree(
         Dict[int, List[ColoParameter]]: a dict contains the classification results.
         The keys are dp_degrees and the values are parameters.
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     params_dict: Dict[int, List[ColoParameter]] = dict()
     for param in param_order.generate():
         # assert isinstance(param, ColoParameter), "please init model in the ColoInitContext"
@@ -134,9 +141,11 @@ def search_chunk_configuration(
 
     if memstas is not None:
         param_order = memstas.param_order()
+        gd.debuginfo(prj="mt", info=f'')
     else:
         # build the param visited order right now
         param_order = OrderedParamGenerator()
+        gd.debuginfo(prj="mt", info=f'')
         for p in model.parameters():
             param_order.append(p)
 
@@ -164,6 +173,7 @@ def search_chunk_configuration(
 
     if filter_exlarge_params:
         _filter_exlarge_params(model, size_dict)
+        gd.debuginfo(prj="mt", info=f'')
 
     max_size = min_chunk_size
     for key in size_dict:

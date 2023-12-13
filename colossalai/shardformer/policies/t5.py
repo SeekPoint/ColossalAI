@@ -37,15 +37,19 @@ class T5BasePolicy(Policy):
         r"""
         Reshape the Embedding layer to make the embedding dimension divisible by world_size
         """
+        gd.debuginfo(prj="mt", info=f'')
         if self.shard_config.enable_tensor_parallelism:
             vocab_size = self.model.config.vocab_size
             world_size = self.shard_config.tensor_parallel_size
+            gd.debuginfo(prj="mt", info=f'')
             if vocab_size % world_size != 0:
                 new_vocab_size = vocab_size + world_size - vocab_size % world_size
                 self.model.resize_token_embeddings(new_vocab_size)
+                gd.debuginfo(prj="mt", info=f'')
         return self.model
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         from transformers.models.t5.modeling_t5 import (
             T5Attention,
             T5DenseActDense,
@@ -63,6 +67,7 @@ class T5BasePolicy(Policy):
             warnings.warn("T5 dosen't support sequence parallelism now, will ignore the sequence parallelism flag.")
 
         if self.shard_config.enable_tensor_parallelism:
+            gd.debuginfo(prj="mt", info=f'')
             policy[T5Stack] = ModulePolicyDescription(
                 sub_module_replacement=[
                     SubModuleReplacementDescription(
@@ -170,6 +175,7 @@ class T5BasePolicy(Policy):
 
         # optimization configuration
         if self.shard_config.enable_fused_normalization:
+            gd.debuginfo(prj="mt", info=f'')
             self.append_or_create_submodule_replacement(
                 description=SubModuleReplacementDescription(
                     suffix="layer_norm",
@@ -204,6 +210,7 @@ class T5BasePolicy(Policy):
 
         # use flash attention
         if self.shard_config.enable_flash_attention:
+            gd.debuginfo(prj="mt", info=f'')
             self.append_or_create_method_replacement(
                 description={
                     "forward": get_t5_flash_attention_forward(),
@@ -214,6 +221,7 @@ class T5BasePolicy(Policy):
 
         # use jit operator
         if self.shard_config.enable_jit_fused:
+            gd.debuginfo(prj="mt", info=f'')
             self.append_or_create_method_replacement(
                 description={
                     "forward": get_jit_fused_T5_layer_ff_forward(),
@@ -253,7 +261,7 @@ class T5BasePolicy(Policy):
         Return the layer distribution as a list and the starting stage of decoder.
         If decoder doesn't exist, returned decoder starting stage is set to num_encoder_layers.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         # number of encoder layers must be a positive integer
         if num_encoder_layers <= 0:
             raise ValueError("The number of encoder layers for T5 must be a positive integer.")
@@ -264,12 +272,14 @@ class T5BasePolicy(Policy):
 
         # in the case of T5EncoderModel, set decoder starting stage to num_stages since it doesn't exist
         if num_decoder_layers == 0:
+            gd.debuginfo(prj="mt", info=f'')
             return Policy.distribute_layers(num_encoder_layers, num_stages), num_stages
 
         # the number of stages distributed between encoder and decoder is optmized in this way:
         # num_encoder_stages = argmin(abs(num_encoder_layers / encoder_stages - num_decoder_layers / decoder_stages))
         #                   s.t. num_encoder_stages + num_decoder_stages = num_stages, num_encoder_stages >= 1, num_decoder_stages >= 1
         def objective(num_encoder_stages):
+            gd.debuginfo(prj="mt", info=f'')
             return abs(num_encoder_layers / num_encoder_stages - num_decoder_layers / (num_stages - num_encoder_stages))
 
         num_encoder_stages = np.argmin([objective(i) for i in range(1, num_stages)]) + 1
@@ -288,11 +298,15 @@ class T5BasePolicy(Policy):
         Return the starting/ending idx of layers in encoder/decoder
         """
         if stage < decoder_starting_stage:
+            gd.debuginfo(prj="mt", info=f'')
             return Policy.get_stage_index(layers_per_stage[:decoder_starting_stage], stage)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return Policy.get_stage_index(layers_per_stage[decoder_starting_stage:], stage - decoder_starting_stage)
 
     def get_held_layers(self) -> List[nn.Module]:
+        gd.debuginfo(prj="mt", info=f'')
+
         """Get pipeline layers for current stage."""
         assert self.pipeline_stage_manager is not None
         stage_manager = self.pipeline_stage_manager
@@ -318,22 +332,27 @@ class T5BasePolicy(Policy):
                 held_layers.append(model.shared)
                 held_layers.append(encoder.embed_tokens)
                 held_layers.append(encoder.dropout)
+                gd.debuginfo(prj="mt", info=f'')
             if stage_manager.stage == decoder_starting_stage - 1:
                 held_layers.append(encoder.final_layer_norm)
                 held_layers.append(encoder.dropout)
+                gd.debuginfo(prj="mt", info=f'')
             held_layers.extend(encoder.block[start_idx:end_idx])
         else:
             # current stage is in t5's decoder
             if stage_manager.stage == decoder_starting_stage:
                 held_layers.append(decoder.embed_tokens)
                 held_layers.append(decoder.dropout)
+                gd.debuginfo(prj="mt", info=f'')
             if stage_manager.is_last_stage():
                 held_layers.append(decoder.final_layer_norm)
                 held_layers.append(decoder.dropout)
+                gd.debuginfo(prj="mt", info=f'')
             held_layers.extend(decoder.block[start_idx:end_idx])
         return held_layers
 
     def set_pipeline_forward(self, model_cls: nn.Module, new_forward: Callable, policy: Dict) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         """If under pipeline parallel setting, replacing the original forward method of huggingface
         to customized forward method, and add this changing to policy."""
         if not self.pipeline_stage_manager:
@@ -365,8 +384,10 @@ class T5BasePolicy(Policy):
 class T5ModelPolicy(T5BasePolicy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         from transformers import T5Model
 
         policy = super().module_policy()
@@ -381,16 +402,19 @@ class T5ModelPolicy(T5BasePolicy):
                 target_key=T5Model,
             )
         if self.pipeline_stage_manager is not None:
+            gd.debuginfo(prj="mt", info=f'')
             self.set_pipeline_forward(model_cls=T5Model, new_forward=T5PipelineForwards.t5_model_forward, policy=policy)
 
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
+        gd.debuginfo(prj="mt", info=f'')
         return super().get_held_layers()
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
         module = self.model
         stage_manager = self.pipeline_stage_manager
+        gd.debuginfo(prj="mt", info=f'')
         if stage_manager is not None and stage_manager.num_stages > 1:
             _, decoder_starting_stage = T5BasePolicy.distribute_t5_layers(
                 len(module.encoder.block), len(module.decoder.block), stage_manager.num_stages
@@ -403,9 +427,11 @@ class T5ModelPolicy(T5BasePolicy):
 
 class T5ForConditionalGenerationPolicy(T5BasePolicy):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         from transformers import T5ForConditionalGeneration
 
         policy = super().module_policy()
@@ -424,6 +450,7 @@ class T5ForConditionalGenerationPolicy(T5BasePolicy):
                 policy=policy,
                 target_key=T5ForConditionalGeneration,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.pipeline_stage_manager is not None:
             self.set_pipeline_forward(
@@ -431,18 +458,25 @@ class T5ForConditionalGenerationPolicy(T5BasePolicy):
                 new_forward=T5PipelineForwards.t5_for_conditional_generation_forward,
                 policy=policy,
             )
+            gd.debuginfo(prj="mt", info=f'')
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
+        gd.debuginfo(prj="mt", info=f'')
         held_layers = super().get_held_layers()
         if self.pipeline_stage_manager.is_last_stage():
             held_layers.append(self.model.lm_head)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
         module = self.model
         stage_manager = self.pipeline_stage_manager
+        gd.debuginfo(prj="mt", info=f'')
+
         if stage_manager is not None and stage_manager.num_stages > 1:
+            gd.debuginfo(prj="mt", info=f'')
+
             _, decoder_starting_stage = T5BasePolicy.distribute_t5_layers(
                 len(module.encoder.block), len(module.decoder.block), stage_manager.num_stages
             )
@@ -452,13 +486,16 @@ class T5ForConditionalGenerationPolicy(T5BasePolicy):
             if id(module.decoder.embed_tokens.weight) == id(module.shared.weight):
                 shared_embedding[0] = module.shared.weight
                 shared_embedding[decoder_starting_stage] = module.decoder.embed_tokens.weight
+                gd.debuginfo(prj="mt", info=f'')
 
             if id(module.lm_head.weight) == id(module.shared.weight):
                 shared_embedding[0] = module.shared.weight
                 shared_embedding[stage_manager.num_stages - 1] = module.lm_head.weight
+                gd.debuginfo(prj="mt", info=f'')
 
             if len(shared_embedding) > 0:
                 shared_params.append(shared_embedding)
+                gd.debuginfo(prj="mt", info=f'')
 
             return shared_params
 
@@ -468,8 +505,10 @@ class T5ForConditionalGenerationPolicy(T5BasePolicy):
 class T5EncoderPolicy(T5BasePolicy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         from transformers import T5EncoderModel
 
         policy = super().module_policy()
@@ -483,14 +522,17 @@ class T5EncoderPolicy(T5BasePolicy):
                 policy=policy,
                 target_key=T5EncoderModel,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.pipeline_stage_manager is not None:
             self.set_pipeline_forward(
                 model_cls=T5EncoderModel, new_forward=T5PipelineForwards.t5_encoder_model_forward, policy=policy
             )
+            gd.debuginfo(prj="mt", info=f'')
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
+        gd.debuginfo(prj="mt", info=f'')
         return super().get_held_layers()
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:

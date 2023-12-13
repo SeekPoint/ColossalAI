@@ -7,6 +7,7 @@ from torch.autograd import Function
 from pydebug import gd, infoTensor
 
 def check_config(config):
+    gd.debuginfo(prj="mt", info=f'')
     if config.hidden_size % config.nhead != 0:
         raise Exception("hidden_size % nhead != 0")
 
@@ -23,6 +24,7 @@ def check_config(config):
 
 
 def calc_offset(sizes):
+    gd.debuginfo(prj="mt", info=f'')
     offsets = [0]
     tmp = 0
     for x in sizes:
@@ -60,6 +62,7 @@ class MultiHeadAttention1DFunc(Function):
         norm_bias,
         config,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         cuda_module = colossal_multihead_attention
         forward_func = (
             cuda_module.multihead_attention_fw_fp16 if config.fp16 else cuda_module.multihead_attention_fw_fp32
@@ -67,6 +70,7 @@ class MultiHeadAttention1DFunc(Function):
         if config.fp16:
             input = input.to(torch.half)
             input_mask = input_mask.to(torch.half)
+            gd.debuginfo(prj="mt", info=f'')
 
         (output,) = forward_func(
             config.layer_id,
@@ -95,10 +99,12 @@ class MultiHeadAttention1DFunc(Function):
                 norm_bias,
             )
             ctx.config = config
+            gd.debuginfo(prj="mt", info=f'')
         return output
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         assert ctx.config.training
 
         cuda_module = colossal_multihead_attention
@@ -185,7 +191,16 @@ class MultiHeadAttention(nn.Module):
 
     layer_id = 0
 
-    def __init__(self, hidden_size, nhead, batch_size, max_seq_len, dropout=0.0, norm_first=False, fp16=True, pg=None):
+    def __init__(self,
+                 hidden_size,
+                 nhead,
+                 batch_size,
+                 max_seq_len,
+                 dropout=0.0,
+                 norm_first=False,
+                 fp16=True,
+                 pg=None):
+        gd.debuginfo(prj="mt", info=f'')
         super(MultiHeadAttention, self).__init__()
 
         self.config = Config(
@@ -196,12 +211,15 @@ class MultiHeadAttention(nn.Module):
         self.pg_size = 1
         if self.pg:
             self.pg_size = pg.size()
+            gd.debuginfo(prj="mt", info=f'')
+
         self.config.layer_id = MultiHeadAttention.layer_id
         MultiHeadAttention.layer_id = MultiHeadAttention.layer_id + 1
 
         # Load cuda modules if needed
         global colossal_multihead_attention
         if colossal_multihead_attention is None:
+            gd.debuginfo(prj="mt", info=f'')
             from colossalai.kernel.op_builder import MultiHeadAttnBuilder
 
             multihead_attention = MultiHeadAttnBuilder().load()
@@ -232,6 +250,7 @@ class MultiHeadAttention(nn.Module):
         self.precision = torch.float32
         if self.config.fp16:
             self.precision = torch.half
+            gd.debuginfo(prj="mt", info=f'')
 
         self.hs_per_rank = int(hs / self.pg_size)
 
@@ -246,11 +265,13 @@ class MultiHeadAttention(nn.Module):
         torch.cuda.empty_cache()
 
     def calc_bound(self, w):
+        gd.debuginfo(prj="mt", info=f'')
         fan_in, _ = nn.init._calculate_fan_in_and_fan_out(w)
         bound = 1.0 / math.sqrt(fan_in)
         return bound
 
     def reset_parameters(self):
+        gd.debuginfo(prj="mt", info=f'')
         hs = self.config.hidden_size
 
         nn.init.zeros_(self.out_proj_bias)
@@ -259,6 +280,7 @@ class MultiHeadAttention(nn.Module):
         nn.init.zeros_(self.norm_bias)
 
         if self.pg_size > 1:
+            gd.debuginfo(prj="mt", info=f'')
             rank_in_pg = torch.distributed.get_rank(self.pg)
             attn_qkvw_global = torch.empty(hs * 3, hs)
             attn_qkvb_global = torch.empty(hs * 3)
@@ -302,12 +324,15 @@ class MultiHeadAttention(nn.Module):
             nn.init.uniform_(self.in_proj_bias, -bound, bound)
 
             nn.init.xavier_uniform_(self.out_proj_weight, 1.0)
+            gd.debuginfo(prj="mt", info=f'')
 
     def state_dict(self, destination=None, prefix="", keep_vars=False):
         destination = torch.nn.Module.state_dict(self, destination=destination, prefix=prefix, keep_vars=keep_vars)
+        gd.debuginfo(prj="mt", info=f'')
         return destination
 
     def forward(self, hidden_states, encoder_padding_mask):
+        gd.debuginfo(prj="mt", info=f'')
         self.config.training = self.training
         self.config.is_grad_enabled = torch.is_grad_enabled()
         hidden_states = hidden_states.contiguous()

@@ -32,6 +32,7 @@ class UniqueKey:
     def __init__(self, microbatch_id, phase) -> None:
         self.microbatch_id = microbatch_id
         self.phase = phase
+        gd.debuginfo(prj="mt", info=f'')
 
     def __eq__(self, __o: object) -> bool:
         return (self.microbatch_id == __o.microbatch_id) and (self.phase == __o.phase)

@@ -4,6 +4,7 @@ from pydebug import gd, infoTensor
 
 class BaseStore:
     def __init__(self, torch_pg: ProcessGroup):
+        gd.debuginfo(prj="mt", info=f'')
         self._world_size = dist.get_world_size(group=torch_pg)
         self._local_rank = dist.get_rank(group=torch_pg)
 

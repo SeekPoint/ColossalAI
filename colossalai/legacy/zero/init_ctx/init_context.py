@@ -35,6 +35,7 @@ class ZeroContextConfig:
     shard_param: bool = False
 
     def __post_init__(self):
+        gd.debuginfo(prj="mt", info=f'')
         if self.shard_param:
             assert self.is_replicated, "Non-replicated parameters can't be sharded."
 
@@ -69,6 +70,7 @@ class ZeroInitContext(InsertPostInitMethodToModuleSubClasses):
         bf16: bool = False,
         model_numel_tensor: torch.Tensor = torch.zeros(1, dtype=torch.long),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(default_dtype=default_dtype)
         self.shard_strategy = shard_strategy
         self.param_list = []

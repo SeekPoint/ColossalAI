@@ -29,6 +29,7 @@ def _gen_ckpt_fn_def(label, free_vars: List[str]) -> str:
     """
     Generate the checkpoint function definition
     """
+    gd.debuginfo(prj="mt", info=f'')
     return f"def checkpoint_{label}({', '.join(['self'] + free_vars)}):"
 
 
@@ -36,6 +37,7 @@ def _gen_ckpt_output(output_vars: List[str]) -> str:
     """
     Generate the return statement for checkpoint region
     """
+    gd.debuginfo(prj="mt", info=f'')
     return f"return {', '.join(output_vars)}"
 
 
@@ -43,6 +45,7 @@ def _gen_ckpt_usage(label, input_vars, output_vars, use_reentrant=True):
     """
     Generate the checkpoint function call code text
     """
+    gd.debuginfo(prj="mt", info=f'')
     outputs = ", ".join(output_vars)
     inputs = ", ".join(input_vars)
     return f"{outputs} = torch.utils.checkpoint.checkpoint(self.checkpoint_{label}, {inputs}, use_reentrant={use_reentrant})"
@@ -61,6 +64,7 @@ def _find_input_and_output_nodes(nodes: List[Node]):
     """
     Find the input and output node names which are not found in the given list of nodes.
     """
+    gd.debuginfo(prj="mt", info=f'')
     input_nodes = []
     output_nodes = []
 
@@ -88,6 +92,7 @@ def _find_nested_ckpt_regions(node_list: List[Node], ckpt_level: int = 0):
     Find the nested checkpoint regions given a list of consecutive nodes. The outputs
     will be list of tuples, each tuple is in the form of (start_index, end_index).
     """
+    gd.debuginfo(prj="mt", info=f'')
     ckpt_regions = []
     start = -1
     end = -1
@@ -148,6 +153,7 @@ def emit_ckpt_func(
         in_ckpt (bool, optional): indicates wether the func is in recursive
         call. Defaults to False.
     """
+    gd.debuginfo(prj="mt", info=f'')
     inputs, outputs = _find_input_and_output_nodes(node_list)
 
     # label given by each layer, e.g. if you are currently at level (0, 1, 1)
@@ -158,6 +164,7 @@ def emit_ckpt_func(
 
     # if there is more level to fetch
     if ckpt_level + 1 < max(map(lambda node: len(node.meta["info"].activation_checkpoint), node_list)):
+        gd.debuginfo(prj="mt", info=f'')
         ckpt_regions = _find_nested_ckpt_regions(node_list, ckpt_level + 1)
         start_idx = [item[0] for item in ckpt_regions]
         end_idx = [item[1] for item in ckpt_regions]
@@ -194,6 +201,7 @@ def emit_ckpt_func(
 
     # last level
     else:
+        gd.debuginfo(prj="mt", info=f'')
         for node in node_list:
             emit_node_func(node, ckpt_func)
             ckpt_func[-1] = "    " + ckpt_func[-1]
@@ -219,6 +227,8 @@ def emit_code_with_activation_checkpoint(body, ckpt_func, nodes, emit_node_func,
         emit_node_func: function to emit node
         delete_unused_value_func: function to remove the unused value
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     ckpt_regions = _find_nested_ckpt_regions(nodes, 0)
     start_idx = [item[0] for item in ckpt_regions]
     end_idx = [item[1] for item in ckpt_regions]
@@ -232,12 +242,14 @@ def emit_code_with_activation_checkpoint(body, ckpt_func, nodes, emit_node_func,
 
         # process ckpt_regions
         if node_idx in start_idx:
+            gd.debuginfo(prj="mt", info=f'')
             ckpt_node_list = node_list[node_idx : end_idx[start_idx.index(node_idx)] + 1]
             emit_ckpt_func(body, ckpt_func, ckpt_node_list, emit_node_func, delete_unused_value_func)
             node_idx += len(ckpt_node_list)
 
         # process node in forward function
         else:
+            gd.debuginfo(prj="mt", info=f'')
             node = node_list[node_idx]
             emit_node_func(node, body)
             delete_unused_value_func(node, body)
@@ -247,6 +259,7 @@ def emit_code_with_activation_checkpoint(body, ckpt_func, nodes, emit_node_func,
 @compatibility(is_backward_compatible=True)
 class ActivationCheckpointCodeGen(CodeGen):
     def _gen_python_code(self, nodes, root_module: str, namespace: _Namespace) -> PythonCode:
+        gd.debuginfo(prj="mt", info=f'')
         free_vars: List[str] = []
         body: List[str] = []
         globals_: Dict[str, Any] = {}
@@ -256,6 +269,7 @@ class ActivationCheckpointCodeGen(CodeGen):
         maybe_return_annotation: List[str] = [""]
 
         def add_global(name_hint: str, obj: Any):
+            gd.debuginfo(prj="mt", info=f'')
             """Add an obj to be tracked as a global.
             We call this for names that reference objects external to the
             Graph, like functions or types.
@@ -281,6 +295,7 @@ class ActivationCheckpointCodeGen(CodeGen):
             add_global(name, obj)
 
         def type_repr(o: Any):
+            gd.debuginfo(prj="mt", info=f'')
             if o == ():
                 # Empty tuple is used for empty tuple type annotation Tuple[()]
                 return "()"
@@ -311,6 +326,7 @@ class ActivationCheckpointCodeGen(CodeGen):
             return add_global(typename, o)
 
         def _format_args(args: Tuple[Argument, ...], kwargs: Dict[str, Argument]) -> str:
+            gd.debuginfo(prj="mt", info=f'')
             def _get_repr(arg):
                 # Handle NamedTuples (if it has `_fields`) via add_global.
                 if isinstance(arg, tuple) and hasattr(arg, "_fields"):
@@ -333,6 +349,7 @@ class ActivationCheckpointCodeGen(CodeGen):
         user_to_last_uses: Dict[Node, List[Node]] = {}
 
         def register_last_uses(n: Node, user: Node):
+            gd.debuginfo(prj="mt", info=f'')
             if n not in node_to_last_use:
                 node_to_last_use[n] = user
                 user_to_last_uses.setdefault(user, []).append(n)
@@ -348,6 +365,7 @@ class ActivationCheckpointCodeGen(CodeGen):
             not used in the remainder of the code are freed and the memory usage
             of the code is optimal.
             """
+            gd.debuginfo(prj="mt", info=f'')
             if user.op == "placeholder":
                 return
             if user.op == "output":
@@ -362,8 +380,10 @@ class ActivationCheckpointCodeGen(CodeGen):
 
         # NOTE: we add a variable to distinguish body and ckpt_func
         def emit_node(node: Node, body):
+            gd.debuginfo(prj="mt", info=f'')
             maybe_type_annotation = "" if node.type is None else f" : {type_repr(node.type)}"
             if node.op == "placeholder":
+                gd.debuginfo(prj="mt", info=f'')
                 assert isinstance(node.target, str)
                 maybe_default_arg = "" if not node.args else f" = {repr(node.args[0])}"
                 free_vars.append(f"{node.target}{maybe_type_annotation}{maybe_default_arg}")
@@ -372,6 +392,7 @@ class ActivationCheckpointCodeGen(CodeGen):
                     body.append(f"{repr(node)} = {raw_name}\n")
                 return
             elif node.op == "call_method":
+                gd.debuginfo(prj="mt", info=f'')
                 assert isinstance(node.target, str)
                 body.append(
                     f"{repr(node)}{maybe_type_annotation} = {_format_target(repr(node.args[0]), node.target)}"
@@ -379,6 +400,7 @@ class ActivationCheckpointCodeGen(CodeGen):
                 )
                 return
             elif node.op == "call_function":
+                gd.debuginfo(prj="mt", info=f'')
                 assert callable(node.target)
                 # pretty print operators
                 if node.target.__module__ == "_operator" and node.target.__name__ in magic_methods:
@@ -392,6 +414,7 @@ class ActivationCheckpointCodeGen(CodeGen):
                 # pretty print inplace operators; required for jit.script to work properly
                 # not currently supported in normal FX graphs, but generated by torchdynamo
                 if node.target.__module__ == "_operator" and node.target.__name__ in inplace_methods:
+                    gd.debuginfo(prj="mt", info=f'')
                     body.append(
                         f"{inplace_methods[node.target.__name__].format(*(repr(a) for a in node.args))};  "
                         f"{repr(node)}{maybe_type_annotation} = {repr(node.args[0])}"
@@ -409,6 +432,7 @@ class ActivationCheckpointCodeGen(CodeGen):
                     and node.args[1].isidentifier()
                     and len(node.args) == 2
                 ):
+                    gd.debuginfo(prj="mt", info=f'')
                     body.append(
                         f"{repr(node)}{maybe_type_annotation} = {_format_target(repr(node.args[0]), node.args[1])}"
                     )
@@ -421,16 +445,19 @@ class ActivationCheckpointCodeGen(CodeGen):
                 return
             elif node.op == "call_module":
                 assert isinstance(node.target, str)
+                gd.debuginfo(prj="mt", info=f'')
                 body.append(
                     f"{repr(node)}{maybe_type_annotation} = "
                     f"{_format_target(root_module, node.target)}({_format_args(node.args, node.kwargs)})"
                 )
                 return
             elif node.op == "get_attr":
+                gd.debuginfo(prj="mt", info=f'')
                 assert isinstance(node.target, str)
                 body.append(f"{repr(node)}{maybe_type_annotation} = {_format_target(root_module, node.target)}")
                 return
             elif node.op == "output":
+                gd.debuginfo(prj="mt", info=f'')
                 if node.type is not None:
                     maybe_return_annotation[0] = f" -> {type_repr(node.type)}"
                 body.append(self.generate_output(node.args[0]))
@@ -448,9 +475,11 @@ class ActivationCheckpointCodeGen(CodeGen):
             body.append("pass\n")
 
         if len(wrapped_fns) > 0:
+            gd.debuginfo(prj="mt", info=f'')
             wrap_name = add_global("wrap", torch.fx.wrap)
             wrap_stmts = "\n".join([f'{wrap_name}("{name}")' for name in wrapped_fns])
         else:
+            gd.debuginfo(prj="mt", info=f'')
             wrap_stmts = ""
 
         if self._body_transformer:

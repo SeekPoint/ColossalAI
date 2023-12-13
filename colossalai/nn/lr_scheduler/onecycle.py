@@ -79,6 +79,7 @@ class OneCycleLR(_OneCycleLR):
         last_epoch=-1,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         max_lrs = list(map(lambda group: group["lr"], optimizer.param_groups))
         super().__init__(
             optimizer,

@@ -25,6 +25,7 @@ class _DistSpec:
     """
 
     def __init__(self, dist_placement_pattern: DistPlacementPattern, **meta_info):
+        gd.debuginfo(prj="mt", info=f'')
         self.placement = dist_placement_pattern
         for k, v in meta_info.items():
             setattr(self, k, v)

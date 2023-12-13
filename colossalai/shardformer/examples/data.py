@@ -52,6 +52,7 @@ class GLUEDataBuilder:
         eval_batch_size: int = 32,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.model_name_or_path = model_name_or_path
         self.task_name = task_name
@@ -66,6 +67,7 @@ class GLUEDataBuilder:
         self.setup()
 
     def setup(self):
+        gd.debuginfo(prj="mt", info=f'')
         self.dataset = datasets.load_dataset("/share/hf_model/glue", self.task_name)
 
         for split in self.dataset.keys():
@@ -80,6 +82,7 @@ class GLUEDataBuilder:
         self.eval_splits = [x for x in self.dataset.keys() if "validation" in x]
 
     def prepare_data(self):
+        gd.debuginfo(prj="mt", info=f'')
         datasets.load_dataset("/share/hf_model/glue", self.task_name)
         AutoTokenizer.from_pretrained(self.model_name_or_path, use_fast=True)
 
@@ -94,8 +97,10 @@ class GLUEDataBuilder:
 
     def val_dataloader(self):
         if self.plugin == None:
+            gd.debuginfo(prj="mt", info=f'')
             return self.native_prepare_dataloader(self.dataset["validation"], batch_size=self.eval_batch_size)
         if len(self.eval_splits) == 1:
+            gd.debuginfo(prj="mt", info=f'')
             return self.plugin.prepare_dataloader(self.dataset["validation"], batch_size=self.eval_batch_size)
         elif len(self.eval_splits) > 1:
             return [
@@ -105,8 +110,10 @@ class GLUEDataBuilder:
 
     def test_dataloader(self):
         if self.plugin == None:
+            gd.debuginfo(prj="mt", info=f'')
             return self.native_prepare_dataloader(self.dataset["test"], batch_size=self.train_batch_size)
         if len(self.eval_splits) == 1:
+            gd.debuginfo(prj="mt", info=f'')
             return self.plugin.prepare_dataloader(self.dataset["test"], batch_size=self.eval_batch_size)
         elif len(self.eval_splits) > 1:
             return [
@@ -118,8 +125,10 @@ class GLUEDataBuilder:
         # Either encode single sentence or sentence pairs
         if len(self.text_fields) > 1:
             texts_or_text_pairs = list(zip(example_batch[self.text_fields[0]], example_batch[self.text_fields[1]]))
+            gd.debuginfo(prj="mt", info=f'')
         else:
             texts_or_text_pairs = example_batch[self.text_fields[0]]
+            gd.debuginfo(prj="mt", info=f'')
 
         # Tokenize the text/text pairs
         features = self.tokenizer.batch_encode_plus(

@@ -12,6 +12,7 @@ from .reducer import Reducer
 
 
 def free_storage(data: torch.Tensor) -> None:
+    gd.debuginfo(prj="mt", info=f'')
     """Free underlying storage of a Tensor."""
     if data.storage().size() > 0:
         # Since we're modifying the Tensor's Storage directly, make sure the Tensor
@@ -21,6 +22,7 @@ def free_storage(data: torch.Tensor) -> None:
 
 
 def _cast_float(args, dtype: torch.dtype):
+    gd.debuginfo(prj="mt", info=f'')
     if isinstance(args, torch.Tensor) and torch.is_floating_point(args):
         args = args.to(dtype)
     elif isinstance(args, (list, tuple)):
@@ -56,6 +58,7 @@ class ColoDDP(torch.nn.Module):
         bucket_cap_mb: int = 25,
         rebuild_bucket: bool = True,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         assert not isinstance(module, ColoDDP)
         super().__init__()
         self.module = module

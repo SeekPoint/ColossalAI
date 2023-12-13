@@ -67,6 +67,8 @@ if version.parse(torch.__version__) >= version.parse("1.12.0"):
         output_padding: List[int],
         groups: int,
     ):
+        gd.debuginfo(prj="mt", info=f'')
+
         def _formula(ln: int, p: int, d: int, k: int, s: int) -> int:
             """
             Formula to apply to calculate the length of some dimension of the output
@@ -107,6 +109,7 @@ if version.parse(torch.__version__) >= version.parse("1.12.0"):
             dilation: Union[List[int], int],
             output_padding: Optional[Union[List[int], int]] = None,
         ):
+            gd.debuginfo(prj="mt", info=f'')
             ret_shape = []
             if isinstance(stride, int):
                 stride = [stride] * len(dims)
@@ -244,10 +247,12 @@ if version.parse(torch.__version__) >= version.parse("1.12.0"):
     ):
         is_input_packed = len(batch_sizes) != 0
         if is_input_packed:
+            gd.debuginfo(prj="mt", info=f'')
             seq_length = len(batch_sizes)
             mini_batch = batch_sizes[0]
             batch_sizes_sum = input.shape[0]
         else:
+            gd.debuginfo(prj="mt", info=f'')
             seq_length = input.shape[1] if batch_first else input.shape[0]
             mini_batch = input.shape[0] if batch_first else input.shape[1]
             batch_sizes_sum = -1
@@ -422,6 +427,9 @@ if version.parse(torch.__version__) >= version.parse("1.12.0"):
     def meta_native_dropout_backward_default(grad: torch.Tensor, mask: torch.Tensor, scale: float):
         return new_like(grad)  # (grad_in)
 
+
+    gd.debuginfo(prj="mt", info=f'')
+
     if version.parse(torch.__version__) < version.parse("1.13.0"):
         # https://github.com/pytorch/pytorch/blob/master/aten/src/ATen/native/native_functions.yaml
         @register_meta(aten.eye.m_out)
@@ -430,6 +438,7 @@ if version.parse(torch.__version__) >= version.parse("1.12.0"):
 
         @register_meta(aten.index.Tensor)
         def meta_index_Tensor(self, indices):
+            gd.debuginfo(prj="mt", info=f'')
             assert indices, "at least one index must be provided"
             # aten::index is the internal advanced indexing implementation
             # checkIndexTensorTypes and expandTensors

@@ -29,14 +29,17 @@ def size_processing(
     This method will be invoked during runtime to convert size node value depending on distributed information.
     """
     if target_dim is not None:
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(size, int)
         if target_dim in dim_partition_dict:
+            gd.debuginfo(prj="mt", info=f'')
             total_shard_size = 1
             for shard_dim in dim_partition_dict[target_dim]:
                 total_shard_size *= device_mesh_info[shard_dim]
             size = size * total_shard_size
 
     else:
+        gd.debuginfo(prj="mt", info=f'')
         size = list(size)
         for dim, dim_size in enumerate(size):
             if dim in dim_partition_dict:
@@ -49,13 +52,14 @@ def size_processing(
     return size
 
 
-def solution_annotation_pass(
-    gm: torch.fx.GraphModule, solution: List[int], strategies_constructor: StrategiesConstructor
-):
+def solution_annotation_pass(gm: torch.fx.GraphModule,
+                             solution: List[int],
+                             strategies_constructor: StrategiesConstructor):
     """
     This method is used to stick the solution strategy to the nodes and add the information
     required in runtime into graph as placeholder nodes.
     """
+    gd.debuginfo(prj="mt", info=f'')
     mod_graph = gm.graph
 
     nodes = [strategies_vector.node for strategies_vector in strategies_constructor.leaf_strategies]
@@ -135,6 +139,7 @@ def size_value_converting_pass(gm: torch.fx.GraphModule, device_mesh: DeviceMesh
     torch.reshape, etc. These nodes have enough information like input sharding_spec and
     output sharding_spec to decide how to convert the size value.
     """
+    gd.debuginfo(prj="mt", info=f'')
     mod_graph = gm.graph
     nodes = tuple(mod_graph.nodes)
     node_pairs = {}
@@ -154,6 +159,7 @@ def size_value_converting_pass(gm: torch.fx.GraphModule, device_mesh: DeviceMesh
         If a target_dim is assigned, then the output will be in type of int, instead of torch.Size.
         Otherwise, the output will be in type of torch.Size and this function will return None.
         """
+        gd.debuginfo(prj="mt", info=f'')
         target_dim = None
         if len(node.args) > 1:
             target_dim = node.args[1]
@@ -166,6 +172,8 @@ def size_value_converting_pass(gm: torch.fx.GraphModule, device_mesh: DeviceMesh
         This function is used to process the dependency between the size node and its users after
         inserting the size_process_node.
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         # store original node and processing node pair in node_pairs dictionary
         # It will be used to replace the original node with processing node in slice object
         node_pairs[node] = size_processing_node
@@ -200,6 +208,7 @@ def size_value_converting_pass(gm: torch.fx.GraphModule, device_mesh: DeviceMesh
         If the slice object contains the Node argument, then the size node will be replaced with
         """
         if isinstance(slice_object, slice):
+            gd.debuginfo(prj="mt", info=f'')
             start = slice_object.start
             stop = slice_object.stop
             step = slice_object.step
@@ -212,8 +221,10 @@ def size_value_converting_pass(gm: torch.fx.GraphModule, device_mesh: DeviceMesh
             return slice(start, stop, step)
         elif isinstance(slice_object, int):
             if slice_object in node_pairs:
+                gd.debuginfo(prj="mt", info=f'')
                 return node_pairs[slice_object]
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 return slice_object
         else:
             raise RuntimeError(f"Unsupported slice object type: {type(slice_object)}")
@@ -283,17 +294,19 @@ def node_args_converting_pass(gm: torch.fx.GraphModule, device_mesh: DeviceMesh)
     """
     mod_graph = gm.graph
     nodes = tuple(mod_graph.nodes)
-
+    gd.debuginfo(prj="mt", info=f'')
     def _extract_info_from_sharding_spec(sharding_spec):
         """
         This function is used to extract the dim_partition_dict and device_mesh from
         sharding spec instance or a list of sharding spec.
         """
         if isinstance(sharding_spec, ShardingSpec):
+            gd.debuginfo(prj="mt", info=f'')
             dim_partition_dict = sharding_spec.dim_partition_dict
             device_mesh = sharding_spec.device_mesh
             return dim_partition_dict, device_mesh
         if sharding_spec is None:
+            gd.debuginfo(prj="mt", info=f'')
             return None, None
         assert isinstance(
             sharding_spec, (tuple, list)
@@ -306,6 +319,7 @@ def node_args_converting_pass(gm: torch.fx.GraphModule, device_mesh: DeviceMesh)
         return dim_partition_dict, sharding_spec
 
     def _process_node_arguments(node):
+        gd.debuginfo(prj="mt", info=f'')
         new_args = []
         for arg in node.args:
             # There are two args style:
@@ -331,11 +345,16 @@ def node_args_converting_pass(gm: torch.fx.GraphModule, device_mesh: DeviceMesh)
         return new_args
 
     def _scale_args_adapt_sharding_spec(dim_partition_dict, device_mesh, node):
+
         new_args = _process_node_arguments(node)
+
         if node.op == "call_method":
+            gd.debuginfo(prj="mt", info=f'')
             args_to_process = list(new_args[1:])
         else:
+            gd.debuginfo(prj="mt", info=f'')
             args_to_process = list(new_args)
+
         for dim, shard_dims in dim_partition_dict.items():
             total_shard_size = 1
             for shard_dim in shard_dims:
@@ -352,20 +371,26 @@ def node_args_converting_pass(gm: torch.fx.GraphModule, device_mesh: DeviceMesh)
 
         if node.op == "call_method":
             new_args = (new_args[0],) + args_to_process
+            gd.debuginfo(prj="mt", info=f'')
         else:
             new_args = args_to_process
+            gd.debuginfo(prj="mt", info=f'')
 
         node.args = new_args
 
     def _filter_node_with_shape_args(node):
         if node.op == "call_method":
             target = getattr(node.args[0]._meta_data.__class__, node.target)
+            gd.debuginfo(prj="mt", info=f'')
         elif node.op == "call_function":
             target = node.target
+            gd.debuginfo(prj="mt", info=f'')
         else:
             target = None
+            gd.debuginfo(prj="mt", info=f'')
 
         if target in SHAPE_ARGUMENT_OPS:
+            gd.debuginfo(prj="mt", info=f'')
             return True
         return False
 
@@ -386,15 +411,19 @@ def module_params_sharding_pass(gm: torch.fx.GraphModule, device_mesh: DeviceMes
     Apply the sharding action to the module parameters and buffers following the
     instructions of solver solution.
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     mod_graph = gm.graph
     nodes = tuple(mod_graph.nodes)
     # This stream is created for overlapping the communication and computation.
     reduction_stream = torch.cuda.Stream()
 
     def _add_hook_for_grad_communication(node, param, name=None):
+        gd.debuginfo(prj="mt", info=f'')
         comm_actions = node.best_strategy.communication_actions
 
         def _filter_param_to_hook(node, op_data, comm_action, name):
+            gd.debuginfo(prj="mt", info=f'')
             if (
                 node.op == "call_module"
                 and op_data.type == OperationDataType.PARAM
@@ -428,6 +457,7 @@ def module_params_sharding_pass(gm: torch.fx.GraphModule, device_mesh: DeviceMes
                 wrapper(param, comm_spec_to_use, reduction_stream, overlap=overlap)
 
     def _shard_param(param, target_sharding_spec):
+        gd.debuginfo(prj="mt", info=f'')
         # apply the sharding spec of parameters
         if target_sharding_spec.dim_partition_dict != {}:
             origin_sharding_spec = ShardingSpec(device_mesh, param.shape, {})
@@ -506,6 +536,7 @@ def runtime_preparation_pass(
     strategies_constructor: StrategiesConstructor,
     overlap=False,
 ):
+    gd.debuginfo(prj="mt", info=f'')
     gm, sharding_spec_convert_dict, origin_node_sharding_spec_dict, comm_actions_dict = solution_annotation_pass(
         gm, solution, strategies_constructor
     )

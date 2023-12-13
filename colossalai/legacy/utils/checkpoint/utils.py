@@ -7,6 +7,7 @@ from colossalai.tensor import ColoTensor
 
 
 def robust_broadcast(tensor):
+    gd.debuginfo(prj="mt", info=f'')
     with torch.no_grad():
         is_cpu_ten = tensor.device.type == "cpu"
         if is_cpu_ten:
@@ -21,6 +22,7 @@ def robust_broadcast(tensor):
 
 
 def gather_tensor(colo_tensor: ColoTensor) -> None:
+    gd.debuginfo(prj="mt", info=f'')
     """Make colo_tensor replicated when the rank is 0"""
     if not colo_tensor.is_replicate():
         pg = colo_tensor.get_process_group()
@@ -39,6 +41,7 @@ def gather_tensor(colo_tensor: ColoTensor) -> None:
 
 
 def scatter_tensor(colo_tensor: ColoTensor, dist_spec: _DistSpec) -> None:
+    gd.debuginfo(prj="mt", info=f'')
     """Reversal operation of `gather_tensor`."""
     if dist_spec.placement == DistPlacementPattern.REPLICATE:
         robust_broadcast(colo_tensor.data)

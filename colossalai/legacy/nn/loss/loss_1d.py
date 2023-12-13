@@ -12,6 +12,7 @@ class _VocabParallelCrossEntropy1D(torch.autograd.Function):
     @staticmethod
     @custom_fwd(cast_inputs=torch.float32)
     def forward(ctx, vocab_parallel_logits, targets, process_group):
+        gd.debuginfo(prj="mt", info=f'')
         if process_group is None:
             process_group = gpc.get_group(ParallelMode.PARALLEL_1D)
 
@@ -60,6 +61,7 @@ class _VocabParallelCrossEntropy1D(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         # Retrieve tensors from the forward path.
         softmax, target_mask, masked_target_1d = ctx.saved_tensors
 
@@ -88,6 +90,7 @@ class VocabParallelCrossEntropyLoss1D(_Loss):
     """
 
     def __init__(self, reduction=True):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.reduction_mean = reduction
 

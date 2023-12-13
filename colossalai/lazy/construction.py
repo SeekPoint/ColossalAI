@@ -55,6 +55,7 @@ class ConstructorManager:
         ConstructorManager.overwrites.clear()
         ConstructorManager.overwrites.update(overwrites)
         ConstructorManager.redo()
+        gd.debuginfo(prj="mt", info=f'')
 
     @staticmethod
     def undo():
@@ -62,6 +63,7 @@ class ConstructorManager:
         for name, (new, old) in ConstructorManager.overwrites.items():
             setattr(torch, name, old)
         ConstructorManager.changed = False
+        gd.debuginfo(prj="mt", info=f'')
 
     @staticmethod
     def redo():
@@ -69,6 +71,7 @@ class ConstructorManager:
         for name, (new, old) in ConstructorManager.overwrites.items():
             setattr(torch, name, new)
         ConstructorManager.changed = True
+        gd.debuginfo(prj="mt", info=f'')
 
     @staticmethod
     @contextmanager
@@ -79,9 +82,11 @@ class ConstructorManager:
         yield
         if enabled:
             ConstructorManager.redo()
+        gd.debuginfo(prj="mt", info=f'')
 
     @staticmethod
     def clear():
         if ConstructorManager.changed:
             ConstructorManager.undo()
         ConstructorManager.overwrites.clear()
+        gd.debuginfo(prj="mt", info=f'')

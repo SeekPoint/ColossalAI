@@ -15,16 +15,20 @@ class RequestTracker:
         self._requests: asyncio.Queue[str] = asyncio.Queue()
         self._finished_requests: asyncio.Queue[RequestOutput] = asyncio.Queue()
         self.new_requests_event = None
+        gd.debuginfo(prj="mt", info=f'')
 
     def __contains__(self, item):
+        gd.debuginfo(prj="mt", info=f'')
         return item in self._requests
 
     def init_event(self):
+        gd.debuginfo(prj="mt", info=f'')
         self.new_requests_event = asyncio.Event()
 
     def add_request(self, request_id: str):
         """Add a request to be sent to the engine on the next background
         loop iteration."""
+        gd.debuginfo(prj="mt", info=f'')
         self._requests.put_nowait(request_id)
         self.new_requests_event.set()  # NOTE: we may find a better way to clear this event
 
@@ -32,11 +36,13 @@ class RequestTracker:
         """
         Add a StopIteration flag to stop async generator.
         """
+        gd.debuginfo(prj="mt", info=f'')
         self._finished_requests.put_nowait(StopIteration)
         self.new_requests_event.clear()
 
     def process_request_output(self, request_output: RequestOutput) -> None:
         """Process a request output from the engine."""
+        gd.debuginfo(prj="mt", info=f'')
         self._finished_requests.put_nowait(request_output)
 
     async def wait_for_new_requests(self):
@@ -68,6 +74,7 @@ class Async_Engine:
         engine_config,
         start_engine_loop: bool = True,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.driver = Driver(router_config=router_config, engine_config=engine_config)
         self.background_loop = None
         self.start_engine_loop = start_engine_loop
@@ -77,19 +84,24 @@ class Async_Engine:
         """
         Logic for handling requests
         """
+        gd.debuginfo(prj="mt", info=f'')
         request_outputs = self.driver.step()
         if request_outputs is not None:
+            gd.debuginfo(prj="mt", info=f'')
             for request_output in request_outputs:
                 self._request_tracker.process_request_output(request_output)
             self._request_tracker.add_stop()
 
     def abort_request(self, request_id: str):
+        gd.debuginfo(prj="mt", info=f'')
         self.driver.abort(request_id)
 
     def _has_requests_in_progress(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self.driver.is_running()
 
     async def run_loop_fwd(self):
+        gd.debuginfo(prj="mt", info=f'')
         has_requests_in_progress = self._has_requests_in_progress()
         while True:
             if not has_requests_in_progress:
@@ -99,9 +111,11 @@ class Async_Engine:
 
     @property
     def is_running(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self.background_loop is not None and not self.background_loop.done()
 
     def start_background_loop(self):
+        gd.debuginfo(prj="mt", info=f'')
         if self.is_running:
             raise RuntimeError("Background loop is already running.")
 
@@ -111,6 +125,7 @@ class Async_Engine:
         self.background_loop = asyncio.shield(self.background_loop_unshielded)
 
     async def add_request(self, request_id: str, prompt: str, sampling_params: SamplingParams):
+        gd.debuginfo(prj="mt", info=f'')
         self.driver.add_input(request_id, prompt, sampling_params)
         self._request_tracker.add_request(request_id)
 
@@ -118,6 +133,7 @@ class Async_Engine:
         """
         The only exposed func, adding new request and return a async generator that yields the existing results.
         """
+        gd.debuginfo(prj="mt", info=f'')
         try:
             if not self.is_running:
                 self.start_background_loop()

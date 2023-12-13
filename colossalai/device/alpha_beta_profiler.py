@@ -59,10 +59,13 @@ class AlphaBetaProfiler:
         self._init_profiling()
         if alpha_beta_dict is None:
             self.alpha_beta_dict = self.profile_ab()
+            gd.debuginfo(prj="mt", info=f'')
         else:
             self.alpha_beta_dict = alpha_beta_dict
+            gd.debuginfo(prj="mt", info=f'')
 
     def _init_profiling(self):
+        gd.debuginfo(prj="mt", info=f'')
         # Create process group list based on its global rank
         process_group_list = []
         for f_index in range(self.world_size - 1):
@@ -78,6 +81,7 @@ class AlphaBetaProfiler:
         self.process_group_dict = process_group_dict
 
     def _profile(self, process_group, pg_handler, nbytes):
+        gd.debuginfo(prj="mt", info=f'')
         logger = get_dist_logger()
         rank = dist.get_rank()
         src_device_num = process_group[0]
@@ -107,6 +111,7 @@ class AlphaBetaProfiler:
         dist.barrier(group=pg_handler)
 
         if rank == src_device_num:
+            gd.debuginfo(prj="mt", info=f'')
             avg_time_s = (end - begin) / self.repeat - FRAMEWORK_LATENCY
             alg_band = nbytes / avg_time_s
             if self.ctype == "a":
@@ -121,6 +126,7 @@ class AlphaBetaProfiler:
             )
             return (avg_time_s, alg_band)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # Just a placeholder
             return (None, None)
 
@@ -135,6 +141,7 @@ class AlphaBetaProfiler:
         Returns:
             latency: None if the latency is not measured, otherwise the median of the latency_list.
         """
+        gd.debuginfo(prj="mt", info=f'')
         latency_list = []
         for i in range(self.latency_iters):
             nbytes = int(BYTE << i)
@@ -142,10 +149,12 @@ class AlphaBetaProfiler:
             latency_list.append(t)
 
         if latency_list[0] is None:
+            gd.debuginfo(prj="mt", info=f'')
             latency = None
         else:
             median_index = math.floor(self.latency_iters / 2)
             latency = latency_list[median_index]
+            gd.debuginfo(prj="mt", info=f'')
 
         return latency
 
@@ -158,6 +167,7 @@ class AlphaBetaProfiler:
             pg_handler: The handler of the process group.
         """
         (_, bandwidth) = self._profile(process_group, pg_handler, maxbytes)
+        gd.debuginfo(prj="mt", info=f'')
         return bandwidth
 
     def profile_ab(self):
@@ -171,7 +181,10 @@ class AlphaBetaProfiler:
         rank = dist.get_rank()
         dist.new_group(self.physical_devices)
 
+        gd.debuginfo(prj="mt", info=f'')
+
         def get_max_nbytes(process_group: Tuple[int], pg_handler: dist.ProcessGroup):
+            gd.debuginfo(prj="mt", info=f'')
             assert rank in process_group
             device = torch.cuda.current_device()
             rank_max_nbytes = torch.cuda.mem_get_info(device)[0]
@@ -192,8 +205,10 @@ class AlphaBetaProfiler:
 
             if bandwidth is None:
                 beta = None
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 beta = 1 / bandwidth
+                gd.debuginfo(prj="mt", info=f'')
 
             broadcast_list = [alpha, beta]
             dist.broadcast_object_list(broadcast_list, src=process_group[0])
@@ -235,8 +250,10 @@ class AlphaBetaProfiler:
             >>> print(best_logical_mesh)
             [[0, 1], [2, 3]]
         """
+        gd.debuginfo(prj="mt", info=f'')
 
         def _power_of_two(integer):
+            gd.debuginfo(prj="mt", info=f'')
             return integer & (integer - 1) == 0
 
         def _detect_homogeneous_device(alpha_beta_dict):
@@ -247,6 +264,7 @@ class AlphaBetaProfiler:
                 of the devices are in range of [(1 - self.homogeneous_tolerance), (1 + self.homogeneous_tolerance)]
                 * base_beta.
             """
+            gd.debuginfo(prj="mt", info=f'')
             homogeneous_device_dict: Dict[float, List[Tuple[int]]] = {}
             for process_group, (_, beta) in alpha_beta_dict.items():
                 if homogeneous_device_dict is None:
@@ -263,9 +281,11 @@ class AlphaBetaProfiler:
 
                 if match_beta is not None:
                     homogeneous_device_dict[match_beta].append(process_group)
+                    gd.debuginfo(prj="mt", info=f'')
                 else:
                     homogeneous_device_dict[beta] = []
                     homogeneous_device_dict[beta].append(process_group)
+                    gd.debuginfo(prj="mt", info=f'')
 
             return homogeneous_device_dict
 
@@ -273,6 +293,7 @@ class AlphaBetaProfiler:
             """
             This function is used to check whether the homogeneous_group contains all physical devices.
             """
+            gd.debuginfo(prj="mt", info=f'')
             flatten_mesh = []
             for process_group in homogeneous_group:
                 flatten_mesh.extend(process_group)
@@ -284,6 +305,7 @@ class AlphaBetaProfiler:
             This function is used to construct the largest ring in the homogeneous_group for each rank.
             """
             # Construct the ring
+            gd.debuginfo(prj="mt", info=f'')
             ring = []
             ranks_in_ring = []
             for rank in self.physical_devices:
@@ -334,6 +356,7 @@ class AlphaBetaProfiler:
         homogeneous_types = len(beta_list)
         best_logical_mesh = None
         if homogeneous_types >= 2:
+            gd.debuginfo(prj="mt", info=f'')
             for _ in range(homogeneous_types - 1):
                 lowest_beta = beta_list.pop()
                 best_homogeneous_group = homogeneous_device_dict[lowest_beta]
@@ -346,6 +369,7 @@ class AlphaBetaProfiler:
                     break
 
         if homogeneous_types == 1 or best_logical_mesh is None:
+            gd.debuginfo(prj="mt", info=f'')
             # in this case, we use balanced logical mesh as the best
             # logical mesh.
             best_logical_mesh = balanced_logical_mesh
@@ -366,6 +390,7 @@ class AlphaBetaProfiler:
             >>> print(mesh_beta)
             [5.875573704655635e-11, 4.7361584445959614e-12]
         """
+        gd.debuginfo(prj="mt", info=f'')
         best_logical_mesh = self.search_best_logical_mesh()
 
         first_axis = [row[0] for row in best_logical_mesh]
@@ -377,6 +402,7 @@ class AlphaBetaProfiler:
 
         # extract alpha and beta for both axes
         def _extract_alpha_beta(pg, pg_handler):
+            gd.debuginfo(prj="mt", info=f'')
             latency = self.profile_latency(pg, pg_handler)
             bandwidth = self.profile_bandwidth(pg, pg_handler)
             broadcast_object = [latency, bandwidth]

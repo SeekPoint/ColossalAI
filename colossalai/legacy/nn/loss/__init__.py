@@ -27,6 +27,7 @@ _vocab_parallel_cross_entropy = {
 
 class CrossEntropyLoss(_Loss):
     def __init__(self, reduction: bool = True, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         tensor_parallel = get_tensor_parallel_mode()
         if tensor_parallel is not None and env.vocab_parallel:

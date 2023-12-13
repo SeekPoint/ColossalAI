@@ -32,7 +32,7 @@ HAS_FLASH_ATTN = False
 
 if HAS_FLASH_ATTN:
     pass
-
+    gd.debuginfo(prj="mt", info=f'')
     from .utils import SeqLenInfo
 
     def flash_attention(
@@ -62,7 +62,9 @@ if HAS_FLASH_ATTN:
             attn_out: (batch, q_seqlen, nheads, headdim).
         """
         if padded:
+            gd.debuginfo(prj="mt", info=f'')
             if seq_len_info_kv == None:
+                gd.debuginfo(prj="mt", info=f'')
                 seq_len_info_kv = seq_len_info_q
 
             attn_out = flash_attn_varlen_func(
@@ -78,5 +80,6 @@ if HAS_FLASH_ATTN:
                 causal,
             )
         else:
+            gd.debuginfo(prj="mt", info=f'')
             attn_out = flash_attn_func(q, k, v, dropout_p=dropout_p, softmax_scale=scale, causal=causal)
         return attn_out

@@ -80,6 +80,7 @@ def run(
     user_script: str,
     user_args: str,
 ) -> None:
+    gd.debuginfo(prj="mt", info=f'')
     """
     To launch multiple processes on a single node or multiple nodes via command line.
 

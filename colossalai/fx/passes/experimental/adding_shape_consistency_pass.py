@@ -9,11 +9,13 @@ from colossalai.tensor.sharding_spec import ShardingSpec
 
 
 def apply(*args, **kwargs):
+    gd.debuginfo(prj="mt", info=f'')
     shape_consistency_manager = ShapeConsistencyManager()
     return shape_consistency_manager.apply(*args, **kwargs)
 
 
 def solution_annotation_pass(gm: torch.fx.GraphModule, solution: List[int], device_mesh):
+    gd.debuginfo(prj="mt", info=f'')
     mod_graph = gm.graph
     nodes = tuple(mod_graph.nodes)
 
@@ -58,6 +60,7 @@ def solution_annotation_pass(gm: torch.fx.GraphModule, solution: List[int], devi
 
 
 def shape_consistency_pass(gm: torch.fx.GraphModule):
+    gd.debuginfo(prj="mt", info=f'')
     mod_graph = gm.graph
     nodes = tuple(mod_graph.nodes)
     input_dict_node = None

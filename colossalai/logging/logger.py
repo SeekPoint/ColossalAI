@@ -40,6 +40,7 @@ class DistributedLogger:
             return logger
 
     def __init__(self, name):
+        gd.debuginfo(prj="mt", info=f'')
         if name in DistributedLogger.__instances:
             raise Exception(
                 "Logger with the same name has been created, you should use colossalai.logging.get_dist_logger"
@@ -114,6 +115,7 @@ class DistributedLogger:
             log_file_name = f"rank_{self.rank}_{suffix}.log"
         else:
             log_file_name = f"rank_{self.rank}.log"
+        gd.debuginfo(prj="mt", info=f'log_file_name={log_file_name}')
         path = path.joinpath(log_file_name)
 
         # add file handler

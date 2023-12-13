@@ -30,6 +30,7 @@ from ..registry import meta_profiler_function
 @meta_profiler_function.register(torch.Tensor.cuda)
 @meta_profiler_function.register(torch._assert)
 def torch_zero_flops_op(*args, **kwargs) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
     flops = 0
     macs = 0
     return flops, macs
@@ -37,6 +38,7 @@ def torch_zero_flops_op(*args, **kwargs) -> Tuple[int, int]:
 
 @meta_profiler_function.register(torch.where)
 def torch_where(condition: torch.Tensor, x: Any, y: Any) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
     # torch.where returns the broadcasted tensor of condition, x, and y,
     # so hack it by using addition
     flops = condition.numel()
@@ -48,13 +50,16 @@ def torch_where(condition: torch.Tensor, x: Any, y: Any) -> Tuple[int, int]:
 def torch_max(
     input: torch.Tensor, dim: int = None, keepdim: bool = False, *, out: Optional[torch.Tensor] = None
 ) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
     macs = 0
     assert out is None, "assigning value to out is not supported yet"
     if dim is not None:
+        gd.debuginfo(prj="mt", info=f'')
         shape = list(input.shape)
         shape.pop(int(dim))
         flops = reduce(operator.mul, shape), macs
         return flops, macs
     else:
+        gd.debuginfo(prj="mt", info=f'')
         flops = input.numel()
         return flops, macs

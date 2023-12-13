@@ -18,10 +18,12 @@ class HFRepoFiles:
     files: List[str]
 
     def download(self, dir_path: str):
+        gd.debuginfo(prj="mt", info=f'')
         for file in self.files:
             file_path = hf_hub_download(self.repo_id, file, local_dir=dir_path)
 
     def download_all(self):
+        gd.debuginfo(prj="mt", info=f'')
         snapshot_download(self.repo_id)
 
 
@@ -32,18 +34,21 @@ def test_init(model: str, dir_path: str):
         critic = GPTCritic(config=config)
         reward_model = GPTRM(config=config)
         GPT2Tokenizer.from_pretrained(dir_path)
+        gd.debuginfo(prj="mt", info=f'')
     elif model == "bloom":
         config = BloomConfig.from_pretrained(dir_path)
         actor = BLOOMActor(config=config)
         critic = BLOOMCritic(config=config)
         reward_model = BLOOMRM(config=config)
         BloomTokenizerFast.from_pretrained(dir_path)
+        gd.debuginfo(prj="mt", info=f'')
     elif model == "opt":
         config = AutoConfig.from_pretrained(dir_path)
         actor = OPTActor(config=config)
         critic = OPTCritic(config=config)
         reward_model = OPTRM(config=config)
         AutoTokenizer.from_pretrained(dir_path)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         raise NotImplementedError(f"Model {model} not implemented")
 

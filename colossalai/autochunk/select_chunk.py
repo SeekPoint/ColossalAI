@@ -18,23 +18,29 @@ class SelectChunk(object):
         self.reorder_graph = reorder_graph
         self.node_mgr = node_mgr
         if max_memory is not None:
+            gd.debuginfo(prj="mt", info=f'')
             self.stratge = "fit_memory"
             self.max_memory = max_memory  # MB
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.stratge = "min_memory"
 
     def _select_best_chunk_region(self, possible_chunk_regions, chunk_infos, mem_peak):
         if self.stratge == "min_memory":
             best_region = self._select_min_memory_chunk_region(possible_chunk_regions, chunk_infos)
+            gd.debuginfo(prj="mt", info=f'')
         elif self.stratge == "fit_memory":
             best_region = self._select_fit_memory_chunk_region(possible_chunk_regions, chunk_infos, mem_peak)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             raise RuntimeError()
         return best_region
 
     def _select_fit_memory_chunk_region(self, possible_chunk_regions, chunk_infos, mem_peak):
+        gd.debuginfo(prj="mt", info=f'')
         # stop chunk if max memory satisfy memory limit
         if max(mem_peak) < self.max_memory:
+            gd.debuginfo(prj="mt", info=f'')
             return None
 
         # remove illegal regions
@@ -82,6 +88,7 @@ class SelectChunk(object):
         return best_region
 
     def _get_fit_chunk_size(self, chunk_region_dict, chunk_infos):
+        gd.debuginfo(prj="mt", info=f'')
         chunk_size = 1
         reorder_chunk_info = chunk_region_dict["reorder_chunk_info"]
         reorder_chunk_info["chunk_size"] = chunk_size
@@ -103,6 +110,7 @@ class SelectChunk(object):
         return chunk_info
 
     def _chunk_size_binary_search(self, left, right, chunk_region_dict, chunk_infos):
+        gd.debuginfo(prj="mt", info=f'')
         if left >= 16:
             gap = 4
         else:
@@ -123,6 +131,7 @@ class SelectChunk(object):
         return left
 
     def _get_compute_node_num(self, start, end):
+        gd.debuginfo(prj="mt", info=f'')
         count = 0
         for i in self.node_mgr.get_node_slice_by_idx(start, end + 1):
             if not is_non_compute_node(i):
@@ -130,6 +139,7 @@ class SelectChunk(object):
         return count
 
     def _select_min_memory_chunk_region(self, possible_chunk_regions, chunk_infos):
+        gd.debuginfo(prj="mt", info=f'')
         # remove illegal regions
         illegal_regions = []
         for i in possible_chunk_regions:
@@ -140,6 +150,7 @@ class SelectChunk(object):
                 possible_chunk_regions.remove(i)
 
         if len(possible_chunk_regions) == 0:
+            gd.debuginfo(prj="mt", info=f'')
             return None
 
         # get max possible chunk region
@@ -172,14 +183,18 @@ class SelectChunk(object):
         best_region_idx = chunk_max_mem.index(min(chunk_max_mem))
         best_region = regions_dict_list[best_region_idx]["chunk_info"]
         if best_region is not None:
+            gd.debuginfo(prj="mt", info=f'')
             best_region["chunk_size"] = 1
         return best_region
 
     def _is_legal_region(self, cur_chunk_info, chunk_infos):
+        gd.debuginfo(prj="mt", info=f'')
         (chunk_region_start, chunk_region_end) = cur_chunk_info["region"]
         if cur_chunk_info in chunk_infos:
+            gd.debuginfo(prj="mt", info=f'')
             return False
         if chunk_region_end < chunk_region_start:
+            gd.debuginfo(prj="mt", info=f'')
             return False
         for i in chunk_infos:
             region = i["region"]

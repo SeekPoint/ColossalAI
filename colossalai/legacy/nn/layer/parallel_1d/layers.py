@@ -79,6 +79,7 @@ class Linear1D(ColossalaiModule):
         weight_initializer: Callable = init.kaiming_uniform_(a=math.sqrt(5)),
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         parallel_input = get_parallel_input()
         if not parallel_input and not gather_output:
             layer = Linear1D_Col(
@@ -119,7 +120,7 @@ class LayerNorm1D(ColossalaiModule):
         bias (bool, optional): Whether to add a bias, defaults to ``True``.
         dtype (:class:`torch.dtype`, optional): The dtype of parameters, defaults to None.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     _fast_ln_supported_sizes = [
         1024,
         1536,
@@ -148,6 +149,7 @@ class LayerNorm1D(ColossalaiModule):
     ]
 
     def __init__(self, normalized_shape: int, eps=1e-05, bias=True, dtype=None):
+        gd.debuginfo(prj="mt", info=f'')
         if Fast_LN is not None and normalized_shape in self._fast_ln_supported_sizes:
             norm = Fast_LN(normalized_shape, eps=eps).to(dtype)
         else:
@@ -211,6 +213,7 @@ class Classifier1D(ParallelLayer):
         weight_initializer: Callable = init.kaiming_uniform_(a=math.sqrt(5)),
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.in_features = in_features
         self.num_classes = num_classes
@@ -346,6 +349,7 @@ class VocabParallelClassifier1D(ParallelLayer):
         weight_initializer: Callable = init.kaiming_uniform_(a=math.sqrt(5)),
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.in_features = in_features
         self.num_classes = num_classes
@@ -484,6 +488,7 @@ class Linear1D_Col(ParallelLayer):
         weight_initializer: Callable = init.kaiming_uniform_(a=math.sqrt(5)),
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
         # Keep input parameters
@@ -620,6 +625,7 @@ class Linear1D_Row(ParallelLayer):
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
         stream_chunk_num: int = 1,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
         self.stream_chunk_num = stream_chunk_num
@@ -791,6 +797,7 @@ class Embedding1D(ParallelLayer):
         *args,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
         self.num_embeddings = num_embeddings
@@ -898,6 +905,7 @@ class VocabParallelEmbedding1D(ParallelLayer):
         *args,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.num_embeddings = num_embeddings
         self.embed_dim = embedding_dim
@@ -992,6 +1000,7 @@ class Dropout1D(ParallelLayer):
     """
 
     def __init__(self, p: float = 0.5, inplace: bool = False):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.parallel_input = get_parallel_input()
         self.p = p
@@ -1043,6 +1052,7 @@ class PatchEmbedding1D(ColossalaiModule):
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
         position_embed_initializer: Callable = init.zeros_(),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         embed = VanillaPatchEmbedding(
             img_size,
             patch_size,

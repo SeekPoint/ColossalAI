@@ -83,6 +83,7 @@ def _rotary_kernel(
 
 @torch.no_grad()
 def int8_rotary_embedding_fwd(q, cos, sin, input_scale, output_scale):
+    gd.debuginfo(prj="mt", info=f'')
     total_len = q.shape[0]
     head_num = q.shape[1]
     head_dim = q.shape[2]

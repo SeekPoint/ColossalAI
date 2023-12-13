@@ -38,6 +38,7 @@ class ParallelCachedEmbeddingBagTablewise(CachedEmbeddingBag):
         pin_weight=False,
         evict_strategy: EvictionStrategy = EvictionStrategy.LFU,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         self.rank = dist.get_rank()
         self.world_size = dist.get_world_size()
         self.rank_of_tables = [config.assigned_rank for config in embedding_bag_config_list]

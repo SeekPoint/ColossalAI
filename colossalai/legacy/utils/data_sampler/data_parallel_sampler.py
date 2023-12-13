@@ -29,6 +29,7 @@ class DataParallelSampler(Sampler):
     """
 
     def __init__(self, dataset: Dataset, shuffle: bool = False, seed: int = 0, drop_last: bool = False) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.dataset = dataset
         self.num_replicas = gpc.get_world_size(ParallelMode.DATA)
         self.rank = gpc.get_local_rank(ParallelMode.DATA)
@@ -125,7 +126,7 @@ def get_dataloader(
         :class:`torch.utils.data.DataLoader`: A DataLoader used for training or testing.
     """
     _kwargs = kwargs.copy()
-
+    gd.debuginfo(prj="mt", info=f'')
     if add_sampler and gpc.is_initialized(ParallelMode.DATA) and gpc.get_world_size(ParallelMode.DATA) > 1:
         sampler = DataParallelSampler(dataset, shuffle=shuffle)
     else:

@@ -30,16 +30,20 @@ class OPTPolicy(Policy):
         r"""
         Reshape the Embedding layer to make the embedding dimension divisible by world_size
         """
+        gd.debuginfo(prj="mt", info=f'')
         if self.shard_config.enable_tensor_parallelism:
             vocab_size = self.model.config.vocab_size
             world_size = self.shard_config.tensor_parallel_size
+            gd.debuginfo(prj="mt", info=f'')
             if vocab_size % world_size != 0:
                 new_vocab_size = vocab_size + world_size - vocab_size % world_size
                 self.model.resize_token_embeddings(new_vocab_size)
+                gd.debuginfo(prj="mt", info=f'')
         return self.model
 
     def module_policy(self):
         from transformers.models.opt.modeling_opt import OPTAttention, OPTDecoder, OPTDecoderLayer
+        gd.debuginfo(prj="mt", info=f'')
 
         policy = {}
         if self.shard_config.enable_sequence_parallelism:
@@ -47,6 +51,7 @@ class OPTPolicy(Policy):
             warnings.warn("OPT dosen't support sequence parallelism now, will ignore the sequence parallelism flag.")
 
         if self.shard_config.enable_tensor_parallelism:
+            gd.debuginfo(prj="mt", info=f'')
             policy[OPTDecoder] = ModulePolicyDescription(
                 sub_module_replacement=[
                     SubModuleReplacementDescription(
@@ -95,6 +100,7 @@ class OPTPolicy(Policy):
 
         # optimization configuration
         if self.shard_config.enable_fused_normalization:
+            gd.debuginfo(prj="mt", info=f'')
             self.append_or_create_submodule_replacement(
                 description=SubModuleReplacementDescription(
                     suffix="final_layer_norm", target_module=FusedLayerNorm, ignore_if_not_exist=True
@@ -117,6 +123,7 @@ class OPTPolicy(Policy):
 
         # use flash attention
         if self.shard_config.enable_flash_attention:
+            gd.debuginfo(prj="mt", info=f'')
             self.append_or_create_method_replacement(
                 description={
                     "forward": get_opt_flash_attention_forward(),
@@ -127,6 +134,7 @@ class OPTPolicy(Policy):
 
         # use jit fused operator
         if self.shard_config.enable_jit_fused:
+            gd.debuginfo(prj="mt", info=f'')
             self.append_or_create_method_replacement(
                 description={
                     "forward": get_jit_fused_opt_decoder_layer_forward(),
@@ -147,8 +155,11 @@ class OPTPolicy(Policy):
 
         if self.model.__class__.__name__ == "OPTModel":
             module = self.model.decoder
+            gd.debuginfo(prj="mt", info=f'')
         else:
             module = self.model.model.decoder
+            gd.debuginfo(prj="mt", info=f'')
+
         stage_manager = self.pipeline_stage_manager
 
         held_layers = []
@@ -157,22 +168,29 @@ class OPTPolicy(Policy):
             held_layers.append(module.embed_tokens)
             held_layers.append(module.embed_positions)
             held_layers.append(module.project_in)
+            gd.debuginfo(prj="mt", info=f'')
+
         start_idx, end_idx = self.get_stage_index(layers_per_stage, stage_manager.stage)
         held_layers.extend(module.layers[start_idx:end_idx])
+
         if stage_manager.is_last_stage():
             held_layers.append(module.final_layer_norm)
             held_layers.append(module.project_out)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def set_pipeline_forward(self, model_cls: nn.Module, new_forward: Callable, policy: Dict) -> None:
         """If under pipeline parallel setting, replacing the original forward method of huggingface
         to customized forward method, and add this changing to policy."""
+        gd.debuginfo(prj="mt", info=f'')
         if self.pipeline_stage_manager:
             stage_manager = self.pipeline_stage_manager
             if self.model.__class__.__name__ == "OPTModel":
                 module = self.model.decoder
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 module = self.model.model.decoder
+                gd.debuginfo(prj="mt", info=f'')
 
             layers_per_stage = Policy.distribute_layers(len(module.layers), stage_manager.num_stages)
             stage_index = Policy.get_stage_index(layers_per_stage, stage_manager.stage)
@@ -184,19 +202,24 @@ class OPTPolicy(Policy):
 
 class OPTModelPolicy(OPTPolicy):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
     def module_policy(self):
         from transformers.models.opt.modeling_opt import OPTModel
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'')
+
         if self.pipeline_stage_manager:
+            gd.debuginfo(prj="mt", info=f'')
             self.set_pipeline_forward(
                 model_cls=OPTModel, new_forward=OPTPipelineForwards.opt_model_forward, policy=policy
             )
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
+        gd.debuginfo(prj="mt", info=f'')
         return super().get_held_layers()
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
@@ -209,6 +232,8 @@ class OPTForCausalLMPolicy(OPTPolicy):
         from transformers.models.opt.modeling_opt import OPTForCausalLM
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'')
+
         if self.shard_config.enable_tensor_parallelism:
             self.append_or_create_submodule_replacement(
                 description=SubModuleReplacementDescription(
@@ -217,29 +242,38 @@ class OPTForCausalLMPolicy(OPTPolicy):
                 policy=policy,
                 target_key=OPTForCausalLM,
             )
+            gd.debuginfo(prj="mt", info=f'')
         if self.pipeline_stage_manager:
             self.set_pipeline_forward(
                 model_cls=OPTForCausalLM, new_forward=OPTPipelineForwards.opt_for_causal_lm_forward, policy=policy
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
         held_layers = super().get_held_layers()
+        gd.debuginfo(prj="mt", info=f'')
+
         if self.pipeline_stage_manager.is_last_stage():
             held_layers.append(self.model.lm_head)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
         opt_model = self.model
+        gd.debuginfo(prj="mt", info=f'')
         if self.pipeline_stage_manager and self.pipeline_stage_manager.num_stages > 1:
             num_stages = self.pipeline_stage_manager.num_stages
+            gd.debuginfo(prj="mt", info=f'')
             if id(opt_model.model.decoder.embed_tokens.weight) == id(opt_model.lm_head.weight):
+                gd.debuginfo(prj="mt", info=f'')
                 return [{0: opt_model.model.decoder.embed_tokens.weight, num_stages - 1: opt_model.lm_head.weight}]
         return []
 
     def postprocess(self):
         if self.shard_config.enable_tensor_parallelism and self.pipeline_stage_manager is None:
+            gd.debuginfo(prj="mt", info=f'')
             binding_map = {
                 "model.decoder.embed_tokens": "lm_head",
             }
@@ -255,9 +289,11 @@ class OPTForCausalLMPolicy(OPTPolicy):
 class OPTForSequenceClassificationPolicy(OPTPolicy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
         from transformers.models.opt.modeling_opt import OPTForSequenceClassification
+        gd.debuginfo(prj="mt", info=f'')
 
         policy = super().module_policy()
         if self.pipeline_stage_manager:
@@ -266,13 +302,16 @@ class OPTForSequenceClassificationPolicy(OPTPolicy):
                 new_forward=OPTPipelineForwards.opt_for_sequence_classification_forward,
                 policy=policy,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
         held_layers = super().get_held_layers()
+        gd.debuginfo(prj="mt", info=f'')
         if self.pipeline_stage_manager.is_last_stage():
             held_layers.append(self.model.score)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
@@ -283,24 +322,32 @@ class OPTForSequenceClassificationPolicy(OPTPolicy):
 class OPTForQuestionAnsweringPolicy(OPTPolicy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
         from transformers.models.opt.modeling_opt import OPTForQuestionAnswering
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'')
+
         if self.pipeline_stage_manager:
             self.set_pipeline_forward(
                 model_cls=OPTForQuestionAnswering,
                 new_forward=OPTPipelineForwards.opt_for_question_answering_forward,
                 policy=policy,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
         held_layers = super().get_held_layers()
+        gd.debuginfo(prj="mt", info=f'')
+
         if self.pipeline_stage_manager.is_last_stage():
             held_layers.append(self.model.qa_outputs)
+            gd.debuginfo(prj="mt", info=f'')
+
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:

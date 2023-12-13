@@ -67,6 +67,7 @@ class Booster:
         mixed_precision: Optional[Union[MixedPrecision, str]] = None,
         plugin: Optional[Plugin] = None,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         if plugin is not None:
             assert isinstance(
                 plugin, Plugin
@@ -75,26 +76,32 @@ class Booster:
 
         # set accelerator
         if self.plugin and self.plugin.control_device():
+            gd.debuginfo(prj="mt", info=f'')
             self.accelerator = None
             if device is not None:
                 warnings.warn("The plugin will control the accelerator, so the device argument will be ignored.")
         else:
+            gd.debuginfo(prj="mt", info=f'')
             device = device or "cuda"
             self.accelerator = Accelerator(device)
 
         # set precision
         if self.plugin and self.plugin.control_precision():
+            gd.debuginfo(prj="mt", info=f'')
             if mixed_precision is not None:
                 warnings.warn("The plugin will control the precision, so the mixed_precision argument will be ignored.")
             self.mixed_precision = None
         elif mixed_precision is None:
+            gd.debuginfo(prj="mt", info=f'')
             self.mixed_precision = None
         else:
             # validate and set precision
             if isinstance(mixed_precision, str):
+                gd.debuginfo(prj="mt", info=f'')
                 # the user will take the default arguments for amp training
                 self.mixed_precision = mixed_precision_factory(mixed_precision)
             elif isinstance(mixed_precision, MixedPrecision):
+                gd.debuginfo(prj="mt", info=f'')
                 # the user can customize the arguments by passing the precision object
                 self.mixed_precision = mixed_precision
             else:
@@ -103,8 +110,10 @@ class Booster:
                 )
 
         if self.plugin is not None and self.plugin.control_checkpoint_io():
+            gd.debuginfo(prj="mt", info=f'')
             self.checkpoint_io = self.plugin.get_checkpoint_io()
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.checkpoint_io = GeneralCheckpointIO()
 
     def boost(
@@ -130,25 +139,30 @@ class Booster:
         Returns:
             List[Union[nn.Module, Optimizer, LRScheduler, DataLoader]]: The list of boosted input arguments.
         """
+        gd.debuginfo(prj="mt", info=f'')
         # TODO(FrankLeeeee): consider multi-model and multi-optimizer case
         # TODO(FrankLeeeee): consider multi-dataloader case
         pretrained_path = pretrained_utils.get_pretrained_path(model)
         # transform model for mixed precision
         if self.plugin:
+            gd.debuginfo(prj="mt", info=f'')
             model, optimizer, criterion, dataloader, lr_scheduler = self.plugin.configure(
                 model, optimizer, criterion, dataloader, lr_scheduler
             )
 
         if self.plugin and not self.plugin.control_device():
+            gd.debuginfo(prj="mt", info=f'')
             # transform model for accelerator
             model = self.accelerator.configure_model(model)
 
         if self.mixed_precision and (self.plugin is None or self.plugin and not self.plugin.control_precision()):
             # transform model for mixed precision
             # when mixed_precision is specified and the plugin is not given or does not control the precision
+            gd.debuginfo(prj="mt", info=f'')
             model, optimizer, criterion = self.mixed_precision.configure(model, optimizer, criterion)
 
         if pretrained_path:
+            gd.debuginfo(prj="mt", info=f'')
             self.load_model(model, pretrained_path)
             # clear pretrained path attr
             orig_model = model.unwrap() if isinstance(model, ModelWrapper) else model
@@ -163,6 +177,7 @@ class Booster:
             loss (torch.Tensor): The loss for backpropagation.
             optimizer (Optimizer): The optimizer to be updated.
         """
+        gd.debuginfo(prj="mt", info=f'')
         # TODO(frank lee): implement this method with plugin
         optimizer.backward(loss)
 
@@ -199,6 +214,7 @@ class Booster:
                             ret_dict['loss'] is the loss of forward if return_loss is set to True, else None.
                             ret_dict['outputs'] is the Huggingface style model outputs during forward if return_output is set to True, else None.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(
             self.plugin, PipelinePluginBase
         ), f"The plugin {self.plugin.__class__.__name__} does not support pipeline."
@@ -215,6 +231,7 @@ class Booster:
         Returns:
             contextmanager: Context to disable gradient synchronization.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert (
             self.plugin is not None
         ), f"no_sync is only enabled when a plugin is provided and the plugin supports no_sync."
@@ -232,6 +249,7 @@ class Booster:
                 in :attr:`state_dict` match the keys returned by this module's
                 :meth:`~torch.nn.Module.state_dict` function. Defaults to True.
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.checkpoint_io.load_model(model, checkpoint, strict)
 
     def save_model(
@@ -244,6 +262,7 @@ class Booster:
         size_per_shard: int = 1024,
         use_safetensors: bool = False,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         """Save model to checkpoint.
 
         Args:
@@ -279,6 +298,7 @@ class Booster:
                 names to compose the keys in state_dict. Defaults to None.
             size_per_shard (int, optional): Maximum size of checkpoint shard file in MB. This is useful only when ``shard=True``. Defaults to 1024.
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.checkpoint_io.load_optimizer(optimizer, checkpoint)
 
     def save_optimizer(
@@ -304,6 +324,7 @@ class Booster:
                 names to compose the keys in state_dict. Defaults to None.
             size_per_shard (int, optional): Maximum size of checkpoint shard file in MB. This is useful only when ``shard=True``. Defaults to 1024.
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.checkpoint_io.save_optimizer(optimizer, checkpoint, shard, gather_dtensor, prefix, size_per_shard)
 
     def save_lr_scheduler(self, lr_scheduler: LRScheduler, checkpoint: str) -> None:
@@ -313,6 +334,7 @@ class Booster:
             lr_scheduler (LRScheduler): A lr scheduler boosted by Booster.
             checkpoint (str): Path to the checkpoint. It must be a local file path.
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.checkpoint_io.save_lr_scheduler(lr_scheduler, checkpoint)
 
     def load_lr_scheduler(self, lr_scheduler: LRScheduler, checkpoint: str) -> None:
@@ -322,4 +344,5 @@ class Booster:
             lr_scheduler (LRScheduler): A lr scheduler boosted by Booster.
             checkpoint (str): Path to the checkpoint. It must be a local file path.
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.checkpoint_io.load_lr_scheduler(lr_scheduler, checkpoint)

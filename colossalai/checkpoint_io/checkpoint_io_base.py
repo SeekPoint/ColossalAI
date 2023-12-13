@@ -88,8 +88,10 @@ class CheckpointIO(ABC):
         origin_model = model
 
         if index_file_exists:
+            gd.debuginfo(prj="mt", info=f'')
             self.load_sharded_model(model, index_file_path, strict)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.load_unsharded_model(model, checkpoint, strict)
 
         return origin_model
@@ -132,8 +134,10 @@ class CheckpointIO(ABC):
         """
 
         if shard:
+            gd.debuginfo(prj="mt", info=f'')
             self.save_sharded_model(model, checkpoint, gather_dtensor, prefix, size_per_shard, use_safetensors)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.save_unsharded_model(model, checkpoint, gather_dtensor, use_safetensors)
 
     def load_optimizer(self, optimizer: Optimizer, checkpoint: str, prefix: str = None, size_per_shard: int = 1024):
@@ -155,9 +159,11 @@ class CheckpointIO(ABC):
             raise ValueError(f"Cannot find index file in {checkpoint}")
 
         if index_file_exists:
+            gd.debuginfo(prj="mt", info=f'')
             # the existence of index file means it is a sharded checkpoint
             self.load_sharded_optimizer(optimizer, index_file_path, prefix)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.load_unsharded_optimizer(optimizer, checkpoint)
 
     def save_optimizer(
@@ -186,8 +192,10 @@ class CheckpointIO(ABC):
         """
 
         if shard:
+            gd.debuginfo(prj="mt", info=f'')
             self.save_sharded_optimizer(optimizer, checkpoint, gather_dtensor, prefix, size_per_shard)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.save_unsharded_optimizer(optimizer, checkpoint, gather_dtensor)
 
     # ========================================================
@@ -315,6 +323,7 @@ class CheckpointIO(ABC):
             lr_scheduler (LRScheduler): lr scheduler to be saved.
             checkpoint: checkpoint path. The checkpoint path can only be a file path.
         """
+        gd.debuginfo(prj="mt", info=f'')
         torch.save(lr_scheduler.state_dict(), checkpoint)
 
     def load_lr_scheduler(self, lr_scheduler: LRScheduler, checkpoint: str):
@@ -325,5 +334,6 @@ class CheckpointIO(ABC):
             lr_scheduler (LRScheduler): lr scheduler to be loaded.
             checkpoint (str): the path for a single checkpoint file.
         """
+        gd.debuginfo(prj="mt", info=f'')
         state_dict = torch.load(checkpoint)
         lr_scheduler.load_state_dict(state_dict)

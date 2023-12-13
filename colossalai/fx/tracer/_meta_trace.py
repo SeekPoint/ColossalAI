@@ -30,12 +30,13 @@ def meta_trace(module: torch.nn.Module, fake_device=None, *args, **kwargs) -> Gr
     """
     graph = Graph()
     namespace = graph._graph_namespace
+    gd.debuginfo(prj="mt", info=f'')
 
     class MetaProxy(torch.Tensor):
         """
         A wrapping tensor that hacks `torch.autograd` without patching more `torch.ops.aten` ops.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         _tensor: torch.Tensor
         _node: Node
 
@@ -43,6 +44,7 @@ def meta_trace(module: torch.nn.Module, fake_device=None, *args, **kwargs) -> Gr
 
         @staticmethod
         def __new__(cls, tensor, fake_device=None, placeholder=False, name=None):
+            gd.debuginfo(prj="mt", info=f'')
             r = torch.Tensor._make_wrapper_subclass(
                 cls,
                 tensor.size(),
@@ -67,6 +69,7 @@ def meta_trace(module: torch.nn.Module, fake_device=None, *args, **kwargs) -> Gr
 
         @classmethod
         def __torch_dispatch__(cls, func, types, args=(), kwargs=None):
+            gd.debuginfo(prj="mt", info=f'')
             def unwrap(x):
                 nonlocal fake_device
                 if isinstance(x, MetaProxy):
@@ -119,6 +122,7 @@ def meta_trace(module: torch.nn.Module, fake_device=None, *args, **kwargs) -> Gr
             return out
 
     def wrap(x):
+        gd.debuginfo(prj="mt", info=f'')
         return MetaProxy(x, fake_device=fake_device, placeholder=True) if isinstance(x, torch.Tensor) else x
 
     args = tree_map(wrap, args)

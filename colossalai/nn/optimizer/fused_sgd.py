@@ -54,9 +54,15 @@ class FusedSGD(Optimizer):
         The Nesterov version is analogously modified.
     """
 
-    def __init__(
-        self, params, lr=required, momentum=0, dampening=0, weight_decay=0, nesterov=False, wd_after_momentum=False
-    ):
+    def __init__(self,
+                 params,
+                 lr=required,
+                 momentum=0,
+                 dampening=0,
+                 weight_decay=0,
+                 nesterov=False,
+                 wd_after_momentum=False):
+        gd.debuginfo(prj="mt", info=f'')
         if lr is not required and lr < 0.0:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if momentum < 0.0:
@@ -72,6 +78,7 @@ class FusedSGD(Optimizer):
         self.wd_after_momentum = wd_after_momentum
 
         if multi_tensor_applier.available:
+            gd.debuginfo(prj="mt", info=f'')
             from colossalai.kernel.op_builder import FusedOptimBuilder
 
             fused_optim = FusedOptimBuilder().load()
@@ -85,11 +92,13 @@ class FusedSGD(Optimizer):
             raise RuntimeError("FusedSGD requires cuda extensions")
 
     def __setstate__(self, state):
+        gd.debuginfo(prj="mt", info=f'')
         super(FusedSGD, self).__setstate__(state)
         for group in self.param_groups:
             group.setdefault("nesterov", False)
 
     def get_momentums(self, params):
+        gd.debuginfo(prj="mt", info=f'')
         momentums = []
         first_run = True
         for p in params:
@@ -113,9 +122,11 @@ class FusedSGD(Optimizer):
             closure (callable, optional): A closure that reevaluates the model
                 and returns the loss.
         """
+        gd.debuginfo(prj="mt", info=f'')
         loss = None
         if closure is not None:
             loss = closure()
+            gd.debuginfo(prj="mt", info=f'')
 
         for group in self.param_groups:
             weight_decay = group["weight_decay"]

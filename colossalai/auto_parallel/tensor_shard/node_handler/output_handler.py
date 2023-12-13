@@ -21,8 +21,10 @@ class OutputHandler(NodeHandler):
     ) -> None:
         super().__init__(node, device_mesh, strategies_vector)
         self.output_option = output_option
+        gd.debuginfo(prj="mt", info=f'')
 
     def get_strategy_generator(self) -> List[StrategyGenerator]:
+        gd.debuginfo(prj="mt", info=f'')
         op_data_mapping = self.get_operation_data_mapping()
         generators = []
         generators.append(OutputGenerator(op_data_mapping, self.device_mesh, self.predecessor_node, self.output_option))
@@ -31,6 +33,7 @@ class OutputHandler(NodeHandler):
     def get_operation_data_mapping(self) -> Dict[str, OperationData]:
         # use transposed shape for strategies
         # the strategies will be transformed back to its original shape in self.post_process
+        gd.debuginfo(prj="mt", info=f'')
         mapping = {}
         output_meta_data = []
         for index, input_node in enumerate(self.predecessor_node):
@@ -42,8 +45,10 @@ class OutputHandler(NodeHandler):
 
         assert len(output_meta_data) > 0, f"Output node {self.node} has no input node."
         if len(output_meta_data) == 1:
+            gd.debuginfo(prj="mt", info=f'')
             output_meta_data = output_meta_data[0]
         else:
+            gd.debuginfo(prj="mt", info=f'')
             output_meta_data = tuple(output_meta_data)
 
         self.node._meta_data = output_meta_data

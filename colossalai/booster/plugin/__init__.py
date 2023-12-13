@@ -10,6 +10,7 @@ import torch
 from packaging import version
 
 if version.parse(torch.__version__) >= version.parse("1.12.0"):
+    gd.debuginfo(prj="mt", info=f'')
     from .torch_fsdp_plugin import TorchFSDPPlugin
 
     __all__.append("TorchFSDPPlugin")

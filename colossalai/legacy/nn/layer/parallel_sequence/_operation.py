@@ -20,6 +20,7 @@ class RingQK(torch.autograd.Function):
     @staticmethod
     @custom_fwd
     def forward(ctx, sub_q, sub_k, batch_size, num_attention_heads, sub_seq_length):
+        gd.debuginfo(prj="mt", info=f'')
         # save tensor for backward
         ctx.save_for_backward(sub_q, sub_k)
         ctx.sub_seq_length = sub_seq_length
@@ -53,6 +54,7 @@ class RingQK(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         (
             sub_q,
             sub_k,
@@ -97,6 +99,7 @@ class RingAV(torch.autograd.Function):
     @staticmethod
     @custom_fwd
     def forward(ctx, attention_score, sub_v, batch_size, num_attention_heads, attention_head_size, sub_seq_length):
+        gd.debuginfo(prj="mt", info=f'')
         local_rank = gpc.get_local_rank(ParallelMode.SEQUENCE)
         local_world_size = gpc.get_world_size(ParallelMode.SEQUENCE)
         local_start_idx, local_end_idx = _calc_current_device_range(local_rank, sub_seq_length)
@@ -130,6 +133,7 @@ class RingAV(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         local_rank = gpc.get_local_rank(ParallelMode.SEQUENCE)
         local_world_size = gpc.get_world_size(ParallelMode.SEQUENCE)
         local_start_idx, local_end_idx = _calc_current_device_range(local_rank, ctx.sub_seq_length)

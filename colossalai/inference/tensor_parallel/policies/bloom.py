@@ -21,24 +21,28 @@ except:
 
 def get_triton_layernorm_forward():
     if HAS_TRITON_NORM:
-
+        gd.debuginfo(prj="mt", info=f'')
         def _triton_layernorm_forward(self: LayerNorm, hidden_states: torch.Tensor):
+            gd.debuginfo(prj="mt", info=f'')
             return layer_norm(hidden_states, self.weight.data, self.bias, self.eps)
 
         return _triton_layernorm_forward
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return None
 
 
 class BloomModelInferPolicy(BloomForCausalLMPolicy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
         from transformers.models.bloom.modeling_bloom import BloomAttention, BloomBlock, BloomForCausalLM, BloomModel
-
+        gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
         if self.shard_config.inference_gptq:
+            gd.debuginfo(prj="mt", info=f'')
             from colossalai.inference.quant.gptq.cai_gptq import ColCaiQuantLinear, RowCaiQuantLinear
             policy[BloomBlock] = ModulePolicyDescription(attribute_replacement={
                 "self_attention.hidden_size": self.model.config.hidden_size // self.shard_config.tensor_parallel_size,

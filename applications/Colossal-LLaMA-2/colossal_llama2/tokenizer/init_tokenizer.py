@@ -23,6 +23,7 @@ logger = get_dist_logger()
 def expand_vocab_tokenizer(
     source_tokenizer_dir: Union[str, os.PathLike], target_tokenizer_dir: Union[str, os.PathLike], new_tokens: List[str]
 ) -> None:
+    gd.debuginfo(prj="mt", info=f'')
     """Expand tokenizer for continue pre-training."""
     if os.path.exists(target_tokenizer_dir):
         raise RuntimeError(f"Find existed directory {target_tokenizer_dir}")
@@ -60,6 +61,7 @@ def expand_vocab_tokenizer(
 
 
 def main():
+    gd.debuginfo(prj="mt", info=f'')
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--source_tokenizer_dir", type=str, required=True, default=None, help="Source tokenizer directory"

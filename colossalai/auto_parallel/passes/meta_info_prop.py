@@ -22,6 +22,7 @@ def _normalize_tuple(x):
 @compatibility(is_backward_compatible=False)
 class MetaInfoProp:
     def __init__(self, module: GraphModule) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.module = module
         self.func_dict = {
             "placeholder": self.placeholder_handler,
@@ -36,8 +37,11 @@ class MetaInfoProp:
         """
         Set uuid to tensor
         """
+        gd.debuginfo(prj="mt", info=f'')
         if isinstance(x, torch.Tensor):
+            gd.debuginfo(prj="mt", info=f'')
             if not x.data_ptr():
+                gd.debuginfo(prj="mt", info=f'')
                 data_ptr = uuid.uuid4()
                 x.data_ptr = lambda: data_ptr
 
@@ -45,9 +49,12 @@ class MetaInfoProp:
         """
         Check if the node is inplace operation.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if node.op == "call_module":
+            gd.debuginfo(prj="mt", info=f'')
             return node.graph.owning_module.get_submodule(node.target).__class__ in OUTPUT_SAVED_MOD
         elif node.op == "call_function":
+            gd.debuginfo(prj="mt", info=f'')
             return node.target in OUTPUT_SAVED_OPS
         return False
 
@@ -55,6 +62,7 @@ class MetaInfoProp:
         """
         Run the meta information propagation pass on the module.
         """
+        gd.debuginfo(prj="mt", info=f'')
         for node in self.module.graph.nodes:
             node: Node
             self.func_dict[node.op](node)
@@ -64,6 +72,7 @@ class MetaInfoProp:
         """
         Handle the placeholder node.
         """
+        gd.debuginfo(prj="mt", info=f'')
         graph_info = GraphInfo()
         out = _normalize_tuple(getattr(node, "_meta_data", None))
         graph_info.fwd_out = list(out) if out[0] is not None else []
@@ -74,6 +83,7 @@ class MetaInfoProp:
         """
         Handle the get_attr node.
         """
+        gd.debuginfo(prj="mt", info=f'')
         graph_info = GraphInfo()
         node.meta = {**asdict(graph_info)}
 
@@ -82,6 +92,7 @@ class MetaInfoProp:
         """
         Handle the output node.
         """
+        gd.debuginfo(prj="mt", info=f'')
         graph_info = GraphInfo()
         output_tensors = []
         for par in node._input_nodes:
@@ -95,6 +106,7 @@ class MetaInfoProp:
         """
         Handle other kind of nodes
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert hasattr(node, "best_strategy_info"), f"Cannot find best_strategy_info in node {node}, {node.op}"
         graph_info = GraphInfo()
         meta_info = node.best_strategy_info
@@ -106,6 +118,7 @@ class MetaInfoProp:
         output_tensors: List[torch.Tensor] = meta_info.fwd_out
 
         if self._is_inplace(node):
+            gd.debuginfo(prj="mt", info=f'')
             # inplace operation will not create new tensor, and it only has one parent node
             # TODO: Verify this observation
             # set data_ptr for input_tensor, buffer_tensor and output_tensor of current node
@@ -120,6 +133,7 @@ class MetaInfoProp:
                 tensor.data_ptr = parent_tensor.data_ptr
 
         else:
+            gd.debuginfo(prj="mt", info=f'')
             for par in node._input_nodes:
                 # set data_ptr for the input_tensor of current node from the output_tensor of its parent node
                 for tensor in par.meta.get("fwd_out", []):

@@ -18,6 +18,9 @@ def embedding_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem
     Returns:
         Tuple[TrainCycleItem, TrainCycleItem, List[torch.Tensor]]: compute cost, memory cost and forward inputs
     """
+
+    gd.debuginfo(prj="mt", info=f'')
+
     input_tensor = next(filter(lambda x: x.type == OperationDataType.ARG, args)).data
     weight_tensor = next(filter(lambda x: x.type == OperationDataType.PARAM, args)).data
     output_tensor = next(filter(lambda x: x.type == OperationDataType.OUTPUT, args)).data

@@ -22,9 +22,11 @@ class GetItemStrategyGenerator(FollowingStrategyGenerator):
     """
 
     def validate(self) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         return super().validate()
 
     def update_compute_cost(self, strategy: ShardingStrategy):
+        gd.debuginfo(prj="mt", info=f'')
         compute_cost = TrainCycleItem(fwd=10, bwd=10, total=20)
         strategy.compute_cost = compute_cost
 
@@ -32,6 +34,7 @@ class GetItemStrategyGenerator(FollowingStrategyGenerator):
         """
         Compute the memory cost per device with this specific strategy.
         """
+        gd.debuginfo(prj="mt", info=f'')
         forward_size_mapping = {
             "input": self._compute_size_in_bytes(strategy, "input"),
             "output": self._compute_size_in_bytes(strategy, "output"),
@@ -67,6 +70,7 @@ class TensorStrategyGenerator(GetItemStrategyGenerator):
     def collate_strategies(self) -> List[ShardingStrategy]:
         strategy_list = []
         getitem_index = self.op_data["index"].data
+        gd.debuginfo(prj="mt", info=f'')
         for index, strategy in enumerate(self.predecessor_node.strategies_vector):
             try:
                 logger = get_dist_logger()
@@ -115,6 +119,7 @@ class TensorStrategyGenerator(GetItemStrategyGenerator):
                 sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict_mapping)
 
                 name = f'{sharding_spec_mapping["output"].sharding_sequence} = {sharding_spec_mapping["input"].sharding_sequence}_{index}'
+                gd.debuginfo(prj="mt", info=f'name={name}')
 
                 strategy = self.get_sharding_strategy(
                     name=name,
@@ -140,6 +145,7 @@ class TensorTupleStrategyGenerator(GetItemStrategyGenerator):
     """
 
     def collate_strategies(self) -> List[ShardingStrategy]:
+        gd.debuginfo(prj="mt", info=f'')
         strategy_list = []
         index = self.op_data["index"].data
 
@@ -159,6 +165,7 @@ class TensorTupleStrategyGenerator(GetItemStrategyGenerator):
                 input_sharding_info += f"{sharding_spec.sharding_sequence}, "
             input_sharding_info += ")"
             name = f'{sharding_spec_mapping["output"].sharding_sequence} = {input_sharding_info}_{strategy_index}'
+            gd.debuginfo(prj="mt", info=f'name={name}')
 
             strategy = self.get_sharding_strategy(
                 name=name,

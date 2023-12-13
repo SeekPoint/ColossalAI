@@ -25,9 +25,11 @@ __all__ = ["FP16Optimizer"]
 
 
 def load_fused_optim():
+    gd.debuginfo(prj="mt", info=f'')
     global fused_optim
 
     if fused_optim is None:
+        gd.debuginfo(prj="mt", info=f'')
         fused_optim = FusedOptimBuilder().load()
 
 
@@ -41,12 +43,14 @@ def _multi_tensor_copy_this_to_that(this, that, overflow_buf=None):
     with bfloat16.
     """
     if overflow_buf:
+        gd.debuginfo(prj="mt", info=f'')
         overflow_buf.fill_(0)
         # Scaling with factor `1.0` is equivalent to copy.
         global fused_optim
         load_fused_optim()
         multi_tensor_applier(fused_optim.multi_tensor_scale, overflow_buf, [this, that], 1.0)
     else:
+        gd.debuginfo(prj="mt", info=f'')
         for this_, that_ in zip(this, that):
             that_.copy_(this_)
 
@@ -72,6 +76,7 @@ class FP16Optimizer(Optimizer):
         dp_process_group: ProcessGroup = None,
         mp_process_group: ProcessGroup = None,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         # have a defaults for compatibility with pytorch optim
         self._optimizer = optimizer
         self._defaults = optimizer.defaults
@@ -88,14 +93,18 @@ class FP16Optimizer(Optimizer):
         # get process group
         def _get_process_group(parallel_mode):
             if gpc.is_initialized(parallel_mode) and gpc.get_world_size(parallel_mode):
+                gd.debuginfo(prj="mt", info=f'')
                 return gpc.get_group(parallel_mode)
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 return None
 
         if dp_process_group is None:
             dp_process_group = _get_process_group(ParallelMode.DATA)
+            gd.debuginfo(prj="mt", info=f'')
         if mp_process_group is None:
             mp_process_group = _get_process_group(ParallelMode.MODEL)
+            gd.debuginfo(prj="mt", info=f'')
 
         self._dp_process_group = dp_process_group
         self._mp_process_group = mp_process_group
@@ -210,6 +219,7 @@ class FP16Optimizer(Optimizer):
         return self._defaults
 
     def _check_overflow(self):
+        gd.debuginfo(prj="mt", info=f'')
         # clear previous overflow record
         self._found_overflow.fill_(0.0)
 
@@ -236,21 +246,24 @@ class FP16Optimizer(Optimizer):
         Args:
             set_to_none (bool): Whether set the gradient to None.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         # set_to_none = True can save some memory space
         for param_group in self._optimizer.param_groups:
             zero_gard_by_list(param_group["params"], set_to_none=set_to_none)
 
     def _get_fp32_param_groups_to_update(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self._fp32_master_param_groups + self._fp32_param_groups
 
     def _unscale_grads(self):
+        gd.debuginfo(prj="mt", info=f'')
         for group in self._get_fp32_param_groups_to_update():
             for p in group:
                 if p.grad is not None:
                     p.grad.data.div_(self.loss_scale)
 
     def _assign_grad_to_fp32_master_param(self):
+        gd.debuginfo(prj="mt", info=f'')
         # This only needs to be done for the float16 group.
         for fp16_param_group, fp32_master_param_group in zip(self._fp16_param_groups, self._fp32_master_param_groups):
             for fp16_param, fp32_param in zip(fp16_param_group, fp32_master_param_group):
@@ -260,6 +273,8 @@ class FP16Optimizer(Optimizer):
                     fp16_param.grad = None
 
     def _update_fp16_param_from_fp32_param(self):
+        gd.debuginfo(prj="mt", info=f'')
+
         fp16_param_data = []
         fp32_master_param_data = []
         for fp16_group, fp32_group in zip(self._fp16_param_groups, self._fp32_master_param_groups):
@@ -272,7 +287,7 @@ class FP16Optimizer(Optimizer):
 
     def step(self):
         """Update the model parameters."""
-
+        gd.debuginfo(prj="mt", info=f'')
         # Copy gradients from model params to main params.
         self._assign_grad_to_fp32_master_param()
         self._unscale_grads()
@@ -305,13 +320,13 @@ class FP16Optimizer(Optimizer):
         Args:
             loss (:class:`torch.Tensor`): the loss value.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         scaled_loss = loss * self.grad_scaler.scale
         scaled_loss.backward()
 
     def state_dict(self):
         """Returns the states of the fp16 optimizer as a dict object."""
-
+        gd.debuginfo(prj="mt", info=f'')
         state_dict = {}
         state_dict["optimizer"] = self._optimizer.state_dict()
         if self.grad_scaler:
@@ -325,7 +340,7 @@ class FP16Optimizer(Optimizer):
         Args:
             state_dict (dict): the states of the fp16 optimizer
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         # Optimizer.
         self._optimizer.load_state_dict(state_dict["optimizer"])
 
@@ -347,6 +362,7 @@ class FP16Optimizer(Optimizer):
         Args:
             clip_grad (float): the max norm for clipping
         """
+        gd.debuginfo(prj="mt", info=f'')
         params = []
         for param_group in self._optimizer.param_groups:
             for param in param_group["params"]:

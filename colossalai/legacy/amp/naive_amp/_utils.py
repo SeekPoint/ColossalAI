@@ -12,6 +12,7 @@ def has_inf_or_nan(tensor):
     Returns:
         bool: Whether the tensor has inf or nan. True for yes and False for no.
     """
+    gd.debuginfo(prj="mt", info=f'')
     try:
         # if tensor is half, the .float() incurs an additional deep copy, but it's necessary if
         # Pytorch's .sum() creates a one-element tensor of the same type as tensor
@@ -37,6 +38,7 @@ def zero_gard_by_list(tensor_list: List[Tensor], set_to_none: bool = True) -> No
 
     Note: copied from torch.optim.optimizer.
     """
+    gd.debuginfo(prj="mt", info=f'')
     for param in tensor_list:
         if param.grad is not None:
             if set_to_none:

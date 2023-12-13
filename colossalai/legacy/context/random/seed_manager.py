@@ -85,6 +85,7 @@ class SeedManager:
         torch.cuda.set_rng_state(current_state)
 
     def reset(self):
+        gd.debuginfo(prj="mt", info=f'')
         self._current_mode = None
         self._seeds = dict()
         self._seed_states = dict()

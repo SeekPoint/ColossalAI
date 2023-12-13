@@ -19,6 +19,7 @@ class DefaultReshapeHandler(MetaInfoNodeHandler):
     """
 
     def get_strategy_generator(self) -> List[StrategyGenerator]:
+        gd.debuginfo(prj="mt", info=f'')
         op_data_mapping = self.get_operation_data_mapping()
         generators = []
         generators.append(DefaultReshapeGenerator(op_data_mapping, self.device_mesh, self.node.args[0]))
@@ -32,8 +33,10 @@ class DefaultReshapeHandler(MetaInfoNodeHandler):
                 such as tuple of tensor.
         """
         if isinstance(data, torch.Tensor):
+            gd.debuginfo(prj="mt", info=f'')
             return data.shape
         else:
+            gd.debuginfo(prj="mt", info=f'')
             assert isinstance(data, tuple), "input_data should be a tuple of tensor or a tensor."
             logical_shape = []
             for tensor in data:
@@ -49,8 +52,10 @@ class DefaultReshapeHandler(MetaInfoNodeHandler):
         # check if the input operand is a parameter
         if isinstance(self.node.args[0]._meta_data, torch.nn.parameter.Parameter):
             data_type = OperationDataType.PARAM
+            gd.debuginfo(prj="mt", info=f'')
         else:
             data_type = OperationDataType.ARG
+            gd.debuginfo(prj="mt", info=f'')
 
         input_data = self.node.args[0]._meta_data
         input_logical_shape = self.infer_logical_shape(input_data)

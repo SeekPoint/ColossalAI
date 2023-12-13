@@ -32,6 +32,7 @@ class LogByEpochHook(BaseHook):
         super().__init__(priority)
         self.logger = logger
         self._interval = interval
+        gd.debuginfo(prj="mt", info=f'')
 
     def _is_epoch_to_log(self, trainer):
         return trainer.cur_epoch % self._interval == 0
@@ -49,6 +50,7 @@ class LogMetricByStepHook(BaseHook):
 
     def __init__(self, priority: int = 10):
         super().__init__(priority)
+        gd.debuginfo(prj="mt", info=f'')
 
     def after_train_iter(self, trainer, *args):
         trainer.states["step_metrics"] = dict()
@@ -80,6 +82,7 @@ class LogMetricByEpochHook(LogByEpochHook):
     """
 
     def __init__(self, logger, interval: int = 1, priority: int = 10) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(logger, interval, priority)
         self._is_rank_to_log = is_dp_rank_0() and is_tp_rank_0() and is_no_pp_or_last_stage()
 
@@ -127,6 +130,7 @@ class TensorboardHook(BaseHook):
         parallel_mode: ParallelMode = ParallelMode.GLOBAL,
         priority: int = 10,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(priority=priority)
         from torch.utils.tensorboard import SummaryWriter
 
@@ -218,6 +222,7 @@ class LogTimingByEpochHook(LogByEpochHook):
         log_eval: bool = True,
         ignore_num_train_steps: int = 0,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(logger=logger, interval=interval, priority=priority)
         self._timer = timer
         self._log_eval = log_eval
@@ -282,6 +287,7 @@ class LogMemoryByEpochHook(LogByEpochHook):
         log_eval: bool = True,
         report_cpu: bool = False,  # no reference
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(logger=logger, interval=interval, priority=priority)
         self._log_eval = log_eval
         self._is_rank_to_log = is_dp_rank_0() and is_tp_rank_0()

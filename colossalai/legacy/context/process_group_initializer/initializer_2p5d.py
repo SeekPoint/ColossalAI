@@ -14,6 +14,7 @@ from .process_group_initializer import ProcessGroupInitializer
 from pydebug import gd, infoTensor
 
 def _check_tesseract_env_var(tesseract_dim: int, tesseract_dep: int):
+    gd.debuginfo(prj="mt", info=f'')
     # check global variable for TESSERACT
     env_tesseract_dim = env.tesseract_dim
     env_tesseract_dep = env.tesseract_dep
@@ -48,6 +49,7 @@ class Initializer_2p5D_ROW(ProcessGroupInitializer):
     """
 
     def __init__(self, tesseract_dim: int, tesseract_dep: int, *args):
+        gd.debuginfo(prj="mt", info=f'')
         super(Initializer_2p5D_ROW, self).__init__(*args)
         self.num_group = self.world_size // self.tensor_parallel_size
         self.tesseract_dep = tesseract_dep
@@ -63,6 +65,7 @@ class Initializer_2p5D_ROW(ProcessGroupInitializer):
             Tuple (local_rank, group_world_size, process_group, ranks_in_group, mode):
                 2.5D tensor row parallelism's information in a tuple.
         """
+        gd.debuginfo(prj="mt", info=f'')
         local_rank = None
         ranks_in_group = None
         process_group = None
@@ -105,6 +108,7 @@ class Initializer_2p5D_Col(ProcessGroupInitializer):
     """
 
     def __init__(self, tesseract_dim: int, tesseract_dep: int, *args):
+        gd.debuginfo(prj="mt", info=f'')
         super(Initializer_2p5D_Col, self).__init__(*args)
         self.num_group = self.world_size // self.tensor_parallel_size
         self.tesseract_dep = tesseract_dep
@@ -117,6 +121,7 @@ class Initializer_2p5D_Col(ProcessGroupInitializer):
             Tuple (local_rank, group_world_size, process_group, ranks_in_group, mode):
                 2.5D tensor col parallelism's information in a tuple.
         """
+        gd.debuginfo(prj="mt", info=f'')
         local_rank = None
         ranks_in_group = None
         process_group = None
@@ -159,6 +164,7 @@ class Initializer_2p5D_Dep(ProcessGroupInitializer):
     """
 
     def __init__(self, tesseract_dim: int, tesseract_dep: int, *args):
+        gd.debuginfo(prj="mt", info=f'')
         super(Initializer_2p5D_Dep, self).__init__(*args)
         self.num_group = self.world_size // self.tensor_parallel_size
         self.tesseract_dep = tesseract_dep
@@ -171,6 +177,7 @@ class Initializer_2p5D_Dep(ProcessGroupInitializer):
             Tuple (local_rank, group_world_size, process_group, ranks_in_group, mode):
                 2.5D tensor depth parallelism's information in a tuple.
         """
+        gd.debuginfo(prj="mt", info=f'')
         local_rank = None
         ranks_in_group = None
         process_group = None
@@ -214,6 +221,7 @@ class Initializer_2p5D_XZ(ProcessGroupInitializer):
     """
 
     def __init__(self, tesseract_dim: int, tesseract_dep: int, *args):
+        gd.debuginfo(prj="mt", info=f'')
         super(Initializer_2p5D_XZ, self).__init__(*args)
         self.num_group = self.world_size // self.tensor_parallel_size
         self.tesseract_dep = tesseract_dep
@@ -226,6 +234,7 @@ class Initializer_2p5D_XZ(ProcessGroupInitializer):
             Tuple (local_rank, group_world_size, process_group, ranks_in_group, mode):
                 2.5D tensor colXdepth parallelism's information in a tuple.
         """
+        gd.debuginfo(prj="mt", info=f'')
         local_rank = None
         ranks_in_group = None
         process_group = None
@@ -278,6 +287,7 @@ class Initializer_2p5D(ProcessGroupInitializer):
         tensor_parallel_size: int,
         depth: int,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         args = (rank, world_size, config, data_parallel_size, pipeline_parallel_size, tensor_parallel_size)
         super().__init__(*args)
         self.num_group = self.world_size // self.tensor_parallel_size
@@ -301,6 +311,7 @@ class Initializer_2p5D(ProcessGroupInitializer):
             List[Tuple (local_rank, group_world_size, process_group, ranks_in_group, mode)]:
                 Whole 2.5D tensor parallelism's information in a list of tuples.
         """
+        gd.debuginfo(prj="mt", info=f'')
         parallel_setting = [
             self.col_initializer.init_dist_group(),
             self.row_initializer.init_dist_group(),

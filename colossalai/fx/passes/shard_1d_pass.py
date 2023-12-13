@@ -38,12 +38,15 @@ def weight_split(weight: torch.nn.parameter.Parameter, dim: int, col_normal: boo
     """
     if col_normal:
         setattr(weight, "fx_attr", (dim, "SHARD", "TP", "col_normal"))
+        gd.debuginfo(prj="mt", info=f'')
     else:
         setattr(weight, "fx_attr", (dim, "SHARD", "TP", "col_needs_many_outputs"))
+        gd.debuginfo(prj="mt", info=f'')
     return weight
 
 
 def column_shard_linear_pass(gm: torch.fx.GraphModule):
+    gd.debuginfo(prj="mt", info=f'')
     # Split all the linear module with column shard. Currently for testing only.
     mod_graph = gm.graph
     for node in mod_graph.nodes:
@@ -59,6 +62,7 @@ def column_shard_linear_pass(gm: torch.fx.GraphModule):
 
 
 def row_shard_linear_pass(gm: torch.fx.GraphModule):
+    gd.debuginfo(prj="mt", info=f'')
     # Split all the linear module with row shard. Currently for testing only.
     mod_graph = gm.graph
     for node in mod_graph.nodes:
@@ -78,17 +82,22 @@ def transformer_mlp_pass(graph_module: torch.fx.GraphModule, process_group: Proc
     # TODO: Needs to handle special cases, like x = linear(x) + linear(x)
     graph = graph_module.graph
     world_size = process_group.world_size()
+    gd.debuginfo(prj="mt", info=f'')
 
     def _traverse_and_annotate(node, start_tracking, annotation_record, world_size):
+        gd.debuginfo(prj="mt", info=f'')
         # traverse the graph to look for consecutive linear layers
         is_linear_module = False
 
         if node.op == "call_module":
+            gd.debuginfo(prj="mt", info=f'')
             # look for the linear layer
             module = node.graph.owning_module.get_submodule(node.target)
             if isinstance(module, nn.Linear):
+                gd.debuginfo(prj="mt", info=f'')
                 is_linear_module = True
                 if start_tracking:
+                    gd.debuginfo(prj="mt", info=f'')
                     # when start_tracking = True
                     # it means the first linear has been found and the current module
                     # is the second linear
@@ -121,6 +130,7 @@ def transformer_mlp_pass(graph_module: torch.fx.GraphModule, process_group: Proc
                     start_tracking = False
                     annotation_record.clear()
                 else:
+                    gd.debuginfo(prj="mt", info=f'')
                     # when start tracking = False
                     # it means the current layer is the first linear
                     # set the linear layer to be col-sharded
@@ -132,16 +142,21 @@ def transformer_mlp_pass(graph_module: torch.fx.GraphModule, process_group: Proc
             # if non-element wise op is found, we reset the tracking
             if node.op == "call_module":
                 module = node.graph.owning_module.get_submodule(node.target)
+                gd.debuginfo(prj="mt", info=f'')
                 if module.__class__ not in ELEMENTWISE_MODULE_OP:
                     start_tracking = False
+                    gd.debuginfo(prj="mt", info=f'')
             elif node.op == "call_function" or node.op == "call_method":
                 if node.target not in ELEMENTWISE_FUNC_OP:
                     start_tracking = False
+                    gd.debuginfo(prj="mt", info=f'')
             elif len(node.users.keys()) > 1:
                 start_tracking = False
+                gd.debuginfo(prj="mt", info=f'')
 
             if not start_tracking:
                 annotation_record.clear()
+                gd.debuginfo(prj="mt", info=f'')
 
         # stop tracking for consecutive linear when branch is found
         # e.g.
@@ -152,6 +167,7 @@ def transformer_mlp_pass(graph_module: torch.fx.GraphModule, process_group: Proc
         if len(next_nodes) > 1:
             start_tracking = False
             annotation_record.clear()
+            gd.debuginfo(prj="mt", info=f'')
 
         # traverse
         for node in next_nodes:

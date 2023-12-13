@@ -74,6 +74,7 @@ class CPUAdam(NVMeOptimizer):
         nvme_offload_fraction: float = 0.0,
         nvme_offload_dir: Optional[str] = None,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         default_args = dict(lr=lr, betas=betas, eps=eps, weight_decay=weight_decay, bias_correction=bias_correction)
         super(CPUAdam, self).__init__(model_params, default_args, nvme_offload_fraction, nvme_offload_dir)
         self.adamw_mode = adamw_mode
@@ -98,11 +99,15 @@ class CPUAdam(NVMeOptimizer):
     ):
         grad = grad.to(data.dtype)
 
+        gd.debuginfo(prj="mt", info=f'')
+
         if weight_decay != 0:
             if use_adamw:
+                gd.debuginfo(prj="mt", info=f'')
                 data.mul_(1 - lr * weight_decay)
             else:
                 grad = grad.add(data, alpha=weight_decay)
+                gd.debuginfo(prj="mt", info=f'')
 
         # Decay the first and second moment running average coefficient
         exp_avg.mul_(beta1).add_(grad, alpha=1 - beta1)
@@ -117,6 +122,7 @@ class CPUAdam(NVMeOptimizer):
 
     @torch.no_grad()
     def step(self, closure=None, div_scale: float = -1):
+        gd.debuginfo(prj="mt", info=f'')
         loss = None
         if closure is not None:
             with torch.enable_grad():

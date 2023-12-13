@@ -3,10 +3,12 @@ from pydebug import gd, infoTensor
 
 class Registry:
     def __init__(self, name):
+        gd.debuginfo(prj="mt", info=f'')
         self.name = name
         self.store = {}
 
     def register(self, source):
+        gd.debuginfo(prj="mt", info=f'')
         def wrapper(func):
             if isinstance(source, (list, tuple)):
                 # support register a list of items for this func
@@ -19,6 +21,7 @@ class Registry:
         return wrapper
 
     def get(self, source):
+        gd.debuginfo(prj="mt", info=f'')
         assert source in self.store, f"{source} not found in the {self.name} registry"
         target = self.store[source]
         return target

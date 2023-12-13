@@ -460,6 +460,7 @@ def gptq_fused_linear_triton(
     g_idx=None,
     act_type=0,
 ):
+    gd.debuginfo(prj="mt", info=f'')
     # print("gptq fused ", qkv_fused, add_bias, add_residual)
     assert input.is_cuda, "input is not in cuda"
     assert qweight.is_cuda, "qweight is not in cuda"
@@ -481,6 +482,7 @@ def gptq_fused_linear_triton(
             output = torch.empty((input.shape[0], qweight.shape[1]), device=input.device, dtype=torch.float16)
         # print("dtype, ", qweight.dtype, output.dtype, scales.dtype, qzeros.dtype, bias.dtype, residual.dtype)
         if g_idx is None:
+            gd.debuginfo(prj="mt", info=f'')
             cai_gptq_matmul_248_kernel[grid](
                 input,
                 qweight,
@@ -509,6 +511,7 @@ def gptq_fused_linear_triton(
                 ACT_TYPE=act_type,
             )
         else:
+            gd.debuginfo(prj="mt", info=f'')
             cai_gptq_idx_matmul_248_kernel[grid](
                 input,
                 qweight,
@@ -538,6 +541,8 @@ def gptq_fused_linear_triton(
                 ACT_TYPE=act_type,
             )
         if qkv_fused:
+            gd.debuginfo(prj="mt", info=f'')
             return output.view(3, input.shape[0], qweight.shape[1])
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return output

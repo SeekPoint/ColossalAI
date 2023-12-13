@@ -29,6 +29,7 @@ class ModelSharder(object):
         self.model = model
         self.policy = get_autopolicy(self.model, shard_config.inference_only) if policy is None else policy
         self.shard_config = shard_config
+        gd.debuginfo(prj="mt", info=f'')
 
     def shard(self) -> List[Dict[int, Tensor]]:
         r"""
@@ -43,13 +44,16 @@ class ModelSharder(object):
         self._replace_module(include=held_layers)
         self._materialize()
         self._postprocess()
+        gd.debuginfo(prj="mt", info=f'')
         return shared_params
 
     def _preprocess(self) -> None:
         self.model = self.policy.preprocess()
+        gd.debuginfo(prj="mt", info=f'')
 
     def _postprocess(self) -> None:
         self.model = self.policy.postprocess()
+        gd.debuginfo(prj="mt", info=f'')
 
     def _replace_module(self, include: Optional[Set[nn.Module]] = None) -> None:
         r"""
@@ -59,6 +63,8 @@ class ModelSharder(object):
             model (:class:`torch.nn.Module`): The model to shard
         """
         module_descriptions = self.policy.module_policy()
+        gd.debuginfo(prj="mt", info=f'')
+
         for layer_cls, module_description in module_descriptions.items():
             attr_replacement = module_description.attribute_replacement
             param_replacement = module_description.param_replacement
@@ -99,17 +105,22 @@ class ModelSharder(object):
         if (isinstance(origin_cls, str) and origin_cls == module.__class__.__name__) or (
             module.__class__ == origin_cls
         ):
+            gd.debuginfo(prj="mt", info=f'')
             if attr_replacement is not None:
                 self._replace_attr(module, attr_replacement)
+                gd.debuginfo(prj="mt", info=f'')
 
             if param_replacement is not None and (include is None or module in include):
                 self._replace_param(module, param_replacement)
+                gd.debuginfo(prj="mt", info=f'')
 
             if method_replacement is not None:
                 self._replace_method(module, method_replacement)
+                gd.debuginfo(prj="mt", info=f'')
 
             if sub_module_replacement is not None:
                 self._replace_sub_module(module, sub_module_replacement, include)
+                gd.debuginfo(prj="mt", info=f'')
 
         for name, child in module.named_children():
             self._recursive_replace_layer(
@@ -134,6 +145,7 @@ class ModelSharder(object):
             module (:class:`torch.nn.Module`): The object of layer to shard
             attr_replacement (Dict): The attribute dict to modify
         """
+        gd.debuginfo(prj="mt", info=f'')
         for k, v in attr_replacement.items():
             setattr_(module, k, v, ignore=True)
 
@@ -149,10 +161,12 @@ class ModelSharder(object):
             module (:class:`torch.nn.Module`): The object of layer to shard
             param_replacement (List[Callable]): The function list to get parameter shard information in policy
         """
+        gd.debuginfo(prj="mt", info=f'')
         for param_func in param_replacement:
             param_func(module)
 
     def _replace_method(self, module: nn.Module, method_replacement: Dict[str, Callable]):
+        gd.debuginfo(prj="mt", info=f'')
         for method_name, new_method in method_replacement.items():
             # bind the new method to the module
             bound_method = MethodType(new_method, module)
@@ -172,6 +186,7 @@ class ModelSharder(object):
             sub_module_replacement (List[SubModuleReplacementDescription]): The sub module replacement description list
             include (Set[nn.Module], optional): The set of modules to keep on current device when pipeline parallel is enabled. Defaults to None
         """
+        gd.debuginfo(prj="mt", info=f'')
         for description in sub_module_replacement:
             suffix = description.suffix
             target_module = description.target_module
@@ -208,7 +223,9 @@ class ModelSharder(object):
             setattr_(org_layer, suffix, replace_layer)
 
     def _get_recursive_held_layers(self, held_layers: Optional[List[nn.Module]]) -> Optional[List[nn.Module]]:
+        gd.debuginfo(prj="mt", info=f'')
         def collect_sub_modules(module: nn.Module):
+            gd.debuginfo(prj="mt", info=f'')
             if module is None:
                 return
             recursive_held_layers.append(module)
@@ -228,6 +245,7 @@ class ModelSharder(object):
             held_layers = self.policy.get_held_layers()
             set_tensors_to_none(self.model, exclude=set(held_layers))
             return set(self._get_recursive_held_layers(held_layers))
+        gd.debuginfo(prj="mt", info=f'')
         return None
 
     def _materialize(self) -> None:
@@ -235,3 +253,4 @@ class ModelSharder(object):
         Materialize the model if lazy initialization is used
         """
         LazyInitContext.materialize(self.model)
+        gd.debuginfo(prj="mt", info=f'')

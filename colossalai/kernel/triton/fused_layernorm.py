@@ -10,6 +10,7 @@ except ImportError:
     print("please install triton from https://github.com/openai/triton")
 
 if HAS_TRITON:
+    gd.debuginfo(prj="mt", info=f'')
     # CREDITS: These functions are adapted from the Triton tutorial
     # https://triton-lang.org/main/getting-started/tutorials/05-layer-norm.html
 
@@ -59,6 +60,7 @@ if HAS_TRITON:
 
     @torch.no_grad()
     def layer_norm(x, weight, bias, eps):
+        gd.debuginfo(prj="mt", info=f'')
         # allocate output
         y = torch.empty_like(x)
         # reshape input data into 2D tensor

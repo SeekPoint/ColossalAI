@@ -27,13 +27,16 @@ class OutputGenerator(OutputStrategyGenerator):
         predecessor_nodes: List[Node],
         output_option: str,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(operation_data_mapping, device_mesh, predecessor_nodes)
         self.output_option = output_option
 
     def validate(self) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         return super().validate()
 
     def update_compute_cost(self, strategy: ShardingStrategy):
+        gd.debuginfo(prj="mt", info=f'')
         compute_cost = TrainCycleItem(fwd=10, bwd=10, total=20)
         strategy.compute_cost = compute_cost
 
@@ -41,6 +44,7 @@ class OutputGenerator(OutputStrategyGenerator):
         """
         Compute the memory cost per device with this specific strategy.
         """
+        gd.debuginfo(prj="mt", info=f'')
         fwd_mem_cost = MemoryCost(activation=0, parameter=0)
 
         bwd_mem_cost = MemoryCost(activation=0, parameter=0)
@@ -54,10 +58,12 @@ class OutputGenerator(OutputStrategyGenerator):
         """
         Generate replica strategy for output node.
         """
+        gd.debuginfo(prj="mt", info=f'')
         dim_partition_dict_mapping = {}
         dim_partition_dict_for_output = []
         for index, _ in enumerate(self.predecessor_nodes):
             mapping_name = f"input_{index}"
+            gd.debuginfo(prj="mt", info=f'mapping_name={mapping_name}')
             if isinstance(self.op_data[mapping_name].data, (tuple, list)):
                 dim_partition_dict_for_input = [{} for _ in range(len(self.op_data[mapping_name].data))]
             else:
@@ -66,8 +72,10 @@ class OutputGenerator(OutputStrategyGenerator):
             dim_partition_dict_for_output.append(dim_partition_dict_for_input)
 
         if len(dim_partition_dict_for_output) == 1:
+            gd.debuginfo(prj="mt", info=f'')
             dim_partition_dict_for_output = dim_partition_dict_for_output[0]
         else:
+            gd.debuginfo(prj="mt", info=f'')
             dim_partition_dict_for_output = tuple(dim_partition_dict_for_output)
 
         dim_partition_dict_mapping["output"] = dim_partition_dict_for_output
@@ -91,16 +99,19 @@ class OutputGenerator(OutputStrategyGenerator):
         # TODO: need to take care of the case when the first element of output only need to be sharded.
         output_op_data = self.op_data["output"]
         if isinstance(output_op_data.data, tuple):
+            gd.debuginfo(prj="mt", info=f'')
             length = len(output_op_data.data)
             dim_partition_dict_mapping = {
                 "output": [{0: mesh_list}] * length,
             }
         else:
+            gd.debuginfo(prj="mt", info=f'')
             dim_partition_dict_mapping = {
                 "output": {0: mesh_list},
             }
         for index, _ in enumerate(self.predecessor_nodes):
             mapping_name = f"input_{index}"
+            gd.debuginfo(prj="mt", info=f'mapping_name={mapping_name}')
             dim_partition_dict_mapping[mapping_name] = {0: mesh_list}
 
         communication_action_mapping = {}
@@ -116,11 +127,14 @@ class OutputGenerator(OutputStrategyGenerator):
         return strategy
 
     def collate_strategies(self) -> List[ShardingStrategy]:
+        gd.debuginfo(prj="mt", info=f'')
         strategy_list = []
         mesh_list = [0, 1]
         if self.output_option == "replicated":
             strategy_list.append(self.replica_strategy())
+            gd.debuginfo(prj="mt", info=f'')
         elif self.output_option == "distributed":
             strategy_list.append(self.distributed_strategy(mesh_list))
+            gd.debuginfo(prj="mt", info=f'')
 
         return strategy_list

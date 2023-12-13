@@ -40,6 +40,7 @@ def _gen_chunk_slice_dim(chunk_dim: int, chunk_indice_name: str, shape: List) ->
     Returns:
         new_shape (str): return slice
     """
+    gd.debuginfo(prj="mt", info=f'')
     new_shape = "["
     for idx, _ in enumerate(shape):
         if idx == chunk_dim:
@@ -69,6 +70,8 @@ def _gen_loop_start(chunk_input: List[Node], chunk_output: List[Node], chunk_out
     Returns:
         context (str): generated str
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     input_node = chunk_input[0]
 
     context = ""
@@ -121,6 +124,7 @@ def _gen_loop_end(
     Returns:
         context (str): generated str
     """
+    gd.debuginfo(prj="mt", info=f'')
     context = "chunk_size = None"
     # determine if its the last use for chunk input
     for chunk_input in chunk_inputs + chunk_non_compute_inputs:
@@ -136,6 +140,7 @@ def _replace_name(context: str, name_from: str, name_to: str) -> str:
     """
     replace node name
     """
+    gd.debuginfo(prj="mt", info=f'')
     patterns = [(" ", " "), (" ", "."), (" ", ","), ("(", ")"), ("(", ","), (" ", ")"), (" ", ""), ("", " ")]
     for p in patterns:
         source = p[0] + name_from + p[1]
@@ -150,7 +155,9 @@ def _replace_reshape_size(context: str, node_name: str, reshape_size_dict: Dict)
     """
     replace reshape size, some may have changed due to chunk
     """
+    gd.debuginfo(prj="mt", info=f'')
     if node_name not in reshape_size_dict:
+        gd.debuginfo(prj="mt", info=f'')
         return context
     context = context.replace(reshape_size_dict[node_name][0], reshape_size_dict[node_name][1])
     return context
@@ -167,6 +174,7 @@ def _replace_new_tensor_like_shape(
     """
     add chunk slice for new tensor op such as ones like
     """
+    gd.debuginfo(prj="mt", info=f'')
     if get_node_name(node) in ["ones_like", "zeros_like", "empty_like"]:
         meta_node = search_chunk.node_mgr.get_node_by_idx(node_idx)
         chunk_dim = chunk_infos[region_idx]["node_chunk_dim"][meta_node]["chunk_dim"]
@@ -192,7 +200,9 @@ def _replace_new_tensor_shape(
     """
     add chunk slice for new tensor op such as ones
     """
+    gd.debuginfo(prj="mt", info=f'')
     if get_node_name(node) in ["ones", "zeros", "empty"]:
+        gd.debuginfo(prj="mt", info=f'')
         meta_node = search_chunk.node_mgr.get_node_by_idx(node_idx)
         chunk_dim = chunk_infos[region_idx]["node_chunk_dim"][meta_node]["chunk_dim"]
         if chunk_dim is None:
@@ -219,6 +229,7 @@ def _add_node_slice(
     """
     add chunk slice for input nodes
     """
+    gd.debuginfo(prj="mt", info=f'')
     for chunk_node_idx, chunk_node in enumerate(chunk_nodes[region_idx]):
         # inputs node
         if isinstance(chunk_nodes_dim[region_idx][chunk_node_idx], dict):
@@ -266,6 +277,7 @@ def emit_code_with_chunk(
         search_chunk: the class to search all chunks
         chunk_infos: store all information about all chunks.
     """
+    gd.debuginfo(prj="mt", info=f'')
     node_list = list(nodes)
 
     # chunk region
@@ -289,6 +301,7 @@ def emit_code_with_chunk(
     within_chunk_region = False
 
     if eval_mem:
+        gd.debuginfo(prj="mt", info=f'')
         body.append("init_memory = torch.cuda.memory_allocated() / 1024**2\n")
 
     while node_idx < len(node_list):
@@ -308,6 +321,7 @@ def emit_code_with_chunk(
             )
 
         if within_chunk_region:
+            gd.debuginfo(prj="mt", info=f'')
             emit_node_func(node, body)
             # replace input var with chunk var
             body = _add_node_slice(chunk_inputs, region_idx, chunk_inputs_dim, node_idx, body, node)
@@ -327,9 +341,12 @@ def emit_code_with_chunk(
                     % (node.name)
                 )
         else:
+            gd.debuginfo(prj="mt", info=f'')
             emit_node_func(node, body)
             if node_idx not in chunk_inputs:
                 delete_unused_value_func(node, body, chunk_inputs_names)
+                gd.debuginfo(prj="mt", info=f'')
+
             if eval_mem:
                 body.append(
                     "print('%s', torch.cuda.max_memory_allocated() / 1024**2 - init_memory);  torch.cuda.reset_peak_memory_stats()\n"
@@ -364,6 +381,7 @@ if AUTOCHUNK_AVAILABLE:
             print_progress: bool = False,
             eval_mem: bool = False,
         ) -> None:
+            gd.debuginfo(prj="mt", info=f'')
             super().__init__()
             self.eval_mem = eval_mem
             # find the chunk regions
@@ -373,6 +391,7 @@ if AUTOCHUNK_AVAILABLE:
                 get_logger().info("AutoChunk start codegen")
 
         def _gen_python_code(self, nodes, root_module: str, namespace: _Namespace) -> PythonCode:
+            gd.debuginfo(prj="mt", info=f'')
             free_vars: List[str] = []
             body: List[str] = []
             globals_: Dict[str, Any] = {}
@@ -382,6 +401,7 @@ if AUTOCHUNK_AVAILABLE:
             maybe_return_annotation: List[str] = [""]
 
             def add_global(name_hint: str, obj: Any):
+                gd.debuginfo(prj="mt", info=f'')
                 """Add an obj to be tracked as a global.
 
                 We call this for names that reference objects external to the
@@ -412,6 +432,7 @@ if AUTOCHUNK_AVAILABLE:
                 add_global(name, obj)
 
             def type_repr(o: Any):
+                gd.debuginfo(prj="mt", info=f'')
                 if o == ():
                     # Empty tuple is used for empty tuple type annotation Tuple[()]
                     return "()"
@@ -442,6 +463,7 @@ if AUTOCHUNK_AVAILABLE:
                 return add_global(typename, o)
 
             def _format_args(args: Tuple[Argument, ...], kwargs: Dict[str, Argument]) -> str:
+                gd.debuginfo(prj="mt", info=f'')
                 def _get_repr(arg):
                     # Handle NamedTuples (if it has `_fields`) via add_global.
                     if isinstance(arg, tuple) and hasattr(arg, "_fields"):
@@ -464,6 +486,7 @@ if AUTOCHUNK_AVAILABLE:
             user_to_last_uses: Dict[Node, List[Node]] = {}
 
             def register_last_uses(n: Node, user: Node):
+                gd.debuginfo(prj="mt", info=f'')
                 if n not in node_to_last_use:
                     node_to_last_use[n] = user
                     user_to_last_uses.setdefault(user, []).append(n)
@@ -481,6 +504,7 @@ if AUTOCHUNK_AVAILABLE:
                 not used in the remainder of the code are freed and the memory usage
                 of the code is optimal.
                 """
+                gd.debuginfo(prj="mt", info=f'')
                 if user.op == "placeholder":
                     return
                 if user.op == "output":
@@ -498,6 +522,7 @@ if AUTOCHUNK_AVAILABLE:
             def emit_node(node: Node, body):
                 maybe_type_annotation = "" if node.type is None else f" : {type_repr(node.type)}"
                 if node.op == "placeholder":
+                    gd.debuginfo(prj="mt", info=f'')
                     assert isinstance(node.target, str)
                     maybe_default_arg = "" if not node.args else f" = {repr(node.args[0])}"
                     free_vars.append(f"{node.target}{maybe_type_annotation}{maybe_default_arg}")
@@ -506,6 +531,7 @@ if AUTOCHUNK_AVAILABLE:
                         body.append(f"{repr(node)} = {raw_name}\n")
                     return
                 elif node.op == "call_method":
+                    gd.debuginfo(prj="mt", info=f'')
                     assert isinstance(node.target, str)
                     body.append(
                         f"{repr(node)}{maybe_type_annotation} = {_format_target(repr(node.args[0]), node.target)}"
@@ -513,6 +539,7 @@ if AUTOCHUNK_AVAILABLE:
                     )
                     return
                 elif node.op == "call_function":
+                    gd.debuginfo(prj="mt", info=f'')
                     assert callable(node.target)
                     # pretty print operators
                     if node.target.__module__ == "_operator" and node.target.__name__ in magic_methods:
@@ -526,6 +553,7 @@ if AUTOCHUNK_AVAILABLE:
                     # pretty print inplace operators; required for jit.script to work properly
                     # not currently supported in normal FX graphs, but generated by torchdynamo
                     if node.target.__module__ == "_operator" and node.target.__name__ in inplace_methods:
+                        gd.debuginfo(prj="mt", info=f'')
                         body.append(
                             f"{inplace_methods[node.target.__name__].format(*(repr(a) for a in node.args))};  "
                             f"{repr(node)}{maybe_type_annotation} = {repr(node.args[0])}"
@@ -543,6 +571,7 @@ if AUTOCHUNK_AVAILABLE:
                         and node.args[1].isidentifier()
                         and len(node.args) == 2
                     ):
+                        gd.debuginfo(prj="mt", info=f'')
                         body.append(
                             f"{repr(node)}{maybe_type_annotation} = {_format_target(repr(node.args[0]), node.args[1])}"
                         )
@@ -554,6 +583,7 @@ if AUTOCHUNK_AVAILABLE:
                         wrapped_fns.setdefault(global_name)
                     return
                 elif node.op == "call_module":
+                    gd.debuginfo(prj="mt", info=f'')
                     assert isinstance(node.target, str)
                     body.append(
                         f"{repr(node)}{maybe_type_annotation} = "
@@ -561,10 +591,12 @@ if AUTOCHUNK_AVAILABLE:
                     )
                     return
                 elif node.op == "get_attr":
+                    gd.debuginfo(prj="mt", info=f'')
                     assert isinstance(node.target, str)
                     body.append(f"{repr(node)}{maybe_type_annotation} = {_format_target(root_module, node.target)}")
                     return
                 elif node.op == "output":
+                    gd.debuginfo(prj="mt", info=f'')
                     if node.type is not None:
                         maybe_return_annotation[0] = f" -> {type_repr(node.type)}"
                     body.append(self.generate_output(node.args[0]))
@@ -581,18 +613,22 @@ if AUTOCHUNK_AVAILABLE:
             )
 
             if len(body) == 0:
+                gd.debuginfo(prj="mt", info=f'')
                 # If the Graph has no non-placeholder nodes, no lines for the body
                 # have been emitted. To continue to have valid Python code, emit a
                 # single pass statement
                 body.append("pass\n")
 
             if len(wrapped_fns) > 0:
+                gd.debuginfo(prj="mt", info=f'')
                 wrap_name = add_global("wrap", torch.fx.wrap)
                 wrap_stmts = "\n".join([f'{wrap_name}("{name}")' for name in wrapped_fns])
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 wrap_stmts = ""
 
             if self._body_transformer:
+                gd.debuginfo(prj="mt", info=f'')
                 body = self._body_transformer(body)
 
             for name, value in self.additional_globals():

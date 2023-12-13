@@ -15,6 +15,7 @@ def customized_split_pass_for_gpt2(gm: torch.fx.GraphModule, pp_size: int, parti
     """
     This pass is only used to do the gpt2 performance test, it may move into adding_split_node_pass.py, and will be deprecated in future.
     """
+    gd.debuginfo(prj="mt", info=f'')
     mod_graph = gm.graph
     valid_children_size = 0
     valid_children = []
@@ -23,6 +24,7 @@ def customized_split_pass_for_gpt2(gm: torch.fx.GraphModule, pp_size: int, parti
             valid_children_size += 1
             valid_children.append(node.target)
     if valid_children_size < pp_size:
+        gd.debuginfo(prj="mt", info=f'')
         # If valid children is not enough to shard, we will use balanced policy instead of uniform policy.
         return balanced_split_pass(gm, pp_size)
     accumulate_layer_amount = 0
@@ -50,8 +52,9 @@ def split_with_split_nodes_pass_for_gp2_test(annotated_gm: torch.fx.GraphModule)
     split_with_split_nodes_pass, and it will be deprecated in future.
     """
     part_idx = 0
-
+    gd.debuginfo(prj="mt", info=f'')
     def eliminate_unused_placeholders(gm):
+        gd.debuginfo(prj="mt", info=f'')
         for node in gm.graph.nodes:
             if node.op == "placeholder":
                 if not len(node.users):
@@ -66,6 +69,7 @@ def split_with_split_nodes_pass_for_gp2_test(annotated_gm: torch.fx.GraphModule)
         The difference is if a output from partition 0 is an input argument of partition 3, the DAG will not transfer it
         to partition 1 and partition 2. However, in single direction linked list, we need to do so.
         """
+        gd.debuginfo(prj="mt", info=f'')
         output_type = None
         output_args = []
         non_output_list = []
@@ -123,6 +127,7 @@ def split_with_split_nodes_pass_for_gp2_test(annotated_gm: torch.fx.GraphModule)
         return gm, new_placeholder_list
 
     def split_callback(n: torch.fx.Node):
+        gd.debuginfo(prj="mt", info=f'')
         nonlocal part_idx
         if (n.op, n.target) == ("call_function", pipe_split):
             part_idx += 1
@@ -169,7 +174,7 @@ def split_module_for_gpt2_test(
     """
     partitions: Dict[str, Partition] = {}
     orig_nodes: Dict[str, torch.fx.node.Node] = {}
-
+    gd.debuginfo(prj="mt", info=f'')
     def _node_with_all_tensor_element(node_metadata: Any) -> int:
         """
         return whether node contains non-tensor element.
@@ -178,10 +183,13 @@ def split_module_for_gpt2_test(
 
         if isinstance(node_metadata, TensorMetadata):
             all_tensor_node = node_metadata.is_tensor and all_tensor_node
+            gd.debuginfo(prj="mt", info=f'')
         elif isinstance(node_metadata, dict):
             value_list = [v for _, v in node_metadata.items()]
             all_tensor_node += _node_with_all_tensor_element(value_list)
+            gd.debuginfo(prj="mt", info=f'')
         else:
+            gd.debuginfo(prj="mt", info=f'')
             for element in node_metadata:
                 all_tensor_node += _node_with_all_tensor_element(element)
 
@@ -189,8 +197,9 @@ def split_module_for_gpt2_test(
 
     def _move_all_ancestors_into_partition(node, partition_name):
         all_ancestors = set()
-
+        gd.debuginfo(prj="mt", info=f'')
         def _gen_all_ancestors_set(node):
+            gd.debuginfo(prj="mt", info=f'')
             all_ancestors.add(node)
             for n in node.all_input_nodes:
                 if n in all_ancestors:
@@ -203,6 +212,7 @@ def split_module_for_gpt2_test(
                 n._fx_partition = partition_name
 
     def record_cross_partition_use(def_node: torch.fx.node.Node, use_node: Optional[torch.fx.node.Node]):  # noqa: B950
+        gd.debuginfo(prj="mt", info=f'')
         def_partition_name = getattr(def_node, "_fx_partition", None)
         use_partition_name = getattr(use_node, "_fx_partition", None)
         if def_partition_name != use_partition_name:
@@ -216,15 +226,19 @@ def split_module_for_gpt2_test(
             #         return
 
             if def_partition_name is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 def_partition = partitions[def_partition_name]
                 def_partition.outputs.setdefault(def_node.name)
                 if use_partition_name is not None:
+                    gd.debuginfo(prj="mt", info=f'')
                     def_partition.partition_dependents.setdefault(use_partition_name)
 
             if use_partition_name is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 use_partition = partitions[use_partition_name]
                 use_partition.inputs.setdefault(def_node.name)
                 if def_partition_name is not None:
+                    gd.debuginfo(prj="mt", info=f'')
                     use_partition.partitions_dependent_on.setdefault(def_partition_name)
 
     node_process_list = list(m.graph.nodes)
@@ -345,6 +359,8 @@ def split_module_for_gpt2_test(
 
         # Construct GraphModule for this partition
         submod_name = f"submod_{partition_name}"
+        gd.debuginfo(prj="mt", info=f'submod_name={submod_name}')
+
         base_mod_attrs[submod_name] = torch.fx.graph_module.GraphModule(
             partition.targets, partition.graph
         )  # noqa: B950

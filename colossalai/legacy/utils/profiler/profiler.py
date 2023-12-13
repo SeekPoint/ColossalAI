@@ -134,6 +134,7 @@ class profile(torch_profile):
         with_modules: bool = False,
         profile_stateful_tensor_memory: bool = False,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(
             activities=activities,
             schedule=schedule,

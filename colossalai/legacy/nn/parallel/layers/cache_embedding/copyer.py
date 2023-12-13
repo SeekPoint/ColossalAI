@@ -11,6 +11,7 @@ class LimitBuffIndexCopyer(object):
     """
 
     def __init__(self, size: int) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self._buff_size = size
 
     @torch.no_grad()

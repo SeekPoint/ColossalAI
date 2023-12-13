@@ -33,6 +33,7 @@ def all_gather(tensor: Tensor, dim: int, parallel_mode: ParallelMode, async_op: 
         Union[tuple(:class:`torch.Tensor`, work handle), :class:`torch.Tensor`]: The result of all-together only,
         if async_op is set to False. A tuple of output of all-gather and Async work handle, if async_op is set to True.
     """
+    gd.debuginfo(prj="mt", info=f'')
     depth = gpc.get_world_size(parallel_mode)
     if depth == 1:
         out = tensor
@@ -74,6 +75,7 @@ def reduce_scatter(
         Union[tuple(:class:`torch.Tensor`, work handle), :class:`torch.Tensor`]: The result of reduce_scatter only,
         if async_op is set to False. A tuple of output of all-gather and Async work handle, if async_op is set to True.
     """
+    gd.debuginfo(prj="mt", info=f'')
     depth = gpc.get_world_size(parallel_mode)
     if depth == 1:
         out = tensor
@@ -113,6 +115,7 @@ def all_reduce(
         Union[tuple(:class:`torch.Tensor`, work handle), :class:`torch.Tensor`]: The result of all-gather only,
         if async_op is set to False. A tuple of output of all-gather and Async work handle, if async_op is set to True.
     """
+    gd.debuginfo(prj="mt", info=f'')
     depth = gpc.get_world_size(parallel_mode)
     if depth == 1:
         out = tensor
@@ -145,6 +148,7 @@ def broadcast(tensor: Tensor, src: int, parallel_mode: ParallelMode, async_op: b
         Union[tuple(:class:`torch.Tensor`, work handle), :class:`torch.Tensor`]: The tensor need to be broadcast only,
         if async_op is set to False. A tuple of output of all-gather and Async work handle, if async_op is set to True.
     """
+    gd.debuginfo(prj="mt", info=f'')
     depth = gpc.get_world_size(parallel_mode)
     if depth == 1:
         out = tensor
@@ -177,6 +181,7 @@ def reduce(tensor: Tensor, dst: int, parallel_mode: ParallelMode, op: ReduceOp =
         Union[tuple(:class:`torch.Tensor`, work handle), :class:`torch.Tensor`]: The result of reduce only,
         if async_op is set to False. A tuple of output of all-gather and Async work handle, if async_op is set to True.
     """
+    gd.debuginfo(prj="mt", info=f'')
     depth = gpc.get_world_size(parallel_mode)
     if depth == 1:
         out = tensor
@@ -195,6 +200,7 @@ def scatter_object_list(scatter_object_output_list, scatter_object_input_list, s
     r"""Modified from `torch.distributed.scatter_object_list
     <https://pytorch.org/docs/stable/_modules/torch/distributed/distributed_c10d.html#scatter_object_list>` to fix issues
     """
+    gd.debuginfo(prj="mt", info=f'')
     if dist.distributed_c10d._rank_not_in_group(group):
         return
 

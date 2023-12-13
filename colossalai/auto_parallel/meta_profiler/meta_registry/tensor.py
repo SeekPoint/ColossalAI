@@ -20,6 +20,7 @@ def tensor_related_metainfo(bwd_mem_out_factor: float = 1, bwd_mem_tmp_factor: f
     Returns:
         Callable: torch.Tensor related metainfo generator
     """
+    gd.debuginfo(prj="mt", info=f'')
 
     def meta_func(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem, List[torch.Tensor]]:
         """torch.Tensor related metainfo generator
@@ -28,6 +29,8 @@ def tensor_related_metainfo(bwd_mem_out_factor: float = 1, bwd_mem_tmp_factor: f
             Tuple[TrainCycleItem, TrainCycleItem, List[torch.Tensor]]: compute cost, memory cost and forward inputs
         """
         outputs = next(filter(lambda x: x.type == OperationDataType.OUTPUT, args)).data
+
+        gd.debuginfo(prj="mt", info=f'')
 
         # compute costs are all zero
         compute_cost = TrainCycleItem(fwd=0, bwd=0, total=0)

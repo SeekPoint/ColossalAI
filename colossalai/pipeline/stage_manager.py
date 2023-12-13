@@ -20,6 +20,7 @@ class PipelineStageManager:
     """
 
     def __init__(self, pg_mesh: ProcessGroupMesh, pipeline_axis: int, is_virtual: bool = False) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.pg_mesh = pg_mesh
         self.pipeline_axis = pipeline_axis
         self.prev_rank: Optional[Tuple[int, ...]] = None
@@ -44,10 +45,12 @@ class PipelineStageManager:
                 self.p2p_groups[tuple(ranks_in_group)] = group
 
         if is_virtual:
+            gd.debuginfo(prj="mt", info=f'')
             # add the process group of the first rank and the last rank
             # only used in interleaved pipeline for now
             group = self.pg_mesh.get_group_along_axis(self.pipeline_axis, [stages[0], stages[-1]])
             if self.stage in [stages[0], stages[-1]]:
+                gd.debuginfo(prj="mt", info=f'')
                 ranks_in_group = self.pg_mesh.get_ranks_in_group(group)
                 self.p2p_groups[tuple(ranks_in_group)] = group
 
@@ -119,8 +122,10 @@ class PipelineStageManager:
         Returns:
             ProcessGroup: P2P process group between the two ranks.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if first_rank > second_rank:
             first_rank, second_rank = second_rank, first_rank
+            gd.debuginfo(prj="mt", info=f'')
         return self.p2p_groups[(first_rank, second_rank)]
 
     def init_process_group_by_stages(self, stages: List[int]) -> ProcessGroup:
@@ -132,4 +137,5 @@ class PipelineStageManager:
         Returns:
             ProcessGroup: Process group of the given stages.
         """
+        gd.debuginfo(prj="mt", info=f'')
         return self.pg_mesh.get_group_along_axis(self.pipeline_axis, stages)

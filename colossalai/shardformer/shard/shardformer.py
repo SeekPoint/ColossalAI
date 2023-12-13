@@ -34,6 +34,7 @@ class ShardFormer:
     def __init__(self, shard_config: ShardConfig):
         self.coordinator = DistCoordinator()
         self.shard_config = shard_config
+        gd.debuginfo(prj="mt", info=f'')
 
     def optimize(self, model: nn.Module, policy: Policy = None) -> Tuple[nn.Module, List[Dict[int, Tensor]]]:
         r"""
@@ -48,4 +49,6 @@ class ShardFormer:
         """
         sharder = ModelSharder(model=model, shard_config=self.shard_config, policy=policy)
         shared_params = sharder.shard()
+        gd.debuginfo(prj="mt", info=f'')
+
         return model, shared_params

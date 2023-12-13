@@ -43,9 +43,10 @@ __all__ = ["FusedLinear1D_Col", "FusedLinear1D_Row", "GPT2FusedLinearConv1D_Col"
 # ====================================
 
 
-def split_fused_qkv_in_gpt2_style(
-    qkv: torch.Tensor, n_fused: int, process_group: ProcessGroup, is_transposed: bool = False
-):
+def split_fused_qkv_in_gpt2_style(qkv: torch.Tensor,
+                                  n_fused: int,
+                                  process_group: ProcessGroup,
+                                  is_transposed: bool = False):
     """
     The fused qkv tensor looks like [Q1, Q2, K1, K2, V1, V2], this function will split them into [Q1, K1, V1] and [Q2, K2, V2].
 
@@ -55,6 +56,8 @@ def split_fused_qkv_in_gpt2_style(
         process_group (ProcessGroup): The process group for distributed communication.
         is_transposed (bool): generally the tensor is the shape of (out_features, in_features). Set this to True if the tensor is in the shape (in_features, out_features).
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     # get the number of slice for the fused qkv
     rank = dist.get_rank(group=process_group)
     world_size = dist.get_world_size(group=process_group)
@@ -67,8 +70,10 @@ def split_fused_qkv_in_gpt2_style(
     # [Q1, Q2, K1, K2, V1, V2]
     if is_transposed:
         weight_chunks = torch.chunk(qkv, world_size * n_fused, dim=-1)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         weight_chunks = torch.chunk(qkv, world_size * n_fused, dim=0)
+        gd.debuginfo(prj="mt", info=f'')
 
     # rearrange the slice into the final order
     # from
@@ -79,8 +84,10 @@ def split_fused_qkv_in_gpt2_style(
 
     if is_transposed:
         weight_of_current_rank = torch.cat(weight_chunks_of_current_rank, dim=-1)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         weight_of_current_rank = torch.cat(weight_chunks_of_current_rank, dim=0)
+        gd.debuginfo(prj="mt", info=f'')
     return weight_of_current_rank
 
 
@@ -96,6 +103,7 @@ def gather_fused_qkv_in_gpt2_style(
         process_group (ProcessGroup): The process group for distributed communication.
         is_transposed (bool): generally the tensor is the shape of (out_features, in_features). Set this to True if the tensor is in the shape (in_features, out_features).
     """
+    gd.debuginfo(prj="mt", info=f'')
     world_size = dist.get_world_size(group=process_group)
 
     # gather the tensors
@@ -110,8 +118,11 @@ def gather_fused_qkv_in_gpt2_style(
 
     if is_transposed:
         gather_weight = torch.cat(gather_list, dim=-1)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         gather_weight = torch.cat(gather_list, dim=0)
+        gd.debuginfo(prj="mt", info=f'')
+
     gather_weight = gather_weight.to(origin_device)
     qkv = qkv.to(origin_device)
 
@@ -122,8 +133,10 @@ def gather_fused_qkv_in_gpt2_style(
     # [Q1, Q2, K1, K2, V1, V2]
     if is_transposed:
         weight_chunks = torch.chunk(gather_weight, world_size * n_fused, dim=-1)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         weight_chunks = torch.chunk(gather_weight, world_size * n_fused, dim=0)
+        gd.debuginfo(prj="mt", info=f'')
 
     reordered_chunk_list = []
     for i in range(n_fused):
@@ -131,8 +144,11 @@ def gather_fused_qkv_in_gpt2_style(
 
     if is_transposed:
         reordered_gather_weight = torch.cat(reordered_chunk_list, dim=-1)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         reordered_gather_weight = torch.cat(reordered_chunk_list, dim=0)
+        gd.debuginfo(prj="mt", info=f'')
+
     return reordered_gather_weight
 
 
@@ -184,6 +200,7 @@ class GPT2FusedLinearConv1D_Col(ParallelModule):
         weight_initializer: Callable = init.kaiming_uniform_(a=math.sqrt(5)),
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
         # Keep input parameters
@@ -216,17 +233,22 @@ class GPT2FusedLinearConv1D_Col(ParallelModule):
             # Initialize weight.
             factory_kwargs = {"device": device, "dtype": dtype}
             self.weight = Parameter(torch.empty(self.in_features, self.out_features, **factory_kwargs))
+            gd.debuginfo(prj="mt", info=f'')
         else:
             weight.data = weight.data.to(device=device, dtype=dtype)
             self.weight = weight
+            gd.debuginfo(prj="mt", info=f'')
 
         def shard_fn(tensor):
+            gd.debuginfo(prj="mt", info=f'')
             return split_fused_qkv_in_gpt2_style(tensor, self.n_fused, self.process_group, True)
 
         def gather_fn(tensor):
+            gd.debuginfo(prj="mt", info=f'')
             return gather_fused_qkv_in_gpt2_style(tensor, self.n_fused, self.process_group, True)
 
         if not is_customized_distributed_tensor(self.weight):
+            gd.debuginfo(prj="mt", info=f'')
             with torch.no_grad():
                 sharded_weight = distribute_tensor_with_customization(self.weight.data, shard_fn, gather_fn)
             customized_distributed_tensor_to_existing_param(sharded_weight, self.weight)
@@ -234,15 +256,19 @@ class GPT2FusedLinearConv1D_Col(ParallelModule):
         if bias:
             if bias_ is None:
                 self.bias = Parameter(torch.empty(self.out_features, **factory_kwargs))
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 bias_.data = bias_.data.to(device=device, dtype=dtype)
                 self.bias = bias_
+                gd.debuginfo(prj="mt", info=f'')
             if not is_customized_distributed_tensor(self.bias):
+                gd.debuginfo(prj="mt", info=f'')
                 with torch.no_grad():
                     sharded_bias = distribute_tensor_with_customization(self.bias.data, shard_fn, gather_fn)
                 customized_distributed_tensor_to_existing_param(sharded_bias, self.bias)
         else:
             self.bias = None
+            gd.debuginfo(prj="mt", info=f'')
 
         if weight is None:
             # init weights
@@ -260,6 +286,7 @@ class GPT2FusedLinearConv1D_Col(ParallelModule):
             process_group (`Union[ProcessGroup, List[ProcessGroup]]`): The process group to be used for weight sharding and communication.
             n_fused (int): The number of layers to be fused. In GPT2, Q,K,V are fused in one weight.
         """
+        gd.debuginfo(prj="mt", info=f'')
         LazyInitContext.materialize(module)
         # get the attributes
         in_features = module.weight.shape[0]
@@ -271,9 +298,11 @@ class GPT2FusedLinearConv1D_Col(ParallelModule):
         if isinstance(process_group, (list, tuple)):
             assert len(process_group) == 1, f"Expected only one process group, got {len(process_group)}."
             process_group = process_group[0]
+            gd.debuginfo(prj="mt", info=f'')
 
         tp_size = dist.get_world_size(process_group)
         if out_features < tp_size:
+            gd.debuginfo(prj="mt", info=f'')
             return module
 
         if out_features % tp_size != 0:
@@ -296,6 +325,7 @@ class GPT2FusedLinearConv1D_Col(ParallelModule):
         return linear_1d
 
     def reset_parameters(self, weight_initializer, bias_initializer) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         with self.randomizer.fork_rng(enable_cpu=True):
             fan_in, fan_out = self.in_features, self.out_features
             weight_initializer(self.weight, fan_in=fan_in, fan_out=fan_out)
@@ -313,11 +343,13 @@ class GPT2FusedLinearConv1D_Col(ParallelModule):
         bias = self.bias if not self.skip_bias_add else None
 
         if self.seq_parallel:
+            gd.debuginfo(prj="mt", info=f'')
             input_parallel = input_
             output_parallel = matmul_gather_forward_reducescatter_backward(
                 input_parallel, self.weight, bias, self.process_group, True, 1, self.overlap
             )
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # Set up backprop all-reduce.
             input_parallel = reduce_backward(input_, self.process_group)
             output_parallel = matmul_with_async_comm(
@@ -327,12 +359,16 @@ class GPT2FusedLinearConv1D_Col(ParallelModule):
         if self.gather_output:
             # All-gather across the partitions.
             output = gather_forward_split_backward(output_parallel, dim=-1, process_group=self.process_group)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             output = output_parallel
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.skip_bias_add:
+            gd.debuginfo(prj="mt", info=f'')
             return output, self.bias
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return output
 
 
@@ -375,6 +411,7 @@ class GPT2FusedLinearConv1D_Row(ParallelModule):
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
         stream_chunk_num: int = 1,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
         self.stream_chunk_num = stream_chunk_num
@@ -409,36 +446,48 @@ class GPT2FusedLinearConv1D_Row(ParallelModule):
             # Initialize weight.
             factory_kwargs = {"device": device, "dtype": dtype}
             self.weight = Parameter(torch.empty(self.in_features, self.out_features, **factory_kwargs))
+            gd.debuginfo(prj="mt", info=f'')
         else:
             weight.data = weight.data.to(device=device, dtype=dtype)
             self.weight = weight
+            gd.debuginfo(prj="mt", info=f'')
         if not is_distributed_tensor(self.weight):
             sharded_weight = shard_rowwise(self.weight.data, self.process_group)
             sharded_tensor_to_existing_param(sharded_weight, self.weight)
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.stream_chunk_num > 1:
             # TODO() work for inference only
             self.chunk_weight()
+            gd.debuginfo(prj="mt", info=f'')
+
         if bias:
             if bias_ is None:
                 self.bias = Parameter(torch.empty(self.out_features, **factory_kwargs))
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 bias_.data = bias_.data.to(device=device, dtype=dtype)
                 self.bias = bias_
+                gd.debuginfo(prj="mt", info=f'')
         else:
             self.bias = None
+            gd.debuginfo(prj="mt", info=f'')
 
         if weight is None:
             # init weights
             self.reset_parameters(weight_initializer, bias_initializer)
+            gd.debuginfo(prj="mt", info=f'')
 
     @staticmethod
-    def from_native_module(
-        module: nn.Linear, process_group: Union[ProcessGroup, List[ProcessGroup]], *args, **kwargs
-    ) -> ParallelModule:
+    def from_native_module(module: nn.Linear,
+                           process_group: Union[ProcessGroup, List[ProcessGroup]],
+                           *args,
+                           **kwargs) -> ParallelModule:
         r"""
         Convert a native PyTorch linear layer to a parallelized linear layer.
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         LazyInitContext.materialize(module)
         # get the attributes
         in_features = module.weight.shape[0]
@@ -450,9 +499,11 @@ class GPT2FusedLinearConv1D_Row(ParallelModule):
         if isinstance(process_group, (list, tuple)):
             assert len(process_group) == 1, f"Expected only one process group, got {len(process_group)}."
             process_group = process_group[0]
+            gd.debuginfo(prj="mt", info=f'')
 
         tp_size = dist.get_world_size(process_group)
         if in_features < tp_size:
+            gd.debuginfo(prj="mt", info=f'')
             return module
 
         if in_features % tp_size != 0:
@@ -475,9 +526,11 @@ class GPT2FusedLinearConv1D_Row(ParallelModule):
         return linear_1d
 
     def chunk_weight(self):
+        gd.debuginfo(prj="mt", info=f'')
         self.weight_list = torch.chunk(self.weight, self.stream_chunk_num, dim=0)
 
     def reset_parameters(self, weight_initializer, bias_initializer) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         with self.randomizer.fork_rng(enable_cpu=True):
             fan_in, fan_out = self.in_features, self.out_features
             weight_initializer(self.weight, fan_in=fan_in, fan_out=fan_out)
@@ -486,8 +539,10 @@ class GPT2FusedLinearConv1D_Row(ParallelModule):
                 bias_initializer(self.bias, fan_in=fan_in)
                 if self.process_group is None:
                     src_rank = 0
+                    gd.debuginfo(prj="mt", info=f'')
                 else:
                     src_rank = dist.distributed_c10d._get_global_rank(self.process_group, 0)
+                    gd.debuginfo(prj="mt", info=f'')
 
                 origin_device = self.bias.device
                 self.bias.data = self.bias.cuda()
@@ -503,6 +558,7 @@ class GPT2FusedLinearConv1D_Row(ParallelModule):
                 input_.shape, self.weight.shape, self.weight.shape[0]
             )
             input_ = input_
+            gd.debuginfo(prj="mt", info=f'')
         else:
             assert (
                 divide(input_.shape[-1], self.num_partitions) == self.weight.shape[0]
@@ -510,8 +566,10 @@ class GPT2FusedLinearConv1D_Row(ParallelModule):
                 input_.shape, self.weight.shape, self.weight.shape[0] * self.num_partitions
             )
             input_ = split_forward_gather_backward(input_, dim=-1, process_group=self.process_group)
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.stream_chunk_num > 1:
+            gd.debuginfo(prj="mt", info=f'')
             if self.training:
                 raise RuntimeError("use stream_chunk_num=1 in Linear1D_Row for training!")
             with torch.no_grad():
@@ -528,17 +586,23 @@ class GPT2FusedLinearConv1D_Row(ParallelModule):
                     handle.wait()
                 output = torch.cat(output_parallel_list, dim=-1)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             output_parallel = torch.matmul(input_, self.weight)
             if self.seq_parallel:
                 output = linear_reducescatter_forward_gather_backward(output_parallel, self.process_group, 1)
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 output = reduce_forward(output_parallel, self.process_group)
+                gd.debuginfo(prj="mt", info=f'')
 
         if not self.skip_bias_add:
+            gd.debuginfo(prj="mt", info=f'')
             if self.bias is not None:
                 output = output + self.bias
+                gd.debuginfo(prj="mt", info=f'')
             return output
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return output, self.bias
 
 
@@ -592,6 +656,7 @@ class FusedLinear1D_Col(ParallelModule):
         weight_initializer: Callable = init.kaiming_uniform_(a=math.sqrt(5)),
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         # Keep input parameters
         self.in_features = in_features
@@ -621,17 +686,22 @@ class FusedLinear1D_Col(ParallelModule):
             # Initialize weight.
             factory_kwargs = {"device": device, "dtype": dtype}
             self.weight = Parameter(torch.empty(self.out_features, self.in_features, **factory_kwargs))
+            gd.debuginfo(prj="mt", info=f'')
         else:
             weight.data = weight.data.to(device=device, dtype=dtype)
             self.weight = weight
+            gd.debuginfo(prj="mt", info=f'')
 
         def shard_fn(tensor):
+            gd.debuginfo(prj="mt", info=f'')
             return split_fused_qkv_in_gpt2_style(tensor, self.n_fused, self.process_group, False)
 
         def gather_fn(tensor):
+            gd.debuginfo(prj="mt", info=f'')
             return gather_fused_qkv_in_gpt2_style(tensor, self.n_fused, self.process_group, False)
 
         if not is_customized_distributed_tensor(self.weight):
+            gd.debuginfo(prj="mt", info=f'')
             with torch.no_grad():
                 sharded_weight = distribute_tensor_with_customization(self.weight.data, shard_fn, gather_fn)
             customized_distributed_tensor_to_existing_param(sharded_weight, self.weight)
@@ -639,19 +709,24 @@ class FusedLinear1D_Col(ParallelModule):
         if bias:
             if bias_ is None:
                 self.bias = Parameter(torch.empty(self.out_features, **factory_kwargs))
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 bias_.data = bias_.data.to(device=device, dtype=dtype)
                 self.bias = bias_
+                gd.debuginfo(prj="mt", info=f'')
             if not is_customized_distributed_tensor(self.bias):
+                gd.debuginfo(prj="mt", info=f'')
                 with torch.no_grad():
                     sharded_bias = distribute_tensor_with_customization(self.bias.data, shard_fn, gather_fn)
                 customized_distributed_tensor_to_existing_param(sharded_bias, self.bias)
         else:
             self.bias = None
+            gd.debuginfo(prj="mt", info=f'')
 
         if weight is None:
             # init weights
             self.reset_parameters(weight_initializer, bias_initializer)
+            gd.debuginfo(prj="mt", info=f'')
 
     @staticmethod
     def from_native_module(
@@ -665,6 +740,8 @@ class FusedLinear1D_Col(ParallelModule):
             process_group (`Union[ProcessGroup, List[ProcessGroup]]`): The process group to be used for weight sharding and communication.
             n_fused (int): The number of layers to be fused. In common, Q,K,V are fused in one weight.
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         # get the attributes
         in_features = module.in_features
         out_features = module.out_features
@@ -675,6 +752,7 @@ class FusedLinear1D_Col(ParallelModule):
         if isinstance(process_group, (list, tuple)):
             assert len(process_group) == 1, f"Expected only one process group, got {len(process_group)}."
             process_group = process_group[0]
+            gd.debuginfo(prj="mt", info=f'')
 
         linear_1d = FusedLinear1D_Col(
             in_features=in_features,
@@ -706,6 +784,7 @@ class FusedLinear1D_Col(ParallelModule):
         return linear_1d
 
     def reset_parameters(self, weight_initializer, bias_initializer) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         with self.randomizer.fork_rng(enable_cpu=True):
             fan_in, fan_out = self.in_features, self.out_features
             weight_initializer(self.weight, fan_in=fan_in, fan_out=fan_out)
@@ -713,6 +792,7 @@ class FusedLinear1D_Col(ParallelModule):
                 bias_initializer(self.bias, fan_in=fan_in)
 
     def forward(self, input_: Tensor) -> Tuple[Tensor, Tensor]:
+        gd.debuginfo(prj="mt", info=f'')
         assert (
             input_.shape[-1] == self.weight.shape[-1]
         ), "Invalid shapes in Linear1D_Col forward: input={}, weight={}. Expected last dim of input {}.".format(
@@ -730,10 +810,14 @@ class FusedLinear1D_Col(ParallelModule):
         if self.gather_output:
             # All-gather across the partitions.
             output = gather_forward_split_backward(output_parallel, dim=-1, process_group=self.process_group)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             output = output_parallel
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.skip_bias_add:
+            gd.debuginfo(prj="mt", info=f'')
             return output, self.bias
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return output

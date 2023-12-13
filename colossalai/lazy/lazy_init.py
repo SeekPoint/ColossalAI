@@ -88,19 +88,23 @@ class _MyTensor(Tensor):
         if concrete_data is not None:
             # uniform api as LazyTensor
             data = concrete_data
+            gd.debuginfo(prj="mt", info=f'')
         else:
             kwargs["device"] = cls.default_device
             data = func(*args, **kwargs)
+            gd.debuginfo(prj="mt", info=f'')
         return Tensor._make_subclass(cls, data, require_grad=data.requires_grad)
 
     @classmethod
     def __torch_function__(cls, func, types, args=(), kwargs=None):
+        gd.debuginfo(prj="mt", info=f'')
         cls._pre_op_fn()
         return super().__torch_function__(func, types, args, kwargs)
 
 
 def _data_tolist(tensor: torch.Tensor) -> list:
     """tolist() method is not allowed for a subclass of tensor. Tensor.data returns a Tensor."""
+    gd.debuginfo(prj="mt", info=f'')
     return tensor.data.tolist()
 
 
@@ -117,16 +121,20 @@ def _convert_cls(tensor: "LazyTensor", target: torch.Tensor) -> torch.Tensor:
     Returns:
         torch.Tensor: the converted tensor
     """
+    gd.debuginfo(prj="mt", info=f'')
     cls_to_become = Parameter if isinstance(tensor, Parameter) else torch.Tensor
     tensor.__class__ = cls_to_become
     if cls_to_become is Parameter:
         # to fit UninitializedParameter
         delattr(tensor, "_is_param")
+        gd.debuginfo(prj="mt", info=f'')
+
     tensor.data = target
     tensor.requires_grad = target.requires_grad
     # subclass of torch.Tensor does not have tolist() method
     # overwrite this method after materialization or distribution
     tensor.tolist = MethodType(_data_tolist, tensor)
+    gd.debuginfo(prj="mt", info=f'')
     return tensor
 
 
@@ -162,7 +170,7 @@ class LazyTensor(torch.Tensor):
         >>> x.data = torch.rand(2, 3) # directly setting data of a lazy tensor triggers early materialization
 
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     _repr = True
     _meta_data: Optional[torch.Tensor] = None  # shape, dtype, device
     _pre_op_fn: Callable[["LazyTensor"], None] = lambda *args: None
@@ -179,12 +187,16 @@ class LazyTensor(torch.Tensor):
         if concrete_data is not None:
             # some ops don't support meta backend and should have concrete data
             elem = concrete_data
+            gd.debuginfo(prj="mt", info=f'')
         else:
             if meta_data is None:
+                gd.debuginfo(prj="mt", info=f'')
                 with ConstructorManager.disable():
                     # to disable create lazy tensor in inner ops, this is a hack for torch 2.0
                     meta_data = func(*args, **{**kwargs, "device": "meta"})
             elem = meta_data
+            gd.debuginfo(prj="mt", info=f'')
+
         # As a meta tensor cannot be modified __class__ to torch.Tensor, we should use an empty real tensor here
         r = torch.Tensor._make_subclass(cls, _EMPTY_DATA, require_grad=elem.requires_grad)
         r._meta_data = meta_data
@@ -192,9 +204,13 @@ class LazyTensor(torch.Tensor):
         return r
 
     def __init__(self, func, *args, meta_data=None, concrete_data=None, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         self._device = torch.device(kwargs.get("device", None) or "cpu")
+
         if func.__name__ in _NORMAL_FACTORY:
             kwargs = {**kwargs, "device": LazyTensor.default_device}
+            gd.debuginfo(prj="mt", info=f'')
+
         self._factory_method = (func, args, kwargs)  # (func, args, kwargs)
         self._op_buffer = []  # (func, args, kwargs, replace)
         self._materialized_data: Optional[torch.Tensor] = concrete_data  # materialized data
@@ -212,11 +228,13 @@ class LazyTensor(torch.Tensor):
         Returns:
             torch.Tensor: The materialized tensor (self).
         """
+        gd.debuginfo(prj="mt", info=f'')
         target = self._materialize_data()
         self.clean()
         return _convert_cls(self, target)
 
     def clean(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         """Clean all stored operations, meta data and materialized data, which prevents memory leaking. This should be called after all tensors are materialized."""
         delattr(self, "_factory_method")
         delattr(self, "_op_buffer")
@@ -225,13 +243,17 @@ class LazyTensor(torch.Tensor):
 
     @staticmethod
     def _replace_with_materialized(x):
+        gd.debuginfo(prj="mt", info=f'')
         if isinstance(x, LazyTensor):
+            gd.debuginfo(prj="mt", info=f'')
             return x._materialize_data()
         return x
 
     def _materialize_data(self) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         # self._materialized_data should be generated after the first call of this function
         if self._materialized_data is None:
+            gd.debuginfo(prj="mt", info=f'')
             # apply factory method
             func, args, kwargs = self._factory_method
             # apply cached sequence
@@ -250,11 +272,13 @@ class LazyTensor(torch.Tensor):
         Args:
             target (torc.Tensor, optional): Intial value of the target tensor (self). Defaults to None.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         def replace(x):
             if x is self:
+                gd.debuginfo(prj="mt", info=f'')
                 return target
             elif isinstance(x, LazyTensor):
+                gd.debuginfo(prj="mt", info=f'')
                 return x._materialize_data()
             return x
 
@@ -262,14 +286,17 @@ class LazyTensor(torch.Tensor):
 
         for func, args, kwargs in self._op_buffer:
             if func == torch.Tensor.requires_grad_:
+                gd.debuginfo(prj="mt", info=f'')
                 packed = func, args, kwargs  # requires grad should be set at last
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 self._pre_op_fn()
                 o = func(*tree_map(replace, args), **tree_map(replace, kwargs))
                 target = o if isinstance(o, torch.Tensor) else target  # if func returns non-Tensor, discard the value
 
         # super-dainiu: set requires_grad after all inplace-ops are done
         if packed is not None:
+            gd.debuginfo(prj="mt", info=f'')
             func, args, kwargs = packed
             func(*tree_map(replace, args), **tree_map(replace, kwargs))
 
@@ -279,9 +306,12 @@ class LazyTensor(torch.Tensor):
 
     @classmethod
     def __torch_function__(cls, func, types, args=(), kwargs=None):
+        gd.debuginfo(prj="mt", info=f'')
         if kwargs is None:
             kwargs = {}
+            gd.debuginfo(prj="mt", info=f'')
         if func.__name__ in _EARLY_MATERIALIZED_OPS:
+            gd.debuginfo(prj="mt", info=f'')
             # These OPs cannot be lazy and related tensors should be early materialized
             tree_map(cls._replace_with_materialized, args)
             tree_map(cls._replace_with_materialized, kwargs)
@@ -294,6 +324,7 @@ class LazyTensor(torch.Tensor):
         is_change_meta_op: bool = func.__name__ in _CHANGE_META_OPS
 
         if isinstance(func, torch._C.ScriptMethod):
+            gd.debuginfo(prj="mt", info=f'')
             # FIXME(ver217): torch script functions are not verified
 
             target = None
@@ -310,6 +341,7 @@ class LazyTensor(torch.Tensor):
             )
             return target
         else:
+            gd.debuginfo(prj="mt", info=f'')
             meta_to_lazy = {}
 
             def unwrap(x):
@@ -353,10 +385,12 @@ class LazyTensor(torch.Tensor):
                 # to disable create lazy tensor in inner ops, this is a hack for torch 2.0
                 o = func(*tree_map(unwrap, args), **tree_map(unwrap, kwargs))
             if isinstance(o, (tuple, list)):
+                gd.debuginfo(prj="mt", info=f'')
                 return type(o)(wrap(y, i=i) for i, y in enumerate(o))
             return wrap(o)
 
     def to(self, *args, **kwargs) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         if self._materialized_data is not None:
             return LazyTensor(lambda: None, concrete_data=self._materialized_data.to(*args, **kwargs))
 
@@ -372,6 +406,7 @@ class LazyTensor(torch.Tensor):
         meta_data = self._meta_data.to(*tree_map(replace, args), **tree_map(replace, kwargs))
 
         if meta_data is self._meta_data and device == self.device:
+            gd.debuginfo(prj="mt", info=f'')
             return self
 
         def factory_fn(t: torch.Tensor, **kw):
@@ -380,13 +415,16 @@ class LazyTensor(torch.Tensor):
         return LazyTensor(factory_fn, self, meta_data=meta_data, device=device)
 
     def cpu(self, memory_format: torch.memory_format = torch.preserve_format):
+        gd.debuginfo(prj="mt", info=f'')
         return self.to(device=torch.device("cpu"), memory_format=memory_format)
 
     def cuda(self, device=None, non_blocking=False, memory_format: torch.memory_format = torch.preserve_format):
+        gd.debuginfo(prj="mt", info=f'')
         device = torch.device(device or "cuda")
         return self.to(device=device, non_blocking=non_blocking, memory_format=memory_format)
 
     def clone(self) -> "LazyTensor":
+        gd.debuginfo(prj="mt", info=f'')
         def factory_fn(t: torch.Tensor, **kw):
             # if self is materialized, return self
             return t.clone()
@@ -396,9 +434,11 @@ class LazyTensor(torch.Tensor):
         return target
 
     def detach(self) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         return self
 
     def __deepcopy__(self, memo):
+        gd.debuginfo(prj="mt", info=f'')
         if not self.is_leaf:
             raise RuntimeError(
                 "Only Tensors created explicitly by the user "
@@ -444,6 +484,7 @@ class LazyTensor(torch.Tensor):
             >>> y.add_(1)   # this will not affect x
 
         """
+        gd.debuginfo(prj="mt", info=f'')
         if other is self:
             return
 
@@ -486,6 +527,7 @@ class LazyInitContext:
         tensor_cls: Union[_MyTensor, LazyTensor] = LazyTensor,
         default_device: Optional[Union[torch.device, str, int]] = None,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         assert tensor_cls is LazyTensor or tensor_cls is _MyTensor
         self.tensor_cls = tensor_cls
         self.old_default_device = LazyTensor.default_device
@@ -497,6 +539,7 @@ class LazyInitContext:
         LazyInitContext._replaced = True
         self.old_default_device = self.tensor_cls.default_device
         self.tensor_cls.default_device = self.default_device
+        gd.debuginfo(prj="mt", info=f'')
 
         def wrap_factory_method(target):
             # factory functions (eg. torch.empty())
@@ -506,6 +549,7 @@ class LazyInitContext:
             return wrapper, target
 
         def wrap_factory_like_method(orig_target, target):
+            gd.debuginfo(prj="mt", info=f'')
             # factory_like functions (eg. torch.empty_like())
             def wrapper(*args, **kwargs):
                 orig_t = args[0]
@@ -516,6 +560,7 @@ class LazyInitContext:
             return wrapper, target
 
         def wrap_legacy_constructor(target, dtype):
+            gd.debuginfo(prj="mt", info=f'')
             # legacy constructor (e.g. torch.LongTensor())
             def wrapper(*args, **kwargs):
                 if len(args) == 1 and isinstance(args[0], torch.Tensor):
@@ -539,6 +584,7 @@ class LazyInitContext:
             return wrapper, target
 
         def wrap_no_meta_factory(target):
+            gd.debuginfo(prj="mt", info=f'')
             # factory functions which don't support meta tensor backend
             def wrapper(*args, **kwargs):
                 tensor = target(*args, **kwargs)
@@ -580,6 +626,7 @@ class LazyInitContext:
         PretrainedManager.inject()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        gd.debuginfo(prj="mt", info=f'')
         self.tensor_cls.default_device = self.old_default_device
         LazyInitContext._replaced = False
         ConstructorManager.clear()
@@ -593,8 +640,9 @@ class LazyInitContext:
             module (nn.Module): Target ``nn.Module``
             verbose (bool): Whether to print lazy initialization rate. Defaults to False.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         def apply_fn(name: str, p: LazyTensor):
+            gd.debuginfo(prj="mt", info=f'')
             p.materialize()
 
         return _apply_to_lazy_module(module, apply_fn, verbose)
@@ -603,6 +651,7 @@ class LazyInitContext:
 def _apply_to_lazy_module(
     module: nn.Module, apply_fn: Callable[[str, torch.Tensor], None], verbose: bool = False
 ) -> nn.Module:
+    gd.debuginfo(prj="mt", info=f'')
     if verbose:
         # verbose info
         param_cnt = 0
@@ -659,6 +708,7 @@ def _is_int_tuple(args) -> bool:
 
 
 def _copy_tensor(tensor: Tensor, requires_grad: bool) -> Tensor:
+    gd.debuginfo(prj="mt", info=f'')
     copied = tensor.data.clone()
     copied.requires_grad = requires_grad
     return copied

@@ -9,6 +9,7 @@ import torch
 from pydebug import gd, infoTensor
 
 def substitute_init_recursively(cls, func, visited: set):
+    gd.debuginfo(prj="mt", info=f'')
     for subcls in cls.__subclasses__():
         substitute_init_recursively(subcls, func, visited)
         if subcls not in visited:
@@ -35,6 +36,7 @@ def call_to_str(base, *args, **kwargs):
     if kwargs:
         name += ", ".join(f"{key}={repr(arg)}" for key, arg in kwargs.items())
     name += ")"
+    gd.debuginfo(prj="mt", info=f'name={name}')
     return name
 
 
@@ -42,11 +44,13 @@ class InsertPostInitMethodToModuleSubClasses(object):
     def __init__(self, default_dtype: Optional[torch.dtype] = None):
         self._old_default_dtype = None
         self._default_dtype = default_dtype
+        gd.debuginfo(prj="mt", info=f'')
 
     def __enter__(self):
         r"""
         Enter the context scope.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if self._default_dtype is not None:
             self._old_default_dtype = torch.get_default_dtype()
             torch.set_default_dtype(self._default_dtype)
@@ -80,6 +84,7 @@ class InsertPostInitMethodToModuleSubClasses(object):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        gd.debuginfo(prj="mt", info=f'')
         if self._default_dtype is not None:
             torch.set_default_dtype(self._old_default_dtype)
 

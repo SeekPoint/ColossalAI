@@ -31,6 +31,7 @@ class _DimSpec:
         self.is_replica = len(shard_list) == 0
         self.shard_list = shard_list
         self.build_difference_2d_dict()
+        gd.debuginfo(prj="mt", info=f'')
 
     def __eq__(self, other):
         return str(self) == str(other)
@@ -65,6 +66,7 @@ class _DimSpec:
         Build a difference mapping for 2D device mesh case. It will be used to
         compute the difference between DimSpec pairs.
         """
+        gd.debuginfo(prj="mt", info=f'')
 
         source_spec_list = ["R", "S0", "S1", "S01"]
         target_spec_list = ["R", "S0", "S1", "S01"]
@@ -138,6 +140,7 @@ class _DimSpec:
         Output:
             5
         """
+        gd.debuginfo(prj="mt", info=f'')
         difference = self.difference_dict[(str(self), str(other))]
         return difference
 
@@ -175,10 +178,13 @@ class ShardingSpec:
     def __init__(
         self, device_mesh: DeviceMesh, entire_shape: torch.Size, dim_partition_dict=None, sharding_sequence=None
     ):
+        gd.debuginfo(prj="mt", info=f'')
         self.device_mesh = device_mesh
 
         if isinstance(entire_shape, (list, tuple)):
             entire_shape = torch.Size(entire_shape)
+            gd.debuginfo(prj="mt", info=f'')
+
         self.entire_shape = entire_shape
         self.dim_partition_dict = dim_partition_dict
         self.sharding_sequence = sharding_sequence
@@ -190,11 +196,14 @@ class ShardingSpec:
                 dim_size=len(entire_shape), dim_partition_dict=self.dim_partition_dict
             )
             self.convert_dict_to_shard_sequence()
+            gd.debuginfo(prj="mt", info=f'')
+
         elif self.dim_partition_dict is None:
             assert (
                 self.sharding_sequence is not None
             ), f"sharding_sequence should not be None, if dim_partition_dict is NoneType object."
             self.convert_shard_sequence_to_dict()
+            gd.debuginfo(prj="mt", info=f'')
         self._sanity_check()
 
     def __repr__(self):
@@ -204,6 +213,7 @@ class ShardingSpec:
         return " ".join(res_list)
 
     def _sanity_check(self):
+        gd.debuginfo(prj="mt", info=f'')
         # make sure all axes in logical device mesh only be used once
         dim_check_list = list(range(self.device_mesh.logical_mesh_id.dim()))
         for dim, shard_list in self.dim_partition_dict.items():
@@ -239,6 +249,7 @@ class ShardingSpec:
         """
         Convert dim_partition_dict into list of _DimSpec, and assign it to sharding_sequence.
         """
+        gd.debuginfo(prj="mt", info=f'')
         sharding_sequence = [_DimSpec([])] * len(self.entire_shape)
         for dim, shard_list in self.dim_partition_dict.items():
             sharding_sequence[dim] = _DimSpec(shard_list)
@@ -248,6 +259,7 @@ class ShardingSpec:
         """
         Convert sharding_sequence into dim_partition_dict.
         """
+        gd.debuginfo(prj="mt", info=f'')
         new_dim_partition_dict = {}
         for index, dim_spec in enumerate(self.sharding_sequence):
             if not dim_spec.is_replica:
@@ -283,6 +295,7 @@ class ShardingSpec:
         Return:
             difference(int): Difference between two ShardingSpec.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert len(self.sharding_sequence) == len(
             other.sharding_sequence
         ), f"Cannot compare difference for two sharding specs with different length."
@@ -293,6 +306,8 @@ class ShardingSpec:
 
     def get_sharded_shape_per_device(self):
         sharded_shape = list(self.entire_shape)
+        gd.debuginfo(prj="mt", info=f'')
+
         for dim, shard_list in self.dim_partition_dict.items():
             mesh_list = [self.device_mesh.shape[mesh_dim] for mesh_dim in shard_list]
             shard_partitions = reduce(operator.mul, mesh_list, 1)

@@ -26,6 +26,7 @@ class RuntimeMemTracer:
     """
 
     def __init__(self, module: torch.nn.Module, dtype: torch.dtype = torch.half):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.module = module
         self.dtype = dtype

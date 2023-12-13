@@ -21,12 +21,14 @@ class ConvModuleHandler(MetaInfoModuleHandler):
     """
 
     def get_strategy_generator(self) -> List[StrategyGenerator]:
+        gd.debuginfo(prj="mt", info=f'')
         op_data_mapping = self.get_operation_data_mapping()
         generators = []
         generators.append(ConvStrategyGenerator(op_data_mapping, self.device_mesh))
         return generators
 
     def get_operation_data_mapping(self) -> Dict[str, OperationData]:
+        gd.debuginfo(prj="mt", info=f'')
         # use transposed shape for strategies
         # the strategies will be transformed back to its original shape in self.post_process
         physical_input_operand = OperationData(
@@ -48,6 +50,7 @@ class ConvModuleHandler(MetaInfoModuleHandler):
         mapping = {"input": physical_input_operand, "other": physical_other_operand, "output": physical_output}
 
         if "bias" in self.named_parameters:
+            gd.debuginfo(prj="mt", info=f'')
             physical_bias_operand = OperationData(
                 name="bias", type=OperationDataType.PARAM, data=self.named_parameters["bias"]
             )
@@ -58,6 +61,7 @@ class ConvModuleHandler(MetaInfoModuleHandler):
         """
         Convert the sharding spec of the weight parameter back to its original shape.
         """
+        gd.debuginfo(prj="mt", info=f'')
         for op_data, sharding_spec in strategy.input_sharding_specs.items():
             if op_data.name == "weight":
                 transpose_partition_dim(sharding_spec, 0, 1)
@@ -73,12 +77,14 @@ class ConvFunctionHandler(MetaInfoNodeHandler):
     """
 
     def get_strategy_generator(self) -> List[StrategyGenerator]:
+        gd.debuginfo(prj="mt", info=f'')
         op_data_mapping = self.get_operation_data_mapping()
         generators = []
         generators.append(ConvStrategyGenerator(op_data_mapping, self.device_mesh))
         return generators
 
     def get_operation_data_mapping(self) -> Dict[str, OperationData]:
+        gd.debuginfo(prj="mt", info=f'')
         # use transposed shape for strategies
         # the strategies will be transformed back to its original shape in self.post_process
         physical_input_operand = OperationData(
@@ -87,9 +93,11 @@ class ConvFunctionHandler(MetaInfoNodeHandler):
 
         # check if the other operand is a parameter
         if isinstance(self.node.args[1]._meta_data, torch.nn.parameter.Parameter):
+            gd.debuginfo(prj="mt", info=f'')
             data_type = OperationDataType.PARAM
         else:
             data_type = OperationDataType.ARG
+            gd.debuginfo(prj="mt", info=f'')
 
         logical_shape_for_weight = list(self.node.args[1]._meta_data.shape)
         logical_shape_for_weight[0], logical_shape_for_weight[1] = (
@@ -110,8 +118,10 @@ class ConvFunctionHandler(MetaInfoNodeHandler):
             # check if the other operand is a parameter
             if isinstance(self.node.kwargs["bias"]._meta_data, torch.nn.parameter.Parameter):
                 data_type = OperationDataType.PARAM
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 data_type = OperationDataType.ARG
+                gd.debuginfo(prj="mt", info=f'')
             physical_bias_operand = OperationData(
                 name=str(self.node.kwargs["bias"]), type=data_type, data=self.node.kwargs["bias"]._meta_data
             )
@@ -122,6 +132,7 @@ class ConvFunctionHandler(MetaInfoNodeHandler):
         """
         Convert the sharding spec of the weight parameter back to its original shape.
         """
+        gd.debuginfo(prj="mt", info=f'')
         for op_data, sharding_spec in strategy.input_sharding_specs.items():
             if op_data.name == str(self.node.args[1]):
                 transpose_partition_dim(sharding_spec, 0, 1)

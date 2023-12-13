@@ -9,10 +9,13 @@ from ...registry import meta_patched_function
 
 def _ntuple(n, name="parse"):
     def parse(x):
+        gd.debuginfo(prj="mt", info=f'')
         if isinstance(x, collections.abc.Iterable):
+            gd.debuginfo(prj="mt", info=f'')
             return tuple(x)
         return tuple(repeat(x, n))
 
+    gd.debuginfo(prj="mt", info=f'')
     parse.__name__ = name
     return parse
 
@@ -23,6 +26,8 @@ _triple = _ntuple(3, "_triple")
 
 
 def _extract_kwargs(kwargs):
+    gd.debuginfo(prj="mt", info=f'')
+
     if "stride" in kwargs:
         stride = kwargs["stride"]
     else:
@@ -48,6 +53,8 @@ def _extract_kwargs(kwargs):
 def torch_nn_functional_conv1d(input, weight, **kwargs):
     stride, padding, dilation, _ = _extract_kwargs(kwargs)
 
+    gd.debuginfo(prj="mt", info=f'')
+
     stride = _single(stride)
     padding = _single(padding)
     dilation = _single(dilation)
@@ -66,6 +73,7 @@ def torch_nn_functional_conv1d(input, weight, **kwargs):
 @meta_patched_function.register(torch.nn.functional.conv2d)
 def torch_nn_functional_conv2d(input, weight, **kwargs):
     stride, padding, dilation, _ = _extract_kwargs(kwargs)
+    gd.debuginfo(prj="mt", info=f'')
 
     stride = _pair(stride)
     padding = _pair(padding)
@@ -87,6 +95,7 @@ def torch_nn_functional_conv2d(input, weight, **kwargs):
 @meta_patched_function.register(torch.nn.functional.conv3d)
 def torch_nn_functional_conv3d(input, weight, **kwargs):
     stride, padding, dilation, _ = _extract_kwargs(kwargs)
+    gd.debuginfo(prj="mt", info=f'')
 
     stride = _triple(stride)
     padding = _triple(padding)
@@ -110,6 +119,7 @@ def torch_nn_functional_conv3d(input, weight, **kwargs):
 @meta_patched_function.register(torch.nn.functional.conv_transpose1d)
 def torch_nn_functional_convtranspose1d(input, weight, **kwargs):
     stride, padding, dilation, output_padding = _extract_kwargs(kwargs)
+    gd.debuginfo(prj="mt", info=f'')
 
     stride = _single(stride)
     padding = _single(padding)
@@ -132,6 +142,7 @@ def torch_nn_functional_convtranspose1d(input, weight, **kwargs):
 @meta_patched_function.register(torch.nn.functional.conv_transpose2d)
 def torch_nn_functional_convtranspose2d(input, weight, **kwargs):
     stride, padding, dilation, output_padding = _extract_kwargs(kwargs)
+    gd.debuginfo(prj="mt", info=f'')
 
     stride = _pair(stride)
     padding = _pair(padding)
@@ -158,6 +169,7 @@ def torch_nn_functional_convtranspose2d(input, weight, **kwargs):
 @meta_patched_function.register(torch.nn.functional.conv_transpose3d)
 def torch_nn_functional_convtranspose3d(input, weight, **kwargs):
     stride, padding, dilation, output_padding = _extract_kwargs(kwargs)
+    gd.debuginfo(prj="mt", info=f'')
 
     stride = _triple(stride)
     padding = _triple(padding)

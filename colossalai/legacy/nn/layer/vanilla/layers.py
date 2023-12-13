@@ -28,6 +28,7 @@ def drop_path(x, drop_prob: float = 0.0, training: bool = False):
         drop_prob (float, optional): probability of dropping path, defaults 0.0.
         training (bool, optional): whether in training progress, defaults False.
     """
+    gd.debuginfo(prj="mt", info=f'')
     if drop_prob == 0.0 or not training:
         return x
     keep_prob = 1 - drop_prob
@@ -48,6 +49,7 @@ class DropPath(nn.Module):
     """
 
     def __init__(self, drop_prob=None):
+        gd.debuginfo(prj="mt", info=f'')
         super(DropPath, self).__init__()
         self.drop_prob = drop_prob
 
@@ -72,6 +74,7 @@ class WrappedDropout(nn.Module):
     """
 
     def __init__(self, p: float = 0.5, inplace: bool = False, mode=None):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         if p < 0 or p > 1:
             raise ValueError("dropout probability has to be between 0 and 1, " "but got {}".format(p))
@@ -108,6 +111,7 @@ class WrappedDropPath(nn.Module):
     """
 
     def __init__(self, p: float = 0.0, mode=None):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.p = p
         self.mode = mode
@@ -163,6 +167,7 @@ class VanillaPatchEmbedding(nn.Module):
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
         position_embed_initializer: Callable = init.zeros_(),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         img_size = to_2tuple(img_size)
         patch_size = to_2tuple(patch_size)
@@ -233,6 +238,7 @@ class VanillaClassifier(nn.Module):
         weight_initializer: Callable = init.kaiming_uniform_(a=math.sqrt(5)),
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.in_features = in_features
         self.num_classes = num_classes
@@ -282,6 +288,7 @@ class VanillaLayerNorm(nn.Module):
     """
 
     def __init__(self, normalized_shape: int, eps=1e-05, bias=True, dtype=None):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
         self.normalized_shape = (normalized_shape,)
@@ -329,6 +336,7 @@ class VanillaLinear(nn.Module):
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
         **kwargs,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features

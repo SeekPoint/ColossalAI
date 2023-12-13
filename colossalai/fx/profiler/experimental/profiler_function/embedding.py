@@ -15,6 +15,7 @@ def torch_nn_functional_embedding(
     scale_grad_by_freq: bool = False,
     sparse: bool = False,
 ) -> torch.Tensor:
+    gd.debuginfo(prj="mt", info=f'')
     # F.embedding is a dictionary lookup, so technically it has 0 FLOPs. (https://discuss.pytorch.org/t/correct-way-to-calculate-flops-in-model/67198/6)
     flops = 0
     macs = 0

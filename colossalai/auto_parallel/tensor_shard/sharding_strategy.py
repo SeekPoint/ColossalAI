@@ -50,6 +50,7 @@ class OperationData:
     logical_shape: Tuple[int] = None
 
     def __post_init__(self):
+        gd.debuginfo(prj="mt", info=f'')
         # if no logical shape is specified, use the data shape as the logical shape
         if self.logical_shape is None:
 
@@ -190,22 +191,26 @@ class ShardingStrategy:
         return self._get_sharding_spec(OperationDataType.OUTPUT)
 
     def _get_sharding_spec(self, operation_data_type: OperationDataType):
+        gd.debuginfo(prj="mt", info=f'')
         specs = {k: v for k, v in self.sharding_specs.items() if k.type == operation_data_type}
         return specs
 
     def get_op_data_by_name(self, name: str):
+        gd.debuginfo(prj="mt", info=f'')
         for op_data in self.sharding_specs.keys():
             if op_data.name == name:
                 return op_data
         raise KeyError(f"Could not find the OperationData with name {name}")
 
     def get_sharding_spec_by_name(self, name: str):
+        gd.debuginfo(prj="mt", info=f'')
         for op_data, sharding_spec in self.sharding_specs.items():
             if op_data.name == name:
                 return sharding_spec
         raise KeyError(f"Could not find the ShardingSpec for OperationData with name {name}")
 
     def clone(self):
+        gd.debuginfo(prj="mt", info=f'')
         def _deepcopy_dict_vals(data: Dict):
             return {k: deepcopy(v) for k, v in data.items()}
 
@@ -244,6 +249,7 @@ class StrategiesVector(list):
     """
 
     def __init__(self, node: Node):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.node = node
         # fetch its input and output nodes
@@ -254,6 +260,7 @@ class StrategiesVector(list):
     def check_merge(self):
         merge_label = False
         if self.node.op == "call_module":
+            gd.debuginfo(prj="mt", info=f'')
             target = self.node.target
             root_module = self.node.graph.owning_module
             submod = root_module.get_submodule(target)
@@ -264,8 +271,10 @@ class StrategiesVector(list):
                 merge_label = True
 
         if self.node.op == "call_function":
+            gd.debuginfo(prj="mt", info=f'')
             # we could merge element-wise op, because the output sharding spec is always same as the input sharding spec.
             if self.node.target in ELEMENTWISE_FUNC_OP:
+                gd.debuginfo(prj="mt", info=f'')
                 merge_label = True
             # we could merge bcast op if the rhs is a scalar, because it will fall back to the element-wise case.
             # TODO: remove this after we support the fall back logic.
@@ -273,13 +282,17 @@ class StrategiesVector(list):
             #     merge_label = True
             # we could merge reshape op, because their computation costs are negligible.
             if self.node.target in RESHAPE_FUNC_OP:
+                gd.debuginfo(prj="mt", info=f'')
                 merge_label = True
 
         if self.node.op == "call_method":
+            gd.debuginfo(prj="mt", info=f'')
             # we could merge reshape op, because their computation costs are negligible.
             method = getattr(self.node.args[0]._meta_data.__class__, self.node.target)
             if method in RESHAPE_METHOD_OP:
+                gd.debuginfo(prj="mt", info=f'')
                 merge_label = True
             if method in ELEMENTWISE_METHOD_OP:
+                gd.debuginfo(prj="mt", info=f'')
                 merge_label = True
         return merge_label

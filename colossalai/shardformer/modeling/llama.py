@@ -45,6 +45,7 @@ class LlamaPipelineForwards:
         use_cache = use_cache if use_cache is not None else self.config.use_cache
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        gd.debuginfo(prj="mt", info=f'')
 
         # retrieve input_ids and inputs_embeds
         if stage_manager.is_first_stage():
@@ -52,8 +53,10 @@ class LlamaPipelineForwards:
                 raise ValueError("You cannot specify both decoder_input_ids and decoder_inputs_embeds at the same time")
             elif input_ids is not None:
                 batch_size, seq_length = input_ids.shape
+                gd.debuginfo(prj="mt", info=f'')
             elif inputs_embeds is not None:
                 batch_size, seq_length, _ = inputs_embeds.shape
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 raise ValueError("You have to specify either decoder_input_ids or decoder_inputs_embeds")
             device = input_ids.device if input_ids is not None else inputs_embeds.device
@@ -64,6 +67,7 @@ class LlamaPipelineForwards:
             input_shape = hidden_states.shape[:-1]
             batch_size, seq_length = input_shape
             device = hidden_states.device
+            gd.debuginfo(prj="mt", info=f'')
 
         seq_length_with_past = seq_length
         past_key_values_length = 0
@@ -136,6 +140,7 @@ class LlamaPipelineForwards:
                     position_ids,
                     None,
                 )
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 layer_outputs = decoder_layer(
                     hidden_states,
@@ -145,13 +150,17 @@ class LlamaPipelineForwards:
                     output_attentions=output_attentions,
                     use_cache=use_cache,
                 )
+                gd.debuginfo(prj="mt", info=f'')
 
             hidden_states = layer_outputs[0]
 
             if use_cache:
                 next_decoder_cache += (layer_outputs[2 if output_attentions else 1],)
+                gd.debuginfo(prj="mt", info=f'')
+
             if output_attentions:
                 all_self_attns += (layer_outputs[1],)
+                gd.debuginfo(prj="mt", info=f'')
 
         if stage_manager.is_last_stage():
             hidden_states = self.norm(hidden_states)
@@ -220,6 +229,7 @@ class LlamaPipelineForwards:
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        gd.debuginfo(prj="mt", info=f'')
 
         # TODO(jianghai): left the recording kv-value tensors as () or None type, this feature may be added in the future.
         if output_attentions:
@@ -248,6 +258,7 @@ class LlamaPipelineForwards:
         past_key_values = None
 
         if stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             hidden_states = outputs[0]
             logits = self.lm_head(hidden_states)
             loss = None
@@ -264,6 +275,7 @@ class LlamaPipelineForwards:
                 loss = loss_fct(shift_logits, shift_labels)
 
             if not return_dict:
+                gd.debuginfo(prj="mt", info=f'')
                 output = (logits,) + outputs[1:]
                 return (loss,) + output if loss is not None else output
 
@@ -275,6 +287,7 @@ class LlamaPipelineForwards:
                 attentions=outputs.attentions,
             )
         else:
+            gd.debuginfo(prj="mt", info=f'')
             hidden_states = outputs.get("hidden_states")
             return {"hidden_states": hidden_states}
 
@@ -327,13 +340,17 @@ class LlamaPipelineForwards:
             hidden_states=hidden_states,
             stage_index=stage_index,
         )
+        gd.debuginfo(prj="mt", info=f'')
 
         if input_ids is not None:
             batch_size = input_ids.shape[0]
+            gd.debuginfo(prj="mt", info=f'')
         elif inputs_embeds is not None:
             batch_size = inputs_embeds.shape[0]
+            gd.debuginfo(prj="mt", info=f'')
         else:
             batch_size = hidden_states.shape[0]
+            gd.debuginfo(prj="mt", info=f'')
 
         if stage_manager.is_last_stage():
             hidden_states = transformer_outputs[0]
@@ -343,38 +360,52 @@ class LlamaPipelineForwards:
                 raise ValueError("Cannot handle batch sizes > 1 if no padding token is defined.")
             if self.config.pad_token_id is None:
                 sequence_lengths = -1
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 if input_ids is not None:
                     sequence_lengths = (torch.ne(input_ids, self.config.pad_token_id).sum(-1) - 1).to(logits.device)
+                    gd.debuginfo(prj="mt", info=f'')
                 else:
                     sequence_lengths = -1
+                    gd.debuginfo(prj="mt", info=f'')
 
             pooled_logits = logits[torch.arange(batch_size, device=logits.device), sequence_lengths]
 
             loss = None
             if labels is not None:
                 labels = labels.to(logits.device)
+                gd.debuginfo(prj="mt", info=f'')
                 if self.config.problem_type is None:
                     if self.num_labels == 1:
                         self.config.problem_type = "regression"
+                        gd.debuginfo(prj="mt", info=f'')
                     elif self.num_labels > 1 and (labels.dtype == torch.long or labels.dtype == torch.int):
                         self.config.problem_type = "single_label_classification"
+                        gd.debuginfo(prj="mt", info=f'')
                     else:
                         self.config.problem_type = "multi_label_classification"
+                        gd.debuginfo(prj="mt", info=f'')
 
                 if self.config.problem_type == "regression":
                     loss_fct = MSELoss()
+                    gd.debuginfo(prj="mt", info=f'')
                     if self.num_labels == 1:
                         loss = loss_fct(pooled_logits.squeeze(), labels.squeeze())
+                        gd.debuginfo(prj="mt", info=f'')
                     else:
                         loss = loss_fct(pooled_logits, labels)
+                        gd.debuginfo(prj="mt", info=f'')
                 elif self.config.problem_type == "single_label_classification":
                     loss_fct = CrossEntropyLoss()
                     loss = loss_fct(pooled_logits.view(-1, self.num_labels), labels.view(-1))
+                    gd.debuginfo(prj="mt", info=f'')
                 elif self.config.problem_type == "multi_label_classification":
                     loss_fct = BCEWithLogitsLoss()
                     loss = loss_fct(pooled_logits, labels)
+                    gd.debuginfo(prj="mt", info=f'')
+
             if not return_dict:
+                gd.debuginfo(prj="mt", info=f'')
                 output = (pooled_logits,) + transformer_outputs[1:]
                 return ((loss,) + output) if loss is not None else output
 
@@ -388,10 +419,12 @@ class LlamaPipelineForwards:
 
         else:
             hidden_states = transformer_outputs.get("hidden_states")
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": hidden_states}
 
 
 def get_llama_flash_attention_forward():
+    gd.debuginfo(prj="mt", info=f'')
     from transformers.models.llama.modeling_llama import LlamaAttention, apply_rotary_pos_emb
 
     from colossalai.kernel.cuda_native import AttnMaskType, ColoAttention
@@ -421,9 +454,12 @@ def get_llama_flash_attention_forward():
         key_states = self.k_proj(hidden_states).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
         value_states = self.v_proj(hidden_states).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
 
+        gd.debuginfo(prj="mt", info=f'')
+
         kv_seq_len = key_states.shape[-2]
         if past_key_value is not None:
             kv_seq_len += past_key_value[0].shape[-2]
+            gd.debuginfo(prj="mt", info=f'')
 
         cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len)
 
@@ -433,6 +469,7 @@ def get_llama_flash_attention_forward():
             # reuse k, v, self_attention
             key_states = torch.cat([past_key_value[0], key_states], dim=2)
             value_states = torch.cat([past_key_value[1], value_states], dim=2)
+            gd.debuginfo(prj="mt", info=f'')
 
         past_key_value = (key_states, value_states) if use_cache else None
 
@@ -440,6 +477,7 @@ def get_llama_flash_attention_forward():
         if llama_version == 2:
             key_states = repeat_kv(key_states, self.num_key_value_groups)
             value_states = repeat_kv(value_states, self.num_key_value_groups)
+            gd.debuginfo(prj="mt", info=f'')
 
         me_input_shape = (bsz, q_len, self.num_heads, self.head_dim)
         query_states = query_states.transpose(1, 2).contiguous().view(*me_input_shape)
@@ -449,6 +487,7 @@ def get_llama_flash_attention_forward():
         flash_attention_mask = None
         attn_mask_type = AttnMaskType.causal
         if attention_mask != None:
+            gd.debuginfo(prj="mt", info=f'')
             if attention_mask.size() != (bsz, 1, q_len, kv_seq_len):
                 raise ValueError(
                     f"Attention mask should be of size {(bsz, 1, q_len, kv_seq_len)}, but is {attention_mask.size()}"

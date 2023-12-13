@@ -8,6 +8,7 @@ from colossalai.legacy.tensor import ProcessGroup
 
 
 def _check_sanity():
+    gd.debuginfo(prj="mt", info=f'')
     from colossalai.legacy.core import global_context as gpc
 
     if gpc.tensor_parallel_size > 1 or gpc.pipeline_parallel_size > 1:
@@ -18,6 +19,7 @@ class MoeParallelInfo:
     """Moe parallelism information, storing parallel sizes and groups."""
 
     def __init__(self, ep_size: int, dp_size: int):
+        gd.debuginfo(prj="mt", info=f'')
         _check_sanity()
         self.ep_size = ep_size
         self.dp_size = dp_size
@@ -54,6 +56,7 @@ class MoeContext(metaclass=SingletonMeta):
         return self.has_setup
 
     def setup(self, seed: int, use_kernel_optim: bool = True):
+        gd.debuginfo(prj="mt", info=f'')
         assert not self.is_initialized, "MoE distributed context shouldn't be set up again"
         _check_sanity()
         assert torch.cuda.is_available(), "MoE requires to enable CUDA first"
@@ -94,6 +97,8 @@ class MoeContext(metaclass=SingletonMeta):
         gt_flag = num_experts % self.max_ep_size == 0  # check whether num_experts is greater
         lt_flag = self.max_ep_size % num_experts == 0  # check whether num_experts is less
 
+        gd.debuginfo(prj="mt", info=f'')
+
         assert gt_flag or lt_flag, (
             "Automatic experts placement dose not not support expert number"
             " is not a multiple of ep size or vice versa."
@@ -114,6 +119,7 @@ class MoeContext(metaclass=SingletonMeta):
         dp_size *= self.min_dp_size
         if not (ep_size in self.parallel_info_dict):
             self.parallel_info_dict[ep_size] = MoeParallelInfo(ep_size, dp_size)
+            gd.debuginfo(prj="mt", info=f'')
 
         return num_local_experts, self.parallel_info_dict[ep_size]
 

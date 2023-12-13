@@ -16,6 +16,7 @@ class Dropout(ColossalaiModule):
     """
 
     def __init__(self, p: float = 0.5, inplace: bool = False) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         tensor_parallel = get_tensor_parallel_mode()
         if tensor_parallel == "1d":
             drop = Dropout1D(p, inplace)

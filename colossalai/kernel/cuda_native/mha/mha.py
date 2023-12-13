@@ -17,14 +17,17 @@ if HAS_MEM_EFF_ATTN:
 
 class ColoAttention(torch.nn.Module):
     def __init__(self, embed_dim: int, num_heads: int, dropout: float = 0.0, scale=None):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         assert (
             embed_dim % num_heads == 0
         ), f"the embed dim ({embed_dim}) is not divisible by the number of attention heads ({num_heads})."
         if scale is not None:
             self.scale = scale
+            gd.debuginfo(prj="mt", info=f'')
         else:
             self.scale = 1 / math.sqrt(embed_dim // num_heads)
+            gd.debuginfo(prj="mt", info=f'')
         self.dropout = dropout
 
         if not HAS_MEM_EFF_ATTN and not HAS_FLASH_ATTN:
@@ -32,10 +35,12 @@ class ColoAttention(torch.nn.Module):
 
     @staticmethod
     def unpad(tensor: torch.Tensor, indices: torch.Tensor) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         return Unpad.apply(tensor, indices)
 
     @staticmethod
     def repad(tensor: torch.Tensor, indices: torch.Tensor, batch_size: int, seq_len: int) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         return Repad.apply(tensor, indices, batch_size, seq_len)
 
     def forward(
@@ -48,11 +53,13 @@ class ColoAttention(torch.nn.Module):
         bias: Optional[torch.Tensor] = None,
     ):
         attn = None
-
+        gd.debuginfo(prj="mt", info=f'')
         if HAS_FLASH_ATTN and query.dtype in [torch.float16, torch.bfloat16] and bias == None:
             attn = flash_attention
+            gd.debuginfo(prj="mt", info=f'')
         else:
             attn = mem_eff_attention
+            gd.debuginfo(prj="mt", info=f'')
 
         padded = attn_mask_type is not None and attn_mask_type.value % 2 == 1
         causal = attn_mask_type is not None and attn_mask_type.value > 1
@@ -62,6 +69,7 @@ class ColoAttention(torch.nn.Module):
         seq_len_info_q = None
         seq_len_info_kv = None
         if padded:
+            gd.debuginfo(prj="mt", info=f'')
             # bert style, unpad process
             assert (
                 attn_mask is not None
@@ -73,23 +81,29 @@ class ColoAttention(torch.nn.Module):
 
             # bert style
             if tgt_len == src_len:
+                gd.debuginfo(prj="mt", info=f'')
                 seq_len_info_q = SeqLenInfo.materialize(attn_mask=attn_mask, device=query.device)
                 if batch_size > 1:
                     query, key, value = self.unpad(
                         torch.stack([query, key, value], dim=2), seq_len_info_q.indices
                     ).unbind(dim=1)
+                    gd.debuginfo(prj="mt", info=f'')
                 else:
                     query, key, value = torch.stack([query, key, value], dim=2).squeeze(0).unbind(dim=1)
+                    gd.debuginfo(prj="mt", info=f'')
                 seq_len_info_kv = seq_len_info_q
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 seq_len_info_q = SeqLenInfo.materialize(size=(batch_size, tgt_len), device=query.device)
                 seq_len_info_kv = SeqLenInfo.materialize(attn_mask=attn_mask, device=query.device)
                 if batch_size > 1:
+                    gd.debuginfo(prj="mt", info=f'')
                     query = rearrange(query, "b s ... -> c (b s) ...", c=1)
                     key, value = self.unpad(torch.stack([query, key, value], dim=2), seq_len_info_kv.indices).unbind(
                         dim=1
                     )
                 else:
+                    gd.debuginfo(prj="mt", info=f'')
                     query, key, value = torch.stack([query, key, value], dim=2).squeeze(0).unbind(dim=1)
 
         out = attn(
@@ -106,7 +120,9 @@ class ColoAttention(torch.nn.Module):
 
         # repad
         if padded:
+            gd.debuginfo(prj="mt", info=f'')
             if batch_size > 1:
+                gd.debuginfo(prj="mt", info=f'')
                 out = self.repad(out, seq_len_info_q.indices, batch_size, tgt_len)
             out = rearrange(out, "(b s) h d -> b s h d", b=batch_size)
 

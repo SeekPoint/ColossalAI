@@ -22,25 +22,31 @@ class BinaryElementwiseHandler(MetaInfoNodeHandler):
     """
 
     def get_operation_data_mapping(self) -> Dict[str, OperationData]:
+        gd.debuginfo(prj="mt", info=f'')
         bcast_shape = self.node._meta_data.shape
 
         def _get_op_data_type(tensor):
             if isinstance(tensor, torch.nn.parameter.Parameter):
+                gd.debuginfo(prj="mt", info=f'')
                 return OperationDataType.PARAM
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 return OperationDataType.ARG
 
         def _get_arg_value(idx):
             non_tensor = False
             if isinstance(self.node.args[idx], Node):
+                gd.debuginfo(prj="mt", info=f'')
                 meta_data = self.node.args[idx]._meta_data
                 # The meta_data of node type argument could also possibly be a non-tensor object.
                 if not isinstance(meta_data, torch.Tensor):
+                    gd.debuginfo(prj="mt", info=f'')
                     assert isinstance(meta_data, (int, float))
                     meta_data = torch.Tensor([meta_data]).to("meta")
                     non_tensor = True
 
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 # this is in fact a real data like int 1
                 # but we can deem it as meta data
                 # as it won't affect the strategy generation
@@ -73,20 +79,25 @@ class BinaryElementwiseHandler(MetaInfoNodeHandler):
             name=str(self.node), type=OperationDataType.OUTPUT, data=output_meta_data, logical_shape=bcast_shape
         )
         if non_tensor_input:
+            gd.debuginfo(prj="mt", info=f'')
             self.non_tensor_list.append(input_op_data)
+
         if non_tensor_other:
             self.non_tensor_list.append(other_op_data)
+            gd.debuginfo(prj="mt", info=f'')
 
         mapping = {"input": input_op_data, "other": other_op_data, "output": output_op_data}
         return mapping
 
     def get_strategy_generator(self) -> List[StrategyGenerator]:
+        gd.debuginfo(prj="mt", info=f'')
         op_data_mapping = self.get_operation_data_mapping()
         generators = []
         generators.append(BinaryElementwiseStrategyGenerator(op_data_mapping, self.device_mesh))
         return generators
 
     def post_process(self, strategy: ShardingStrategy) -> Union[ShardingStrategy, List[ShardingStrategy]]:
+        gd.debuginfo(prj="mt", info=f'')
         # convert bias from its logical sharding spec to its physical sharding spec
         op_data_mapping = self.get_operation_data_mapping()
 
@@ -94,8 +105,10 @@ class BinaryElementwiseHandler(MetaInfoNodeHandler):
             if op_data in self.non_tensor_list:
                 # remove the sharding spec if the op_data is not a tensor, e.g. torch.pow(tensor, 2)
                 strategy.sharding_specs.pop(op_data)
+                gd.debuginfo(prj="mt", info=f'')
 
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 # convert the logical sharding spec to physical sharding spec if broadcast
                 # e.g. torch.rand(4, 4) + torch.rand(4)
                 physical_shape = op_data.data.shape
@@ -107,6 +120,7 @@ class BinaryElementwiseHandler(MetaInfoNodeHandler):
 
                 strategy.sharding_specs[op_data] = sharding_spec
                 if len(removed_dims) > 0:
+                    gd.debuginfo(prj="mt", info=f'')
                     comm_action = comm_actions_for_oprands(
                         node=self.node, removed_dims=removed_dims, op_data=op_data, sharding_spec=sharding_spec
                     )

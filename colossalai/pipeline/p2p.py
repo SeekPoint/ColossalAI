@@ -29,7 +29,10 @@ def _cuda_safe_tensor_to_object(tensor: torch.Tensor, tensor_size: torch.Size) -
         Any: object after unpickled
     """
     buf = tensor.numpy().tobytes()[:tensor_size]
+    gd.debuginfo(prj="mt", info=f'')
+
     if b"cuda" in buf:
+        gd.debuginfo(prj="mt", info=f'')
         buf_array = bytearray(buf)
         device_index = torch.cuda.current_device()
         # There might be more than one output tensors during forward
@@ -60,8 +63,9 @@ def _broadcast_object_list(
         device (:class:`torch.device`): device to do broadcast. current device in default
 
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     if c10d._rank_not_in_group(group):
+        gd.debuginfo(prj="mt", info=f'')
         c10d._warn_not_in_group("broadcast_object_list")
         return
 
@@ -72,24 +76,31 @@ def _broadcast_object_list(
         if is_nccl_backend and device.type != "cuda":
             raise ValueError("device type must be cuda for nccl backend")
         current_device = device
+        gd.debuginfo(prj="mt", info=f'')
     else:
+        gd.debuginfo(prj="mt", info=f'')
         current_device = torch.device("cpu")
         if is_nccl_backend:
             current_device = torch.device("cuda", torch.cuda.current_device())
+            gd.debuginfo(prj="mt", info=f'')
 
     my_rank = dist.get_rank()
     # Serialize object_list elements to tensors on src rank.
     if my_rank == src:
         if Version(torch.__version__) >= Version("1.13.0"):
             tensor_list, size_list = zip(*[c10d._object_to_tensor(obj, device=current_device) for obj in object_list])
+            gd.debuginfo(prj="mt", info=f'')
         else:
             tensor_list, size_list = zip(*[c10d._object_to_tensor(obj) for obj in object_list])
+            gd.debuginfo(prj="mt", info=f'')
         object_sizes_tensor = torch.cat(size_list)
     else:
         object_sizes_tensor = torch.empty(len(object_list), dtype=torch.long)
+        gd.debuginfo(prj="mt", info=f'')
 
     if is_nccl_backend:
         object_sizes_tensor = object_sizes_tensor.to(current_device)
+        gd.debuginfo(prj="mt", info=f'')
 
     # Broadcast object sizes
     c10d.broadcast(object_sizes_tensor, src=src, group=group, async_op=False)
@@ -97,14 +108,17 @@ def _broadcast_object_list(
     # Concatenate and broadcast serialized object tensors
     if my_rank == src:
         object_tensor = torch.cat(tensor_list)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         object_tensor = torch.empty(  # type: ignore[call-overload]
             torch.sum(object_sizes_tensor).item(),  # type: ignore[arg-type]
             dtype=torch.uint8,
         )
+        gd.debuginfo(prj="mt", info=f'')
 
     if is_nccl_backend:
         object_tensor = object_tensor.to(current_device)
+        gd.debuginfo(prj="mt", info=f'')
 
     c10d.broadcast(object_tensor, src=src, group=group, async_op=False)
 
@@ -141,6 +155,7 @@ def _send_object(object: Any, src: int, dst: int, group: ProcessGroup) -> None:
     Returns:
         None
     """
+    gd.debuginfo(prj="mt", info=f'')
     # then broadcast safely
     _broadcast_object_list([object], src, group)
 
@@ -154,6 +169,7 @@ def _recv_object(src: int, dst: int, group: ProcessGroup) -> Any:
     Returns:
         Any: Object received from src.
     """
+    gd.debuginfo(prj="mt", info=f'')
     object_list = [None]
     _broadcast_object_list(object_list, src, group)
 
@@ -180,19 +196,25 @@ def _p2p_comm(
     Returns:
         torch.Tensor: tensor received from previous stage
     """
+    gd.debuginfo(prj="mt", info=f'')
     # send and recv shape
     send_next_shape = None
     recv_prev_shape = None
 
     if tensor_send_next is not None:
         send_next_shape = torch.tensor(tensor_send_next.size(), device=torch.cuda.current_device(), dtype=torch.int64)
+        gd.debuginfo(prj="mt", info=f'')
+
     if recv_prev:
         recv_prev_shape = torch.empty((3), device=torch.cuda.current_device(), dtype=torch.int64)
+        gd.debuginfo(prj="mt", info=f'')
 
     ops = []
     if send_next_shape is not None:
         send_next_op = dist.P2POp(dist.isend, send_next_shape, peer=peer, group=group)
         ops.append(send_next_op)
+        gd.debuginfo(prj="mt", info=f'')
+
     if recv_prev_shape is not None:
         recv_prev_op = dist.P2POp(
             dist.irecv,
@@ -201,19 +223,23 @@ def _p2p_comm(
             group=group,
         )
         ops.append(recv_prev_op)
+        gd.debuginfo(prj="mt", info=f'')
 
     if len(ops) > 0:
+        gd.debuginfo(prj="mt", info=f'')
         reqs = dist.batch_isend_irecv(ops)
         for req in reqs:
             req.wait()
 
     if recv_prev_shape is not None:
         recv_prev_shape = recv_prev_shape.tolist()
+        gd.debuginfo(prj="mt", info=f'')
 
     # send and recv data
     tensor_recv_prev = None
     if recv_prev:
         tensor_recv_prev = torch.empty(recv_prev_shape, device=torch.cuda.current_device(), dtype=comm_dtype)
+        gd.debuginfo(prj="mt", info=f'')
 
     ops = []
     if tensor_send_next is not None:
@@ -224,6 +250,7 @@ def _p2p_comm(
             group=group,
         )
         ops.append(send_next_op)
+        gd.debuginfo(prj="mt", info=f'')
 
     if tensor_recv_prev is not None:
         recv_prev_op = dist.P2POp(
@@ -233,7 +260,10 @@ def _p2p_comm(
             group=group,
         )
         ops.append(recv_prev_op)
+        gd.debuginfo(prj="mt", info=f'')
+
     if len(ops) > 0:
+        gd.debuginfo(prj="mt", info=f'')
         reqs = dist.batch_isend_irecv(ops)
         for req in reqs:
             req.wait()
@@ -243,6 +273,7 @@ def _p2p_comm(
 class PipelineP2PCommunication:
     def __init__(self, stage_manager: PipelineStageManager) -> None:
         self.stage_manager = stage_manager
+        gd.debuginfo(prj="mt", info=f'')
 
     def recv_forward(self, prev_rank: int = None) -> Any:
         """Copy the forward output from the previous stage in pipeline as the input tensor of this stage.
@@ -253,8 +284,11 @@ class PipelineP2PCommunication:
         Returns:
             Any: The input tensor or input tensor list.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if prev_rank is None:
             prev_rank = self.stage_manager.get_prev_rank()
+            gd.debuginfo(prj="mt", info=f'')
+
         cur_rank = self.stage_manager.get_rank()
         input_tensor = _recv_object(prev_rank, cur_rank, self.stage_manager.get_p2p_process_group(prev_rank, cur_rank))
 
@@ -269,8 +303,10 @@ class PipelineP2PCommunication:
         Returns:
             Any: The input gradient tensor or gradient tensor list.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if next_rank is None:
             next_rank = self.stage_manager.get_next_rank()
+            gd.debuginfo(prj="mt", info=f'')
         cur_rank = self.stage_manager.get_rank()
         output_tensor_grad = _recv_object(
             next_rank, cur_rank, self.stage_manager.get_p2p_process_group(next_rank, cur_rank)
@@ -285,8 +321,10 @@ class PipelineP2PCommunication:
             output_object (Any): Object to be sent.
             next_rank (int, optional): The rank of the recipient of the tensor.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if next_rank is None:
             next_rank = self.stage_manager.get_next_rank()
+            gd.debuginfo(prj="mt", info=f'')
         cur_rank = self.stage_manager.get_rank()
         _send_object(output_object, cur_rank, next_rank, self.stage_manager.get_p2p_process_group(cur_rank, next_rank))
 
@@ -297,14 +335,18 @@ class PipelineP2PCommunication:
             input_object (Any): Object to be sent.
             prev_rank (int, optional): The rank of the recipient of the tensor
         """
+        gd.debuginfo(prj="mt", info=f'')
         if prev_rank is None:
             prev_rank = self.stage_manager.get_prev_rank()
+            gd.debuginfo(prj="mt", info=f'')
         cur_rank = self.stage_manager.get_rank()
         _send_object(input_object, cur_rank, prev_rank, self.stage_manager.get_p2p_process_group(cur_rank, prev_rank))
 
-    def p2p_communicate(
-        self, output_object: Any, recv_pre: bool, peer: int = None, comm_dtype: torch.dtype = torch.float16
-    ) -> None:
+    def p2p_communicate(self,
+                        output_object: Any,
+                        recv_pre: bool,
+                        peer: int = None,
+                        comm_dtype: torch.dtype = torch.float16) -> None:
         """
         Sends the input tensor to the next stage in pipeline, using `P2Pop` in torch.
 
@@ -312,8 +354,11 @@ class PipelineP2PCommunication:
             output_object (Any): Object to be sent.
             next_rank (int, optional): The rank of the recipient of the tensor.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if peer is None:
             peer = self.stage_manager.get_next_rank()
+            gd.debuginfo(prj="mt", info=f'')
+
         cur_rank = self.stage_manager.get_rank()
         recv_tensor = _p2p_comm(
             output_object, recv_pre, peer, self.stage_manager.get_p2p_process_group(cur_rank, peer), comm_dtype

@@ -22,6 +22,7 @@ class InferSamplingParams:
         top_k: int = -1,
         vocab_size: int = -1,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.do_sample = do_sample
         self.presence_penalty = presence_penalty
         self.frequency_penalty = frequency_penalty
@@ -67,6 +68,7 @@ class InferBatch:
         vocab_size: int,
         max_total_len: int,
     ) -> "InferBatch":
+        gd.debuginfo(prj="mt", info=f'')
         input_lengths = []
         all_input_ids = []
         requests_idx_mapping = {}
@@ -103,8 +105,10 @@ class InferBatch:
 
         if len(requests) > 1:
             input_ids = np.concatenate(all_input_ids, dtype=np.int64)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             input_ids = all_input_ids[0]
+            gd.debuginfo(prj="mt", info=f'')
 
         # Create tensors on device
         input_ids = torch.tensor(input_ids, dtype=torch.int64, device=device)
@@ -132,6 +136,8 @@ class InferBatch:
         """
         Free the memory of the InferBatch itself
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         remove_index = []
         for idx in range(len(self)):
             remove_index.append(
@@ -149,6 +155,7 @@ class InferBatch:
         """
         Filter finished batch and return a new InferBatch with left ones.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if len(request_ids) == 0:
             raise ValueError("Batch must have at least one request")
         if len(request_ids) == len(self):
@@ -230,6 +237,8 @@ class InferBatch:
         """
         Return megerd new InferBatch
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         requests = batch1.requests + batch2.requests
         requests_idx_mapping = {}
         new_batch_size = len(batch1) + len(batch2)
@@ -299,6 +308,8 @@ class InferBatch:
         return len(self.requests)
 
     def get_post_sample_tensors(self) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        gd.debuginfo(prj="mt", info=f'')
+
         presence_penalties: List[float] = []
         frequency_penalties: List[float] = []
         temperatures: List[float] = []

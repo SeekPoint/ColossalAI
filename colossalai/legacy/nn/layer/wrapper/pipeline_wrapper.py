@@ -9,6 +9,7 @@ from pydebug import gd, infoTensor
 
 class PipelineSharedModuleWrapper:
     def __init__(self, pipeline_ranks: Union[List[int], Tuple[int]]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         assert len(pipeline_ranks) > 1, f"Expect len(pipeline_ranks) > 1, got {len(pipeline_ranks)}"
         self.pipeline_ranks = pipeline_ranks
         self.group = None
@@ -16,6 +17,7 @@ class PipelineSharedModuleWrapper:
         self._init_group()
 
     def _init_group(self):
+        gd.debuginfo(prj="mt", info=f'')
         world_size = gpc.get_world_size(ParallelMode.GLOBAL)
         dp_size = gpc.get_world_size(ParallelMode.DATA)
         pp_size = gpc.get_world_size(ParallelMode.PIPELINE)

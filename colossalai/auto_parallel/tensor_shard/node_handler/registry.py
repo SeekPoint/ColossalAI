@@ -2,10 +2,12 @@ from pydebug import gd, infoTensor
 
 class Registry:
     def __init__(self, name):
+        gd.debuginfo(prj="mt", info=f'')
         self.name = name
         self.store = {}
 
     def register(self, source):
+        gd.debuginfo(prj="mt", info=f'')
         def wrapper(func):
             if isinstance(source, (list, tuple)):
                 # support register a list of items for this func

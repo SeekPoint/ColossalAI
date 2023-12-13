@@ -14,6 +14,7 @@ from pydebug import gd, infoTensor
 
 class Bucket:
     def __init__(self, size: int, dtype: torch.dtype, device: torch.device, group: ProcessGroup):
+        gd.debuginfo(prj="mt", info=f'')
         self.buffer = torch.zeros(size, dtype=dtype, device=device)
         self.group = group
         self.offset = 0
@@ -61,6 +62,7 @@ class Bucket:
 
 class Reducer:
     def __init__(self, bucket_size_mb: int = 25):
+        gd.debuginfo(prj="mt", info=f'')
         self.bucket_size_mb = bucket_size_mb
         self.buckets: Dict[Tuple[torch.dtype, torch.device, ProcessGroup], Bucket] = {}
 

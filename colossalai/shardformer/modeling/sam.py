@@ -7,7 +7,9 @@ from torch import Tensor
 
 
 def forward_fn():
+    gd.debuginfo(prj="mt", info=f'')
     def forward(self, hidden_states: torch.Tensor, output_attentions=False) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         batch_size, height, width, _ = hidden_states.shape
         # qkv with shape (3, batch_size, nHead, height * width, channel)
         qkv = (
@@ -48,6 +50,7 @@ def forward_fn():
 
 
 def get_sam_flash_attention_forward():
+    gd.debuginfo(prj="mt", info=f'')
     from transformers.models.sam.modeling_sam import SamAttention
 
     try:
@@ -56,18 +59,21 @@ def get_sam_flash_attention_forward():
         raise ImportError("Error: xformers module is not installed. Please install it to use flash attention.")
 
     def _separate_heads(hidden_states: Tensor, num_attention_heads: int) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         batch, point_batch_size, n_tokens, channel = hidden_states.shape
         c_per_head = channel // num_attention_heads
         hidden_states = hidden_states.reshape(batch * point_batch_size, n_tokens, num_attention_heads, c_per_head)
         return hidden_states
 
     def _recombine_heads(hidden_states: Tensor, point_batch_size: int) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         batch, n_tokens, n_heads, c_per_head = hidden_states.shape
         return hidden_states.reshape(batch // point_batch_size, point_batch_size, n_tokens, n_heads * c_per_head)
 
     def forward(
         self: SamAttention, query: Tensor, key: Tensor, value: Tensor, attention_similarity: Tensor = None
     ) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         # Input projections
         query = self.q_proj(query)
         key = self.k_proj(key)
@@ -97,6 +103,7 @@ def get_sam_flash_attention_forward():
 
 
 def get_sam_vision_flash_attention_forward():
+    gd.debuginfo(prj="mt", info=f'')
     from transformers.models.sam.modeling_sam import SamVisionAttention
 
     try:
@@ -133,6 +140,7 @@ def get_sam_vision_flash_attention_forward():
             attn (`torch.Tensor`):
                 attention map with added relative positional embeddings.
         """
+        gd.debuginfo(prj="mt", info=f'')
 
         query_height, query_width = q_size
         key_height, key_width = k_size
@@ -163,6 +171,8 @@ def get_sam_vision_flash_attention_forward():
         Returns:
             Extracted positional embeddings according to relative positions.
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         max_rel_dist = int(2 * max(q_size, k_size) - 1)
         # Interpolate rel pos.
         rel_pos_resized = F.interpolate(
@@ -189,6 +199,7 @@ def get_sam_vision_flash_attention_forward():
         )
 
         query, key, value = qkv.reshape(3, batch_size, height * width, self.num_attention_heads, -1).unbind(0)
+        gd.debuginfo(prj="mt", info=f'')
 
         rel_pos = None
         if self.use_rel_pos:

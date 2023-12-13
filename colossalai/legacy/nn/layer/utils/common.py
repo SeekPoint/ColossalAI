@@ -19,6 +19,7 @@ class CheckpointModule(nn.Module):
         self.checkpoint = checkpoint
         self._use_checkpoint = checkpoint
         self._offload = offload
+        gd.debuginfo(prj="mt", info=f'')
 
     def _forward(self, *args, **kwargs):
         raise NotImplementedError("CheckpointModule should implement _forward method instead of origin forward")

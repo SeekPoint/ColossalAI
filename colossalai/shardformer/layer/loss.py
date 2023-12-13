@@ -37,6 +37,8 @@ class DistCrossEntropy(Function):
         logits_max = torch.max(vocab_logits, dim=-1)[0]
         dist.all_reduce(logits_max, op=dist.ReduceOp.MAX, group=process_group)
 
+        gd.debuginfo(prj="mt", info=f'')
+
         # minus the max to avoid the result of sum of exp is too large and the log is nan
         vocab_logits = vocab_logits - logits_max.unsqueeze(dim=-1)
 
@@ -91,6 +93,8 @@ class DistCrossEntropy(Function):
         # retrieve the saved tensors
         exp_logits, mask, masked_target_1d = ctx.saved_tensors
 
+        gd.debuginfo(prj="mt", info=f'')
+
         # use exp logits as the input grad
         grad_logits = exp_logits
         partion_vocab_size = grad_logits.shape[-1]
@@ -106,4 +110,5 @@ class DistCrossEntropy(Function):
 def cross_entropy_1d(
     vocab_logits: torch.Tensor, labels: torch.Tensor, ignore_index: int = -100, process_group: ProcessGroup = None
 ) -> torch.Tensor:
+    gd.debuginfo(prj="mt", info=f'')
     return DistCrossEntropy.apply(vocab_logits, labels, ignore_index, process_group)

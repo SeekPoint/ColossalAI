@@ -51,6 +51,8 @@ class FusedLayerNorm:
         r"""
         Convert a native pytorch layer norm module to colossalai layer norm module
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         # check if apex is installed
         try:
             pass
@@ -71,12 +73,14 @@ class FusedLayerNorm:
         use_fast_ln = normalized_shape in FAST_LAYERNORM_SUPPORTED_SIZE
 
         if use_fast_ln:
+            gd.debuginfo(prj="mt", info=f'')
             try:
                 from apex.contrib.layer_norm.layer_norm import FastLayerNorm as ApexFusedLayerNorm
             except ImportError:
                 # fall back to the normal fused layernorm is not built
                 from apex.normalization import FusedLayerNorm as ApexFusedLayerNorm
         else:
+            gd.debuginfo(prj="mt", info=f'')
             from apex.normalization import FusedLayerNorm as ApexFusedLayerNorm
 
         layernorm = (
@@ -101,6 +105,7 @@ class FusedRMSNorm:
 
     @staticmethod
     def from_native_module(module: nn.Module, *args, **kwargs) -> nn.Module:
+        gd.debuginfo(prj="mt", info=f'')
         try:
             from apex.normalization import FusedRMSNorm as ApexFusedRMSNorm
         except ImportError:
@@ -114,11 +119,13 @@ class FusedRMSNorm:
             normalized_shape = module.weight.shape[0]
             eps = module.variance_epsilon
             elementwise_affine = True
+            gd.debuginfo(prj="mt", info=f'')
         else:
             # get the attributes of the module
             normalized_shape = module.normalized_shape
             eps = module.eps
             elementwise_affine = module.elementwise_affine
+            gd.debuginfo(prj="mt", info=f'')
 
         rmsnorm = ApexFusedRMSNorm(normalized_shape=normalized_shape, eps=eps, elementwise_affine=elementwise_affine)
 

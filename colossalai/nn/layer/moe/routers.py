@@ -32,6 +32,7 @@ class MoeRouter(nn.Module, ABC):
         noisy_func: Callable = None,
         drop_tks: bool = True,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.k_value = k_value
         self.capacity_factor_train = capacity_factor_train
@@ -42,6 +43,7 @@ class MoeRouter(nn.Module, ABC):
         self._routing_loss = None
 
     def get_capacity(self, logits_shape):
+        gd.debuginfo(prj="mt", info=f'')
         capacity_factor = self.capacity_factor_train if self.training else self.capacity_factor_eval
         capacity = math.floor(self.k_value * capacity_factor * logits_shape[-2] / logits_shape[-1])
         capacity += capacity % 2
@@ -52,8 +54,10 @@ class MoeRouter(nn.Module, ABC):
     def set_routing_loss(self, aux_loss: torch.Tensor) -> None:
         assert self._routing_loss is None
         self._routing_loss = aux_loss
+        gd.debuginfo(prj="mt", info=f'')
 
     def pop_routing_loss(self) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         assert self._routing_loss is not None
         reservation = self._routing_loss
         self._routing_loss = None
@@ -90,16 +94,23 @@ class Top1Router(MoeRouter):
             noisy_func=noisy_func,
             drop_tks=drop_tks,
         )
+        gd.debuginfo(prj="mt", info=f'')
         self.select_policy = select_policy
         assert select_policy in {"first", "random"}
         if select_policy == "random":
+            gd.debuginfo(prj="mt", info=f'')
             self.uniform = torch.distributions.uniform.Uniform(
                 low=torch.tensor(0.0, device=get_current_device()), high=torch.tensor(1.0, device=get_current_device())
             ).rsample
 
-    def forward(self, inputs: torch.Tensor, use_kernel: bool = False, ep_group: Optional[ProcessGroup] = None):
+    def forward(self,
+                inputs: torch.Tensor,
+                use_kernel: bool = False,
+                ep_group: Optional[ProcessGroup] = None):
+        gd.debuginfo(prj="mt", info=f'')
         if self.noisy_func is not None and self.training:
             inputs = self.noisy_func(inputs)
+            gd.debuginfo(prj="mt", info=f'')
 
         assert inputs.dtype == torch.float
         logits = F.softmax(inputs, dim=-1)
@@ -116,16 +127,19 @@ class Top1Router(MoeRouter):
         self.set_routing_loss(l_aux)
 
         if not self.training and not self.drop_tks:
+            gd.debuginfo(prj="mt", info=f'')
             max_num = torch.max(torch.sum(mask, dim=0))
             dist.all_reduce(max_num, op=dist.ReduceOp.MAX, group=ep_group)
             capacity = max_num.item()
 
         if self.select_policy == "random":
+            gd.debuginfo(prj="mt", info=f'')
             rand_mask = mask * self.uniform(mask.shape)
             _, dispatch_idx = torch.topk(rand_mask, k=capacity, dim=0)
             mask = mask * torch.zeros_like(mask).scatter_(0, dispatch_idx, 1)
             ranks = moe_cumsum(mask)
         elif self.select_policy == "first":
+            gd.debuginfo(prj="mt", info=f'')
             ranks = moe_cumsum(mask)
             mask = mask * torch.lt(ranks, capacity)
         else:
@@ -134,11 +148,13 @@ class Top1Router(MoeRouter):
         ranks = torch.sum(mask * ranks, dim=-1)
 
         if use_kernel:
+            gd.debuginfo(prj="mt", info=f'')
             mask = torch.sum(mask, dim=-1)
             mask = torch.stack([mask], dim=0).to(torch.int32)
             dest_idx = torch.stack([top1_idx * capacity + ranks], dim=0).to(torch.int32)
             return logits, mask, dest_idx, num_experts * capacity
         else:
+            gd.debuginfo(prj="mt", info=f'')
             ranks = F.one_hot(ranks, num_classes=capacity)
             weight = mask * logits.type_as(inputs)
             combine_weights = weight.unsqueeze(2) * ranks.unsqueeze(1)
@@ -165,6 +181,7 @@ class Top2Router(MoeRouter):
         noisy_func: Callable = None,
         drop_tks: bool = True,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(
             k_value=2,
             capacity_factor_train=capacity_factor_train,
@@ -175,9 +192,11 @@ class Top2Router(MoeRouter):
         )
 
     def forward(self, inputs: torch.Tensor, use_kernel: bool = False, ep_group: Optional[ProcessGroup] = None):
+        gd.debuginfo(prj="mt", info=f'')
         # inputs: [s, h]
         if self.noisy_func is not None and self.training:
             inputs = self.noisy_func(inputs)
+            gd.debuginfo(prj="mt", info=f'')
 
         assert inputs.dtype == torch.float
         logits = F.softmax(inputs, dim=-1)  # logits: [s, e]
@@ -202,6 +221,7 @@ class Top2Router(MoeRouter):
             max_num = torch.max(torch.sum(cmask, dim=0))
             dist.all_reduce(max_num, op=dist.ReduceOp.MAX, group=ep_group)
             capacity = max_num.item()
+            gd.debuginfo(prj="mt", info=f'')
 
         rank1 = moe_cumsum(mask1)  # rank1: [s, e]
         rank2 = moe_cumsum(mask2)
@@ -220,6 +240,7 @@ class Top2Router(MoeRouter):
             mask = torch.stack([mask1, mask2], dim=0).to(torch.int32)
             dest_idx = torch.stack([top1_idx * capacity + rank1, top2_idx * capacity + rank2], dim=0).to(torch.int32)
 
+            gd.debuginfo(prj="mt", info=f'')
             return logits, mask, dest_idx, num_experts * capacity
         else:
             weight1 = mask1 * logits.type_as(inputs)
@@ -231,5 +252,7 @@ class Top2Router(MoeRouter):
             cb_weight2 = weight2.unsqueeze(2) * rank2_sc.unsqueeze(1)
             cb_weight = cb_weight1 + cb_weight2
             sec_mask = cb_weight.bool()
+
+            gd.debuginfo(prj="mt", info=f'')
 
             return cb_weight, sec_mask

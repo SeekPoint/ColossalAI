@@ -28,6 +28,7 @@ def to_device(x: Any, device: torch.device) -> Any:
 
 
 def train(args):
+    gd.debuginfo(prj="mt", info=f'')
     colossalai.launch_from_torch(config={}, seed=42)
     coordinator = DistCoordinator()
 
@@ -93,6 +94,7 @@ def fit(
     batch_size,
     coordinator,
 ):
+    gd.debuginfo(prj="mt", info=f'')
     step_bar = tqdm(
         range(len(train_dataloader) // accumulation_steps * max_epochs),
         desc=f"steps",
@@ -165,6 +167,7 @@ def evaluate_model(
 
 
 if __name__ == "__main__":
+    gd.debuginfo(prj="mt", info=f'')
     parser = argparse.ArgumentParser()
     parser.add_argument("-t", "--task", default="mrpc", help="GLUE task to run")
     parser.add_argument("--model", type=str, default="bert")

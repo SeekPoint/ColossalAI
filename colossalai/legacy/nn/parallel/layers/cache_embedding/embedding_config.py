@@ -20,6 +20,7 @@ class TablewiseEmbeddingBagConfig:
         initial_weight: torch.tensor = None,
         name: str = "",
     ):
+        gd.debuginfo(prj="mt", info=f'')
         self.num_embeddings = num_embeddings
         self.cuda_row_num = cuda_row_num
         self.assigned_rank = assigned_rank

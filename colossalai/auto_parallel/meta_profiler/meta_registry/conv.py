@@ -53,8 +53,10 @@ def convnd_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem, L
     input_tensor = args[0].data
     output_tensor = next(filter(lambda x: x.type == OperationDataType.OUTPUT, args)).data
     if len(args) == 4:
+        gd.debuginfo(prj="mt", info=f'')
         weight_tensors = [args[1].data, args[3].data]
     else:
+        gd.debuginfo(prj="mt", info=f'')
         weight_tensors = [args[1].data]
 
     # check if conv has bias
@@ -62,12 +64,15 @@ def convnd_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem, L
         has_bias = True
         # bias tensor's shape only has one dimension
         if len(weight_tensors[0].shape) == 1:
+            gd.debuginfo(prj="mt", info=f'')
             bias_tensor, weight_tensor = weight_tensors
         else:
+            gd.debuginfo(prj="mt", info=f'')
             weight_tensor, bias_tensor = weight_tensors
 
     else:
         weight_tensor = weight_tensors[0]
+        gd.debuginfo(prj="mt", info=f'')
 
     # construct input args for forward
     fwd_args = [None] * 9

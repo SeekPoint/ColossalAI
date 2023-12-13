@@ -20,9 +20,11 @@ def torch_nn_msa(
     if getattr(self, "batch_first", False):
         batch_size = query.shape[0]
         len_idx = 1
+        gd.debuginfo(prj="mt", info=f'')
     else:
         batch_size = query.shape[1]
         len_idx = 0
+        gd.debuginfo(prj="mt", info=f'')
     dim_idx = 2
 
     qdim = query.shape[dim_idx]

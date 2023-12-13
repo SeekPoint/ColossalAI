@@ -60,6 +60,7 @@ class CachedParamMgr(torch.nn.Module):
         evict_strategy: EvictionStrategy = EvictionStrategy.DATASET,
         async_copy: bool = False,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super(CachedParamMgr, self).__init__()
         self.buffer_size = buffer_size
         self.num_embeddings, self.embedding_dim = weight.shape

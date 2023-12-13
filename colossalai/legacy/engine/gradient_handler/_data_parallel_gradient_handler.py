@@ -20,6 +20,7 @@ class DataParallelGradientHandler(BaseGradientHandler):
     """
 
     def handle_gradient(self):
+        gd.debuginfo(prj="mt", info=f'')
         """A method running a all-reduce operation in a data parallel group."""
         # TODO: add memory buffer
         if gpc.data_parallel_size > 1:

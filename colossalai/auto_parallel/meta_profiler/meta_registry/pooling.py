@@ -29,6 +29,7 @@ def avgpool_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem, 
     Returns:
         Tuple[TrainCycleItem, TrainCycleItem, List[torch.Tensor]]: compute cost, memory cost and forward inputs
     """
+    gd.debuginfo(prj="mt", info=f'')
 
     input_tensor = args[0].data
     output_tensor = next(filter(lambda x: x.type == OperationDataType.OUTPUT, args)).data
@@ -87,6 +88,7 @@ def maxpool_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem, 
     Returns:
         Tuple[TrainCycleItem, TrainCycleItem, List[torch.Tensor]]: compute cost, memory cost and forward inputs
     """
+    gd.debuginfo(prj="mt", info=f'')
 
     input_tensor = next(filter(lambda x: x.type == OperationDataType.ARG, args)).data
     output_tensor = next(filter(lambda x: x.type == OperationDataType.OUTPUT, args)).data

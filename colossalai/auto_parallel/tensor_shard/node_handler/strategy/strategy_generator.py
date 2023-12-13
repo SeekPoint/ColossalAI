@@ -28,6 +28,7 @@ class StrategyGenerator(ABC):
     """
 
     def __init__(self, operation_data_mapping: Dict[str, OperationData], device_mesh: DeviceMesh):
+        gd.debuginfo(prj="mt", info=f'')
         self.op_data = operation_data_mapping
         self.device_mesh = device_mesh
 
@@ -62,6 +63,7 @@ class StrategyGenerator(ABC):
             sharding_spec_mapping (Dict[str, ShardingSpec]): the mapping between the operation data name and the ShardingSpec object.
             communication_action_mapping (Dict[str, CommSpec]): the mapping between the operation data name and the CommSpec object.
         """
+        gd.debuginfo(prj="mt", info=f'')
         sharding_specs = self.replace_op_name_with_op_data(sharding_spec_mapping)
         communication_actions = self.replace_op_name_with_op_data(communication_action_mapping)
         return ShardingStrategy(name=name, sharding_specs=sharding_specs, communication_actions=communication_actions)
@@ -78,6 +80,7 @@ class StrategyGenerator(ABC):
             However, if the op_data.data is of other non-iterative types, such as float or int, we should return None. If the op_data.data is of some iterative types, such as
             list or tuple, we should return a list of ShardingSpec objects follow the same rule as above mentioned.
         """
+        gd.debuginfo(prj="mt", info=f'')
         results = {}
         for op_data_name, dim_partition_dict in mapping.items():
             if op_data_name in self.op_data:
@@ -118,6 +121,7 @@ class StrategyGenerator(ABC):
         """
         Convert the key of the dictionary from the operation data name to an OperationData object.
         """
+        gd.debuginfo(prj="mt", info=f'')
         results = {}
         for k, v in mapping.items():
             op_data = self.op_data[k]
@@ -130,6 +134,7 @@ class StrategyGenerator(ABC):
         communication_pattern: CollectiveCommPattern,
         logical_process_axis: Union[int, List[int]],
     ):
+        gd.debuginfo(prj="mt", info=f'')
         """
         A factory method to produce a CommSpec object.
         """
@@ -149,6 +154,7 @@ class StrategyGenerator(ABC):
         """
         A factory method to produce a CommAction object.
         """
+        gd.debuginfo(prj="mt", info=f'')
         return CommAction(
             comm_spec=self.get_communication_spec(
                 sharding_spec=sharding_spec,
@@ -164,10 +170,11 @@ class StrategyGenerator(ABC):
         """
         Compute the communication cost involved in the forward and backward iteration.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         comm_cost = TrainCycleItem(fwd=0, bwd=0, total=0)
 
         def _compute_and_add(op_data: OperationData, comm_spec: CommSpec):
+            gd.debuginfo(prj="mt", info=f'')
             num_ele_in_comm = comm_spec.get_comm_cost()
             dtype = op_data.data.dtype
             size_per_elem_bytes = torch.tensor([], dtype=dtype).element_size()
@@ -220,6 +227,7 @@ class StrategyGenerator(ABC):
             strategy (ShardingStrategy): the ShardingStrategy generated.
             key (str): the name of the operation data defined by the generator.
         """
+        gd.debuginfo(prj="mt", info=f'')
         op_data = self.op_data[key]
 
         def _compute_size_in_bytes_helper(sharding_spec, meta_data):
@@ -233,6 +241,7 @@ class StrategyGenerator(ABC):
             return num_elements * size_per_elem_bytes
 
         if isinstance(op_data.data, tuple):
+            gd.debuginfo(prj="mt", info=f'')
             assert isinstance(
                 strategy.sharding_specs[op_data], list
             ), "sharding_spec of op_data should be a list of sharding specs if op_data.data is a tuple."
@@ -248,10 +257,12 @@ class StrategyGenerator(ABC):
 
         else:
             if isinstance(op_data.data, torch.Tensor):
+                gd.debuginfo(prj="mt", info=f'')
                 total_bytes = _compute_size_in_bytes_helper(strategy.sharding_specs[op_data], op_data.data)
             else:
                 # if op_data.data is not a tensor, we count the memory as 0
                 total_bytes = 0
+                gd.debuginfo(prj="mt", info=f'')
 
         return total_bytes
 
@@ -259,6 +270,7 @@ class StrategyGenerator(ABC):
         """
         Generate all possible sharding strategies for this operation.
         """
+        gd.debuginfo(prj="mt", info=f'')
         strategies = self.collate_strategies()
 
         # some strategies may be None as ignore_sharding_exception may return None
@@ -296,9 +308,11 @@ class FollowingStrategyGenerator(StrategyGenerator):
     TODO: remove the original strategy_generator.py after refactoring
     """
 
-    def __init__(
-        self, operation_data_mapping: Dict[str, OperationData], device_mesh: DeviceMesh, predecessor_node: Node
-    ):
+    def __init__(self,
+                 operation_data_mapping: Dict[str, OperationData],
+                 device_mesh: DeviceMesh,
+                 predecessor_node: Node):
+        gd.debuginfo(prj="mt", info=f'')
         self.op_data = operation_data_mapping
         self.device_mesh = device_mesh
         self.predecessor_node = predecessor_node
@@ -309,8 +323,10 @@ class OutputStrategyGenerator(StrategyGenerator):
     OutputStrategyGenerator is used to generate the sharding strategies for Output Node.
     """
 
-    def __init__(
-        self, operation_data_mapping: Dict[str, OperationData], device_mesh: DeviceMesh, predecessor_nodes: List[Node]
-    ):
+    def __init__(self,
+                 operation_data_mapping: Dict[str, OperationData],
+                 device_mesh: DeviceMesh,
+                 predecessor_nodes: List[Node]):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(operation_data_mapping, device_mesh)
         self.predecessor_nodes = predecessor_nodes

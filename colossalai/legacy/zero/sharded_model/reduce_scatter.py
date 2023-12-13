@@ -21,6 +21,7 @@ else:
 
 class Bucket:
     def __init__(self, shard_size: int, dtype: torch.dtype, device: torch.device, group: ProcessGroup):
+        gd.debuginfo(prj="mt", info=f'')
         self.buffer = torch.zeros((group.size(), shard_size), dtype=dtype, device=device)
         self.group = group
         self.offset = 0

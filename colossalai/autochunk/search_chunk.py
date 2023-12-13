@@ -41,6 +41,7 @@ class SearchChunk(object):
     """
 
     def __init__(self, gm, max_memory=None, print_mem=False, print_progress=False) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.print_mem = print_mem
         self.max_memory = max_memory
         self.print_progress = print_progress
@@ -59,6 +60,7 @@ class SearchChunk(object):
         )
 
     def _init_trace(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         """
         find the max trace range for every node
         reduce the computation complexity of trace_indice
@@ -75,6 +77,7 @@ class SearchChunk(object):
         """
         find peak node, along with its neighbor nodes exceeds max mem
         """
+        gd.debuginfo(prj="mt", info=f'')
         max_value = max(mem_peak)
         max_idx = mem_peak.index(max_value)
         peak_region = [max_idx, max_idx]
@@ -118,6 +121,7 @@ class SearchChunk(object):
             chunk_region_start (int)
             chunk_region_end (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         # check if peak node already in chunk info
         if chunk_regions is not None:
             for i in chunk_regions:
@@ -172,6 +176,7 @@ class SearchChunk(object):
         Returns:
             chunk_infos: possible regions found
         """
+        gd.debuginfo(prj="mt", info=f'')
         start_traces = input_trace[start_idx]
         if len(start_traces) > 1:  # TODO need to be removed
             return []
@@ -204,6 +209,7 @@ class SearchChunk(object):
         Returns:
             possible_chunk_region (List)
         """
+        gd.debuginfo(prj="mt", info=f'')
         possible_chunk_region = []
         output_trace = copy.deepcopy(self.trace_indice.indice_trace_list)
         input_trace = []  # trace of a node's input nodes
@@ -250,9 +256,11 @@ class SearchChunk(object):
         Returns:
             best_chunk_region (Dict)
         """
+        gd.debuginfo(prj="mt", info=f'')
         peak_region = self._find_peak_region(mem_peak)
         max_chunk_region = self._search_max_chunk_region(active_node, peak_region, chunk_infos)
         if max_chunk_region == None:
+            gd.debuginfo(prj="mt", info=f'')
             return None
         possible_chunk_regions = self._search_possible_chunk_regions(max_chunk_region, peak_region)
         best_chunk_region = self.select_chunk._select_best_chunk_region(possible_chunk_regions, chunk_infos, mem_peak)
@@ -269,6 +277,8 @@ class SearchChunk(object):
         Returns:
             chunk_infos (Dict)
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         if self.print_progress:
             get_logger().info("AutoChunk start searching chunk regions")
 
@@ -293,6 +303,7 @@ class SearchChunk(object):
                 )
 
         if self.print_mem:
+            gd.debuginfo(prj="mt", info=f'')
             self.print_mem = False
             self.estimate_memory.estimate_chunk_inference_mem(
                 self.node_mgr.get_node_list(), chunk_infos, print_mem=True

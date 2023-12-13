@@ -35,6 +35,7 @@ except:
 
 
 def rotate_half(x):
+    gd.debuginfo(prj="mt", info=f'')
     """Rotates half the hidden dims of the input."""
     x1 = x[..., : x.shape[-1] // 2]
     x2 = x[..., x.shape[-1] // 2 :]
@@ -42,6 +43,7 @@ def rotate_half(x):
 
 
 def apply_rotary_pos_emb(q, k, cos, sin, position_ids):
+    gd.debuginfo(prj="mt", info=f'')
     # The first two dimensions of cos and sin are always 1, so we can `squeeze` them.
     cos = cos.squeeze(1).squeeze(0)  # [seq_len, dim]
     sin = sin.squeeze(1).squeeze(0)  # [seq_len, dim]
@@ -56,8 +58,10 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids):
 def llama_triton_context_attention(
     query_states, key_states, value_states, attn_output, infer_state, num_key_value_groups=1
 ):
+    gd.debuginfo(prj="mt", info=f'')
     if num_key_value_groups == 1:
         if HAS_LIGHTLLM_KERNEL is False:
+            gd.debuginfo(prj="mt", info=f'')
             llama_context_attn_fwd(
                 query_states,
                 key_states,
@@ -69,6 +73,7 @@ def llama_triton_context_attention(
                 infer_state.max_len_in_batch,
             )
         else:
+            gd.debuginfo(prj="mt", info=f'')
             lightllm_context_attention_fwd(
                 query_states,
                 key_states,
@@ -80,6 +85,7 @@ def llama_triton_context_attention(
                 infer_state.max_len_in_batch,
             )
     else:
+        gd.debuginfo(prj="mt", info=f'')
         assert HAS_LIGHTLLM_KERNEL is True, "You have to install lightllm kernels to run llama2 model"
         lightllm_llama2_context_attention_fwd(
             query_states,
@@ -95,7 +101,9 @@ def llama_triton_context_attention(
 
 def llama_triton_token_attention(query_states, attn_output, infer_state, num_key_value_groups=1):
     assert HAS_LIGHTLLM_KERNEL is True, "You have to install lightllm kernel to run token attention for llama models"
+    gd.debuginfo(prj="mt", info=f'')
     if num_key_value_groups == 1:
+        gd.debuginfo(prj="mt", info=f'')
         token_attention_fwd(
             query_states,
             infer_state.cache_manager.key_buffer[infer_state.decode_layer_id],
@@ -108,6 +116,7 @@ def llama_triton_token_attention(query_states, attn_output, infer_state, num_key
             infer_state.max_len_in_batch,
         )
     else:
+        gd.debuginfo(prj="mt", info=f'')
         Llama2TokenAttentionForwards.token_attn(
             query_states,
             infer_state.cache_manager.key_buffer[infer_state.decode_layer_id],
@@ -141,6 +150,7 @@ class LlamaInferenceForwards:
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         infer_state = self.infer_state
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
@@ -151,15 +161,19 @@ class LlamaInferenceForwards:
             raise ValueError("You cannot specify both decoder_input_ids and decoder_inputs_embeds at the same time")
         elif input_ids is not None:
             batch_size, seq_length = input_ids.shape
+            gd.debuginfo(prj="mt", info=f'')
         elif inputs_embeds is not None:
             batch_size, seq_length, _ = inputs_embeds.shape
+            gd.debuginfo(prj="mt", info=f'')
         else:
             raise ValueError("You have to specify either decoder_input_ids or decoder_inputs_embeds")
 
         if infer_state.is_context_stage:
             past_key_values_length = 0
+            gd.debuginfo(prj="mt", info=f'')
         else:
             past_key_values_length = infer_state.max_len_in_batch - 1
+            gd.debuginfo(prj="mt", info=f'')
 
         # NOTE: differentiate with prefill stage
         #       block_loc require different value-assigning method for two different stage
@@ -171,6 +185,7 @@ class LlamaInferenceForwards:
             infer_state.init_block_loc(
                 infer_state.block_loc, infer_state.seq_len, seq_length, infer_state.context_mem_index
             )
+            gd.debuginfo(prj="mt", info=f'')
         else:
             infer_state.is_context_stage = False
             alloc_mem = infer_state.cache_manager.alloc_contiguous(batch_size)
@@ -180,6 +195,7 @@ class LlamaInferenceForwards:
                 infer_state.decode_mem_start = alloc_mem[1]
                 infer_state.decode_mem_end = alloc_mem[2]
                 infer_state.block_loc[:, infer_state.max_len_in_batch - 1] = infer_state.decode_mem_index
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 print(f" *** Encountered allocation non-contiguous")
                 print(f"    infer_state.max_len_in_batch : {infer_state.max_len_in_batch}")
@@ -189,6 +205,7 @@ class LlamaInferenceForwards:
                 # infer_state.decode_key_buffer = torch.empty((batch_size, self.tp_head_num_, self.head_dim_), dtype=torch.float16, device="cuda")
                 # infer_state.decode_value_buffer = torch.empty((batch_size, self.tp_head_num_, self.head_dim_), dtype=torch.float16, device="cuda")
                 infer_state.block_loc[:, infer_state.max_len_in_batch - 1] = infer_state.decode_mem_index
+                gd.debuginfo(prj="mt", info=f'')
 
         if position_ids is None:
             device = input_ids.device if input_ids is not None else inputs_embeds.device
@@ -197,8 +214,10 @@ class LlamaInferenceForwards:
             )
             position_ids = position_ids.repeat(batch_size, 1)
             position_ids = position_ids.unsqueeze(0).view(-1, seq_length)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             position_ids = position_ids.view(-1, seq_length).long()
+            gd.debuginfo(prj="mt", info=f'')
 
         if infer_state.is_context_stage:
             infer_state.position_cos = torch.index_select(self._cos_cached, 0, position_ids.view(-1)).view(
@@ -207,25 +226,31 @@ class LlamaInferenceForwards:
             infer_state.position_sin = torch.index_select(self._sin_cached, 0, position_ids.view(-1)).view(
                 position_ids.view(-1).shape[0], -1
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         else:
             seq_len = infer_state.seq_len
             infer_state.position_cos = torch.index_select(self._cos_cached, 0, seq_len - 1).view(seq_len.shape[0], -1)
             infer_state.position_sin = torch.index_select(self._sin_cached, 0, seq_len - 1).view(seq_len.shape[0], -1)
             infer_state.other_kv_index = infer_state.block_loc[0, infer_state.max_len_in_batch - 1].item()
+            gd.debuginfo(prj="mt", info=f'')
 
         if inputs_embeds is None:
             inputs_embeds = self.embed_tokens(input_ids)
+            gd.debuginfo(prj="mt", info=f'')
 
         # embed positions
         if attention_mask is None:
             attention_mask = torch.ones(
                 (batch_size, infer_state.max_len_in_batch), dtype=torch.bool, device=inputs_embeds.device
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         attention_mask = self._prepare_decoder_attention_mask(
             attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length
         )
+
+        gd.debuginfo(prj="mt", info=f'')
 
         hidden_states = inputs_embeds
 
@@ -252,6 +277,7 @@ class LlamaInferenceForwards:
 
             if use_cache:
                 next_decoder_cache += (layer_outputs[2 if output_attentions else 1],)
+                gd.debuginfo(prj="mt", info=f'')
 
         hidden_states = self.norm(hidden_states)
         next_cache = next_decoder_cache if use_cache else None
@@ -263,6 +289,7 @@ class LlamaInferenceForwards:
         infer_state.max_len_in_batch += 1
 
         if not return_dict:
+            gd.debuginfo(prj="mt", info=f'')
             return tuple(v for v in [hidden_states, next_cache, all_hidden_states, all_self_attns] if v is not None)
 
         return BaseModelOutputWithPast(
@@ -283,6 +310,7 @@ class LlamaInferenceForwards:
         use_cache: Optional[bool] = False,
         infer_state: Optional[BatchInferState] = None,
     ) -> Tuple[torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]]:
+        gd.debuginfo(prj="mt", info=f'')
         residual = hidden_states
 
         hidden_states = self.input_layernorm(hidden_states)
@@ -309,9 +337,11 @@ class LlamaInferenceForwards:
 
         if output_attentions:
             outputs += (self_attn_weights,)
+            gd.debuginfo(prj="mt", info=f'')
 
         if use_cache:
             outputs += (present_key_value,)
+            gd.debuginfo(prj="mt", info=f'')
 
         return outputs
 
@@ -326,6 +356,7 @@ class LlamaInferenceForwards:
         use_cache: bool = False,
         infer_state: Optional[BatchInferState] = None,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
+        gd.debuginfo(prj="mt", info=f'')
         assert use_cache is True, "use_cache should be set to True using this llama attention"
 
         bsz, q_len, _ = hidden_states.size()
@@ -352,6 +383,7 @@ class LlamaInferenceForwards:
         value_states = value_states.reshape(-1, self.num_key_value_heads, self.head_dim)
 
         if infer_state.is_context_stage:
+            gd.debuginfo(prj="mt", info=f'')
             # first token generation
             # copy key and value calculated in current step to memory manager
             copy_kv_to_mem_cache(
@@ -382,6 +414,7 @@ class LlamaInferenceForwards:
                 ]
                 cache_k.copy_(key_states)
                 cache_v.copy_(value_states)
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 # if decode is not contiguous, use triton kernel to copy key and value cache
                 # k, v shape: [batch_size, num_heads, head_dim/embed_size_per_head
@@ -392,12 +425,14 @@ class LlamaInferenceForwards:
                     infer_state.decode_mem_index,
                     infer_state.cache_manager,
                 )
+                gd.debuginfo(prj="mt", info=f'')
 
             if HAS_LIGHTLLM_KERNEL:
                 attn_output = torch.empty_like(query_states)
                 llama_triton_token_attention(
                     query_states, attn_output, infer_state, num_key_value_groups=self.num_key_value_groups
                 )
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 self.num_heads // self.num_key_value_heads
                 cache_k = infer_state.cache_manager.key_buffer[infer_state.decode_layer_id]
@@ -414,6 +449,7 @@ class LlamaInferenceForwards:
                     softmax_scale=1 / math.sqrt(self.head_dim),
                     causal=True,
                 )
+                gd.debuginfo(prj="mt", info=f'')
 
         attn_output = attn_output.view(bsz, q_len, self.hidden_size)
 

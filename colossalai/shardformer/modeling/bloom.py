@@ -30,6 +30,7 @@ logger = logging.get_logger(__name__)
 
 
 def build_bloom_alibi_tensor_fn(process_group: ProcessGroup) -> torch.Tensor:
+    gd.debuginfo(prj="mt", info=f'')
     def build_bloom_alibi_tensor(
         self, attention_mask: torch.Tensor, num_heads: int, dtype: torch.dtype
     ) -> torch.Tensor:
@@ -49,11 +50,13 @@ def build_bloom_alibi_tensor_fn(process_group: ProcessGroup) -> torch.Tensor:
             dtype (`torch.dtype`, *optional*, default=`torch.bfloat16`):
                 dtype of the output tensor
         """
+        gd.debuginfo(prj="mt", info=f'')
         import math
 
         if dist.is_initialized():
             world_size = dist.get_world_size(process_group)
             num_heads = num_heads * world_size
+            gd.debuginfo(prj="mt", info=f'')
 
         batch_size, seq_length = attention_mask.shape
         closest_power_of_2 = 2 ** math.floor(math.log2(num_heads))
@@ -74,6 +77,7 @@ def build_bloom_alibi_tensor_fn(process_group: ProcessGroup) -> torch.Tensor:
                 1, 1 + 2 * num_remaining_heads, 2, device=attention_mask.device, dtype=torch.int32
             )
             slopes = torch.cat([slopes, torch.pow(extra_base, extra_powers)], dim=0)
+            gd.debuginfo(prj="mt", info=f'')
 
         # Note: alibi will added to the attention bias that will be applied to the query, key product of attention
         # => therefore alibi will have to be of shape (batch_size, num_heads, query_length, key_length)
@@ -88,8 +92,10 @@ def build_bloom_alibi_tensor_fn(process_group: ProcessGroup) -> torch.Tensor:
             offset = dist.get_rank(process_group) * num_heads_per_rank
             alibi = alibi.view(batch_size, num_heads, 1, seq_length)
             alibi = alibi[:, offset : num_heads_per_rank + offset, :, :]
+            gd.debuginfo(prj="mt", info=f'')
             return alibi.reshape(batch_size * num_heads_per_rank, 1, seq_length).to(dtype)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return alibi.reshape(batch_size * num_heads, 1, seq_length).to(dtype)
 
     return build_bloom_alibi_tensor
@@ -119,7 +125,7 @@ class BloomPipelineForwards:
         **deprecated_arguments,
     ) -> Union[Tuple[torch.Tensor, ...], "BaseModelOutputWithPastAndCrossAttentions"]:
         logger = logging.get_logger(__name__)
-
+        gd.debuginfo(prj="mt", info=f'')
         if deprecated_arguments.pop("position_ids", False) is not False:
             # `position_ids` could have been `torch.Tensor` or `None` so defaulting pop to `False` allows to detect if users were passing explicitly `None`
             warnings.warn(
@@ -136,6 +142,8 @@ class BloomPipelineForwards:
         )
         use_cache = use_cache if use_cache is not None else self.config.use_cache
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+
+        gd.debuginfo(prj="mt", info=f'')
 
         # add warnings here
         if output_attentions:
@@ -156,24 +164,30 @@ class BloomPipelineForwards:
 
         # case: First stage of training
         if stage_manager.is_first_stage():
+            gd.debuginfo(prj="mt", info=f'')
+
             # check input_ids and inputs_embeds
             if input_ids is not None and inputs_embeds is not None:
                 raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
             elif input_ids is not None:
                 batch_size, seq_length = input_ids.shape
+                gd.debuginfo(prj="mt", info=f'')
             elif inputs_embeds is not None:
                 batch_size, seq_length, _ = inputs_embeds.shape
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 raise ValueError("You have to specify either input_ids or inputs_embeds")
 
             if inputs_embeds is None:
                 inputs_embeds = self.word_embeddings(input_ids)
+                gd.debuginfo(prj="mt", info=f'')
 
             hidden_states = self.word_embeddings_layernorm(inputs_embeds)
             # initialize in the first stage and then pass to the next stage
         else:
             input_shape = hidden_states.shape[:-1]
             batch_size, seq_length = input_shape
+            gd.debuginfo(prj="mt", info=f'')
 
         # extra recording tensor should be generated in the first stage
 
@@ -182,14 +196,18 @@ class BloomPipelineForwards:
         all_hidden_states = () if output_hidden_states else None
 
         if self.gradient_checkpointing and self.training:
+            gd.debuginfo(prj="mt", info=f'')
             if use_cache:
                 logger.warning_once(
                     "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
                 )
                 use_cache = False
+                gd.debuginfo(prj="mt", info=f'')
 
         if past_key_values is None:
             past_key_values = tuple([None] * len(self.h))
+            gd.debuginfo(prj="mt", info=f'')
+
         # Compute alibi tensor: check build_alibi_tensor documentation,build for every stage
         seq_length_with_past = seq_length
         past_key_values_length = 0
@@ -197,10 +215,14 @@ class BloomPipelineForwards:
             past_key_values_length = past_key_values[0][0].shape[2]  # source_len
 
             seq_length_with_past = seq_length_with_past + past_key_values_length
+            gd.debuginfo(prj="mt", info=f'')
+
         if attention_mask is None:
             attention_mask = torch.ones((batch_size, seq_length_with_past), device=hidden_states.device)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             attention_mask = attention_mask.to(hidden_states.device)
+            gd.debuginfo(prj="mt", info=f'')
 
         alibi = self.build_alibi_tensor(attention_mask, self.num_heads, dtype=hidden_states.dtype)
 
@@ -217,6 +239,7 @@ class BloomPipelineForwards:
             hidden_states = split_forward_gather_backward(
                 hidden_states, dim=1, process_group=shard_config.tensor_parallel_process_group
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         start_idx, end_idx = stage_index[0], stage_index[1]
         for i, (block, layer_past) in enumerate(
@@ -224,10 +247,13 @@ class BloomPipelineForwards:
         ):
             if output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states,)
+                gd.debuginfo(prj="mt", info=f'')
 
             if self.gradient_checkpointing and self.training:
+                gd.debuginfo(prj="mt", info=f'')
 
                 def create_custom_forward(module):
+                    gd.debuginfo(prj="mt", info=f'')
                     def custom_forward(*inputs):
                         # None for past_key_value
                         return module(*inputs, use_cache=use_cache, output_attentions=output_attentions)
@@ -242,6 +268,7 @@ class BloomPipelineForwards:
                     layer_past,
                     head_mask[i],
                 )
+
             else:
                 outputs = block(
                     hidden_states,
@@ -252,30 +279,39 @@ class BloomPipelineForwards:
                     output_attentions=output_attentions,
                     alibi=alibi,
                 )
+                gd.debuginfo(prj="mt", info=f'')
 
             hidden_states = outputs[0]
 
             if use_cache is True:
                 presents = presents + (outputs[1],)
+                gd.debuginfo(prj="mt", info=f'')
+
             if output_attentions:
                 all_self_attentions = all_self_attentions + (outputs[2 if use_cache else 1],)
+                gd.debuginfo(prj="mt", info=f'')
 
         # When sequence parallelism done, gather the output tensor in forward and split it in backward
         if shard_config.enable_sequence_parallelism:
             hidden_states = gather_forward_split_backward(
                 hidden_states, dim=1, process_group=shard_config.tensor_parallel_process_group
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         if stage_manager.is_last_stage():
             # Add last hidden state
             hidden_states = self.ln_f(hidden_states)
+            gd.debuginfo(prj="mt", info=f'')
 
         # TODO(jianghai): deal with all_hidden_states, all_self_attentions, presents
         if output_hidden_states:
             all_hidden_states = all_hidden_states + (hidden_states,)
+            gd.debuginfo(prj="mt", info=f'')
 
         if stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             if not return_dict:
+                gd.debuginfo(prj="mt", info=f'')
                 return tuple(
                     v for v in [hidden_states, presents, all_hidden_states, all_self_attentions] if v is not None
                 )
@@ -288,6 +324,7 @@ class BloomPipelineForwards:
                 attentions=all_self_attentions,
             )
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # always return dict for imediate stage
             return {"hidden_states": hidden_states}
 
@@ -317,6 +354,7 @@ class BloomPipelineForwards:
             are ignored (masked), the loss is only computed for labels in `[0, ..., config.vocab_size]`
         """
         logger = logging.get_logger(__name__)
+        gd.debuginfo(prj="mt", info=f'')
 
         if deprecated_arguments.pop("position_ids", False) is not False:
             # `position_ids` could have been `torch.Tensor` or `None` so defaulting pop to `False` allows to detect if users were passing explicitly `None`
@@ -355,11 +393,13 @@ class BloomPipelineForwards:
         )
         past_key_values = None
         if stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             hidden_states = transformer_outputs[0]
             lm_logits = self.lm_head(hidden_states)
 
             loss = None
             if labels is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 # move labels to correct device to enable model parallelism
                 labels = labels.to(lm_logits.device)
                 # Shift so that tokens < n predict n
@@ -374,6 +414,7 @@ class BloomPipelineForwards:
 
             if not return_dict:
                 output = (lm_logits,) + transformer_outputs[1:]
+                gd.debuginfo(prj="mt", info=f'')
                 return ((loss,) + output) if loss is not None else output
 
             return CausalLMOutputWithCrossAttentions(
@@ -385,6 +426,7 @@ class BloomPipelineForwards:
             )
         else:
             hidden_states = transformer_outputs.get("hidden_states")
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": hidden_states}
 
     @staticmethod
@@ -413,6 +455,7 @@ class BloomPipelineForwards:
             `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
         """
         logger = logging.get_logger(__name__)
+        gd.debuginfo(prj="mt", info=f'')
 
         if deprecated_arguments.pop("position_ids", False) is not False:
             # `position_ids` could have been `torch.Tensor` or `None` so defaulting pop to `False` allows to detect if users were passing explicitly `None`
@@ -452,6 +495,7 @@ class BloomPipelineForwards:
         )
         past_key_values = None
         if stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             batch_size = hidden_states.shape[0]
             # update batch size
             hidden_states = transformer_outputs[0]
@@ -461,42 +505,55 @@ class BloomPipelineForwards:
                 raise ValueError("Cannot handle batch sizes > 1 if no padding token is defined.")
             if self.config.pad_token_id is None:
                 sequence_lengths = -1
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 if input_ids is not None:
                     sequence_lengths = (torch.ne(input_ids, self.config.pad_token_id).sum(-1) - 1).to(logits.device)
+                    gd.debuginfo(prj="mt", info=f'')
                 else:
                     sequence_lengths = -1
                     logger.warning(
                         f"{self.__class__.__name__} will not detect padding tokens in `inputs_embeds`. Results may be "
                         "unexpected if using padding tokens in conjunction with `inputs_embeds.`"
                     )
+                    gd.debuginfo(prj="mt", info=f'')
 
             pooled_logits = logits[torch.arange(batch_size, device=logits.device), sequence_lengths]
 
             loss = None
             if labels is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 if self.config.problem_type is None:
                     if self.num_labels == 1:
                         self.config.problem_type = "regression"
+                        gd.debuginfo(prj="mt", info=f'')
                     elif self.num_labels > 1 and (labels.dtype == torch.long or labels.dtype == torch.int):
                         self.config.problem_type = "single_label_classification"
+                        gd.debuginfo(prj="mt", info=f'')
                     else:
                         self.config.problem_type = "multi_label_classification"
+                        gd.debuginfo(prj="mt", info=f'')
 
                 if self.config.problem_type == "regression":
                     loss_fct = MSELoss()
+                    gd.debuginfo(prj="mt", info=f'')
                     if self.num_labels == 1:
                         loss = loss_fct(pooled_logits.squeeze(), labels.squeeze())
+                        gd.debuginfo(prj="mt", info=f'')
                     else:
                         loss = loss_fct(pooled_logits, labels)
+                        gd.debuginfo(prj="mt", info=f'')
                 elif self.config.problem_type == "single_label_classification":
                     loss_fct = CrossEntropyLoss()
                     loss = loss_fct(pooled_logits, labels)
+                    gd.debuginfo(prj="mt", info=f'')
                 elif self.config.problem_type == "multi_label_classification":
                     loss_fct = BCEWithLogitsLoss()
                     loss = loss_fct(pooled_logits, labels)
+                    gd.debuginfo(prj="mt", info=f'')
             if not return_dict:
                 output = (pooled_logits,) + transformer_outputs[1:]
+                gd.debuginfo(prj="mt", info=f'')
                 return ((loss,) + output) if loss is not None else output
 
             return SequenceClassifierOutputWithPast(
@@ -508,6 +565,7 @@ class BloomPipelineForwards:
             )
         else:
             hidden_states = transformer_outputs.get("hidden_states")
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": hidden_states}
 
     @staticmethod
@@ -536,6 +594,7 @@ class BloomPipelineForwards:
             `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
         """
         logger = logging.get_logger(__name__)
+        gd.debuginfo(prj="mt", info=f'')
 
         if deprecated_arguments.pop("position_ids", False) is not False:
             # `position_ids` could have been `torch.Tensor` or `None` so defaulting pop to `False` allows to detect if users were passing explicitly `None`
@@ -576,6 +635,7 @@ class BloomPipelineForwards:
         past_key_values = None
 
         if stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             hidden_states = transformer_outputs[0]
             hidden_states = self.dropout(hidden_states)
             logits = self.classifier(hidden_states)
@@ -589,9 +649,11 @@ class BloomPipelineForwards:
                 loss = loss_fct(
                     logits.view(batch_size * seq_length, self.num_labels), labels.view(batch_size * seq_length)
                 )
+                gd.debuginfo(prj="mt", info=f'')
 
             if not return_dict:
                 output = (logits,) + transformer_outputs[2:]
+                gd.debuginfo(prj="mt", info=f'')
                 return ((loss,) + output) if loss is not None else output
 
             return TokenClassifierOutput(
@@ -602,6 +664,7 @@ class BloomPipelineForwards:
             )
         else:
             hidden_states = transformer_outputs.get("hidden_states")
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": hidden_states}
 
     @staticmethod
@@ -634,6 +697,8 @@ class BloomPipelineForwards:
         """
         logger = logging.get_logger(__name__)
 
+        gd.debuginfo(prj="mt", info=f'')
+
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
         # TODO(jianghai): left the recording kv-value tensors as () or None type, this feature may be added in the future.
         if output_attentions:
@@ -660,6 +725,7 @@ class BloomPipelineForwards:
         )
 
         if stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             sequence_output = outputs[0]
             logits = self.qa_outputs(sequence_output)
             start_logits, end_logits = logits.split(1, dim=-1)
@@ -668,11 +734,14 @@ class BloomPipelineForwards:
 
             total_loss = None
             if start_positions is not None and end_positions is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 # If we are on multi-GPU, split add a dimension
                 if len(start_positions.size()) > 1:
                     start_positions = start_positions.squeeze(-1)
+                    gd.debuginfo(prj="mt", info=f'')
                 if len(end_positions.size()) > 1:
                     end_positions = end_positions.squeeze(-1)
+                    gd.debuginfo(prj="mt", info=f'')
                 # sometimes the start/end positions are outside our model inputs, we ignore these terms
                 ignored_index = start_logits.size(1)
                 start_positions = start_positions.clamp(0, ignored_index)
@@ -685,6 +754,7 @@ class BloomPipelineForwards:
 
             if not return_dict:
                 output = (start_logits, end_logits) + outputs[2:]
+                gd.debuginfo(prj="mt", info=f'')
                 return ((total_loss,) + output) if total_loss is not None else output
 
             return QuestionAnsweringModelOutput(
@@ -696,6 +766,7 @@ class BloomPipelineForwards:
             )
         else:
             hidden_states = outputs.get("hidden_states")
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": hidden_states}
 
 
@@ -721,6 +792,8 @@ def get_bloom_flash_attention_forward(enabel_jit_fused=False):
         (query_layer, key_layer, value_layer) = self._split_heads(fused_qkv)
         batch_size, tgt_len, _ = query_layer.size()
 
+        gd.debuginfo(prj="mt", info=f'')
+
         _, kv_length, _, _ = key_layer.size()
 
         proj_shape = (batch_size, tgt_len, self.num_heads, self.head_dim)
@@ -735,11 +808,14 @@ def get_bloom_flash_attention_forward(enabel_jit_fused=False):
             #  - value: [batch_size * self.num_heads, kv_length, head_dim]
             key_layer = torch.cat((past_key, key_layer), dim=1)
             value_layer = torch.cat((past_value, value_layer), dim=1)
+            gd.debuginfo(prj="mt", info=f'')
 
         if use_cache is True:
             present = (key_layer, value_layer)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             present = None
+            gd.debuginfo(prj="mt", info=f'')
 
         tgt_len = key_layer.size()[1]
 
@@ -773,8 +849,10 @@ def get_bloom_flash_attention_forward(enabel_jit_fused=False):
                     context_layer[:, :, int(i * slices) : int((i + 1) * slices)],
                     self.dense.weight[:, int(i * slices) : int((i + 1) * slices)],
                 )
+            gd.debuginfo(prj="mt", info=f'')
         else:
             output_tensor = self.dense(context_layer)
+            gd.debuginfo(prj="mt", info=f'')
 
         # TODO to replace with the bias_dropout_add function in jit
         output_tensor = self.dropout_add(output_tensor, residual, self.hidden_dropout, self.training)
@@ -801,6 +879,8 @@ def get_jit_fused_bloom_attention_forward():
     ):
         fused_qkv = self.query_key_value(hidden_states)  # [batch_size, seq_length, 3 x hidden_size]
 
+        gd.debuginfo(prj="mt", info=f'')
+
         # 3 x [batch_size, seq_length, num_heads, head_dim]
         (query_layer, key_layer, value_layer) = self._split_heads(fused_qkv)
 
@@ -816,13 +896,16 @@ def get_jit_fused_bloom_attention_forward():
             #  - value: [batch_size * self.num_heads, kv_length, head_dim]
             key_layer = torch.cat((past_key, key_layer), dim=2)
             value_layer = torch.cat((past_value, value_layer), dim=1)
+            gd.debuginfo(prj="mt", info=f'')
 
         _, _, kv_length = key_layer.shape
 
         if use_cache is True:
             present = (key_layer, value_layer)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             present = None
+            gd.debuginfo(prj="mt", info=f'')
 
         # [batch_size * num_heads, q_length, kv_length]
         # we use `torch.Tensor.baddbmm` instead of `torch.baddbmm` as the latter isn't supported by TorchScript v1.11
@@ -841,6 +924,7 @@ def get_jit_fused_bloom_attention_forward():
         # `float16` has a minimum value of -65504.0, whereas `bfloat16` and `float32` have a minimum value of `-3.4e+38`
         if input_dtype == torch.float16:
             attention_scores = attention_scores.to(torch.float)
+            gd.debuginfo(prj="mt", info=f'')
         attn_weights = torch.masked_fill(attention_scores, attention_mask, torch.finfo(attention_scores.dtype).min)
         attention_probs = F.softmax(attn_weights, dim=-1, dtype=torch.float32).to(input_dtype)
 
@@ -849,6 +933,7 @@ def get_jit_fused_bloom_attention_forward():
 
         if head_mask is not None:
             attention_probs = attention_probs * head_mask
+            gd.debuginfo(prj="mt", info=f'')
 
         # change view [batch_size x num_heads, q_length, kv_length]
         attention_probs_reshaped = attention_probs.view(batch_size * self.num_heads, q_length, kv_length)
@@ -868,14 +953,17 @@ def get_jit_fused_bloom_attention_forward():
                     context_layer[:, :, int(i * slices) : int((i + 1) * slices)],
                     self.dense.weight[:, int(i * slices) : int((i + 1) * slices)],
                 )
+            gd.debuginfo(prj="mt", info=f'')
         else:
             output_tensor = self.dense(context_layer)
+            gd.debuginfo(prj="mt", info=f'')
 
         output_tensor = self.dropout_add(output_tensor, residual, self.hidden_dropout, self.training)
 
         outputs = (output_tensor, present)
         if output_attentions:
             outputs += (attention_probs,)
+            gd.debuginfo(prj="mt", info=f'')
 
         return outputs
 
@@ -883,12 +971,15 @@ def get_jit_fused_bloom_attention_forward():
 
 
 def get_jit_fused_bloom_mlp_forward():
+    gd.debuginfo(prj="mt", info=f'')
     from transformers.models.bloom.modeling_bloom import BloomMLP
 
     def forward(self: BloomMLP, hidden_states: torch.Tensor, residual: torch.Tensor) -> torch.Tensor:
         hidden_states = self.gelu_impl(self.dense_h_to_4h(hidden_states))
+        gd.debuginfo(prj="mt", info=f'')
 
         if self.pretraining_tp > 1 and self.slow_but_exact:
+            gd.debuginfo(prj="mt", info=f'')
             intermediate_output = torch.zeros_like(residual)
             slices = self.dense_4h_to_h.weight.shape[-1] / self.pretraining_tp
             for i in range(self.pretraining_tp):
@@ -898,6 +989,7 @@ def get_jit_fused_bloom_mlp_forward():
                 )
         else:
             intermediate_output = self.dense_4h_to_h(hidden_states)
+            gd.debuginfo(prj="mt", info=f'')
         output = self.dropout_add(intermediate_output, residual, self.hidden_dropout, self.training)
         return output
 
@@ -905,6 +997,7 @@ def get_jit_fused_bloom_mlp_forward():
 
 
 def get_jit_fused_bloom_gelu_forward():
+    gd.debuginfo(prj="mt", info=f'')
     from transformers.models.bloom.modeling_bloom import BloomGelu
 
     from colossalai.kernel.jit.bias_gelu import GeLUFunction as JitGeLUFunction
@@ -912,14 +1005,17 @@ def get_jit_fused_bloom_gelu_forward():
     def forward(self: BloomGelu, x: torch.Tensor) -> torch.Tensor:
         bias = torch.zeros_like(x)
         if self.training:
+            gd.debuginfo(prj="mt", info=f'')
             return JitGeLUFunction.apply(x, bias)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return self.bloom_gelu_forward(x, bias)
 
     return forward
 
 
 def get_bloom_sequence_parallel_forward_fn(shard_config: ShardConfig):
+    gd.debuginfo(prj="mt", info=f'')
     from transformers import BloomModel
 
     def forward(
@@ -935,6 +1031,7 @@ def get_bloom_sequence_parallel_forward_fn(shard_config: ShardConfig):
         return_dict: Optional[bool] = None,
         **deprecated_arguments,
     ) -> Union[Tuple[torch.Tensor, ...], BaseModelOutputWithPastAndCrossAttentions]:
+        gd.debuginfo(prj="mt", info=f'')
         if deprecated_arguments.pop("position_ids", False) is not False:
             # `position_ids` could have been `torch.Tensor` or `None` so defaulting pop to `False` allows to detect if users were passing explicitly `None`
             warnings.warn(
@@ -956,13 +1053,16 @@ def get_bloom_sequence_parallel_forward_fn(shard_config: ShardConfig):
             raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
         elif input_ids is not None:
             batch_size, seq_length = input_ids.shape
+            gd.debuginfo(prj="mt", info=f'')
         elif inputs_embeds is not None:
             batch_size, seq_length, _ = inputs_embeds.shape
+            gd.debuginfo(prj="mt", info=f'')
         else:
             raise ValueError("You have to specify either input_ids or inputs_embeds")
 
         if past_key_values is None:
             past_key_values = tuple([None] * len(self.h))
+            gd.debuginfo(prj="mt", info=f'')
 
         # Prepare head mask if needed
         # 1.0 in head_mask indicate we keep the head
@@ -972,6 +1072,7 @@ def get_bloom_sequence_parallel_forward_fn(shard_config: ShardConfig):
 
         if inputs_embeds is None:
             inputs_embeds = self.word_embeddings(input_ids)
+            gd.debuginfo(prj="mt", info=f'')
 
         hidden_states = self.word_embeddings_layernorm(inputs_embeds)
 
@@ -985,6 +1086,7 @@ def get_bloom_sequence_parallel_forward_fn(shard_config: ShardConfig):
                     "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
                 )
                 use_cache = False
+                gd.debuginfo(prj="mt", info=f'')
 
         # Compute alibi tensor: check build_alibi_tensor documentation
         seq_length_with_past = seq_length
@@ -992,10 +1094,13 @@ def get_bloom_sequence_parallel_forward_fn(shard_config: ShardConfig):
         if past_key_values[0] is not None:
             past_key_values_length = past_key_values[0][0].shape[2]
             seq_length_with_past = seq_length_with_past + past_key_values_length
+            gd.debuginfo(prj="mt", info=f'')
         if attention_mask is None:
             attention_mask = torch.ones((batch_size, seq_length_with_past), device=hidden_states.device)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             attention_mask = attention_mask.to(hidden_states.device)
+            gd.debuginfo(prj="mt", info=f'')
 
         alibi = self.build_alibi_tensor(attention_mask, self.num_heads, dtype=hidden_states.dtype)
 
@@ -1013,10 +1118,12 @@ def get_bloom_sequence_parallel_forward_fn(shard_config: ShardConfig):
         for i, (block, layer_past) in enumerate(zip(self.h, past_key_values)):
             if output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states,)
+                gd.debuginfo(prj="mt", info=f'')
 
             if self.gradient_checkpointing and self.training:
 
                 def create_custom_forward(module):
+                    gd.debuginfo(prj="mt", info=f'')
                     def custom_forward(*inputs):
                         # None for past_key_value
                         return module(*inputs, use_cache=use_cache, output_attentions=output_attentions)
@@ -1031,6 +1138,7 @@ def get_bloom_sequence_parallel_forward_fn(shard_config: ShardConfig):
                     layer_past,
                     head_mask[i],
                 )
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 outputs = block(
                     hidden_states,
@@ -1041,13 +1149,16 @@ def get_bloom_sequence_parallel_forward_fn(shard_config: ShardConfig):
                     output_attentions=output_attentions,
                     alibi=alibi,
                 )
+                gd.debuginfo(prj="mt", info=f'')
 
             hidden_states = outputs[0]
             if use_cache is True:
                 presents = presents + (outputs[1],)
+                gd.debuginfo(prj="mt", info=f'')
 
             if output_attentions:
                 all_self_attentions = all_self_attentions + (outputs[2 if use_cache else 1],)
+                gd.debuginfo(prj="mt", info=f'')
 
         # When sequence parallelism done, gather the output tensor in forward and split it in backward
         hidden_states = gather_forward_split_backward(
@@ -1058,8 +1169,10 @@ def get_bloom_sequence_parallel_forward_fn(shard_config: ShardConfig):
 
         if output_hidden_states:
             all_hidden_states = all_hidden_states + (hidden_states,)
+            gd.debuginfo(prj="mt", info=f'')
 
         if not return_dict:
+            gd.debuginfo(prj="mt", info=f'')
             return tuple(v for v in [hidden_states, presents, all_hidden_states, all_self_attentions] if v is not None)
 
         return BaseModelOutputWithPastAndCrossAttentions(

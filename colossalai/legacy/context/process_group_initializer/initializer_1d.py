@@ -24,6 +24,7 @@ class Initializer_1D(ProcessGroupInitializer):
     """
 
     def __init__(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(*args, **kwargs)
         self.num_group = self.world_size // self.tensor_parallel_size
 
@@ -34,6 +35,7 @@ class Initializer_1D(ProcessGroupInitializer):
             Tuple (local_rank, group_world_size, process_group, ranks_in_group, mode):
                 1D tensor parallelism's information in a tuple.
         """
+        gd.debuginfo(prj="mt", info=f'')
         local_rank = None
         ranks_in_group = None
         process_group = None

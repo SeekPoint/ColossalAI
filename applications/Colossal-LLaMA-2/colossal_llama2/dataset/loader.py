@@ -23,6 +23,7 @@ PathType = Union[str, os.PathLike]
 def load_tokenized_dataset(
     dataset_paths: Union[PathType, List[PathType]], mode: str = "train"
 ) -> Optional[DatasetType]:
+    gd.debuginfo(prj="mt", info=f'')
     """
     Load pre-tokenized dataset.
     Each instance of dataset is a dictionary with
@@ -80,7 +81,7 @@ class DataCollatorForSupervisedDataset(object):
             f"`{self.tokenizer.__class__.__name__}.pad_token_id` must be a valid non-negative integer index value, "
             f"but now `{self.tokenizer.pad_token_id}`"
         )
-
+        gd.debuginfo(prj="mt", info=f'')
         # `List[torch.Tensor]`
         batch_input_ids = [
             torch.LongTensor(instance["input_ids"][: self.max_length])
@@ -96,6 +97,7 @@ class DataCollatorForSupervisedDataset(object):
         ]
 
         if self.tokenizer.padding_side == "right":
+            gd.debuginfo(prj="mt", info=f'')
             input_ids = torch.nn.utils.rnn.pad_sequence(
                 sequences=batch_input_ids,
                 batch_first=True,
@@ -111,6 +113,7 @@ class DataCollatorForSupervisedDataset(object):
             input_ids = F.pad(input_ids, (0, to_pad), value=self.tokenizer.pad_token_id)
             labels = F.pad(labels, (0, to_pad), value=self.ignore_index)
         elif self.tokenizer.padding_side == "left":
+            gd.debuginfo(prj="mt", info=f'')
             reversed_input_ids = [seq.flip(dims=(0,)) for seq in batch_input_ids]
             reversed_input_ids = torch.nn.utils.rnn.pad_sequence(
                 sequences=reversed_input_ids,
@@ -150,6 +153,7 @@ class StatefulDistributedSampler(DistributedSampler):
         seed: int = 0,
         drop_last: bool = False,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(
             dataset=dataset,
             num_replicas=num_replicas,
@@ -188,6 +192,7 @@ def setup_distributed_dataloader(
     """
     Setup dataloader for distributed training.
     """
+    gd.debuginfo(prj="mt", info=f'')
     _kwargs = kwargs.copy()
     process_group = process_group or _get_default_group()
     sampler = StatefulDistributedSampler(
@@ -201,6 +206,7 @@ def setup_distributed_dataloader(
 
     # Deterministic dataloader
     def seed_worker(worker_id: int) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         worker_seed = seed
         np.random.seed(worker_seed)
         torch.manual_seed(worker_seed)

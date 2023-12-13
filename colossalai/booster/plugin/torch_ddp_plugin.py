@@ -17,6 +17,7 @@ __all__ = ["TorchDDPPlugin"]
 
 class TorchDDPCheckpointIO(GeneralCheckpointIO):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.coordinator = DistCoordinator()
 
@@ -24,6 +25,7 @@ class TorchDDPCheckpointIO(GeneralCheckpointIO):
         """
         Load model from checkpoint.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(model, ModelWrapper), "Please boost the model before loading!"
         super().load_unsharded_model(model.unwrap(), checkpoint, strict=strict)
 
@@ -31,14 +33,17 @@ class TorchDDPCheckpointIO(GeneralCheckpointIO):
         """
         Save model to checkpoint but only on master process.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(model, ModelWrapper), "Please boost the model before saving!"
         if self.coordinator.is_master():
+            gd.debuginfo(prj="mt", info=f'')
             super().save_unsharded_model(model.unwrap(), checkpoint, gather_dtensor, use_safetensors)
 
     def load_unsharded_optimizer(self, optimizer: OptimizerWrapper, checkpoint: str):
         """
         Load optimizer from checkpoint.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(optimizer, OptimizerWrapper), "Please boost the optimizer before loading!"
         super().load_unsharded_optimizer(optimizer, checkpoint)
 
@@ -47,14 +52,18 @@ class TorchDDPCheckpointIO(GeneralCheckpointIO):
         Save optimizer to checkpoint but only on master process.
         """
         assert isinstance(optimizer, OptimizerWrapper), "Please boost the optimizer before saving!"
+        gd.debuginfo(prj="mt", info=f'')
         if self.coordinator.is_master():
+            gd.debuginfo(prj="mt", info=f'')
             super().save_unsharded_optimizer(optimizer, checkpoint, gather_dtensor)
 
     def save_lr_scheduler(self, lr_scheduler: LRScheduler, checkpoint: str):
         """
         Save model to checkpoint but only on master process.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if self.coordinator.is_master():
+            gd.debuginfo(prj="mt", info=f'')
             super().save_lr_scheduler(lr_scheduler, checkpoint)
 
     def save_sharded_model(
@@ -69,8 +78,10 @@ class TorchDDPCheckpointIO(GeneralCheckpointIO):
         """
         Save model to checkpoint but only on master process.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(model, ModelWrapper), "Please boost the model before saving!"
         if self.coordinator.is_master():
+            gd.debuginfo(prj="mt", info=f'')
             super().save_sharded_model(
                 model.unwrap(), checkpoint_path, gather_dtensor, prefix, max_shard_size, use_safetensors
             )
@@ -86,6 +97,7 @@ class TorchDDPCheckpointIO(GeneralCheckpointIO):
         """
         Load model from sharded checkpoint.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(model, ModelWrapper), "Please boost the model before loading!"
         super().load_sharded_model(model.unwrap(), checkpoint_index_file, strict, use_safetensors, load_sub_module)
 
@@ -100,8 +112,10 @@ class TorchDDPCheckpointIO(GeneralCheckpointIO):
         """
         Save optimizer to sharded checkpoint but only on master process.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(optimizer, OptimizerWrapper), "Please boost the optimizer before saving!"
         if self.coordinator.is_master():
+            gd.debuginfo(prj="mt", info=f'')
             super().save_sharded_optimizer(optimizer.unwrap(), checkpoint, gather_dtensor, prefix, size_per_shard)
 
     def load_sharded_optimizer(
@@ -113,16 +127,19 @@ class TorchDDPCheckpointIO(GeneralCheckpointIO):
         """
         Load optimizer from sharded checkpoint.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(optimizer, OptimizerWrapper), "Please boost the optimizer before loading!"
         super().load_sharded_optimizer(optimizer.unwrap(), index_file_path, prefix)
 
 
 class TorchDDPModel(ModelWrapper):
     def __init__(self, module: nn.Module, *args, **kwargs) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(module)
         self.module = DDP(module, *args, **kwargs)
 
     def unwrap(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self.module.module
 
 

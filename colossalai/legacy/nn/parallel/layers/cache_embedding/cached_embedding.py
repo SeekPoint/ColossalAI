@@ -68,7 +68,7 @@ class CachedEmbeddingBag(BaseEmbeddingBag):
             mode,
             include_last_offset,
         )
-
+        gd.debuginfo(prj="mt", info=f'')
         assert cache_ratio <= 1.0, f"cache ratio {cache_ratio} must less than 1.0"
         self.evict_strategy = evict_strategy
         if _weight is None:

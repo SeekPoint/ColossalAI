@@ -21,7 +21,7 @@ def _construct_shard_meta_info(
     _, comm_action_sequence, total_cost = shape_consistency_manager.shape_consistency(
         origin_sharding_spec, target_sharding_spec
     )
-
+    gd.debuginfo(prj="mt", info=f'')
     meta_info = ShardMetaInfo()
     # NOTE: the cost in shape_consistency_manager.mem_cost is the count in number of numel
     # get mem cost for ShardMetaInfo
@@ -62,7 +62,7 @@ def _runtime_apply_meta_info(node: Node, origin_spec_dict, sharding_spec_dict) -
     """
     This method is used to construct `MetaInto` for shape consistency node
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     # extract node index and user node index
     args = node.args
     node_index, user_node_index = args[3], args[4]
@@ -77,9 +77,10 @@ def _runtime_apply_meta_info(node: Node, origin_spec_dict, sharding_spec_dict) -
 def _runtime_comm_spec_apply_meta_info(node: Node, comm_actions_dict: Dict) -> ShardMetaInfo:
     # extract node_index and op_data_name
     node_index, op_data_name = node.args[2], node.args[3]
-
+    gd.debuginfo(prj="mt", info=f'')
     comm_action = comm_actions_dict[node_index][op_data_name]
     if isinstance(comm_action.comm_spec, CommSpec):
+        gd.debuginfo(prj="mt", info=f'')
         # this case is for all_reduce, there will be no memory cost
         meta_info = ShardMetaInfo()
         meta_info.memory_cost = TrainCycleItem(MemoryCost(), MemoryCost(), MemoryCost)
@@ -98,6 +99,7 @@ def _runtime_comm_spec_apply_meta_info(node: Node, comm_actions_dict: Dict) -> S
         meta_info.fwd_buffer = []
         meta_info.fwd_out = [torch.rand(output_shape, device="meta")]
     else:
+        gd.debuginfo(prj="mt", info=f'')
         # this case will be handled by shape consistency manager
         origin_sharding_spec, target_sharding_spec = (
             comm_action.comm_spec["src_spec"],
@@ -114,6 +116,7 @@ def comm_metainfo_pass(
     """
     The method manages all the metainfo of the communication node (run_time_apply, runtime_comm_spec_apply) in the graph.
     """
+    gd.debuginfo(prj="mt", info=f'')
     for node in gm.graph.nodes:
         if node.target == runtime_apply:
             setattr(node, "best_strategy_info", _runtime_apply_meta_info(node, origin_spec_dict, sharding_spec_dict))

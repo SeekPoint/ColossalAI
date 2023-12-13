@@ -18,6 +18,7 @@ class BucketTensorShardStrategy(TensorShardStrategy):
     """
 
     def gather(self, tensor_list: List[ShardedTensor], process_group: Optional[dist.ProcessGroup] = None):
+        gd.debuginfo(prj="mt", info=f'')
         tensor_list: List[ShardedTensor] = [t for t in tensor_list if t.is_sharded]
         if len(tensor_list) == 0:
             return

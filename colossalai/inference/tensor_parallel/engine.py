@@ -80,9 +80,11 @@ class TPInferEngine:
         self.multi_query_group_num = 0
 
         if hasattr(model.config, "multi_query_group_num"):
+            gd.debuginfo(prj="mt", info=f'')
             self.multi_query_group_num = model.config.multi_query_group_num
 
         if hasattr(model.config, "num_key_value_heads"):
+            gd.debuginfo(prj="mt", info=f'')
             self.multi_query_group_num = model.config.num_key_value_heads
 
         self.tp_size = -1  # to be set with given shard config in self.prepare_shard_config
@@ -106,7 +108,7 @@ class TPInferEngine:
         assert self.tp_size >= 1, "TP size not initialized without providing a valid ShardConfig"
         assert self.head_num % self.tp_size == 0, f"Cannot shard {self.head_num} heads with tp size {self.tp_size}"
         self.head_num //= self.tp_size  # update sharded number of heads
-
+        gd.debuginfo(prj="mt", info=f'')
         if self.multi_query_group_num:
             # NOTE the logic of MQA tensor parallelism should be specified.
             assert (
@@ -119,14 +121,16 @@ class TPInferEngine:
                 self.head_dim,
                 self.layer_num,
             )
+            gd.debuginfo(prj="mt", info=f'')
         else:
             self.cache_manager = MemoryManager(
                 self.max_total_token_num, self.dtype, self.head_num, self.head_dim, self.layer_num
             )
+            gd.debuginfo(prj="mt", info=f'')
 
     def _post_init_gptq_buffer(self, model: nn.Module) -> None:
         from colossalai.inference.quant.gptq.cai_gptq import CaiQuantLinear
-
+        gd.debuginfo(prj="mt", info=f'')
         HAS_GPTQ_CUDA = False
         try:
             from colossalai.kernel.op_builder.gptq import GPTQBuilder
@@ -177,6 +181,7 @@ class TPInferEngine:
         Optimize the original model by sharding with ShardFormer.
         In further generation, use the sharded model instead of original model.
         """
+        gd.debuginfo(prj="mt", info=f'')
         # NOTE we will change to use an inference config later with additional attrs we want
         assert self.shard_config.inference_only is True
         shardformer = ShardFormer(shard_config=self.shard_config)
@@ -190,8 +195,10 @@ class TPInferEngine:
             shard_config (ShardConfig): shard config given to specify settings of the engine.
                 If not provided, a default ShardConfig with tp size 1 will be created.
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.tp_size = 1
         if shard_config is None:
+            gd.debuginfo(prj="mt", info=f'')
             shard_config = ShardConfig(
                 tensor_parallel_process_group=None,
                 pipeline_stage_manager=None,
@@ -203,15 +210,19 @@ class TPInferEngine:
                 inference_only=True,
             )
         else:
+            gd.debuginfo(prj="mt", info=f'')
             shard_config.inference_only = True
             shard_config.pipeline_stage_manager = None
             if shard_config.enable_tensor_parallelism:
                 self.tp_size = shard_config.tensor_parallel_size
+                gd.debuginfo(prj="mt", info=f'')
+
         self._init_manager()
 
         return shard_config
 
     def _shard_model_by(self, shardformer: ShardFormer, model: nn.Module) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         """Shard original model by the given ShardFormer and store the sharded model."""
         assert (
             self.tp_size == shardformer.shard_config.tensor_parallel_size
@@ -226,11 +237,13 @@ class TPInferEngine:
 
         if self.shard_config.inference_gptq:
             self._post_init_gptq_buffer(self.model)
+            gd.debuginfo(prj="mt", info=f'')
 
         self.model = self.model.cuda()
 
     @property
     def supported_models(self) -> List[str]:
+        gd.debuginfo(prj="mt", info=f'')
         return _supported_models
 
     def generate(self, input_tokens: Union[BatchEncoding, dict, list, torch.Tensor], **generate_kwargs) -> torch.Tensor:
@@ -244,13 +257,16 @@ class TPInferEngine:
         Returns:
             torch.Tensor: The returned sequence is given inputs + generated_tokens.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if isinstance(input_tokens, torch.Tensor):
             input_tokens = dict(input_ids=input_tokens, attention_mask=torch.ones_like(input_tokens, dtype=torch.bool))
+            gd.debuginfo(prj="mt", info=f'')
         for t in input_tokens:
             if torch.is_tensor(input_tokens[t]):
                 input_tokens[t] = input_tokens[t].cuda()
         if "max_new_tokens" not in generate_kwargs:
             generate_kwargs.update(max_new_tokens=self.max_output_len)
+            gd.debuginfo(prj="mt", info=f'')
 
         return self._generate_by_set_infer_state(input_tokens, **generate_kwargs)
 
@@ -271,6 +287,7 @@ class TPInferEngine:
         Returns:
             BatchInferState: the states for the current batch during inference
         """
+        gd.debuginfo(prj="mt", info=f'')
         if not isinstance(inputs, (BatchEncoding, dict, list, torch.Tensor)):
             raise TypeError(f"inputs type {type(inputs)} is not supported in prepare_batch_state")
 
@@ -280,11 +297,14 @@ class TPInferEngine:
         if isinstance(inputs, (BatchEncoding, dict)):
             input_ids_list = inputs["input_ids"]
             attention_mask = inputs["attention_mask"]
+            gd.debuginfo(prj="mt", info=f'')
         else:
             input_ids_list = inputs
+            gd.debuginfo(prj="mt", info=f'')
         if isinstance(input_ids_list[0], int):  # for a single input
             input_ids_list = [input_ids_list]
             attention_mask = [attention_mask] if attention_mask is not None else attention_mask
+            gd.debuginfo(prj="mt", info=f'')
 
         batch_size = len(input_ids_list)
         seq_start_indexes = torch.zeros(batch_size, dtype=torch.int32, device="cuda")
@@ -293,6 +313,7 @@ class TPInferEngine:
 
         max_len_in_batch = -1
         if isinstance(inputs, (BatchEncoding, dict)):
+            gd.debuginfo(prj="mt", info=f'')
             for i, attn_mask in enumerate(attention_mask):
                 curr_seq_len = len(attn_mask)
                 # if isinstance(attn_mask, torch.Tensor):
@@ -304,6 +325,7 @@ class TPInferEngine:
                 start_index += curr_seq_len
                 max_len_in_batch = curr_seq_len if curr_seq_len > max_len_in_batch else max_len_in_batch
         else:
+            gd.debuginfo(prj="mt", info=f'')
             length = max(len(input_id) for input_id in input_ids_list)
             for i, input_ids in enumerate(input_ids_list):
                 curr_seq_len = length
@@ -335,6 +357,7 @@ class TPInferEngine:
                 2. list of input token ids (e.g. appended result of tokenizer encode)
                 3. torch.Tensor (e.g. tokenizer encode with return_tensors='pt')
         """
+        gd.debuginfo(prj="mt", info=f'')
 
         # for testing, always use sharded model
         assert self.model is not None, "sharded model does not exist"
@@ -349,8 +372,10 @@ class TPInferEngine:
         model = self.model
         if isinstance(model, LlamaForCausalLM):
             model = self.model.model
+            gd.debuginfo(prj="mt", info=f'')
         elif isinstance(model, BloomForCausalLM):
             model = self.model.transformer
+            gd.debuginfo(prj="mt", info=f'')
         setattr(model, "infer_state", batch_infer_state)
 
         outputs = self.model.generate(**input_tokens, **generate_kwargs, early_stopping=False)
@@ -380,6 +405,7 @@ class TPInferEngine:
     # BatchInferState is created and kept during generation
     # after each iter of model forward, we should update BatchInferState
     def _update_batch_state(self, infer_state: Optional[BatchInferState]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         batch_size = infer_state.batch_size
         device = infer_state.start_loc.device
         infer_state.start_loc = infer_state.start_loc + torch.arange(0, batch_size, dtype=torch.int32, device=device)
@@ -387,14 +413,17 @@ class TPInferEngine:
 
     @torch.no_grad()
     def forward(self, batch_id, is_prefill):
+        gd.debuginfo(prj="mt", info=f'')
         """
         Forward is used in Dynamic Batching Manager
         """
         batch = self.cache.pop(batch_id)
         if is_prefill:
             input_ = torch.tensor(batch.all_input_ids).cuda()
+            gd.debuginfo(prj="mt", info=f'')
         else:
             input_ = batch.input_ids.reshape(len(batch), 1)
+            gd.debuginfo(prj="mt", info=f'')
 
         batch_args = {
             "batch_size": len(batch),
@@ -410,8 +439,10 @@ class TPInferEngine:
         model = self.model
         if isinstance(model, LlamaForCausalLM):
             model = self.model.model
+            gd.debuginfo(prj="mt", info=f'')
         elif isinstance(model, BloomForCausalLM):
             model = self.model.transformer
+            gd.debuginfo(prj="mt", info=f'')
 
         setattr(model, "infer_state", infer_state)
         output = self.model.forward(input_ids=input_)
@@ -458,10 +489,12 @@ class TPInferEngine:
 
     @torch.no_grad()
     def _prefill_batch(self, batch_id):
+        gd.debuginfo(prj="mt", info=f'')
         return self.forward(batch_id, is_prefill=True)
 
     @torch.no_grad()
     def _decode_batch(self, batch_id):
+        gd.debuginfo(prj="mt", info=f'')
         return self.forward(batch_id, is_prefill=False)
 
     # might want to create a sequence pool

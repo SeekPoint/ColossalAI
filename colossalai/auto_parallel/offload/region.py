@@ -15,6 +15,7 @@ class Region:
     """
 
     def __init__(self, r_id: int = 0) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.r_id: int = r_id
         self.fp16_params: List[torch.nn.Parameter] = []
         self.param_size: int = 0
@@ -41,6 +42,7 @@ class Region:
         """
         Check if the region can be released.
         """
+        gd.debuginfo(prj="mt", info=f'')
         return self.grad_num == self.param_num
 
     @property
@@ -48,13 +50,14 @@ class Region:
         """
         Check if the grad of the region has inf or nan values on CUDA.
         """
+        gd.debuginfo(prj="mt", info=f'')
         return torch.isinf(self.fp16_data).any() | torch.isnan(self.fp16_data).any()
 
     def init_param_data(self, pre_alloc_tensor: torch.Tensor = None):
         """
         Map the parameters in the region to a contiguous memory space.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         self.fp16_data = torch.zeros(self.param_num, dtype=torch.half, device="cuda")
         offset = 0
         for param in self.fp16_params:
@@ -78,7 +81,7 @@ class Region:
         The reason is that the performance of precision conversion on the CPU
         is much slower than the data transfer overhead.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         self.temp_fp32_data.copy_(self.fp32_data, non_blocking=True)
         self.temp_fp32_data.record_stream(torch.cuda.current_stream())
         if not self.in_mem_pool_flag:
@@ -92,16 +95,18 @@ class Region:
         """
         Move gradients from GPU to CPU.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         self.cpu_grad = torch.empty(self.param_num, dtype=torch.half, pin_memory=True)
         self.cpu_grad.copy_(self.fp16_data[: self.param_num], non_blocking=True)
         self.fp16_data.record_stream(torch.cuda.current_stream())
         if not self.in_mem_pool_flag:
+            gd.debuginfo(prj="mt", info=f'')
             self.free_cuda_data()
 
         self.grad_num = 0
 
     def free_cuda_data(self):
+        gd.debuginfo(prj="mt", info=f'')
         free_storage(self.fp16_data)
 
         # torch.cuda.empty_cache()
@@ -114,7 +119,7 @@ class Region:
             param (torch.nn.Parameter): the param used to retrieve meta information
             data_slice (torch.Tensor): the tensor to be copied to the region
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         begin, end = self.param_to_range[param]
         self.fp16_data[begin:end].copy_(data_slice.data.flatten())
         param.data = self.fp16_data[begin:end].view(param.data.shape)
@@ -136,10 +141,11 @@ class Region:
         self.fp16_params = self.fp16_params[:cut_param_idx]
         self.param_size -= new_reg.param_size
         self.param_num -= new_reg.param_num
-
+        gd.debuginfo(prj="mt", info=f'')
         return new_reg
 
     def __update_params_ptr(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         for param in self.fp16_params:
             begin, end = self.param_to_range[param]
             param.data = self.fp16_data[begin:end].view(param.data.shape)

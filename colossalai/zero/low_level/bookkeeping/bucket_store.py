@@ -10,6 +10,7 @@ from pydebug import gd, infoTensor
 
 class BucketStore(BaseStore):
     def __init__(self, torch_pg: ProcessGroup):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(torch_pg)
 
         # init

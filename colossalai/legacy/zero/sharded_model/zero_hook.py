@@ -27,6 +27,7 @@ class ZeroHook(BaseOpHook):
         stateful_tensor_mgr: Optional[StatefulTensorMgr] = None,
         process_group: Optional[dist.ProcessGroup] = None,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.logger = get_dist_logger("ZeROHook")
         self.shard_strategy = shard_strategy

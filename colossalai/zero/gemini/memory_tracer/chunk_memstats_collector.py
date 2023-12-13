@@ -19,18 +19,22 @@ class ChunkMemStatsCollector(MemStatsCollector):
         """
         super().__init__(memstats)
         self._chunk_manager = chunk_manager
+        gd.debuginfo(prj="mt", info=f'')
 
     # override
     def record_model_data_volume(self) -> None:
         """
         record model data volume on cuda and cpu.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if self._start_flag and not self.use_outside_memstats:
             cuda_mem = self._chunk_manager.total_mem["cuda"]
             self._memstats.record_max_cuda_model_data(cuda_mem)
+            gd.debuginfo(prj="mt", info=f'')
 
     @property
     def cuda_margin_mem(self) -> float:
+        gd.debuginfo(prj="mt", info=f'')
         from colossalai.legacy.utils.memory import colo_device_memory_capacity
 
         return colo_device_memory_capacity(get_current_device()) - self._memstats.max_overall_cuda

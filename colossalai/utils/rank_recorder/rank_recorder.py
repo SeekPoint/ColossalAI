@@ -22,6 +22,7 @@ class Event:
         self.end = end
         self.name = name
         self.rank = rank
+        gd.debuginfo(prj="mt", info=f'')
 
 
 class Recorder:
@@ -39,6 +40,7 @@ class Recorder:
         self.legend_fontsize = 16
         self.device_fontsize = 20
         self.bar_height = 0.2
+        gd.debuginfo(prj="mt", info=f'')
 
         if not os.path.exists(LOG_FOLDER):
             os.makedirs(LOG_FOLDER)
@@ -48,6 +50,7 @@ class Recorder:
         torch.cuda.synchronize()
         start_time = time.time()
         self.temp_event = Event(start_time, None, name, rank)
+        gd.debuginfo(prj="mt", info=f'')
 
     def end(self):
         assert self.temp_event is not None, "`start` before `end`"
@@ -56,9 +59,11 @@ class Recorder:
         self.temp_event.end = end_time
         rank = self.temp_event.rank
         if rank not in self.rank_to_history:
+            gd.debuginfo(prj="mt", info=f'')
             self.rank_to_history[rank] = []
         self.rank_to_history[rank].append(self.temp_event)
         self.temp_event = None
+        gd.debuginfo(prj="mt", info=f'')
 
     def get_history(self):
         return self.history
@@ -66,17 +71,20 @@ class Recorder:
     def __call__(self, name: str, rank: str):
         self.temp_name = name
         self.temp_rank = rank
+        gd.debuginfo(prj="mt", info=f'')
         return self
 
     def __enter__(self):
         name = self.temp_name
         rank = self.temp_rank
         self.start(name, rank)
+        gd.debuginfo(prj="mt", info=f'')
 
     def __exit__(self, *args):
         self.end()
 
     def dump_record(self):
+        gd.debuginfo(prj="mt", info=f'')
         rank = dist.get_rank()
         rank_to_history = self.rank_to_history
         records = {"base_time": self.base_time, "content": {}}
@@ -89,11 +97,14 @@ class Recorder:
             records["content"][record_rank] = recs
 
         dump_name = f"{rank}.json"
+        gd.debuginfo(prj="mt", info=f'dump_name={dump_name}')
+
         dump_path = os.path.join(LOG_FOLDER, dump_name)
         with open(dump_path, "w", encoding="utf-8") as f:
             json.dump(records, f, ensure_ascii=False)
 
     def merge_recode(self):
+        gd.debuginfo(prj="mt", info=f'')
         base_time = self.base_time
         world_size = dist.get_world_size()
 
@@ -127,6 +138,7 @@ class Recorder:
             json.dump(recoders, f, ensure_ascii=False)
 
     def visualize_record(self):
+        gd.debuginfo(prj="mt", info=f'')
         with open(self.export_name + ".json", "r", encoding="utf-8") as f:
             records = json.load(f)
         records = dict(records)
@@ -155,6 +167,7 @@ class Recorder:
         plt.savefig("{}.{}".format(self.export_name, self.export_format))
 
     def exit_worker(self):
+        gd.debuginfo(prj="mt", info=f'')
         if len(self.rank_to_history) == 0:
             return
         self.dump_record()

@@ -7,8 +7,9 @@ from torch import Tensor
 
 def zeros_():
     """Return the initializer filling the input Tensor with the scalar zeros"""
-
+    gd.debuginfo(prj="mt", info=f'')
     def initializer(tensor: Tensor, fan_in: int = None, fan_out: int = None):
+        gd.debuginfo(prj="mt", info=f'')
         return nn.init.zeros_(tensor)
 
     return initializer
@@ -16,7 +17,7 @@ def zeros_():
 
 def ones_():
     """Return the initializer filling the input Tensor with the scalar ones"""
-
+    gd.debuginfo(prj="mt", info=f'')
     def initializer(tensor: Tensor, fan_in: int = None, fan_out: int = None):
         return nn.init.ones_(tensor)
 
@@ -31,7 +32,7 @@ def uniform_(a: float = 0.0, b: float = 1.0):
         a (float): the lower bound of the uniform distribution. Defaults 0.0.
         b (float): the upper bound of the uniform distribution. Defaults 1.0.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     def initializer(tensor: Tensor, fan_in: int = None, fan_out: int = None):
         return nn.init.uniform_(tensor, a, b)
 
@@ -48,7 +49,7 @@ def normal_(mean: float = 0.0, std: float = 1.0):
         mean (float): the mean of the normal distribution. Defaults 0.0.
         std (float): the standard deviation of the normal distribution. Defaults 1.0.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     def initializer(tensor: Tensor, fan_in: int = None, fan_out: int = None):
         return nn.init.normal_(tensor, mean, std)
 
@@ -69,7 +70,7 @@ def trunc_normal_(mean: float = 0.0, std: float = 1.0, a: float = -2.0, b: float
         a (float): the minimum cutoff value. Defaults -2.0.
         b (float): the maximum cutoff value. Defaults 2.0.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     def initializer(tensor: Tensor, fan_in: int = None, fan_out: int = None):
         return nn.init.trunc_normal_(tensor, mean, std, a, b)
 
@@ -97,9 +98,10 @@ def kaiming_uniform_(a=0, mode="fan_in", nonlinearity="leaky_relu"):
         nonlinearity (str, optional): the non-linear function (`nn.functional` name),
                         recommended to use only with ``'relu'`` or ``'leaky_relu'`` (default).
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     # adapted from torch.nn.init
     def initializer(tensor: Tensor, fan_in: int = None, fan_out: int = None):
+        gd.debuginfo(prj="mt", info=f'')
         if 0 in tensor.shape:
             warnings.warn("Initializing zero-element tensors is a no-op")
             return tensor
@@ -141,9 +143,10 @@ def kaiming_normal_(a=0, mode="fan_in", nonlinearity="leaky_relu"):
         nonlinearity (str, optional): the non-linear function (`nn.functional` name),
                         recommended to use only with ``'relu'`` or ``'leaky_relu'`` (default).
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     # adapted from torch.nn.init
     def initializer(tensor: Tensor, fan_in: int = None, fan_out: int = None):
+        gd.debuginfo(prj="mt", info=f'')
         if 0 in tensor.shape:
             warnings.warn("Initializing zero-element tensors is a no-op")
             return tensor
@@ -181,9 +184,10 @@ def xavier_uniform_(a: float = math.sqrt(3.0), scale: float = 2.0, gain: float =
         scale (float, optional): an optional scaling factor used to calculate standard deviation. Defaults 2.0.
         gain (float, optional): an optional scaling factor. Defaults 1.0.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     # adapted from torch.nn.init
     def initializer(tensor: Tensor, fan_in: int = None, fan_out: int = None):
+        gd.debuginfo(prj="mt", info=f'')
         assert fan_in is not None, "Fan_in is not provided."
 
         fan = fan_in
@@ -213,9 +217,10 @@ def xavier_normal_(scale: float = 2.0, gain: float = 1.0):
         scale (float, optional): an optional scaling factor used to calculate standard deviation. Defaults 2.0.
         gain (float, optional): an optional scaling factor. Defaults 1.0.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     # adapted from torch.nn.init
     def initializer(tensor: Tensor, fan_in: int = None, fan_out: int = None):
+        gd.debuginfo(prj="mt", info=f'')
         assert fan_in is not None, "Fan_in is not provided."
 
         fan = fan_in
@@ -230,8 +235,10 @@ def xavier_normal_(scale: float = 2.0, gain: float = 1.0):
 
 
 def lecun_uniform_():
+    gd.debuginfo(prj="mt", info=f'')
     # adapted from jax.nn.initializers
     def initializer(tensor: Tensor, fan_in: int = None, fan_out: int = None):
+        gd.debuginfo(prj="mt", info=f'')
         assert fan_in is not None, "Fan_in is not provided."
 
         var = 1.0 / fan_in
@@ -242,8 +249,10 @@ def lecun_uniform_():
 
 
 def lecun_normal_():
+    gd.debuginfo(prj="mt", info=f'')
     # adapted from jax.nn.initializers
     def initializer(tensor: Tensor, fan_in: int = None, fan_out: int = None):
+        gd.debuginfo(prj="mt", info=f'')
         assert fan_in is not None, "Fan_in is not provided."
 
         std = math.sqrt(1.0 / fan_in)

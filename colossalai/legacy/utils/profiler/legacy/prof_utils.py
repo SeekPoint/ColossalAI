@@ -7,6 +7,7 @@ from colossalai.legacy.core import global_context as gpc
 
 # copied from high version pytorch to support low version
 def _format_time(time_us):
+    gd.debuginfo(prj="mt", info=f'')
     """Defines how to format time in FunctionEvent"""
     US_IN_SECOND = 1000.0 * 1000.0
     US_IN_MS = 1000.0
@@ -19,6 +20,7 @@ def _format_time(time_us):
 
 # copied from high version pytorch to support low version
 def _format_memory(nbytes):
+    gd.debuginfo(prj="mt", info=f'')
     """Returns a formatted memory size string"""
     KB = 1024
     MB = 1024 * KB
@@ -45,6 +47,7 @@ def _format_bandwidth(volume: float or int, time_us: int):
 
 class BaseProfiler(ABC):
     def __init__(self, profiler_name: str, priority: int):
+        gd.debuginfo(prj="mt", info=f'')
         self.name = profiler_name
         self.priority = priority
 
@@ -93,6 +96,7 @@ class ProfilerContext(object):
     """
 
     def __init__(self, profilers: List[BaseProfiler] = None, enable: bool = True):
+        gd.debuginfo(prj="mt", info=f'')
         self.enable = enable
         self.profilers = sorted(profilers, key=lambda prof: prof.priority)
 

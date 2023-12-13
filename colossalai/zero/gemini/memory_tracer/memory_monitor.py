@@ -75,6 +75,7 @@ class AsyncMemoryMonitor(MemoryMonitor):
     """
 
     def __init__(self, power: int = 10):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.keep_measuring = False
 
@@ -131,6 +132,7 @@ class SyncCudaMemoryMonitor(MemoryMonitor):
 
     def __init__(self, power: int = 10):
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def start(self):
         torch.cuda.synchronize()

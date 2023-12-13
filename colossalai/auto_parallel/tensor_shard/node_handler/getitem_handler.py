@@ -22,12 +22,15 @@ class GetItemHandler(NodeHandler):
         generators = []
         if isinstance(op_data_mapping["input"].data, torch.Tensor):
             generators.append(TensorStrategyGenerator(op_data_mapping, self.device_mesh, self.node.args[0]))
+            gd.debuginfo(prj="mt", info=f'')
         else:
             generators.append(TensorTupleStrategyGenerator(op_data_mapping, self.device_mesh, self.node.args[0]))
+            gd.debuginfo(prj="mt", info=f'')
 
         return generators
 
     def get_operation_data_mapping(self) -> Dict[str, OperationData]:
+        gd.debuginfo(prj="mt", info=f'')
         # use transposed shape for strategies
         # the strategies will be transformed back to its original shape in self.post_process
         physical_input_operand = OperationData(

@@ -74,6 +74,7 @@ class Linear(ColossalaiModule):
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
         **kwargs,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         tensor_parallel = get_tensor_parallel_mode()
         linear_cls = _parallel_linear[tensor_parallel]
         gather_output = kwargs.pop("gather_output", None)
@@ -120,6 +121,7 @@ class Classifier(ColossalaiModule):
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
         vocab_parallel_limit: int = 2048,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         tensor_parallel = get_tensor_parallel_mode()
         if num_classes <= vocab_parallel_limit or tensor_parallel is None:
             layer = _parallel_classifier[tensor_parallel](

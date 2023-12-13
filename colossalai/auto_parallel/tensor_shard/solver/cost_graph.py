@@ -18,6 +18,7 @@ class CostGraph:
     """
 
     def __init__(self, leaf_strategies, simplify=True, forward_only=False):
+        gd.debuginfo(prj="mt", info=f'')
         self.leaf_strategies = leaf_strategies
         self.nodes = [strategies_vector.node for strategies_vector in self.leaf_strategies]
         # stores number of strategies in each node
@@ -30,6 +31,7 @@ class CostGraph:
         self._build_cost_graph()
 
     def _remove_invalid_node(self, node, attr_name):
+        gd.debuginfo(prj="mt", info=f'')
         remove_list = []
         target_node_list = getattr(node, attr_name, [])
         for target_node in target_node_list:
@@ -43,9 +45,12 @@ class CostGraph:
         This method will generate edge_cost for adjacent node pair. Additionally, 'parents' and 'children' attribute will be
         set to node.
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.edge_costs = {}
         if self.simplify:
+            gd.debuginfo(prj="mt", info=f'')
             self.merge_pair = []
+
         for strategies_vector in self.leaf_strategies:
             # build edge_cost
             dst_node = strategies_vector.node
@@ -96,6 +101,7 @@ class CostGraph:
                         self.merge_pair.append((followed_node, dst_node))
 
     def get_edge_cost(self, src_node, dst_node):
+        gd.debuginfo(prj="mt", info=f'')
         return self.edge_costs[(src_node, dst_node)]
 
     def merge_node(self, src_node, dst_node):
@@ -120,6 +126,8 @@ class CostGraph:
             src_node(Node): The node will be merged into dst_node.
             dst_node(Node): The node to integrate src_node.
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         # build merge_map
         merge_map = {}
         for src_index, _ in enumerate(src_node.strategies_vector):
@@ -184,15 +192,18 @@ class CostGraph:
                 node_pair = (dst_node, child_node)
                 self.edge_costs.pop(node_pair)
         if len(dst_node.parents) == 0:
+            gd.debuginfo(prj="mt", info=f'')
             self.following_dict[dst_node] = src_node
             dst_node.children = []
 
     def _reindexing_src(self, src):
+        gd.debuginfo(prj="mt", info=f'')
         if src not in self.following_dict:
             return src
         return self._reindexing_src(self.following_dict[src])
 
     def simplify_graph(self):
+        gd.debuginfo(prj="mt", info=f'')
         if not self.simplify:
             return
         self.merge_pair.reverse()

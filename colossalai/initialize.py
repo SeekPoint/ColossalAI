@@ -44,6 +44,7 @@ def launch(
     Raises:
         Exception: Raise exception when config type is wrong
     """
+    gd.debuginfo(prj="mt", info=f'')
     if rank == 0:
         warnings.warn("`config` is deprecated and will be removed soon.")
 
@@ -82,6 +83,7 @@ def launch_from_slurm(
         seed (int, optional): Specified random seed for every process. Defaults to 1024.
         verbose (bool, optional): Whether to print logs. Defaults to True.
     """
+    gd.debuginfo(prj="mt", info=f'')
     try:
         rank = int(os.environ["SLURM_PROCID"])
         world_size = int(os.environ["SLURM_NPROCS"])
@@ -121,6 +123,7 @@ def launch_from_openmpi(
         seed (int, optional): Specified random seed for every process. Defaults to 1024.
         verbose (bool, optional): Whether to print logs. Defaults to True.
     """
+    gd.debuginfo(prj="mt", info=f'')
     try:
         rank = int(os.environ["OMPI_COMM_WORLD_RANK"])
         local_rank = int(os.environ["OMPI_COMM_WORLD_LOCAL_RANK"])
@@ -155,6 +158,7 @@ def launch_from_torch(
         seed (int, optional): Specified random seed for every process. Defaults to 1024.
         verbose (bool, optional): Whether to print logs. Defaults to True.
     """
+    gd.debuginfo(prj="mt", info=f'')
     try:
         rank = int(os.environ["RANK"])
         local_rank = int(os.environ["LOCAL_RANK"])

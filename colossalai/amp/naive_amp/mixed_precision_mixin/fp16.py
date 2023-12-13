@@ -29,6 +29,7 @@ class FP16MixedPrecisionMixin(MixedPrecisionMixin):
         hysteresis: int = 2,
         max_scale: float = 2**32,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.grad_scaler = DynamicGradScaler(
             initial_scale=initial_scale,
@@ -55,19 +56,23 @@ class FP16MixedPrecisionMixin(MixedPrecisionMixin):
         """
 
     def check_overflow(self) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         # clear previous overflow record
         self.found_overflow.fill_(0.0)
         if self.check_local_overflow():
+            gd.debuginfo(prj="mt", info=f'')
             self.found_overflow.fill_(1.0)
         dist.all_reduce(self.found_overflow, op=dist.ReduceOp.MAX)
         return self.found_overflow.item() > 0
 
     def pre_backward(self, loss: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         loss = self.loss_scale * loss
         self.optim_state = OptimState.SCALED
         return loss
 
     def pre_backward_by_grad(self, tensor: Tensor, grad: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         self.optim_state = OptimState.SCALED
         return grad
 
@@ -75,6 +80,7 @@ class FP16MixedPrecisionMixin(MixedPrecisionMixin):
         found_inf = self.check_overflow()
         self.grad_scaler.update(found_inf)
         if found_inf:
+            gd.debuginfo(prj="mt", info=f'')
             self.optim_state = OptimState.UNSCALED
         return found_inf
 
@@ -82,6 +88,7 @@ class FP16MixedPrecisionMixin(MixedPrecisionMixin):
         pass
 
     def get_grad_div_scale(self) -> float:
+        gd.debuginfo(prj="mt", info=f'')
         assert self.optim_state == OptimState.SCALED, "grads should be scaled before clipping"
         self.optim_state = OptimState.UNSCALED
         return self.loss_scale

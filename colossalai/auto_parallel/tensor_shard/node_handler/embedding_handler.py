@@ -27,6 +27,7 @@ def _convert_logical_sharding_to_physical_sharding_spec_for_embedding(
         input_name (str): the name of the OperationData object for the input.
         output_name (str): the name of the OperationData object for the output.
     """
+    gd.debuginfo(prj="mt", info=f'')
     # the result will be a list of strategies
     sharding_strategies = []
 
@@ -47,6 +48,7 @@ def _convert_logical_sharding_to_physical_sharding_spec_for_embedding(
     # logical 1D non-matrix dimension, the logical non-matrix dimension can belong to the 0th to Nth dimension of the
     # physical input shape. Thus, we enumerate to get all possible cases.
     if input_sharding_spec.dim_partition_dict:
+        gd.debuginfo(prj="mt", info=f'')
         # if bool(input_sharding_spec.dim_partition_dict), it means that the
         # the generated sharding strategy does shard the non-matrix dimension,
         # in this case, we need to do enumeration
@@ -84,6 +86,7 @@ def _convert_logical_sharding_to_physical_sharding_spec_for_embedding(
                     f"Errored occurred when converting the logical sharding spec to the physical one. Error details: {e}"
                 )
     else:
+        gd.debuginfo(prj="mt", info=f'')
         # the generated sharding strategy does not shard the non-matrix dimension,
         # in this case, we don't need to do enumeration
         # but instead, we still need to convert the logical shape to physical shape
@@ -98,8 +101,10 @@ def _convert_logical_sharding_to_physical_sharding_spec_for_embedding(
 
         if last_logical_output_dims in output_sharding_spec.dim_partition_dict:
             dim_mapping = {last_logical_output_dims: last_physical_output_dims}
+            gd.debuginfo(prj="mt", info=f'')
         else:
             dim_mapping = {}
+            gd.debuginfo(prj="mt", info=f'')
 
         update_partition_dim(
             sharding_spec=output_sharding_spec,
@@ -119,12 +124,14 @@ class EmbeddingModuleHandler(ModuleHandler):
     """
 
     def get_strategy_generator(self) -> List[StrategyGenerator]:
+        gd.debuginfo(prj="mt", info=f'')
         op_data_mapping = self.get_operation_data_mapping()
         generators = []
         generators.append(EmbeddingStrategyGenerator(op_data_mapping, self.device_mesh))
         return generators
 
     def get_operation_data_mapping(self) -> Dict[str, OperationData]:
+        gd.debuginfo(prj="mt", info=f'')
         # In nn.Embedding operation, all the dimensions of input will be treated as the batch dimension,
         # and then the sharding spec will be generated based on the logical 1D tensor.
         # After that, the logical sharding info will be enumerated among all the physical dimensions.
@@ -164,6 +171,7 @@ class EmbeddingModuleHandler(ModuleHandler):
         """
         Convert the sharding spec from the logical shape to the physical shape.
         """
+        gd.debuginfo(prj="mt", info=f'')
         # create multiple sharding strategies for the inputs
         # as input can be multi-dimensional and the partition dim is only 2D,
         # we need to map the partition at logical dim 0 to one of the first few dimensions of the input and output
@@ -180,12 +188,14 @@ class EmbeddingFunctionHandler(NodeHandler):
     """
 
     def get_strategy_generator(self) -> List[StrategyGenerator]:
+        gd.debuginfo(prj="mt", info=f'')
         op_data_mapping = self.get_operation_data_mapping()
         generators = []
         generators.append(EmbeddingStrategyGenerator(op_data_mapping, self.device_mesh))
         return generators
 
     def get_operation_data_mapping(self) -> Dict[str, OperationData]:
+        gd.debuginfo(prj="mt", info=f'')
         # In F.embedding operation, all the dimensions of input will be treated as the batch dimension,
         # and then the sharding spec will be generated based on the logical 1D tensor.
         # After that, the logical sharding info will be enumerated among all the physical dimensions.
@@ -202,8 +212,10 @@ class EmbeddingFunctionHandler(NodeHandler):
         # check if the other operand is a parameter
         if isinstance(self.node.args[1]._meta_data, torch.nn.parameter.Parameter):
             data_type = OperationDataType.PARAM
+            gd.debuginfo(prj="mt", info=f'')
         else:
             data_type = OperationDataType.ARG
+            gd.debuginfo(prj="mt", info=f'')
 
         physical_other_operand = OperationData(
             name=str(self.node.args[1]), type=data_type, data=self.node.args[1]._meta_data
@@ -228,6 +240,7 @@ class EmbeddingFunctionHandler(NodeHandler):
         return mapping
 
     def post_process(self, strategy: ShardingStrategy):
+        gd.debuginfo(prj="mt", info=f'')
         """
         Convert the sharding spec from the logical shape to the physical shape.
         """

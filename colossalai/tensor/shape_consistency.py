@@ -26,6 +26,7 @@ class ShapeConsistencyOptions:
 
 
 def to_global(distributed_tensor: torch.Tensor, sharding_spec: ShardingSpec) -> torch.Tensor:
+    gd.debuginfo(prj="mt", info=f'')
     shape_consistency_manager = ShapeConsistencyManager()
     global_sharding_spec = ShardingSpec(sharding_spec.device_mesh, sharding_spec.entire_shape, {})
     with torch.no_grad():
@@ -39,8 +40,10 @@ def set_shape_consistency_options(options: ShapeConsistencyOptions):
     """
     Configure the shape consistency manager via function call.
     """
+
     manager = ShapeConsistencyManager()
     manager.options = options
+    gd.debuginfo(prj="mt", info=f'')
 
 
 class ShapeConsistencyManager(metaclass=SingletonMeta):
@@ -63,12 +66,14 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
 
     @property
     def forward_only(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self._forward_only
 
     @forward_only.setter
     def forward_only(self, value):
         assert isinstance(value, bool)
         self._forward_only = value
+        gd.debuginfo(prj="mt", info=f'')
 
     def get_all_all_gather_spec(
         self, source_spec: ShardingSpec, orig_cost_dict: Dict[str, float]
@@ -102,6 +107,7 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
             shard_sequence: S0,R,R
             device_mesh_shape: (4, 4): 0}
         """
+        gd.debuginfo(prj="mt", info=f'')
         valid_spec_dict = {}
         comm_pattern = CollectiveCommPattern.GATHER_FWD_SPLIT_BWD
         for target_pair in source_spec.dim_partition_dict.items():
@@ -178,6 +184,7 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
             shard_sequence: S0,R,S1
             device_mesh_shape: (4, 4): 0}
         """
+        gd.debuginfo(prj="mt", info=f'')
         valid_spec_dict = {}
         comm_pattern = CollectiveCommPattern.ALL2ALL_FWD_ALL2ALL_BWD
         tensor_dims = len(source_spec.entire_shape)
@@ -287,6 +294,7 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
             shard_sequence: S0,R,S1
             device_mesh_shape: (4, 4): 0}
         """
+        gd.debuginfo(prj="mt", info=f'')
         valid_spec_dict = {}
         comm_pattern = CollectiveCommPattern.SPLIT_FWD_GATHER_BWD
 
@@ -347,6 +355,7 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
         S01R -> RR
         RS01 -> RR
         """
+        gd.debuginfo(prj="mt", info=f'')
         valid_spec_dict = {}
         comm_pattern = CollectiveCommPattern.MIXGATHER_FWD_SPLIT_BWD
         tensor_dims = len(source_spec.entire_shape)
@@ -410,6 +419,7 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
         Return:
             valid_spec_dict(Dict[ShardingSpec, float]): all valid sharding specs from source_spec with single all-to-all operation.
         """
+        gd.debuginfo(prj="mt", info=f'')
         valid_spec_dict = {}
         valid_spec_dict.update(self.get_all_all_gather_spec(source_spec, orig_cost_dict))
         valid_spec_dict.update(self.get_all_all_to_all_spec(source_spec, orig_cost_dict))
@@ -425,8 +435,9 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
         Returns:
             TrainCycleItem: memory (numel) cost of such comm_action_sequence
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         def compute_shape(sharding_spec: ShardingSpec):
+            gd.debuginfo(prj="mt", info=f'')
             shape = sharding_spec.entire_shape
             new_shape = []
             for dim, shard in sharding_spec.dim_partition_dict.items():
@@ -444,6 +455,7 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
                 alloc_numel (int): current allocated numel
                 peak_numel (int): current peak numel
             """
+            gd.debuginfo(prj="mt", info=f'')
             input_shape = compute_shape(comm_spec.sharding_spec)
             input_numel = np.prod(input_shape)
             output_numel = input_numel * comm_spec.device_mesh.shape[comm_spec.logical_process_axis]
@@ -451,6 +463,7 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
             alloc_numel += output_numel
             if discard_input:
                 alloc_numel -= input_numel
+                gd.debuginfo(prj="mt", info=f'')
 
             return alloc_numel, peak_numel
 
@@ -466,8 +479,10 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
                 alloc_numel (int): current allocated numel
                 peak_numel (int): current peak numel
             """
+            gd.debuginfo(prj="mt", info=f'')
             shard_dim = comm_spec.shard_dim
             if shard_dim != 0:
+                gd.debuginfo(prj="mt", info=f'')
                 # if we don't shard the tensor on the first dimension, the split action will
                 # generate a new tensor
                 input_shape = compute_shape(comm_spec.sharding_spec)
@@ -477,6 +492,7 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
                 peak_numel = max(peak_numel, alloc_numel)
                 if discard_input:
                     alloc_numel -= input_numel
+                    gd.debuginfo(prj="mt", info=f'')
             else:
                 # if we shard the tensor on the first dimension, the split action will not generate
                 # a new tensor, and as it will preserve a reference to the input tensor, we could
@@ -490,6 +506,7 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
                 # the current memory estimation framework, we will overestimate the memory usage. But the above case is
                 # kind of weird, and I think we could ignore it for now.
                 pass
+                gd.debuginfo(prj="mt", info=f'')
 
             return alloc_numel, peak_numel
 
@@ -511,17 +528,21 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
                 alloc_numel (int): current allocated numel
                 peak_numel (int): current peak numel
             """
+            gd.debuginfo(prj="mt", info=f'')
             input_shape = compute_shape(comm_spec.sharding_spec)
             input_numel = np.prod(input_shape)
             output_numel = input_numel
             shard_dim = comm_spec.shard_dim
             if shard_dim != 0:
                 peak_numel = max(peak_numel, alloc_numel + output_numel * 3)
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 peak_numel = max(peak_numel, alloc_numel + output_numel * 2)
+                gd.debuginfo(prj="mt", info=f'')
             alloc_numel += output_numel
             if discard_input:
                 alloc_numel -= input_numel
+                gd.debuginfo(prj="mt", info=f'')
 
             return alloc_numel, peak_numel
 
@@ -529,6 +550,7 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
             """
             a dummy function for identity memory footprint analysis, as the identity action doesn't allocate extra memory
             """
+            gd.debuginfo(prj="mt", info=f'')
             return alloc_numel, peak_numel
 
         pattern_to_func_dict = {
@@ -539,6 +561,8 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
             CollectiveCommPattern.IDENTITY_FWD_ALLREDUCE_BWD: [identity_analysis, reduce_analysis],
             CollectiveCommPattern.MIXGATHER_FWD_SPLIT_BWD: [],
         }
+
+        gd.debuginfo(prj="mt", info=f'')
 
         fwd_actions = []
         bwd_actions = []
@@ -640,6 +664,8 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
                                    CommSpec:(comm_pattern:shard, shard_dim:0, logical_process_axis:1)]
             total_cost: 12294.402000000002
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         MAX_TRANSFORM_STEPS = 20
         total_cost_dict = {"forward": 0, "backward": 0, "total": 0}
         total_steps = 0
@@ -650,6 +676,7 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
 
         # We do nothing if the sharding spec is all the same.
         if source_spec.sharding_sequence_difference(target_spec) == 0:
+            gd.debuginfo(prj="mt", info=f'')
             self.cached_spec_pairs_transform_path[spec_pairs] = (transform_path, comm_action_sequence)
             return (transform_path, comm_action_sequence, total_cost_dict)
 
@@ -746,6 +773,7 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
                     [3.],
                     [3.]])
         """
+        gd.debuginfo(prj="mt", info=f'')
         _, comm_action_sequence, _ = self.shape_consistency(tensor_with_sharding_spec.sharding_spec, target_spec)
         for comm_spec in comm_action_sequence:
             tensor_with_sharding_spec = comm_spec.covert_spec_to_action(tensor_with_sharding_spec)
@@ -753,6 +781,7 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
         return tensor_with_sharding_spec
 
     def apply_for_autoparallel_runtime(self, tensor, source_spec, target_spec):
+        gd.debuginfo(prj="mt", info=f'')
         _, comm_action_sequence, _ = self.shape_consistency(source_spec, target_spec)
         for comm_spec in comm_action_sequence:
             tensor = comm_spec.covert_spec_to_action(tensor)

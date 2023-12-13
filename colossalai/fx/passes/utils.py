@@ -10,6 +10,7 @@ def get_comm_size(prev_partition, next_partition):
     Given two partitions (parent and child),
     calculate the communication size between the two.
     """
+    gd.debuginfo(prj="mt", info=f'')
     # Keep tracking the communication size between parent and child
     comm_size = 0
     # Keep tracking all the counted node
@@ -36,6 +37,7 @@ def get_leaf(graph: Graph):
     Note: If we remove ``root`` nodes, ``placeholder`` nodes, and ``output`` nodes from fx graph,
     we will get a normal DAG. Leaf nodes in this context means leaf nodes in that DAG.
     """
+    gd.debuginfo(prj="mt", info=f'')
     input_nodes: Dict[Node, None] = {}
     for node in graph.nodes:
         if node.op == "output":
@@ -60,6 +62,7 @@ def get_top(graph: Graph):
     Note: If we remove ``root`` nodes, ``placeholder`` nodes, and ``output`` nodes from fx graph,
     we will get a normal DAG. Top nodes in this context means nodes with BFS level 0 in that DAG.
     """
+    gd.debuginfo(prj="mt", info=f'')
     top_node_list = set()
     for node in graph.nodes:
         if node.op == "output":
@@ -89,6 +92,7 @@ def get_all_consumers(graph: Graph, node: Node):
     Returns:
         List of ``Nodes`` that node appear in these nodes ``args`` and ``kwargs``.
     """
+    gd.debuginfo(prj="mt", info=f'')
     consumer_list = []
     for n in graph.nodes:
         if node in n.all_input_nodes:
@@ -138,6 +142,7 @@ def assign_bfs_level_to_nodes(graph: Graph):
         linear4 1
         linear5 2
     """
+    gd.debuginfo(prj="mt", info=f'')
     current_level = 0
     nodes_to_process = []
 
@@ -166,7 +171,7 @@ def get_node_module(node) -> torch.nn.Module:
     Returns:
         torch.nn.Module: the module associated with the given node
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     assert (
         node.graph.owning_module is not None
     ), "Cannot find the owning_module for node.graph, please make sure the graph is associated with a GraphModule object"

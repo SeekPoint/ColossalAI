@@ -26,8 +26,10 @@ def torch_nn_normalize(
     has_affine = self.weight is not None
     if self.training:
         flops = input.numel() * (2 if has_affine else 1)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         flops = input.numel() * (5 if has_affine else 4)
+        gd.debuginfo(prj="mt", info=f'')
     macs = 0
     return flops, macs
 

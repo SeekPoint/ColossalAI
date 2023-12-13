@@ -11,11 +11,13 @@ _COLOSSAL_MODULES: Dict[type, ColoModule] = {}
 
 
 def register_colo_module(module_type: type, colo_module: ColoModule):
+    gd.debuginfo(prj="mt", info=f'')
     global _COLOSSAL_MODULES
     _COLOSSAL_MODULES[module_type] = colo_module
 
 
 def is_colo_module(module: torch.nn.Module):
+    gd.debuginfo(prj="mt", info=f'')
     global _COLOSSAL_MODULES
     for module_type in _COLOSSAL_MODULES.keys():
         if isinstance(module, module_type):
@@ -24,6 +26,7 @@ def is_colo_module(module: torch.nn.Module):
 
 
 def get_colo_module(module: torch.nn.Module):
+    gd.debuginfo(prj="mt", info=f'')
     global _COLOSSAL_MODULES
     if is_colo_module(module):
         for module_type, colo_module in _COLOSSAL_MODULES.items():
@@ -34,6 +37,7 @@ def get_colo_module(module: torch.nn.Module):
 
 
 def check_colo_module(module: torch.nn.Module, pg: ProcessGroup, recursive=True):
+    gd.debuginfo(prj="mt", info=f'')
     if is_colo_module(module):
         colo_module = get_colo_module(module)
         param_names = colo_module.get_param_names()
@@ -88,6 +92,7 @@ def check_colo_module(module: torch.nn.Module, pg: ProcessGroup, recursive=True)
 def init_colo_module(
     module: torch.nn.Module, compute_spec: ComputeSpec, pg: ProcessGroup, recursive=True, mode="default"
 ):
+    gd.debuginfo(prj="mt", info=f'')
     compute_pattern = compute_spec.compute_pattern
     if is_colo_module(module):
         # for each param

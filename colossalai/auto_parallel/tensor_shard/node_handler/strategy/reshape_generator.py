@@ -26,9 +26,11 @@ class ReshapeGenerator(FollowingStrategyGenerator):
     """
 
     def validate(self) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         return super().validate()
 
     def update_compute_cost(self, strategy: ShardingStrategy):
+        gd.debuginfo(prj="mt", info=f'')
         compute_cost = TrainCycleItem(fwd=10, bwd=10, total=20)
         strategy.compute_cost = compute_cost
 
@@ -36,6 +38,7 @@ class ReshapeGenerator(FollowingStrategyGenerator):
         """
         Compute the memory cost per device with this specific strategy.
         """
+        gd.debuginfo(prj="mt", info=f'')
         forward_size_mapping = {
             "input": self._compute_size_in_bytes(strategy, "input"),
             "output": self._compute_size_in_bytes(strategy, "output"),
@@ -63,6 +66,7 @@ class ReshapeGenerator(FollowingStrategyGenerator):
         strategy.memory_cost = memory_cost
 
     def collate_strategies(self) -> List[ShardingStrategy]:
+        gd.debuginfo(prj="mt", info=f'')
         return super().collate_strategies()
 
 
@@ -72,6 +76,7 @@ class ViewGenerator(ReshapeGenerator):
     """
 
     def collate_strategies(self) -> List[ShardingStrategy]:
+        gd.debuginfo(prj="mt", info=f'')
         strategy_list = []
         for index, strategy in enumerate(self.predecessor_node.strategies_vector):
             dim_partition_dict_mapping = {}
@@ -104,13 +109,16 @@ class ViewGenerator(ReshapeGenerator):
             # because in solver, this node will be merged into other nodes, and solver will not create a new variable for this node.
             if keep_sharding_status:
                 name = f'{sharding_spec_mapping["input"].sharding_sequence} -> {sharding_spec_mapping["output"].sharding_sequence}_{index}'
+                gd.debuginfo(prj="mt", info=f'name={name}')
             else:
                 name = f'{sharding_spec_mapping["input"].sharding_sequence} -> FULLY REPLICATED_{index}'
+                gd.debuginfo(prj="mt", info=f'name={name}')
 
                 # add comm action for converting input to fully replicated
                 total_mesh_dim_list = []
                 for mesh_dim_list in dim_partition_dict_for_input.values():
                     total_mesh_dim_list.extend(mesh_dim_list)
+
                 # if there is only one sharding dimension, we should use the value instead of list as logical_process_axis.
                 if len(total_mesh_dim_list) == 1:
                     total_mesh_dim_list = total_mesh_dim_list[0]
@@ -159,6 +167,7 @@ class PermuteGenerator(ReshapeGenerator):
 
     def collate_strategies(self) -> List[ShardingStrategy]:
         strategy_list = []
+        gd.debuginfo(prj="mt", info=f'')
         for index, strategy in enumerate(self.predecessor_node.strategies_vector):
             dim_partition_dict_mapping = {}
             communication_action_mapping = {}
@@ -181,6 +190,7 @@ class PermuteGenerator(ReshapeGenerator):
             # we keep same strategies with different name for node merging, and it will not increase the searching space,
             # because in solver, this node will be merged into other nodes, and solver will not create a new variable for this node.
             name = f'{sharding_spec_mapping["input"].sharding_sequence} -> {sharding_spec_mapping["output"].sharding_sequence}_{index}'
+            gd.debuginfo(prj="mt", info=f'name={name}')
 
             strategy = self.get_sharding_strategy(
                 name=name,
@@ -198,6 +208,7 @@ class TransposeGenerator(ReshapeGenerator):
     """
 
     def collate_strategies(self) -> List[ShardingStrategy]:
+        gd.debuginfo(prj="mt", info=f'')
         strategy_list = []
         for index, strategy in enumerate(self.predecessor_node.strategies_vector):
             dim_partition_dict_mapping = {}
@@ -227,6 +238,7 @@ class TransposeGenerator(ReshapeGenerator):
             # we keep same strategies with different name for node merging, and it will not increase the searching space,
             # because in solver, this node will be merged into other nodes, and solver will not create a new variable for this node.
             name = f'{sharding_spec_mapping["input"].sharding_sequence} -> {sharding_spec_mapping["output"].sharding_sequence}_{index}'
+            gd.debuginfo(prj="mt", info=f'name={name}')
 
             strategy = self.get_sharding_strategy(
                 name=name,
@@ -244,6 +256,7 @@ class SplitGenerator(ReshapeGenerator):
     """
 
     def collate_strategies(self) -> List[ShardingStrategy]:
+        gd.debuginfo(prj="mt", info=f'')
         strategy_list = []
         for index, strategy in enumerate(self.predecessor_node.strategies_vector):
             recover_dims = None
@@ -269,6 +282,7 @@ class SplitGenerator(ReshapeGenerator):
             # we keep same strategies with different name for node merging, and it will not increase the searching space,
             # because in solver, this node will be merged into other nodes, and solver will not create a new variable for this node.
             name = f'{sharding_spec_mapping["input"].sharding_sequence}_{index}'
+            gd.debuginfo(prj="mt", info=f'name={name}')
 
             # add comm action if the input need to be recovered to replica in the split dimension.
             if recover_dims:
@@ -318,6 +332,7 @@ class DefaultReshapeGenerator(ReshapeGenerator):
     """
 
     def collate_strategies(self) -> List[ShardingStrategy]:
+        gd.debuginfo(prj="mt", info=f'')
         strategy_list = []
         # For default reshape strategy, to keep the computing correctness we keep the
         # sharding spec of input is fully replicated. In addition, we will keep the output
@@ -341,6 +356,7 @@ class DefaultReshapeGenerator(ReshapeGenerator):
             # we keep same strategies with different name for node merging, and it will not increase the searching space,
             # because in solver, this node will be merged into other nodes, and solver will not create a new variable for this node.
             name = f'{sharding_spec_mapping["input"].sharding_sequence} -> FULLY REPLICATED_{index}'
+            gd.debuginfo(prj="mt", info=f'name={name}')
 
             total_mesh_dim_list = []
             for mesh_dim_list in dim_partition_dict_for_input.values():

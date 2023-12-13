@@ -48,6 +48,7 @@ class CommSpec:
         self.shard_dim = shard_dim
         self.logical_process_axis = logical_process_axis
         self.process_group_dict = process_group_dict
+        gd.debuginfo(prj="mt", info=f'')
 
     def __repr__(self):
         res_list = ["CommSpec:("]
@@ -85,8 +86,10 @@ class CommSpec:
         """
         if self.comm_pattern in pattern_to_func_dict:
             tensor = pattern_to_func_dict[self.comm_pattern](tensor, self)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             tensor = tensor
+            gd.debuginfo(prj="mt", info=f'')
         return tensor
 
 
@@ -101,6 +104,8 @@ def _all_gather(tensor: torch.Tensor, comm_spec: CommSpec):
     tensor = tensor.contiguous()
     dist.all_gather(tensor_list, tensor, group=process_group)
     output = torch.cat(tuple(tensor_list), comm_spec.gather_dim).contiguous()
+    gd.debuginfo(prj="mt", info=f'')
+
     return output
 
 
@@ -113,6 +118,9 @@ def _split(tensor: torch.Tensor, comm_spec: CommSpec):
     length = tensor.shape[comm_spec.shard_dim] // dist.get_world_size(process_group)
     start = length * dist.get_rank(process_group)
     output = torch.narrow(tensor, dim, start, length).contiguous()
+
+    gd.debuginfo(prj="mt", info=f'')
+
     return output
 
 
@@ -132,6 +140,9 @@ def _all_to_all(tensor: torch.Tensor, comm_spec: CommSpec):
     group = process_group
     dist.all_to_all(output_tensor_list, input_tensor_list, group)
     output = torch.cat(tuple(output_tensor_list), comm_spec.gather_dim).contiguous()
+
+    gd.debuginfo(prj="mt", info=f'')
+
     return output
 
 
@@ -143,6 +154,8 @@ def _all_reduce(tensor: torch.Tensor, comm_spec: CommSpec, async_op: bool = Fals
     if not tensor.is_contiguous():
         tensor = tensor.contiguous()
     dist.all_reduce(tensor, op=ReduceOp.SUM, group=process_group, async_op=async_op)
+    gd.debuginfo(prj="mt", info=f'')
+
     return tensor
 
 
@@ -158,15 +171,18 @@ class _ReduceGrad(torch.autograd.Function):
 
     @staticmethod
     def symbolic(graph, input_):
+        gd.debuginfo(prj="mt", info=f'')
         return input_
 
     @staticmethod
     def forward(ctx, input_, comm_spec):
         ctx.comm_spec = comm_spec
+        gd.debuginfo(prj="mt", info=f'')
         return input_
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return _all_reduce(grad_output, ctx.comm_spec), None
 
 
@@ -182,14 +198,17 @@ class _ReduceInput(torch.autograd.Function):
 
     @staticmethod
     def symbolic(graph, input_):
+        gd.debuginfo(prj="mt", info=f'')
         return _all_reduce(input_)
 
     @staticmethod
     def forward(ctx, input_, comm_spec):
+        gd.debuginfo(prj="mt", info=f'')
         return _all_reduce(input_, comm_spec)
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return grad_output, None
 
 
@@ -205,15 +224,18 @@ class _SplitForwardGatherBackward(torch.autograd.Function):
 
     @staticmethod
     def symbolic(graph, input_):
+        gd.debuginfo(prj="mt", info=f'')
         return _split(input_)
 
     @staticmethod
     def forward(ctx, input_, comm_spec):
         ctx.comm_spec = comm_spec
+        gd.debuginfo(prj="mt", info=f'')
         return _split(input_, comm_spec)
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return _all_gather(grad_output, ctx.comm_spec), None
 
 
@@ -229,15 +251,18 @@ class _GatherForwardSplitBackward(torch.autograd.Function):
 
     @staticmethod
     def symbolic(graph, input_):
+        gd.debuginfo(prj="mt", info=f'')
         return _all_gather(input_)
 
     @staticmethod
     def forward(ctx, input_, comm_spec):
         ctx.comm_spec = comm_spec
+        gd.debuginfo(prj="mt", info=f'')
         return _all_gather(input_, comm_spec)
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return _split(grad_output, ctx.comm_spec), None
 
 
@@ -253,11 +278,14 @@ class _AllToAll(torch.autograd.Function):
 
     @staticmethod
     def symbolic(graph, input_):
+        gd.debuginfo(prj="mt", info=f'')
         return _all_to_all(input_)
 
     @staticmethod
     def forward(ctx, input_, comm_spec):
         output = _all_to_all(input_, comm_spec)
+        gd.debuginfo(prj="mt", info=f'')
+
         comm_spec_for_backward = CommSpec(
             comm_pattern=comm_spec.comm_pattern,
             process_group_dict=comm_spec.process_group_dict,
@@ -270,26 +298,32 @@ class _AllToAll(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_outputs):
+        gd.debuginfo(prj="mt", info=f'')
         return _all_to_all(grad_outputs, ctx.comm_spec), None
 
 
 def reduce_grad(input_, comm_spec):
+    gd.debuginfo(prj="mt", info=f'')
     return _ReduceGrad.apply(input_, comm_spec)
 
 
 def reduce_input(input_, comm_spec):
+    gd.debuginfo(prj="mt", info=f'')
     return _ReduceInput.apply(input_, comm_spec)
 
 
 def split_forward_gather_backward(input_, comm_spec):
+    gd.debuginfo(prj="mt", info=f'')
     return _SplitForwardGatherBackward.apply(input_, comm_spec)
 
 
 def gather_forward_split_backward(input_, comm_spec):
+    gd.debuginfo(prj="mt", info=f'')
     return _GatherForwardSplitBackward.apply(input_, comm_spec)
 
 
 def all_to_all(input_, comm_spec):
+    gd.debuginfo(prj="mt", info=f'')
     return _AllToAll.apply(input_, comm_spec)
 
 

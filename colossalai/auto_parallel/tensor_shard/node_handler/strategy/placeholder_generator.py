@@ -21,13 +21,16 @@ class PlaceholderGenerator(StrategyGenerator):
     def __init__(
         self, operation_data_mapping: Dict[str, OperationData], device_mesh: DeviceMesh, placeholder_option: str
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(operation_data_mapping, device_mesh)
         self.placeholder_option = placeholder_option
 
     def validate(self) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         return super().validate()
 
     def update_compute_cost(self, strategy: ShardingStrategy):
+        gd.debuginfo(prj="mt", info=f'')
         compute_cost = TrainCycleItem(fwd=10, bwd=10, total=20)
         strategy.compute_cost = compute_cost
 
@@ -35,6 +38,7 @@ class PlaceholderGenerator(StrategyGenerator):
         """
         Compute the memory cost per device with this specific strategy.
         """
+        gd.debuginfo(prj="mt", info=f'')
         forward_size_mapping = {"output": self._compute_size_in_bytes(strategy, "output")}
 
         # compute fwd cost incurred
@@ -53,6 +57,7 @@ class PlaceholderGenerator(StrategyGenerator):
         """
         Generate replica strategy for placeholder node.
         """
+        gd.debuginfo(prj="mt", info=f'')
         dim_partition_dict_mapping = {
             "output": {},
         }
@@ -73,6 +78,7 @@ class PlaceholderGenerator(StrategyGenerator):
         """
         Generate distributed strategy for placeholder node.
         """
+        gd.debuginfo(prj="mt", info=f'')
         dim_partition_dict_mapping = {
             "output": {0: mesh_list},
         }
@@ -95,11 +101,13 @@ class PlaceholderGenerator(StrategyGenerator):
             mesh_list = [0, 1]
             distributed_strategy = self.distributed_placeholder(mesh_list)
             strategy_list.append(distributed_strategy)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             assert (
                 self.placeholder_option == "replicated"
             ), f"placeholder_option {self.placeholder_option} is not supported"
             replicated_strategy = self.replica_placeholder()
             strategy_list.append(replicated_strategy)
+            gd.debuginfo(prj="mt", info=f'')
 
         return strategy_list

@@ -41,6 +41,7 @@ class LLamaSmoothquantAttention(nn.Module):
         hidden_size: int,
         num_heads: int,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.hidden_size = hidden_size
         self.num_heads = num_heads
@@ -72,6 +73,7 @@ class LLamaSmoothquantAttention(nn.Module):
         self.num_key_value_heads = num_heads
 
     def _init_rope(self):
+        gd.debuginfo(prj="mt", info=f'')
         self.rotary_emb = LlamaRotaryEmbedding(
             self.head_dim,
             max_position_embeddings=2048,
@@ -89,6 +91,7 @@ class LLamaSmoothquantAttention(nn.Module):
         k_rotary_output_scale: float,
         out_input_scale: float,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         int8_module = LLamaSmoothquantAttention(module.hidden_size, module.num_heads)
 
         int8_module.attn_input_scale = torch.tensor([attn_input_scale])
@@ -110,6 +113,7 @@ class LLamaSmoothquantAttention(nn.Module):
         return int8_module
 
     def _shape(self, tensor: torch.Tensor, seq_len: int, bsz: int):
+        gd.debuginfo(prj="mt", info=f'')
         return tensor.view(bsz, seq_len, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
 
     @torch.no_grad()
@@ -125,6 +129,7 @@ class LLamaSmoothquantAttention(nn.Module):
         padding_mask: Optional[torch.LongTensor] = None,
         infer_state: Optional[BatchInferState] = None,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
+        gd.debuginfo(prj="mt", info=f'')
         bsz, q_len, _ = hidden_states.size()
 
         query_states = self.q_proj(hidden_states)
@@ -185,9 +190,10 @@ class LLamaSmoothquantAttention(nn.Module):
                 infer_state.seq_len,
                 q_len,
             )
-
+            gd.debuginfo(prj="mt", info=f'')
         else:
             if infer_state.decode_is_contiguous:
+                gd.debuginfo(prj="mt", info=f'')
                 # if decode is contiguous, then we copy to key cache and value cache in cache manager directly
                 cache_k = infer_state.cache_manager.key_buffer[infer_state.decode_layer_id][
                     infer_state.decode_mem_start : infer_state.decode_mem_end, :, :
@@ -198,6 +204,7 @@ class LLamaSmoothquantAttention(nn.Module):
                 cache_k.copy_(key_states)
                 cache_v.copy_(value_states)
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 # if decode is not contiguous, use triton kernel to copy key and value cache
                 # k, v shape: [batch_size, num_heads, head_dim/embed_size_per_head
                 _copy_kv_to_mem_cache(
@@ -234,18 +241,21 @@ class LLamaSmoothquantAttention(nn.Module):
 
 class LlamaLayerNormQ(torch.nn.Module):
     def __init__(self, dim, eps=1e-5):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.input_scale = 1.0
         self.variance_epsilon = eps
         self.register_buffer("weight", torch.ones(dim, dtype=torch.float32))
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         ln_output_fp = torch.nn.functional.layer_norm(x, x.shape[-1:], self.weight, None, self.variance_epsilon)
         ln_output_int8 = ln_output_fp.round().clamp(-128, 127).to(torch.int8)
         return ln_output_int8
 
     @staticmethod
     def from_float(module: torch.nn.LayerNorm, output_scale: float):
+        gd.debuginfo(prj="mt", info=f'')
         assert module.weight.shape[0] == module.weight.numel()
         q_module = LlamaLayerNormQ(module.weight.shape[0], module.variance_epsilon)
         q_module.weight = module.weight / output_scale
@@ -254,6 +264,7 @@ class LlamaLayerNormQ(torch.nn.Module):
 
 class LlamaSmoothquantMLP(nn.Module):
     def __init__(self, intermediate_size, hidden_size):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.gate_proj = W8A8BFP32O32LinearSiLU(hidden_size, intermediate_size)
         self.up_proj = W8A8BFP32OFP32Linear(hidden_size, intermediate_size)
@@ -267,6 +278,7 @@ class LlamaSmoothquantMLP(nn.Module):
         up_proj_input_scale: float,
         down_proj_input_scale: float,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         int8_module = LlamaSmoothquantMLP(
             mlp_module.intermediate_size,
             mlp_module.hidden_size,
@@ -282,6 +294,7 @@ class LlamaSmoothquantMLP(nn.Module):
         self,
         hidden_states: torch.Tensor,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         x_shape = hidden_states.shape
         gate_out = self.gate_proj(hidden_states)
         up_out = self.up_proj(hidden_states)
@@ -294,6 +307,7 @@ class LlamaSmoothquantMLP(nn.Module):
 
 class LlamaSmoothquantDecoderLayer(nn.Module):
     def __init__(self, config: LlamaConfig):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.hidden_size = config.hidden_size
         self.self_attn = LLamaSmoothquantAttention(config.hidden_size, config.num_attention_heads)
@@ -317,6 +331,7 @@ class LlamaSmoothquantDecoderLayer(nn.Module):
         up_input_scale: float,
         down_input_scale: float,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         config = module.self_attn.config
         int8_decoder_layer = LlamaSmoothquantDecoderLayer(config)
 
@@ -370,7 +385,7 @@ class LlamaSmoothquantDecoderLayer(nn.Module):
                 (see `past_key_values`).
             past_key_value (`Tuple(torch.FloatTensor)`, *optional*): cached past key and value projection states
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         residual = hidden_states
 
         hidden_states = self.input_layernorm(hidden_states)
@@ -404,6 +419,7 @@ class LlamaApplyRotary(nn.Module):
         super().__init__()
 
     def forward(self, x, cos, sin, position_ids):
+        gd.debuginfo(prj="mt", info=f'')
         # The first two dimensions of cos and sin are always 1, so we can `squeeze` them.
         cos = cos.squeeze(1).squeeze(0)  # [seq_len, dim]
         sin = sin.squeeze(1).squeeze(0)  # [seq_len, dim]
@@ -425,9 +441,12 @@ def llama_decoder_layer_forward(
     use_cache: bool = False,
     padding_mask: Optional[torch.LongTensor] = None,
 ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
+    gd.debuginfo(prj="mt", info=f'')
+
     bsz, q_len, _ = hidden_states.size()
 
     if self.config.pretraining_tp > 1:
+        gd.debuginfo(prj="mt", info=f'')
         key_value_slicing = (self.num_key_value_heads * self.head_dim) // self.config.pretraining_tp
         query_slices = self.q_proj.weight.split((self.num_heads * self.head_dim) // self.config.pretraining_tp, dim=0)
         key_slices = self.k_proj.weight.split(key_value_slicing, dim=0)
@@ -443,6 +462,7 @@ def llama_decoder_layer_forward(
         value_states = torch.cat(value_states, dim=-1)
 
     else:
+        gd.debuginfo(prj="mt", info=f'')
         query_states = self.q_proj(hidden_states)
         key_states = self.k_proj(hidden_states)
         value_states = self.v_proj(hidden_states)
@@ -454,11 +474,14 @@ def llama_decoder_layer_forward(
     kv_seq_len = key_states.shape[-2]
     if past_key_value is not None:
         kv_seq_len += past_key_value[0].shape[-2]
+        gd.debuginfo(prj="mt", info=f'')
+
     cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len)
     query_states = self.q_apply_rotary(query_states, cos, sin, position_ids)
     key_states = self.k_apply_rotary(key_states, cos, sin, position_ids)
 
     if past_key_value is not None:
+        gd.debuginfo(prj="mt", info=f'')
         # reuse k, v, self_attention
         key_states = torch.cat([past_key_value[0], key_states], dim=2)
         value_states = torch.cat([past_key_value[1], value_states], dim=2)
@@ -501,11 +524,14 @@ def llama_decoder_layer_forward(
         attn_output = attn_output.split(self.hidden_size // self.config.pretraining_tp, dim=2)
         o_proj_slices = self.o_proj.weight.split(self.hidden_size // self.config.pretraining_tp, dim=1)
         attn_output = sum([F.linear(attn_output[i], o_proj_slices[i]) for i in range(self.config.pretraining_tp)])
+        gd.debuginfo(prj="mt", info=f'')
     else:
         attn_output = self.o_proj(attn_output)
+        gd.debuginfo(prj="mt", info=f'')
 
     if not output_attentions:
         attn_weights = None
+        gd.debuginfo(prj="mt", info=f'')
 
     return attn_output, attn_weights, past_key_value
 
@@ -520,15 +546,20 @@ def init_to_get_rotary(config, base=10000, use_elem=False):
     config.head_dim_ = config.hidden_size // config.num_attention_heads
     if not hasattr(config, "rope_scaling"):
         rope_scaling_factor = 1.0
+        gd.debuginfo(prj="mt", info=f'')
     else:
         rope_scaling_factor = config.rope_scaling.factor if config.rope_scaling is not None else 1.0
+        gd.debuginfo(prj="mt", info=f'')
 
     if hasattr(config, "max_sequence_length"):
         max_seq_len = config.max_sequence_length
+        gd.debuginfo(prj="mt", info=f'')
     elif hasattr(config, "max_position_embeddings"):
         max_seq_len = config.max_position_embeddings * rope_scaling_factor
+        gd.debuginfo(prj="mt", info=f'')
     else:
         max_seq_len = 2048 * rope_scaling_factor
+        gd.debuginfo(prj="mt", info=f'')
     base = float(base)
 
     # NTK  ref: https://www.reddit.com/r/LocalLLaMA/comments/14lz7j5/ntkaware_scaled_rope_allows_llama_models_to_have/
@@ -569,6 +600,7 @@ def llama_model_forward(
     output_hidden_states: Optional[bool] = None,
     return_dict: Optional[bool] = None,
 ) -> Union[Tuple, BaseModelOutputWithPast]:
+    gd.debuginfo(prj="mt", info=f'')
     output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
     output_hidden_states = (
         output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
@@ -582,16 +614,20 @@ def llama_model_forward(
         raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
     elif input_ids is not None:
         batch_size, seq_length = input_ids.shape
+        gd.debuginfo(prj="mt", info=f'')
     elif inputs_embeds is not None:
         batch_size, seq_length, _ = inputs_embeds.shape
+        gd.debuginfo(prj="mt", info=f'')
     else:
         raise ValueError("You have to specify either input_ids or inputs_embeds")
 
     infer_state = self.infer_state
     if infer_state.is_context_stage:
         past_key_values_length = 0
+        gd.debuginfo(prj="mt", info=f'')
     else:
         past_key_values_length = infer_state.max_len_in_batch - 1
+        gd.debuginfo(prj="mt", info=f'')
 
     seq_length_with_past = seq_length + past_key_values_length
 
@@ -604,6 +640,7 @@ def llama_model_forward(
         infer_state.init_block_loc(
             infer_state.block_loc, infer_state.seq_len, seq_length, infer_state.context_mem_index
         )
+        gd.debuginfo(prj="mt", info=f'')
     else:
         alloc_mem = infer_state.cache_manager.alloc_contiguous(batch_size)
         if alloc_mem is not None:
@@ -612,6 +649,7 @@ def llama_model_forward(
             infer_state.decode_mem_start = alloc_mem[1]
             infer_state.decode_mem_end = alloc_mem[2]
             infer_state.block_loc[:, seq_length_with_past - 1] = infer_state.decode_mem_index
+            gd.debuginfo(prj="mt", info=f'')
         else:
             print(f" *** Encountered allocation non-contiguous")
             print(f"    infer_state.cache_manager.max_len_in_batch: {infer_state.max_len_in_batch}")
@@ -619,6 +657,7 @@ def llama_model_forward(
             alloc_mem = infer_state.cache_manager.alloc(batch_size)
             infer_state.decode_mem_index = alloc_mem
             infer_state.block_loc[:, seq_length_with_past - 1] = infer_state.decode_mem_index
+            gd.debuginfo(prj="mt", info=f'')
 
     if position_ids is None:
         device = input_ids.device if input_ids is not None else inputs_embeds.device
@@ -626,20 +665,26 @@ def llama_model_forward(
             past_key_values_length, seq_length + past_key_values_length, dtype=torch.long, device=device
         )
         position_ids = position_ids.unsqueeze(0).view(-1, seq_length)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         position_ids = position_ids.view(-1, seq_length).long()
+        gd.debuginfo(prj="mt", info=f'')
 
     if inputs_embeds is None:
         inputs_embeds = self.embed_tokens(input_ids)
+        gd.debuginfo(prj="mt", info=f'')
     # embed positions
     if attention_mask is None:
         attention_mask = torch.ones((batch_size, seq_length_with_past), dtype=torch.bool, device=inputs_embeds.device)
         padding_mask = None
+        gd.debuginfo(prj="mt", info=f'')
     else:
         if 0 in attention_mask:
             padding_mask = attention_mask
+            gd.debuginfo(prj="mt", info=f'')
         else:
             padding_mask = None
+            gd.debuginfo(prj="mt", info=f'')
 
     attention_mask = self._prepare_decoder_attention_mask(
         attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length
@@ -657,9 +702,11 @@ def llama_model_forward(
         position_sin = torch.index_select(self._sin_cached, 0, position_ids.view(-1)).view(
             position_ids.view(-1).shape[0], -1
         )
+        gd.debuginfo(prj="mt", info=f'')
     else:
         position_cos = torch.index_select(self._cos_cached, 0, position_ids.view(-1)).view(batch_size, -1)
         position_sin = torch.index_select(self._sin_cached, 0, position_ids.view(-1)).view(batch_size, -1)
+        gd.debuginfo(prj="mt", info=f'')
 
     # decoder layers
     all_hidden_states = () if output_hidden_states else None
@@ -706,6 +753,7 @@ def llama_model_forward(
 
     next_cache = next_decoder_cache if use_cache else None
     if not return_dict:
+        gd.debuginfo(prj="mt", info=f'')
         return tuple(v for v in [hidden_states, next_cache, all_hidden_states, all_self_attns] if v is not None)
     return BaseModelOutputWithPast(
         last_hidden_state=hidden_states,
@@ -719,6 +767,7 @@ class SmoothLlamaForCausalLM(BaseSmoothForCausalLM):
     layer_type = "LlamaDecoderLayer"
 
     def __init__(self, model: PreTrainedModel, quantized: bool = False):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(model, quantized)
 
     # Adatped from https://github.com/mit-han-lab/smoothquant/blob/main/smoothquant/calibration.py
@@ -729,6 +778,7 @@ class SmoothLlamaForCausalLM(BaseSmoothForCausalLM):
         num_samples=512,
         seq_len=512,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         llama_model = self.model
 
         llama_model.eval()
@@ -737,6 +787,7 @@ class SmoothLlamaForCausalLM(BaseSmoothForCausalLM):
         act_dict = defaultdict(dict)
 
         def stat_io_hook(m, x, y, name):
+            gd.debuginfo(prj="mt", info=f'')
             if isinstance(x, tuple):
                 x = x[0]
             if name not in act_dict or "input" not in act_dict[name]:
@@ -770,6 +821,7 @@ class SmoothLlamaForCausalLM(BaseSmoothForCausalLM):
         return act_dict
 
     def smooth_fn(self, scales, alpha=0.5):
+        gd.debuginfo(prj="mt", info=f'')
         model = self.model
         for name, module in model.named_modules():
             if isinstance(module, LlamaDecoderLayer):
@@ -779,6 +831,7 @@ class SmoothLlamaForCausalLM(BaseSmoothForCausalLM):
                 self.smooth_ln_fcs(attn_ln, qkv, qkv_input_scales, alpha)
 
     def create_quantized_model(model):
+        gd.debuginfo(prj="mt", info=f'')
         llama_config = model.config
         for i, layer in enumerate(model.model.layers):
             model.model.layers[i] = LlamaSmoothquantDecoderLayer(llama_config)
@@ -796,6 +849,7 @@ class SmoothLlamaForCausalLM(BaseSmoothForCausalLM):
         seq_len=512,
         alpha=0.5,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         llama_model = self.model
         llama_config = llama_model.config
 

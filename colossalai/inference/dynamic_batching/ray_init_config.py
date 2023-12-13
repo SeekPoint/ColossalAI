@@ -35,6 +35,7 @@ class RayInitConfig(BaseModel):
 
     @classmethod
     def from_yaml_path(cls, path: str):
+        gd.debuginfo(prj="mt", info=f'')
         try:
             with open(path, "r") as yaml_file:
                 try:

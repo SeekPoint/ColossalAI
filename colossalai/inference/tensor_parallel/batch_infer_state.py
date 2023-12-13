@@ -36,11 +36,13 @@ class BatchInferState:
 
     @property
     def total_token_num(self):
+        gd.debuginfo(prj="mt", info=f'')
         # return self.batch_size * self.max_len_in_batch
         assert self.seq_len is not None and self.seq_len.size(0) > 0
         return int(torch.sum(self.seq_len))
 
     def set_cache_manager(self, manager: MemoryManager):
+        gd.debuginfo(prj="mt", info=f'')
         self.cache_manager = manager
 
     # adapted from: https://github.com/ModelTC/lightllm/blob/28c1267cfca536b7b4f28e921e03de735b003039/lightllm/common/infer_utils.py#L1
@@ -48,6 +50,7 @@ class BatchInferState:
     def init_block_loc(
         b_loc: torch.Tensor, seq_len: torch.Tensor, max_len_in_batch: int, alloc_mem_index: torch.Tensor
     ):
+        gd.debuginfo(prj="mt", info=f'')
         """in-place update block loc mapping based on the sequence length of the inputs in current bath"""
         start_index = 0
         seq_len_numpy = seq_len.cpu().numpy()
@@ -66,6 +69,7 @@ class BatchInferState:
         max_output_len: int,
         cache_manager: MemoryManager,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         if not isinstance(batch, (BatchEncoding, dict, list, torch.Tensor)):
             raise TypeError(f"batch type {type(batch)} is not supported in prepare_batch_state")
 
@@ -75,11 +79,14 @@ class BatchInferState:
         if isinstance(batch, (BatchEncoding, dict)):
             input_ids_list = batch["input_ids"]
             attention_mask = batch["attention_mask"]
+            gd.debuginfo(prj="mt", info=f'')
         else:
             input_ids_list = batch
+            gd.debuginfo(prj="mt", info=f'')
         if isinstance(input_ids_list[0], int):  # for a single input
             input_ids_list = [input_ids_list]
             attention_mask = [attention_mask] if attention_mask is not None else attention_mask
+            gd.debuginfo(prj="mt", info=f'')
 
         batch_size = len(input_ids_list)
 
@@ -95,6 +102,7 @@ class BatchInferState:
                 seq_start_indexes[i] = start_index
                 start_index += curr_seq_len
                 max_len_in_batch = curr_seq_len if curr_seq_len > max_len_in_batch else max_len_in_batch
+            gd.debuginfo(prj="mt", info=f'')
         else:
             length = max(len(input_id) for input_id in input_ids_list)
             for i, input_ids in enumerate(input_ids_list):
@@ -103,6 +111,7 @@ class BatchInferState:
                 seq_start_indexes[i] = start_index
                 start_index += curr_seq_len
                 max_len_in_batch = curr_seq_len if curr_seq_len > max_len_in_batch else max_len_in_batch
+            gd.debuginfo(prj="mt", info=f'')
         block_loc = torch.zeros((batch_size, max_input_len + max_output_len), dtype=torch.long, device="cuda")
 
         return cls(

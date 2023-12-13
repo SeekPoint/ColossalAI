@@ -10,6 +10,7 @@ class ModelWrapper(nn.Module):
     """
 
     def __init__(self, module: nn.Module) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.module = module
 
@@ -17,7 +18,9 @@ class ModelWrapper(nn.Module):
         """
         Unwrap the model to return the original model for checkpoint saving/loading.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if isinstance(self.module, ModelWrapper):
+            gd.debuginfo(prj="mt", info=f'')
             return self.module.unwrap()
         return self.module
 

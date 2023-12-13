@@ -29,6 +29,7 @@ def run_on_environment_flag(name: str):
         pytest test_for_something.py
 
     """
+    gd.debuginfo(prj="mt", info=f'')
     try:
         import pytest
     except ImportError:

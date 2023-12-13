@@ -32,6 +32,7 @@ class Metric(ABC):
     def __init__(self, epoch_only: bool):
         # is the metric only read for the full epoch
         self._epoch_only = epoch_only
+        gd.debuginfo(prj="mt", info=f'')
 
     @property
     def epoch_only(self):
@@ -85,6 +86,7 @@ class LossMetric(Metric):
         self.last_step_loss = torch.zeros(1, device=get_current_device())
         self.accum_loss = torch.zeros(1, device=get_current_device())
         self.count = 0
+        gd.debuginfo(prj="mt", info=f'')
 
     def reset(self) -> None:
         """Sets :attr:`last_step_loss` and :attr:`accum_loss` to zero."""
@@ -134,6 +136,7 @@ class LearningRateMetric(Metric):
     def __init__(self, epoch_only: bool, initial_lr: float = 0.0):
         super().__init__(epoch_only=epoch_only)
         self.lr = initial_lr
+        gd.debuginfo(prj="mt", info=f'')
 
     def reset(self) -> None:
         pass
@@ -168,6 +171,7 @@ class AccuracyMetric(Metric):
         self.last_step_correct = torch.zeros(1, device=get_current_device())
         self.accumulated_sum = torch.zeros(1, device=get_current_device())
         self.accumulated_correct = torch.zeros(1, device=get_current_device())
+        gd.debuginfo(prj="mt", info=f'')
 
     def reset(self) -> None:
         self.last_step_sum.zero_()
@@ -229,6 +233,7 @@ class MetricHook(BaseHook):
     ):
         super().__init__(priority)
         self._is_stage_to_compute = is_no_pp_or_last_stage()
+        gd.debuginfo(prj="mt", info=f'')
 
     def _check_metric_states_initialization(self, trainer):
         if "metrics" not in trainer.states:
@@ -247,6 +252,7 @@ class LossHook(MetricHook):
 
     def __init__(self, priority: int = 0):
         super().__init__(priority)
+        gd.debuginfo(prj="mt", info=f'')
 
     def after_hook_is_attached(self, trainer):
         self._check_metric_states_initialization(trainer)
@@ -290,6 +296,7 @@ class AccuracyHook(MetricHook):
     def __init__(self, accuracy_func: Callable, priority: int = 0):
         super().__init__(priority)
         self.accuracy_func = accuracy_func
+        gd.debuginfo(prj="mt", info=f'')
 
     def after_hook_is_attached(self, trainer):
         self._check_metric_states_initialization(trainer)
@@ -326,6 +333,7 @@ class ThroughputMetric(Metric):
         self.last_step_used_time = torch.zeros(1, device=get_current_device())
         self._tflop_per_step = tflop_per_step
         self._use_local = use_local
+        gd.debuginfo(prj="mt", info=f'')
 
     def reset(self) -> None:
         # self.cur_steps = 0
@@ -400,6 +408,7 @@ class ThroughputHook(MetricHook):
         self.ignored_steps = ignored_steps
         self._tflop_per_step = tflop_per_step
         self._use_local = use_local
+        gd.debuginfo(prj="mt", info=f'')
 
     def after_hook_is_attached(self, trainer):
         self._check_metric_states_initialization(trainer)

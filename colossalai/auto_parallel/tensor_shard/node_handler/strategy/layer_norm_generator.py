@@ -28,6 +28,7 @@ class LayerNormGenerator(StrategyGenerator):
     """
 
     def validate(self) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         return super().validate()
 
     def update_compute_cost(self, strategy: ShardingStrategy):
@@ -36,6 +37,7 @@ class LayerNormGenerator(StrategyGenerator):
 
         Note: compute_cost need to be divided by TFLOPS, now it just shows the computation size.
         """
+        gd.debuginfo(prj="mt", info=f'')
         # TODO: compute_cost need to be divided by TFLOPS, now it just shows the computation size.
         # TODO: a constant coefficient need to be added.
 
@@ -44,6 +46,8 @@ class LayerNormGenerator(StrategyGenerator):
         if self.has_bias:
             # bias add is an element wise operation, so the cost is equal to product of output shape.
             bias_compute_cost = reduce(operator.mul, sharded_weight_shape)
+            gd.debuginfo(prj="mt", info=f'')
+
         # in LayerNorm context, batch dimensions mean all the dimensions do not join the normalization.
         input_batch_shape = sharded_input_shape[: -len(sharded_weight_shape)]
         input_batch_product = reduce(operator.mul, input_batch_shape, 1)
@@ -57,6 +61,8 @@ class LayerNormGenerator(StrategyGenerator):
         if self.has_bias:
             forward_compute_cost += bias_compute_cost
             backward_compute_cost += bias_compute_cost
+            gd.debuginfo(prj="mt", info=f'')
+
         total_compute_cost = forward_compute_cost + backward_compute_cost
         compute_cost = TrainCycleItem(fwd=forward_compute_cost, bwd=backward_compute_cost, total=total_compute_cost)
         strategy.compute_cost = compute_cost
@@ -65,6 +71,7 @@ class LayerNormGenerator(StrategyGenerator):
         """
         Compute the memory cost per device with this specific strategy.
         """
+        gd.debuginfo(prj="mt", info=f'')
         forward_size_mapping = {
             "input": self._compute_size_in_bytes(strategy, "input"),
             "other": self._compute_size_in_bytes(strategy, "other"),
@@ -74,6 +81,7 @@ class LayerNormGenerator(StrategyGenerator):
         if self.has_bias:
             bias_size = self._compute_size_in_bytes(strategy, "bias")
             forward_size_mapping["bias"] = bias_size
+            gd.debuginfo(prj="mt", info=f'')
 
         backward_size_mapping = copy.deepcopy(forward_size_mapping)
         backward_size_mapping.pop("output")
@@ -98,6 +106,7 @@ class LayerNormGenerator(StrategyGenerator):
 
     @ignore_sharding_exception
     def _generate_strategy_with_dim_partition(self, dim_partition):
+        gd.debuginfo(prj="mt", info=f'')
         dim_partition_dict_mapping = {
             "input": dim_partition,
             "other": {},
@@ -105,16 +114,22 @@ class LayerNormGenerator(StrategyGenerator):
         }
         if self.has_bias:
             dim_partition_dict_mapping["bias"] = {}
+            gd.debuginfo(prj="mt", info=f'')
 
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict_mapping)
 
         name = f'{sharding_spec_mapping["output"].sharding_sequence} = {sharding_spec_mapping["input"].sharding_sequence} x {sharding_spec_mapping["other"].sharding_sequence}'
+        gd.debuginfo(prj="mt", info=f'name={name}')
+
         total_mesh_dim_list = []
         for mesh_dim_list in dim_partition.values():
             total_mesh_dim_list.extend(mesh_dim_list)
+
         # if there is only one sharding dimension, we should use the value instead of list as logical_process_axis.
         if len(total_mesh_dim_list) == 1:
             total_mesh_dim_list = total_mesh_dim_list[0]
+            gd.debuginfo(prj="mt", info=f'')
+
         communication_action_mapping = {}
 
         other_comm_action = self.get_communication_action(
@@ -133,6 +148,7 @@ class LayerNormGenerator(StrategyGenerator):
                 comm_type=CommType.HOOK,
             )
             communication_action_mapping["bias"] = bias_comm_action
+            gd.debuginfo(prj="mt", info=f'')
 
         strategy = self.get_sharding_strategy(
             name=name,
@@ -161,6 +177,8 @@ class LayerNormGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def non_split(self):
         name = f"RR = RR x R"
+        gd.debuginfo(prj="mt", info=f'name={name}')
+
         dim_partition_dict_mapping = {
             "input": {},
             "other": {},
@@ -168,6 +186,7 @@ class LayerNormGenerator(StrategyGenerator):
         }
         if self.has_bias:
             dim_partition_dict_mapping["bias"] = {}
+            gd.debuginfo(prj="mt", info=f'')
 
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict_mapping)
 
@@ -183,6 +202,8 @@ class LayerNormGenerator(StrategyGenerator):
         """
         Generate every possible strategies for a LayerNorm node, and record all strategies into the strategies_vector.
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         strategy_list = []
         input_data_dim = len(self.op_data["input"].logical_shape)
         weight_data_dim = len(self.op_data["other"].logical_shape)

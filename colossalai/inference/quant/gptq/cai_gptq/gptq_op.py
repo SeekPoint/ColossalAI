@@ -5,6 +5,7 @@ from pydebug import gd, infoTensor
 
 class CaiGPTQLinearOp(torch.nn.Module):
     def __init__(self, gptq_group_size, gptq_quant_bits):
+        gd.debuginfo(prj="mt", info=f'')
         super(CaiGPTQLinearOp, self).__init__()
         self.group_size = gptq_group_size
         self.bits = gptq_quant_bits
@@ -23,13 +24,16 @@ class CaiGPTQLinearOp(torch.nn.Module):
         residual: torch.Tensor = None,
         qkv_fused=False,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         add_bias = True
         if bias is None:
+            gd.debuginfo(prj="mt", info=f'')
             bias = self.empty_tensor
             add_bias = False
 
         add_residual = True
         if residual is None:
+            gd.debuginfo(prj="mt", info=f'')
             residual = self.empty_tensor
             add_residual = False
         x = input.view(-1, input.shape[-1])
@@ -52,7 +56,9 @@ class CaiGPTQLinearOp(torch.nn.Module):
         )
         if qkv_fused:
             out = out.view(3, input.shape[0], input.shape[1], weight.shape[-1])
+            gd.debuginfo(prj="mt", info=f'')
         else:
             out = out.view(input.shape[0], input.shape[1], weight.shape[-1])
+            gd.debuginfo(prj="mt", info=f'')
 
         return out

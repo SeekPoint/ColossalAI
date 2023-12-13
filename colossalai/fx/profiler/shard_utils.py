@@ -20,6 +20,8 @@ def calculate_fwd_in(n: Node) -> int:
     Returns:
         fwd_in (int): the result of `fwd_in`
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     # TODO(super-dainiu): should divide the memory by sharding spec
     return activation_size(n.meta["fwd_in"])
 
@@ -35,6 +37,7 @@ def calculate_fwd_tmp(n: Node) -> int:
     Returns:
         fwd_tmp (int): the result of `fwd_tmp`
     """
+    gd.debuginfo(prj="mt", info=f'')
 
     # TODO(super-dainiu): should divide the memory by sharding spec
     def is_relu_like_node(n: Node) -> bool:
@@ -59,13 +62,17 @@ def calculate_fwd_tmp(n: Node) -> int:
         Returns:
             bool: Whether the node is a ReLU-like node
         """
+        gd.debuginfo(prj="mt", info=f'')
         if n.op == "call_function":
+            gd.debuginfo(prj="mt", info=f'')
             return n.target in OUTPUT_SAVED_OPS
         elif n.op == "call_module":
+            gd.debuginfo(prj="mt", info=f'')
             return type(n.graph.owning_module.get_submodule(n.target)) in OUTPUT_SAVED_MOD
         return False
 
     if not is_relu_like_node(n):
+        gd.debuginfo(prj="mt", info=f'')
         return activation_size(n.meta["fwd_tmp"])
     return 0
 
@@ -80,6 +87,7 @@ def calculate_fwd_out(n: Node) -> int:
     Returns:
         fwd_out (int): the result of `fwd_out`
     """
+    gd.debuginfo(prj="mt", info=f'')
 
     # TODO(super-dainiu): should divide the memory by sharding spec
     def intersect(a, b):
@@ -88,6 +96,8 @@ def calculate_fwd_out(n: Node) -> int:
     fwd_in = dict()
     for u in n.users:
         fwd_in.update({x.data_ptr(): x for x in u.meta["fwd_in"] if isinstance(x, torch.Tensor)})
+        gd.debuginfo(prj="mt", info=f'')
+
     fwd_out = {x.data_ptr(): x for x in n.meta["fwd_out"] if isinstance(x, torch.Tensor)}
     return activation_size(intersect(fwd_in, fwd_out))
 
@@ -99,6 +109,8 @@ def calculate_fwd_time(n: Node) -> float:
     Returns:
         fwd_time (float): the result of `fwd_time`
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     # TODO(super-dainiu): should divide the time by the number of GPUs as well as TFLOPs
     return n.meta["fwd_time"]
 
@@ -110,5 +122,6 @@ def calculate_bwd_time(n: Node) -> float:
     Returns:
         bwd_time (float): the result of `bwd_time`
     """
+    gd.debuginfo(prj="mt", info=f'')
     # TODO(super-dainiu): should divide the time by the number of GPUs as well as TFLOPs
     return n.meta["bwd_time"]

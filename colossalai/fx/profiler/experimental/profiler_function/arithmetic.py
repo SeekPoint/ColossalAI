@@ -14,12 +14,16 @@ def _elementwise_flops_compute(input, other):
     # copied from https://github.com/microsoft/DeepSpeed/blob/master/deepspeed/profiling/flops_profiler/profiler.py#L763
     if not torch.is_tensor(input):
         if torch.is_tensor(other):
+            gd.debuginfo(prj="mt", info=f'')
             return reduce(operator.mul, other.shape), 0
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return 1, 0
     elif not torch.is_tensor(other):
+        gd.debuginfo(prj="mt", info=f'')
         return reduce(operator.mul, input.shape), 0
     else:
+        gd.debuginfo(prj="mt", info=f'')
         dim_input = len(input.shape)
         dim_other = len(other.shape)
         max_dim = max(dim_input, dim_other)
@@ -56,6 +60,7 @@ def torch_add_like_ops(input: Any, other: Any, *, out: Optional[torch.Tensor] = 
 
 @meta_profiler_function.register(torch.abs)
 def torch_elementwise_op(input: torch.Tensor, *, out: Optional[torch.Tensor] = None) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
     flops = input.numel()
     macs = 0
     return flops, macs
@@ -65,6 +70,7 @@ def torch_elementwise_op(input: torch.Tensor, *, out: Optional[torch.Tensor] = N
 @meta_profiler_function.register("matmul")  # for built-in op @
 @meta_profiler_function.register(torch.Tensor.matmul)
 def torch_matmul(input: torch.Tensor, other: torch.Tensor, *, out: Optional[torch.Tensor] = None) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
     macs = reduce(operator.mul, input.shape) * other.shape[-1]
     flops = 2 * macs
     return flops, macs
@@ -72,6 +78,7 @@ def torch_matmul(input: torch.Tensor, other: torch.Tensor, *, out: Optional[torc
 
 @meta_profiler_function.register(torch.bmm)
 def torch_bmm(input: torch.Tensor, other: torch.Tensor, *, out: Optional[torch.Tensor] = None) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
     macs = reduce(operator.mul, input.shape) * other.shape[-1]
     flops = 2 * macs
     return flops, macs
@@ -86,6 +93,7 @@ def torch_var_mean(
     *,
     out: Optional[torch.Tensor] = None,
 ) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
     assert out is None, "saving to out is not supported yet"
     flops = input.numel() * 3
     macs = 0

@@ -56,6 +56,7 @@ class Trainer:
         timer: MultiTimer = None,
         logger: DistributedLogger = None,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         # training-related params
         self._engine = engine
         self._max_epochs = 0

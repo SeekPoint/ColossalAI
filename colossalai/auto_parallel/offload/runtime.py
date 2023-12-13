@@ -21,15 +21,18 @@ class SynPreFwdPostBwdOP(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input_, fwd_info, bwd_info):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.bwd_info = bwd_info
         d2h_rid = fwd_info.get("d2h_rid", None)
         if d2h_rid is not None:
+            gd.debuginfo(prj="mt", info=f'')
             free_region = GlobalRuntimeInfo().region_list[d2h_rid]
             assert isinstance(free_region, Region)
             free_region.free_cuda_data()
 
         h2d_rid = fwd_info.get("h2d_rid", None)
         if h2d_rid is not None:
+            gd.debuginfo(prj="mt", info=f'')
             h2d_region = GlobalRuntimeInfo().region_list[h2d_rid]
             assert isinstance(h2d_region, Region)
             h2d_region.move_param_to_cuda()
@@ -38,8 +41,10 @@ class SynPreFwdPostBwdOP(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         h2d_rid = ctx.bwd_info.get("h2d_rid", None)
         if h2d_rid is not None:
+            gd.debuginfo(prj="mt", info=f'')
             pref_region = GlobalRuntimeInfo().region_list[h2d_rid]
             assert isinstance(pref_region, Region)
             pref_region.move_param_to_cuda()
@@ -61,16 +66,19 @@ class AsynPreFwdPostBwdOP(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input_, fwd_info, bwd_info):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.bwd_info = bwd_info
 
         sync_rid = fwd_info.get("sync_rid", None)
         if sync_rid is not None:
+            gd.debuginfo(prj="mt", info=f'')
             prefetch_event = GlobalRuntimeInfo().fwd_prefetch_event_map.get(sync_rid, None)
             if prefetch_event:
                 prefetch_event.wait()
 
         h2d_rid = fwd_info.get("h2d_rid", None)
         if h2d_rid is not None:
+            gd.debuginfo(prj="mt", info=f'')
             pref_region = GlobalRuntimeInfo().region_list[h2d_rid]
             assert isinstance(pref_region, Region)
             master_stream = torch.cuda.current_stream()
@@ -86,8 +94,10 @@ class AsynPreFwdPostBwdOP(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         sync_rid = ctx.bwd_info.get("sync_rid", None)
         if sync_rid is not None:
+            gd.debuginfo(prj="mt", info=f'')
             wait_region = GlobalRuntimeInfo().region_list[sync_rid]
             assert isinstance(wait_region, Region)
             prefetch_event = GlobalRuntimeInfo().bwd_prefetch_event_map.get(sync_rid, None)
@@ -98,6 +108,7 @@ class AsynPreFwdPostBwdOP(torch.autograd.Function):
 
         h2d_rid = ctx.bwd_info.get("h2d_rid", None)
         if h2d_rid is not None:
+            gd.debuginfo(prj="mt", info=f'')
             pref_region = GlobalRuntimeInfo().region_list[h2d_rid]
             assert isinstance(pref_region, Region)
             master_stream = torch.cuda.current_stream()
@@ -122,6 +133,7 @@ def convert_fwd_upload_bwd_offload_to_action(tensor, fwd_info, bwd_info):
         bwd_info(dict): information dict, which contains region indices
             that need to be uploaded during backward pass.
     """
+    gd.debuginfo(prj="mt", info=f'')
     with torch._C.DisableTorchFunction():
         ret = SynPreFwdPostBwdOP.apply(tensor, fwd_info, bwd_info)
     return ret
@@ -138,6 +150,7 @@ def convert_fwd_prefetch_bwd_offload_to_action(tensor, fwd_info, bwd_info):
         bwd_info(dict): information dict, which contains region indices
             that need to be prefetched or waited during backward pass.
     """
+    gd.debuginfo(prj="mt", info=f'')
     with torch._C.DisableTorchFunction():
         ret = AsynPreFwdPostBwdOP.apply(tensor, fwd_info, bwd_info)
     return ret
@@ -145,9 +158,12 @@ def convert_fwd_prefetch_bwd_offload_to_action(tensor, fwd_info, bwd_info):
 
 def replace_node_users(orig_node: Node, inserted_node: Node, rep_user_nodes: List[Node] = None):
     user_list = list(orig_node.users.keys())
+
     if rep_user_nodes is not None:
         user_list = rep_user_nodes
+        gd.debuginfo(prj="mt", info=f'')
     for user in user_list:
+        gd.debuginfo(prj="mt", info=f'')
         if user == inserted_node:
             continue
         new_args = list(user.args)
@@ -157,10 +173,12 @@ def replace_node_users(orig_node: Node, inserted_node: Node, rep_user_nodes: Lis
             # substitute the origin node with offload_apply_node
             new_args[new_args.index(orig_node)] = inserted_node
             user.args = tuple(new_args)
+            gd.debuginfo(prj="mt", info=f'')
         elif str(orig_node) in new_kwargs:
             # substitute the origin node with offload_apply_node
             new_kwargs[str(orig_node)] = inserted_node
             user.kwargs = new_kwargs
+            gd.debuginfo(prj="mt", info=f'')
 
 
 def runtime_syn_offload_apply_pass(gm: torch.fx.GraphModule, region_list: List[Region]):
@@ -169,6 +187,7 @@ def runtime_syn_offload_apply_pass(gm: torch.fx.GraphModule, region_list: List[R
     """
     mod_graph = gm.graph
     last_inp_node = tuple(mod_graph.nodes)[0]
+    gd.debuginfo(prj="mt", info=f'')
 
     for r_idx, region in enumerate(region_list):
         # forward upload
@@ -201,6 +220,8 @@ def runtime_asyn_offload_apply_pass(gm: torch.fx.GraphModule, region_list: List[
     """
     This pass is used to add the asynchronous prefetch and offload spec apply node to the origin graph.
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     mod_graph = gm.graph
 
     # upload parameters of the first region

@@ -23,6 +23,7 @@ def elementwise_meta_info(temp_mem_scale: float = 0, buffer_mem_scale: float = 0
     """
 
     def meta_func(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem, List[torch.Tensor]]:
+        gd.debuginfo(prj="mt", info=f'')
         input_tensor = next(
             filter(
                 lambda x: (x.type == OperationDataType.ARG or x.type == OperationDataType.PARAM)

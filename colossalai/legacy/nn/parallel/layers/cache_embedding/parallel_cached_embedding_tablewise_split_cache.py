@@ -36,6 +36,7 @@ class ParallelCachedEmbeddingBagTablewiseSpiltCache(abc.ABC, nn.Module):
         pin_weight=False,
         evict_strategy: EvictionStrategy = EvictionStrategy.LFU,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super(ParallelCachedEmbeddingBagTablewiseSpiltCache, self).__init__()
         self.rank = dist.get_rank()
         self.world_size = dist.get_world_size()

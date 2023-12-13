@@ -23,11 +23,13 @@ class Layout:
         self.sharding_spec = sharding_spec
         self.global_shape = global_shape
         self._sanity_check()
+        gd.debuginfo(prj="mt", info=f'')
 
     def __hash__(self) -> int:
         return hash(f"{self.sharding_spec}")
 
     def get_sharded_shape_per_device(self):
+        gd.debuginfo(prj="mt", info=f'')
         sharded_shape = list(self.global_shape)
         for dim, shard_list in self.sharding_spec.dim_partition_dict.items():
             mesh_list = [self.device_mesh.shape[mesh_dim] for mesh_dim in shard_list]
@@ -39,10 +41,12 @@ class Layout:
         return torch.Size(sharded_shape)
 
     def _sanity_check(self):
+        gd.debuginfo(prj="mt", info=f'')
         sharding_spec = self.sharding_spec
 
         # make sure all axes in logical device mesh only be used once
         if self.device_mesh.logical_mesh_id is not None:
+            gd.debuginfo(prj="mt", info=f'')
             dim_check_list = list(range(self.device_mesh.logical_mesh_id.dim()))
             for dim, shard_list in sharding_spec.dim_partition_dict.items():
                 for element in shard_list:

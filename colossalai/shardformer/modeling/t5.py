@@ -46,6 +46,7 @@ class T5PipelineForwards:
     ) -> Union[Dict, Tuple, BaseModelOutputWithPastAndCrossAttentions]:
         # This function is modified on the basis of transformers.models.t5.modeling_t5.T5Stack.forward.
         # Please refer to original code of transformers for more details.
+        gd.debuginfo(prj="mt", info=f'')
 
         logger = logging.get_logger(__name__)
 
@@ -84,6 +85,7 @@ class T5PipelineForwards:
 
         # Process inputs if at the first stage of encoder/decoder.
         if at_first_stage:
+            gd.debuginfo(prj="mt", info=f'')
             if input_ids is not None and inputs_embeds is not None:
                 err_msg_prefix = "decoder_" if in_decoder else ""
                 raise ValueError(
@@ -92,14 +94,17 @@ class T5PipelineForwards:
             elif input_ids is not None:
                 input_shape = input_ids.size()
                 input_ids = input_ids.view(-1, input_shape[-1])
+                gd.debuginfo(prj="mt", info=f'')
             elif inputs_embeds is not None:
                 input_shape = inputs_embeds.size()[:-1]
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 err_msg_prefix = "decoder_" if in_decoder else ""
                 raise ValueError(
                     f"You have to specify either {err_msg_prefix}input_ids or {err_msg_prefix}inputs_embeds"
                 )
             if inputs_embeds is None:
+                gd.debuginfo(prj="mt", info=f'')
                 if self.embed_tokens is None:
                     raise ValueError("You have to initialize the model with valid token embeddings")
                 inputs_embeds = self.embed_tokens(input_ids)
@@ -107,6 +112,7 @@ class T5PipelineForwards:
             device = inputs_embeds.device
             hidden_states = self.dropout(inputs_embeds)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             if hidden_states is None:
                 raise ValueError(
                     "hidden_states shouldn't be None for stages other than the first stage of encoder/decoder."
@@ -120,13 +126,16 @@ class T5PipelineForwards:
 
         if attention_mask is None:
             attention_mask = torch.ones(batch_size, mask_seq_length, device=device)
+            gd.debuginfo(prj="mt", info=f'')
         if in_decoder and encoder_attention_mask is None and encoder_hidden_states is not None:
             encoder_seq_length = encoder_hidden_states.shape[1]
             encoder_attention_mask = torch.ones(batch_size, encoder_seq_length, device=device, dtype=torch.long)
+            gd.debuginfo(prj="mt", info=f'')
 
         # initialize past_key_values with `None` if past does not exist
         if past_key_values is None:
             past_key_values = [None] * len(self.block)
+            gd.debuginfo(prj="mt", info=f'')
 
         # We can provide a self-attention mask of dimensions [batch_size, from_seq_length, to_seq_length]
         # ourselves in which case we just need to make it broadcastable to all heads.
@@ -137,11 +146,14 @@ class T5PipelineForwards:
         if self.is_decoder and encoder_hidden_states is not None:
             encoder_batch_size, encoder_sequence_length, _ = encoder_hidden_states.size()
             encoder_hidden_shape = (encoder_batch_size, encoder_sequence_length)
+            gd.debuginfo(prj="mt", info=f'')
             if encoder_attention_mask is None:
                 encoder_attention_mask = torch.ones(encoder_hidden_shape, device=inputs_embeds.device)
+                gd.debuginfo(prj="mt", info=f'')
             encoder_extended_attention_mask = self.invert_attention_mask(encoder_attention_mask)
         else:
             encoder_extended_attention_mask = None
+            gd.debuginfo(prj="mt", info=f'')
 
         # Prepare head mask if needed
         head_mask = self.get_head_mask(head_mask, self.config.num_layers)
@@ -181,6 +193,7 @@ class T5PipelineForwards:
                     cross_attn_layer_head_mask,
                     None,  # past_key_value is always None with gradient checkpointing
                 )
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 layer_outputs = layer_module(
                     hidden_states,
@@ -195,12 +208,14 @@ class T5PipelineForwards:
                     use_cache=use_cache,
                     output_attentions=output_attentions,
                 )
+                gd.debuginfo(prj="mt", info=f'')
 
             # layer_outputs is a tuple with:
             # hidden-states, key-value-states, (self-attention position bias), (self-attention weights), (cross-attention position bias), (cross-attention weights)
 
             if use_cache is False or use_cache is None:
                 layer_outputs = layer_outputs[:1] + (None,) + layer_outputs[1:]
+                gd.debuginfo(prj="mt", info=f'')
             hidden_states, present_key_value_state = layer_outputs[:2]
 
             # We share the position biases between the layers - the first layer store them
@@ -210,16 +225,20 @@ class T5PipelineForwards:
 
             if in_decoder and encoder_hidden_states is not None:
                 encoder_decoder_position_bias = layer_outputs[4 if output_attentions else 3]
+                gd.debuginfo(prj="mt", info=f'')
             # append next layer key value states
             if use_cache:
                 present_key_value_states = present_key_value_states + (present_key_value_state,)
+                gd.debuginfo(prj="mt", info=f'')
 
         # last layer
         if at_last_stage:
+            gd.debuginfo(prj="mt", info=f'')
             hidden_states = self.final_layer_norm(hidden_states)
             hidden_states = self.dropout(hidden_states)
 
             if not return_dict:
+                gd.debuginfo(prj="mt", info=f'')
                 return tuple(
                     v
                     for v in [
@@ -239,6 +258,7 @@ class T5PipelineForwards:
                 cross_attentions=all_cross_attentions,
             )
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return {
                 "hidden_states": hidden_states,
                 "position_bias": position_bias,
@@ -273,6 +293,7 @@ class T5PipelineForwards:
         stage_index: Optional[List[int]] = None,
         decoder_starting_stage: Optional[int] = None,
     ) -> Union[Tuple[torch.FloatTensor], Seq2SeqModelOutput]:
+        gd.debuginfo(prj="mt", info=f'')
         # This function is modified on the basis of transformers.models.t5.modeling_t5.T5Model.forward.
         # Please refer to original code of transformers for more details.
 
@@ -304,6 +325,7 @@ class T5PipelineForwards:
 
         # FutureWarning: head_mask was separated into two input args - head_mask, decoder_head_mask
         if head_mask is not None and decoder_head_mask is None:
+            gd.debuginfo(prj="mt", info=f'')
             if self.config.num_layers == self.config.num_decoder_layers:
                 warnings.warn(__HEAD_MASK_WARNING_MSG, FutureWarning)
                 decoder_head_mask = head_mask
@@ -328,9 +350,11 @@ class T5PipelineForwards:
                 decoder_starting_stage=decoder_starting_stage,
             )
             if stage_manager.stage == decoder_starting_stage - 1:
+                gd.debuginfo(prj="mt", info=f'')
                 # last stage of encoder
                 return {"encoder_hidden_states": encoder_outputs[0]}
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 return encoder_outputs
 
         at_last_decoder_stage = stage_manager.is_last_stage()
@@ -371,11 +395,15 @@ class T5PipelineForwards:
         if not at_last_decoder_stage:
             # encoder_hidden_states should be passed to the next stage
             decoder_outputs["encoder_hidden_states"] = encoder_hidden_states
+            gd.debuginfo(prj="mt", info=f'')
+
             return decoder_outputs
 
         if not return_dict:
+            gd.debuginfo(prj="mt", info=f'')
             return decoder_outputs + encoder_hidden_states
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return Seq2SeqModelOutput(
                 last_hidden_state=decoder_outputs.last_hidden_state,
                 past_key_values=decoder_outputs.past_key_values,
@@ -427,6 +455,7 @@ class T5PipelineForwards:
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         logger = logging.get_logger(__name__)
+        gd.debuginfo(prj="mt", info=f'')
 
         # TODO(baizhou): left the recording kv-value tensors as () or None type, this feature may be added in the future.
         if past_key_values:
@@ -444,6 +473,7 @@ class T5PipelineForwards:
 
         # FutureWarning: head_mask was separated into two input args - head_mask, decoder_head_mask
         if head_mask is not None and decoder_head_mask is None:
+            gd.debuginfo(prj="mt", info=f'')
             if self.config.num_layers == self.config.num_decoder_layers:
                 warnings.warn(__HEAD_MASK_WARNING_MSG, FutureWarning)
                 decoder_head_mask = head_mask
@@ -468,10 +498,14 @@ class T5PipelineForwards:
                 stage_index=stage_index,
                 decoder_starting_stage=decoder_starting_stage,
             )
+            gd.debuginfo(prj="mt", info=f'')
+
             if stage_manager.stage == decoder_starting_stage - 1:
+                gd.debuginfo(prj="mt", info=f'')
                 # last stage of encoder
                 return {"encoder_hidden_states": encoder_outputs[0]}
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 return encoder_outputs
 
         at_last_decoder_stage = stage_manager.is_last_stage()
@@ -479,6 +513,7 @@ class T5PipelineForwards:
 
         if encoder_outputs is not None:
             encoder_hidden_states = encoder_outputs[0]
+            gd.debuginfo(prj="mt", info=f'')
         elif encoder_hidden_states is None:
             raise ValueError("Non-empty encoder_hidden_states should be passed in at decoder stages.")
 
@@ -488,6 +523,7 @@ class T5PipelineForwards:
         if labels is not None and decoder_input_ids is None and decoder_inputs_embeds is None:
             # get decoder inputs from shifting lm labels to the right
             decoder_input_ids = self._shift_right(labels)
+            gd.debuginfo(prj="mt", info=f'')
 
         # Decode
         decoder_outputs = T5PipelineForwards.t5_stack_forward(
@@ -511,11 +547,13 @@ class T5PipelineForwards:
             stage_index=stage_index,
             decoder_starting_stage=decoder_starting_stage,
         )
+        gd.debuginfo(prj="mt", info=f'')
 
         # Directly return outputs of overloaded T5Stack forward if not at last stage.
         if not at_last_decoder_stage:
             # encoder_hidden_states should be passed to the next stage
             decoder_outputs["encoder_hidden_states"] = encoder_hidden_states
+            gd.debuginfo(prj="mt", info=f'')
             return decoder_outputs
 
         sequence_output = decoder_outputs[0]
@@ -524,6 +562,7 @@ class T5PipelineForwards:
             # Rescale output before projecting on vocab
             # See https://github.com/tensorflow/mesh/blob/fa19d69eafc9a482aff0b59ddd96b025c0cb207d/mesh_tensorflow/transformer/transformer.py#L586
             sequence_output = sequence_output * (self.model_dim**-0.5)
+            gd.debuginfo(prj="mt", info=f'')
 
         lm_logits = self.lm_head(sequence_output)
 
@@ -533,9 +572,11 @@ class T5PipelineForwards:
             # move labels to correct device to enable PP
             labels = labels.to(lm_logits.device)
             loss = loss_fct(lm_logits.view(-1, lm_logits.size(-1)), labels.view(-1))
+            gd.debuginfo(prj="mt", info=f'')
 
         if not return_dict:
             output = (lm_logits,) + decoder_outputs[1:] + encoder_hidden_states
+            gd.debuginfo(prj="mt", info=f'')
             return ((loss,) + output) if loss is not None else output
 
         return Seq2SeqLMOutput(
@@ -589,10 +630,13 @@ class T5PipelineForwards:
             decoder_starting_stage=decoder_starting_stage,
         )
 
+        gd.debuginfo(prj="mt", info=f'')
+
         return outputs
 
 
 def get_t5_flash_attention_forward():
+    gd.debuginfo(prj="mt", info=f'')
     try:
         from xformers.ops import memory_efficient_attention as me_attention
     except:
@@ -620,8 +664,10 @@ def get_t5_flash_attention_forward():
         batch_size, seq_length = hidden_states.shape[:2]
 
         real_seq_length = seq_length
+        gd.debuginfo(prj="mt", info=f'')
 
         if past_key_value is not None:
+            gd.debuginfo(prj="mt", info=f'')
             if len(past_key_value) != 2:
                 raise ValueError(
                     f"past_key_value should have 2 past states: keys and values. Got { len(past_key_value)} past states"
@@ -631,38 +677,46 @@ def get_t5_flash_attention_forward():
         key_length = real_seq_length if key_value_states is None else key_value_states.shape[1]
 
         def shape(states):
+            gd.debuginfo(prj="mt", info=f'')
             """projection"""
             return states.view(batch_size, -1, self.n_heads, self.key_value_proj_dim)
 
         def unshape(states):
+            gd.debuginfo(prj="mt", info=f'')
             """reshape"""
             return states.view(batch_size, -1, self.inner_dim)
 
         def project(hidden_states, proj_layer, key_value_states, past_key_value):
+            gd.debuginfo(prj="mt", info=f'')
             """projects hidden states correctly to key/query states"""
             if key_value_states is None:
                 # self-attn
                 # (batch_size, n_heads, seq_length, dim_per_head)
                 hidden_states = shape(proj_layer(hidden_states))
+                gd.debuginfo(prj="mt", info=f'')
             elif past_key_value is None:
                 # cross-attn
                 # (batch_size, n_heads, seq_length, dim_per_head)
                 hidden_states = shape(proj_layer(key_value_states))
+                gd.debuginfo(prj="mt", info=f'')
 
             if past_key_value is not None:
                 if key_value_states is None:
                     # self-attn
                     # (batch_size, n_heads, key_length, dim_per_head)
                     hidden_states = torch.cat([past_key_value, hidden_states], dim=1)
+                    gd.debuginfo(prj="mt", info=f'')
                 elif past_key_value.shape[1] != key_value_states.shape[1]:
                     # checking that the `sequence_length` of the `past_key_value` is the same as
                     # the provided `key_value_states` to support prefix tuning
                     # cross-attn
                     # (batch_size, n_heads, seq_length, dim_per_head)
                     hidden_states = shape(proj_layer(key_value_states))
+                    gd.debuginfo(prj="mt", info=f'')
                 else:
                     # cross-attn
                     hidden_states = past_key_value
+                    gd.debuginfo(prj="mt", info=f'')
             return hidden_states
 
         # get query states
@@ -677,29 +731,37 @@ def get_t5_flash_attention_forward():
         )
 
         if position_bias is None:
+            gd.debuginfo(prj="mt", info=f'')
             if not self.has_relative_attention_bias:
                 position_bias = torch.zeros(
                     (1, self.n_heads, real_seq_length, key_length), device=query_states.device, dtype=query_states.dtype
                 )
+                gd.debuginfo(prj="mt", info=f'')
                 if self.gradient_checkpointing and self.training:
                     position_bias.requires_grad = True
+                    gd.debuginfo(prj="mt", info=f'')
             else:
                 position_bias = self.compute_bias(real_seq_length, key_length, device=query_states.device)
+                gd.debuginfo(prj="mt", info=f'')
 
             # if key and values are already calculated
             # we want only the last query position bias
             if past_key_value is not None:
                 position_bias = position_bias[:, :, -hidden_states.size(1) :, :]
+                gd.debuginfo(prj="mt", info=f'')
 
             if mask is not None:
                 position_bias = position_bias + mask  # (batch_size, n_heads, seq_length, key_length)
+                gd.debuginfo(prj="mt", info=f'')
 
         if self.pruned_heads:
             mask = torch.ones(position_bias.shape[1])
             mask[list(self.pruned_heads)] = 0
             position_bias_masked = position_bias[:, mask.bool()]
+            gd.debuginfo(prj="mt", info=f'')
         else:
             position_bias_masked = position_bias
+            gd.debuginfo(prj="mt", info=f'')
 
         position_bias_masked = position_bias_masked.contiguous()
         attn_output = me_attention(
@@ -718,9 +780,11 @@ def get_t5_flash_attention_forward():
 
 
 def get_jit_fused_T5_layer_ff_forward():
+    gd.debuginfo(prj="mt", info=f'')
     from transformers.models.t5.modeling_t5 import T5LayerFF
 
     def forward(self: T5LayerFF, hidden_states: torch.Tensor) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         forwarded_states = self.layer_norm(hidden_states)
         forwarded_states = self.DenseReluDense(forwarded_states)
         hidden_states = self.dropout_add(forwarded_states, hidden_states, self.dropout.p, self.dropout.training)
@@ -730,6 +794,7 @@ def get_jit_fused_T5_layer_ff_forward():
 
 
 def get_T5_layer_self_attention_forward():
+    gd.debuginfo(prj="mt", info=f'')
     from transformers.models.t5.modeling_t5 import T5LayerSelfAttention
 
     def forward(
@@ -754,12 +819,15 @@ def get_T5_layer_self_attention_forward():
         )
         hidden_states = self.dropout_add(attention_output[0], hidden_states, self.dropout.p, self.dropout.training)
         outputs = (hidden_states,) + attention_output[1:]  # add attentions if we output them
+        gd.debuginfo(prj="mt", info=f'')
+
         return outputs
 
     return forward
 
 
 def get_T5_layer_cross_attention_forward():
+    gd.debuginfo(prj="mt", info=f'')
     from transformers.models.t5.modeling_t5 import T5LayerCrossAttention
 
     def forward(
@@ -775,6 +843,7 @@ def get_T5_layer_cross_attention_forward():
         output_attentions: bool = False,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[torch.Tensor]]:
         normed_hidden_states = self.layer_norm(hidden_states)
+        gd.debuginfo(prj="mt", info=f'')
         attention_output = self.EncDecAttention(
             normed_hidden_states,
             mask=attention_mask,

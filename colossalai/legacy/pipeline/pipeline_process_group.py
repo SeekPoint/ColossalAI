@@ -12,6 +12,7 @@ class PipelineProcessGroup:
     # In the future design mode, dp_degree and tp_degree should be removed
     def __init__(self) -> None:
         self.is_initialize = False
+        gd.debuginfo(prj="mt", info=f'')
 
     def set_global_info(
         self,

@@ -9,6 +9,7 @@ class BaseParamHookMgr(object):
         r"""
         register backward hook on every parameters of module
         """
+        gd.debuginfo(prj="mt", info=f'')
         self._param_list = param_list
         self._hook_list = []
 

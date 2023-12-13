@@ -29,6 +29,7 @@ class StatefulTensorMemoryEvent:
     EVENT_NAME = "[statefulTensorMemory]"
 
     def __init__(self, timestamp: int, device_type: DeviceType, bytes_: int) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.pid = os.getpid()
         self.tid = threading.get_ident()
         self.timestamp = timestamp
@@ -50,6 +51,7 @@ class StatefulTensorMemoryTracer:
     def __init__(self) -> None:
         self.events: List[StatefulTensorMemoryEvent] = []
         self._tracing = False
+        gd.debuginfo(prj="mt", info=f'')
 
     def sample(self):
         cuda_mem = StatefulTensor.GST_MGR.total_mem["cuda"]
@@ -75,6 +77,7 @@ class StatefulTensorMemoryTracerHook(BaseOpHook):
         super().__init__()
         self.tracer = tracer
         self._enable = False
+        gd.debuginfo(prj="mt", info=f'')
 
     def pre_fwd_exec(self, module: torch.nn.Module, *args):
         if self._enable:
@@ -109,6 +112,7 @@ class StatefulTensorMemoryProfilerExtention(ProfilerExtension):
         self.tracer = StatefulTensorMemoryTracer()
         self.hook = StatefulTensorMemoryTracerHook(self.tracer)
         self.hook_registered = False
+        gd.debuginfo(prj="mt", info=f'')
 
     def prepare_trace(self):
         self.hook.enable()

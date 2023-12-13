@@ -28,6 +28,7 @@ except ImportError:
 class CaiQuantLinear(nn.Module):
 
     def __init__(self, bits, groupsize, infeatures, outfeatures, bias, tp_size=1, tp_rank=0, row_split=False):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         if bits not in [2, 4, 8]:
             raise NotImplementedError("Only 2,4,8 bits are supported.")
@@ -44,18 +45,22 @@ class CaiQuantLinear(nn.Module):
         self.register_buffer('scales',
                              torch.zeros((math.ceil(infeatures / self.groupsize), outfeatures), dtype=torch.float16))
         if row_split:
+            gd.debuginfo(prj="mt", info=f'')
             self.register_buffer(
                 'g_idx',
                 torch.tensor([(i + (tp_rank * self.infeatures)) // self.groupsize for i in range(infeatures)],
                              dtype=torch.int32))
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.register_buffer('g_idx',
                                  torch.tensor([i // self.groupsize for i in range(infeatures)], dtype=torch.int32))
 
         if bias:
             self.register_buffer('bias', torch.zeros((outfeatures), dtype=torch.float16))
+            gd.debuginfo(prj="mt", info=f'')
         else:
             self.bias = None
+            gd.debuginfo(prj="mt", info=f'')
 
         self.gptq_linear = CaiGPTQLinearOp(groupsize, bits)
 
@@ -66,7 +71,7 @@ class CaiQuantLinear(nn.Module):
         self.row_split = row_split
 
     def pack(self, linear, scales, zeros, g_idx=None):
-
+        gd.debuginfo(prj="mt", info=f'')
         g_idx = g_idx.clone() if g_idx is not None else torch.tensor(
             [i // self.groupsize for i in range(self.infeatures)], dtype=torch.int32)
 
@@ -132,13 +137,17 @@ class CaiQuantLinear(nn.Module):
 
         if torch.equal(self.g_idx.to(g_idx.device), g_idx):
             self.g_idx = None
+            gd.debuginfo(prj="mt", info=f'')
         else:
             self.g_idx = g_idx
+            gd.debuginfo(prj="mt", info=f'')
 
     def init_q4(self):
+        gd.debuginfo(prj="mt", info=f'')
         assert self.qweight.device.type == "cuda"
         self.q4_width = self.qweight.shape[1]
         if self.g_idx is not None:
+            gd.debuginfo(prj="mt", info=f'')
             if self.row_split and torch.equal(
                     self.g_idx,
                     torch.tensor(
@@ -151,6 +160,7 @@ class CaiQuantLinear(nn.Module):
                     torch.tensor([i // self.groupsize for i in range(self.infeatures)],
                                  dtype=torch.int32,
                                  device=self.g_idx.device)):
+                gd.debuginfo(prj="mt", info=f'')
                 self.g_idx = None
 
         if self.g_idx is not None:
@@ -162,10 +172,11 @@ class CaiQuantLinear(nn.Module):
         torch.cuda.synchronize()
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         outshape = x.shape[:-1] + (self.outfeatures,)
 
         if HAS_GPTQ_CUDA and self.bits == 4:
-
+            gd.debuginfo(prj="mt", info=f'')
             if self.q4 is None:
                 self.init_q4()
 
@@ -177,8 +188,10 @@ class CaiQuantLinear(nn.Module):
         else:
             if self.bias is not None and (not self.row_split or self.tp_size == 1):
                 bias = self.bias
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 bias = None
+                gd.debuginfo(prj="mt", info=f'')
             output = self.gptq_linear(
                 x,
                 self.qweight,
@@ -191,13 +204,14 @@ class CaiQuantLinear(nn.Module):
 
 
 def split_column_copy(gptq_linear, cai_linear, tp_size=1, tp_rank=0, split_num=1):
-
+    gd.debuginfo(prj="mt", info=f'')
     qweights = gptq_linear.qweight.split(gptq_linear.out_features // split_num, dim=-1)
     qzeros = gptq_linear.qzeros.split(gptq_linear.out_features // (32 // cai_linear.bits) // split_num, dim=-1)
     scales = gptq_linear.scales.split(gptq_linear.out_features // split_num, dim=-1)
     g_idx = gptq_linear.g_idx
     if gptq_linear.bias is not None:
         bias = gptq_linear.bias.split(gptq_linear.out_features // split_num, dim=-1)
+        gd.debuginfo(prj="mt", info=f'')
 
     cai_split_out_features = cai_linear.outfeatures // split_num
     zero_split_block = cai_linear.outfeatures // (32 // cai_linear.bits) // split_num
@@ -220,7 +234,7 @@ def split_column_copy(gptq_linear, cai_linear, tp_size=1, tp_rank=0, split_num=1
 
 
 def split_row_copy(gptq_linear, cai_linear, tp_rank=0, split_num=1):
-
+    gd.debuginfo(prj="mt", info=f'')
     qweights = gptq_linear.qweight.split(gptq_linear.in_features // split_num, dim=0)
     qzeros = gptq_linear.qzeros.split(gptq_linear.in_features // split_num, dim=0)
     scales = gptq_linear.scales.split(gptq_linear.in_features // split_num, dim=0)
@@ -245,12 +259,13 @@ def split_row_copy(gptq_linear, cai_linear, tp_rank=0, split_num=1):
                                                          idx_split_features]
     if cai_linear.bias is not None:
         cai_linear.bias.copy_(gptq_linear.bias)
+        gd.debuginfo(prj="mt", info=f'')
 
 
 class RowCaiQuantLinear(CaiQuantLinear, ParallelModule):
 
     def __init__(self, bits, groupsize, infeatures, outfeatures, bias, tp_size=1, tp_rank=0, row_split=False):
-
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(bits,
                          groupsize,
                          infeatures,
@@ -262,14 +277,18 @@ class RowCaiQuantLinear(CaiQuantLinear, ParallelModule):
         self.process_group = None
 
     @staticmethod
-    def from_native_module(module: nn.Module, process_group: Union[ProcessGroup, List[ProcessGroup]], *args,
+    def from_native_module(module: nn.Module,
+                           process_group: Union[ProcessGroup,
+                           List[ProcessGroup]], *args,
                            **kwargs) -> ParallelModule:
+        gd.debuginfo(prj="mt", info=f'')
         LazyInitContext.materialize(module)
         # get the attributes
         in_features = module.in_features
 
         # ensure only one process group is passed
         if isinstance(process_group, (list, tuple)):
+            gd.debuginfo(prj="mt", info=f'')
             assert len(process_group) == 1, \
                 f'Expected only one process group, got {len(process_group)}.'
             process_group = process_group[0]
@@ -278,6 +297,7 @@ class RowCaiQuantLinear(CaiQuantLinear, ParallelModule):
         tp_rank = dist.get_rank(process_group)
 
         if in_features < tp_size:
+            gd.debuginfo(prj="mt", info=f'')
             return module
 
         if in_features % tp_size != 0:
@@ -297,10 +317,13 @@ class RowCaiQuantLinear(CaiQuantLinear, ParallelModule):
         return linear_1d
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         output = super().forward(x)
         if self.tp_size > 1:
+            gd.debuginfo(prj="mt", info=f'')
             dist.all_reduce(output, op=dist.ReduceOp.SUM, group=self.process_group)
             if self.bias is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 output.add_(self.bias)
         return output
 
@@ -308,7 +331,7 @@ class RowCaiQuantLinear(CaiQuantLinear, ParallelModule):
 class ColCaiQuantLinear(CaiQuantLinear, ParallelModule):
 
     def __init__(self, bits, groupsize, infeatures, outfeatures, bias, tp_size=1, tp_rank=0, row_split=False):
-
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(bits,
                          groupsize,
                          infeatures,
@@ -320,8 +343,11 @@ class ColCaiQuantLinear(CaiQuantLinear, ParallelModule):
         self.process_group = None
 
     @staticmethod
-    def from_native_module(module: nn.Module, process_group: Union[ProcessGroup, List[ProcessGroup]], *args,
+    def from_native_module(module: nn.Module,
+                           process_group: Union[ProcessGroup,
+                           List[ProcessGroup]], *args,
                            **kwargs) -> ParallelModule:
+        gd.debuginfo(prj="mt", info=f'')
         LazyInitContext.materialize(module)
         # get the attributes
         in_features = module.in_features
@@ -336,6 +362,7 @@ class ColCaiQuantLinear(CaiQuantLinear, ParallelModule):
         tp_rank = dist.get_rank(process_group)
 
         if in_features < tp_size:
+            gd.debuginfo(prj="mt", info=f'')
             return module
 
         if in_features % tp_size != 0:

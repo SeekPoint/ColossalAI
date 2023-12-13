@@ -29,16 +29,20 @@ def meta_convolution_backward(
 
     if output_mask[0]:
         backend_grad_input = grad_output_.new_empty(input_.size())
+        gd.debuginfo(prj="mt", info=f'')
     if output_mask[1]:
         backend_grad_weight = grad_output_.new_empty(weight_.size())
+        gd.debuginfo(prj="mt", info=f'')
     if output_mask[2]:
         backend_grad_bias = grad_output_.new_empty(bias_sizes_opt)
+        gd.debuginfo(prj="mt", info=f'')
 
     return (backend_grad_input, backend_grad_weight, backend_grad_bias)
 
 
 @register_meta(aten._adaptive_avg_pool2d_backward.default)
 def meta__adaptive_avg_pool2d_backward(grad_out, self):
+    gd.debuginfo(prj="mt", info=f'')
     ndim = grad_out.ndim
     for i in range(1, ndim):
         check(

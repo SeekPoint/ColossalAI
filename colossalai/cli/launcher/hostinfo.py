@@ -15,6 +15,7 @@ class HostInfo:
         hostname: str,
         port: str = None,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         self.hostname = hostname
         self.port = port
         self.is_local_host = HostInfo.is_host_localhost(hostname, port)
@@ -31,7 +32,7 @@ class HostInfo:
         Returns:
             bool: True if it is local, False otherwise
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         if port is None:
             port = 22  # no port specified, lets just use the ssh port
 
@@ -71,7 +72,7 @@ class HostInfoList:
         Args:
             hostinfo (HostInfo): host information
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         self.hostinfo_list.append(hostinfo)
 
     def remove(self, hostname: str) -> None:
@@ -81,7 +82,7 @@ class HostInfoList:
         Args:
             hostname (str): the name of the host
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         hostinfo = self.get_hostinfo(hostname)
         self.hostinfo_list.remove(hostinfo)
 
@@ -95,7 +96,7 @@ class HostInfoList:
         Returns:
             hostinfo (HostInfo): the HostInfo object which matches with the hostname
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         for hostinfo in self.hostinfo_list:
             if hostinfo.hostname == hostname:
                 return hostinfo
@@ -112,6 +113,7 @@ class HostInfoList:
         Returns:
             bool: True if added, False otherwise
         """
+        gd.debuginfo(prj="mt", info=f'')
         for hostinfo in self.hostinfo_list:
             if hostinfo.hostname == hostname:
                 return True

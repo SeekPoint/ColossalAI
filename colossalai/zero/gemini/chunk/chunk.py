@@ -42,15 +42,18 @@ class ChunkFullError(Exception):
 
 
 def is_storage_empty(tensor: torch.Tensor) -> bool:
+    gd.debuginfo(prj="mt", info=f'')
     return tensor.storage().size() == 0
 
 
 def free_storage(tensor: torch.Tensor) -> None:
+    gd.debuginfo(prj="mt", info=f'')
     if not is_storage_empty(tensor):
         tensor.storage().resize_(0)
 
 
 def alloc_storage(tensor: torch.Tensor) -> None:
+    gd.debuginfo(prj="mt", info=f'')
     if is_storage_empty(tensor):
         tensor.storage().resize_(tensor.numel())
 
@@ -84,6 +87,8 @@ class Chunk:
             keep_gathered (bool): optional, if True, this chunk is always gathered in CUDA memory
             pin_memory (bool): optional, if True, this chunk always has a shard copied in pinned CPU memory
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         self.count_id = Chunk._total_number
         Chunk._total_number += 1
 
@@ -142,6 +147,7 @@ class Chunk:
         self.keep_gathered = keep_gathered
         if self.keep_gathered:
             pin_memory = False  # since this chunk is gathered, it doesn't need to pin
+            gd.debuginfo(prj="mt", info=f'')
 
         # if pin_memory is True, we allocate a piece of CPU pin-memory
         # for it all the time
@@ -164,6 +170,7 @@ class Chunk:
 
     @property
     def memory_usage(self) -> Dict[str, int]:
+        gd.debuginfo(prj="mt", info=f'')
         cuda_memory = 0
         cpu_memory = 0
 
@@ -186,6 +193,7 @@ class Chunk:
     @property
     def device_type(self) -> str:
         if self.chunk_temp is not None:
+            gd.debuginfo(prj="mt", info=f'')
             return self.chunk_temp.device.type
         else:
             if self.is_gathered:
@@ -197,6 +205,7 @@ class Chunk:
 
     @property
     def payload(self) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         # sanity check
         assert self.chunk_temp is None
 
@@ -209,6 +218,7 @@ class Chunk:
 
     @property
     def payload_mem(self) -> int:
+        gd.debuginfo(prj="mt", info=f'')
         # sanity check
         assert self.chunk_temp is None
 
@@ -224,8 +234,10 @@ class Chunk:
     @property
     def can_release(self) -> bool:
         if self.keep_gathered:
+            gd.debuginfo(prj="mt", info=f'')
             return False
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return (
                 self.tensor_state_cnter[TensorState.HOLD] + self.tensor_state_cnter[TensorState.HOLD_AFTER_BWD]
                 == self.num_tensors
@@ -240,9 +252,11 @@ class Chunk:
         """Check if the chunk has inf or nan values on CUDA."""
         if self.is_gathered:
             valid_tensor = self.cuda_global_chunk[: self.utilized_size]
+            gd.debuginfo(prj="mt", info=f'')
         else:
             assert self.cuda_shard is not None  # only check on CUDA
             valid_tensor = self.cuda_shard[: self.valid_end]
+            gd.debuginfo(prj="mt", info=f'')
 
         return torch.isinf(valid_tensor).any().item() | torch.isnan(valid_tensor).any().item()
 
@@ -251,9 +265,11 @@ class Chunk:
         assert self.l2_norm is None, "you are calculating the l2 norm twice"
         if self.is_gathered:
             valid_tensor = self.cuda_global_chunk[: self.utilized_size]
+            gd.debuginfo(prj="mt", info=f'')
         else:
             assert self.cuda_shard is not None  # calculate on CUDA
             valid_tensor = self.cuda_shard[: self.valid_end]
+            gd.debuginfo(prj="mt", info=f'')
         chunk_l2_norm = valid_tensor.data.float().norm(2)
         self.l2_norm = chunk_l2_norm.item() ** 2
 
@@ -263,6 +279,8 @@ class Chunk:
         Args:
             tensor (torch.Tensor): a tensor to be added to the chunk
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         # sanity check
         assert self.chunk_temp is not None
         assert tensor.dtype == self.dtype
@@ -286,6 +304,7 @@ class Chunk:
     def close_chunk(self):
         """Close the chunk. Any tensor can't be appended to a closed chunk later."""
         # sanity check
+        gd.debuginfo(prj="mt", info=f'')
         assert self.chunk_temp is not None
 
         # calculate the valid end for each shard
@@ -321,6 +340,8 @@ class Chunk:
             device: the device to which the shard will move
             force_copy: if True, copy function is called mandatorily
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         # sanity check
         assert not self.is_gathered
         # when the current chunk is not synchronized with the optimizer
@@ -363,16 +384,21 @@ class Chunk:
         assert self.chunk_temp is None
 
         if not self.is_gathered:
+            gd.debuginfo(prj="mt", info=f'')
             self.__gather()
         self.__update_tensors_ptr()
+        gd.debuginfo(prj="mt", info=f'')
 
     def release_chunk(self):
         """Release the usable chunk. It's an operation done in CUDA."""
+        gd.debuginfo(prj="mt", info=f'')
+
         # sanity check
         assert self.chunk_temp is None
 
         if self.is_gathered:
             self.__scatter()
+            gd.debuginfo(prj="mt", info=f'')
 
     def reduce(self):
         """Reduce scatter all the gradients. It's an operation done in CUDA."""
@@ -384,9 +410,11 @@ class Chunk:
             # just move cuda_global_chunk to cuda_shard
             # the communication is not necessary
             self.__scatter()
+            gd.debuginfo(prj="mt", info=f'')
         elif self.keep_gathered:
             # we use all-reduce here
             dist.all_reduce(self.cuda_global_chunk, group=self.torch_pg)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             self.cuda_shard = torch.empty(self.shard_size, dtype=self.dtype, device=get_current_device())
 
@@ -395,7 +423,9 @@ class Chunk:
 
             free_storage(self.cuda_global_chunk)
             self.is_gathered = False
+            gd.debuginfo(prj="mt", info=f'')
         self.__update_tensors_state(TensorState.HOLD)
+        gd.debuginfo(prj="mt", info=f'')
 
     def tensor_trans_state(self, tensor: torch.Tensor, tensor_state: TensorState) -> None:
         """
@@ -413,8 +443,10 @@ class Chunk:
         # this function only apply valid state transformation
         # invalid calls will be ignored and nothing changes
         if (self.tensors_info[tensor].state, tensor_state) not in STATE_TRANS:
+            gd.debuginfo(prj="mt", info=f'')
             return
         self.__update_one_tensor_info(self.tensors_info[tensor], tensor_state)
+        gd.debuginfo(prj="mt", info=f'')
 
     def copy_tensor_to_chunk_slice(
         self, tensor: torch.Tensor, data_slice: torch.Tensor, update_ptr: bool = True
@@ -426,6 +458,8 @@ class Chunk:
             tensor (torch.Tensor): the tensor used to retrieve meta information
             data_slice (torch.Tensor): the tensor to be copied to the chunk
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         # sanity check
         assert self.is_gathered
 
@@ -433,6 +467,7 @@ class Chunk:
         self.cuda_global_chunk[tensor_info.offset : tensor_info.end].copy_(data_slice.data.flatten())
         if update_ptr:
             tensor.data = self.cuda_global_chunk[tensor_info.offset : tensor_info.end].view(tensor.shape)
+            gd.debuginfo(prj="mt", info=f'')
 
     def add_tensor_to_chunk_slice(self, tensor: torch.Tensor, data_slice: torch.Tensor) -> None:
         """
@@ -448,12 +483,15 @@ class Chunk:
 
         tensor_info = self.tensors_info[tensor]
         self.cuda_global_chunk[tensor_info.offset : tensor_info.end].add_(data_slice.data.flatten())
+        gd.debuginfo(prj="mt", info=f'')
 
     def get_valid_length(self) -> int:
         """Get the valid length of the chunk's payload."""
         if self.keep_gathered:
+            gd.debuginfo(prj="mt", info=f'')
             return self.utilized_size
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return self.valid_end
 
     def init_pair(self, friend_chunk: "Chunk") -> None:
@@ -461,9 +499,11 @@ class Chunk:
         if self.paired_chunk is None and friend_chunk.paired_chunk is None:
             self.paired_chunk = friend_chunk
             friend_chunk.paired_chunk = self
+            gd.debuginfo(prj="mt", info=f'')
         else:
             assert self.paired_chunk is friend_chunk
             assert friend_chunk.paired_chunk is self
+            gd.debuginfo(prj="mt", info=f'')
 
     def optim_update(self) -> None:
         """Update the fp16 chunks via their fp32 chunks. It's used by the optimizer."""
@@ -475,10 +515,12 @@ class Chunk:
             assert friend_chunk.is_gathered is True
             self.cuda_global_chunk.copy_(friend_chunk.cuda_global_chunk)
             self.optim_sync_flag = True
+            gd.debuginfo(prj="mt", info=f'')
         elif friend_chunk.device_type == "cuda" and self.device_type == "cuda":
             self.cuda_shard.copy_(friend_chunk.cuda_shard)
             self.optim_sync_flag = True
             self.cpu_vis_flag = False
+            gd.debuginfo(prj="mt", info=f'')
         else:
             # optim_sync_flag is set to False
             # see shard_move function for more details
@@ -486,11 +528,13 @@ class Chunk:
             assert self.device_type == "cpu"
             self.optim_sync_flag = False
             self.cpu_vis_flag = False
+            gd.debuginfo(prj="mt", info=f'')
 
     def get_tensors(self) -> List[torch.Tensor]:
         return list(self.tensors_info.keys())
 
     def __gather(self):
+        gd.debuginfo(prj="mt", info=f'')
         if not self.is_gathered:
             # sanity check
             assert self.cuda_shard is not None
@@ -503,10 +547,13 @@ class Chunk:
             self.is_gathered = True
 
     def __scatter(self):
+        gd.debuginfo(prj="mt", info=f'')
         if self.keep_gathered:
             return
 
         if self.is_gathered:
+            gd.debuginfo(prj="mt", info=f'')
+
             # sanity check
             assert self.cuda_shard is None
 
@@ -518,6 +565,7 @@ class Chunk:
             self.is_gathered = False
 
     def __paired_shard_move(self):
+        gd.debuginfo(prj="mt", info=f'')
         assert self.paired_chunk is not None, "chunks should be paired before training"
         optim_chunk = self.paired_chunk
         assert self.chunk_size == optim_chunk.chunk_size
@@ -539,16 +587,19 @@ class Chunk:
 
         for tensor, tensor_info in self.tensors_info.items():
             tensor.data = self.cuda_global_chunk[tensor_info.offset : tensor_info.end].view(tensor.shape)
+            gd.debuginfo(prj="mt", info=f'')
 
     def __update_one_tensor_info(self, tensor_info: TensorInfo, next_state: TensorState):
         self.tensor_state_cnter[tensor_info.state] -= 1
         tensor_info.state = next_state
         self.tensor_state_cnter[tensor_info.state] += 1
+        gd.debuginfo(prj="mt", info=f'')
 
     def __update_tensors_state(self, next_state: TensorState, prev_state: Optional[TensorState] = None):
         for tensor_info in self.tensors_info.values():
             if prev_state is None or tensor_info.state == prev_state:
                 self.__update_one_tensor_info(tensor_info, next_state)
+                gd.debuginfo(prj="mt", info=f'')
 
     def __hash__(self) -> int:
         return hash(id(self))
@@ -623,8 +674,10 @@ class Chunk:
 
             if grad_chunk.chunk_temp.device.type == "cpu":
                 grad_chunk.cuda_global_chunk = grad_chunk.chunk_temp.to(get_current_device())
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 grad_chunk.cuda_global_chunk = grad_chunk.chunk_temp
+                gd.debuginfo(prj="mt", info=f'')
             grad_chunk.chunk_temp = None
 
             if grad_chunk.pin_memory:
@@ -633,10 +686,12 @@ class Chunk:
                 )
 
             self.grad_chunk = grad_chunk
+            gd.debuginfo(prj="mt", info=f'')
         else:
             # grad chunk is initialized, just reallocate cuda global chunk
             self.grad_chunk.cuda_shard = None
             self.grad_chunk.is_gathered = True
             alloc_storage(self.grad_chunk.cuda_global_chunk)
+            gd.debuginfo(prj="mt", info=f'')
 
         return self.grad_chunk

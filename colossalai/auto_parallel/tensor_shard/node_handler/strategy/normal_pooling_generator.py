@@ -27,6 +27,7 @@ class NormalPoolStrategyGenerator(StrategyGenerator):
         For Pool2d, the dim of input data should be 4([N, C, H, W]).
         For Pool3d, the dim of input data should be 5([N, C, H, W, D]).
         """
+        gd.debuginfo(prj="mt", info=f'')
         input_op_data = self.op_data["input"]
         assert input_op_data.data.dim() in (
             3,
@@ -40,6 +41,7 @@ class NormalPoolStrategyGenerator(StrategyGenerator):
 
         Note: compute_cost need to be divided by TFLOPS, now it just shows the computation size.
         """
+        gd.debuginfo(prj="mt", info=f'')
         # TODO: compute_cost need to be divided by TFLOPS, now it just shows the computation size.
         # 1D: (Lout) * N * C * kernel
         # 2D: (H * W) * N * Cout * Cin * kernel
@@ -50,6 +52,8 @@ class NormalPoolStrategyGenerator(StrategyGenerator):
         kernel_size = self.op_data["other"].data
         if isinstance(kernel_size, int):
             kernel_size = [kernel_size] * (len(sharded_output_shape) - 2)
+            gd.debuginfo(prj="mt", info=f'')
+
         kernel_size_product = reduce(operator.mul, kernel_size)
         output_size_product = reduce(operator.mul, sharded_output_shape)
         input_size_product = reduce(operator.mul, sharded_input_shape)
@@ -63,6 +67,7 @@ class NormalPoolStrategyGenerator(StrategyGenerator):
         strategy.compute_cost = compute_cost
 
     def update_memory_cost(self, strategy: ShardingStrategy) -> ShardingStrategy:
+        gd.debuginfo(prj="mt", info=f'')
         forward_size_mapping = {
             "input": self._compute_size_in_bytes(strategy, "input"),
             "output": self._compute_size_in_bytes(strategy, "output"),
@@ -87,6 +92,8 @@ class NormalPoolStrategyGenerator(StrategyGenerator):
 
     @ignore_sharding_exception
     def _generate_strategy_with_dim_partition(self, dim_partition):
+        gd.debuginfo(prj="mt", info=f'')
+
         dim_partition_dict_mapping = {"input": dim_partition, "output": dim_partition}
 
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict_mapping)
@@ -105,6 +112,7 @@ class NormalPoolStrategyGenerator(StrategyGenerator):
         return strategy
 
     def enumerate_all_possible_batch_dimensions_dim_partition(self, mesh_dim_0, mesh_dim_1):
+        gd.debuginfo(prj="mt", info=f'')
         dim_partition_list = []
         dim_partition_list.extend(enumerate_all_possible_1d_sharding(mesh_dim_0, 2))
         dim_partition_list.extend(enumerate_all_possible_1d_sharding(mesh_dim_1, 2))
@@ -115,6 +123,7 @@ class NormalPoolStrategyGenerator(StrategyGenerator):
         return dim_partition_list
 
     def collate_strategies(self) -> List[ShardingStrategy]:
+        gd.debuginfo(prj="mt", info=f'')
         strategy_list = []
 
         dim_partition_list = self.enumerate_all_possible_batch_dimensions_dim_partition(0, 1)

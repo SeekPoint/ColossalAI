@@ -33,6 +33,8 @@ class GeminiManager:
         memstats: Optional[MemStats] = None,
         **placement_kwargs,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
+
         assert placement_policy in PlacementPolicyFactory.get_policy_names()
         self.policy_name = placement_policy
         policy_cls = PlacementPolicyFactory.create(placement_policy)
@@ -61,6 +63,7 @@ class GeminiManager:
         self._layout_time = 0
         self._evict_time = 0
         self._comp_cuda_demand_time = 0
+        gd.debuginfo(prj="mt", info=f'')
 
     @property
     def need_warmup(self) -> bool:
@@ -83,8 +86,10 @@ class GeminiManager:
             return self._mem_stats_collector._memstats
 
     def pre_iter(self, *args):
+        gd.debuginfo(prj="mt", info=f'')
         if self._mem_stats_collector and self._warmup:
             self._mem_stats_collector.start_collection()
+
 
     def post_iter(self):
         """This function must be called when each iteration finishes"""
@@ -92,8 +97,10 @@ class GeminiManager:
             self._mem_stats_collector.finish_collection()
         self._warmup = False
         self.reset_attributes()
+        gd.debuginfo(prj="mt", info=f'')
 
     def adjust_layout(self, chunks: Tuple[Chunk, ...]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         """Adjust the layout of stateful tensors according to the information provided
         by mem_stats_collector, which should belongs to a Sharded Model.
         """
@@ -118,6 +125,7 @@ class GeminiManager:
 
     @functools.lru_cache(maxsize=None)
     def _get_layout_info(self, compute_idx: int, warmup: bool, chunks: Tuple[Chunk, ...]):
+        gd.debuginfo(prj="mt", info=f'')
         start = time()
         cuda_demand = 0
         for chunk in chunks:
@@ -136,15 +144,18 @@ class GeminiManager:
         return cuda_demand, can_evict_chunks
 
     def _record_chunks_order(self, chunks: Tuple[Chunk, ...]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self._compute_idx += 1
         if self._warmup and self._placement_policy.need_mem_stats:
             self._compute_list.append(chunks)
 
     def sample_overall_data(self):
+        gd.debuginfo(prj="mt", info=f'')
         if self._mem_stats_collector:
             self._mem_stats_collector.sample_overall_data()
 
     def record_model_data_volume(self):
+        gd.debuginfo(prj="mt", info=f'')
         if self._mem_stats_collector:
             self._mem_stats_collector.record_model_data_volume()
 

@@ -16,6 +16,7 @@ colossalai.launch_from_torch(config={})
 
 
 def data_gen(batch_size: int = 4, seq_len: int = 512):
+    gd.debuginfo(prj="mt", info=f'')
     input_ids = torch.randint(10, 30000, (1, seq_len), dtype=torch.int32)
     attention_mask = torch.ones((1, seq_len), dtype=torch.int32)
     data = dict(input_ids=input_ids, attention_mask=attention_mask)
@@ -91,6 +92,7 @@ def print_details_info(timestamps, model_config, args, whole_end2end):
 
 
 if __name__ == "__main__":
+    gd.debuginfo(prj="mt", info=f'')
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", default="toy", help="the size of model")
     parser.add_argument("-b", "--batch_size", type=int, default=8, help="batch size")

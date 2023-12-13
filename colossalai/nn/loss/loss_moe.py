@@ -32,6 +32,7 @@ class MoeCrossEntropyLoss(_Loss):
         super().__init__()
         self.loss = nn.CrossEntropyLoss(*args, **kwargs)
         self.aux_weight = aux_weight
+        gd.debuginfo(prj="mt", info=f'')
 
     def forward(self, *args):
         """
@@ -46,6 +47,8 @@ class MoeCrossEntropyLoss(_Loss):
         """
         main_loss = self.loss(*args)
         aux_loss = MOE_CONTEXT.get_loss()
+        gd.debuginfo(prj="mt", info=f'')
+
         return main_loss + self.aux_weight * aux_loss
 
 
@@ -64,6 +67,7 @@ class MoeLoss(_Loss):
         super().__init__()
         self.loss_fn = loss_fn(*args, **kwargs)
         self.aux_weight = aux_weight
+        gd.debuginfo(prj="mt", info=f'')
 
     def forward(self, *args, **kwargs):
         """
@@ -78,4 +82,5 @@ class MoeLoss(_Loss):
         """
         main_loss = self.loss_fn(*args, **kwargs)
         aux_loss = MOE_CONTEXT.get_loss()
+        gd.debuginfo(prj="mt", info=f'')
         return main_loss + self.aux_weight * aux_loss

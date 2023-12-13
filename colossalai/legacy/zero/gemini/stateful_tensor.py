@@ -33,6 +33,7 @@ class StatefulTensor(object):
         self._state = state
         self._payload = None
         self._payload_size = 0  # byte size of current payload
+        gd.debuginfo(prj="mt", info=f'')
 
         StatefulTensor.GST_MGR.register_new_instance()
 

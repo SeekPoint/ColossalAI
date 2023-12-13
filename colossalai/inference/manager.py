@@ -38,6 +38,7 @@ class DynamicBatchManager:
                 running_batch : running batch
                 waiting_req_list : list of waiting requests, initialized before dynamic batch manager
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.engine = tp_engine
         self.max_total_token_num = max_total_token_num
         running_max_req_size = self.engine.max_batch_size if self.engine is not None else 2
@@ -60,11 +61,13 @@ class DynamicBatchManager:
         self.tokenizer = get_tokenizer(tokenizer_name=self.model) if tokenizer is None else tokenizer
         if self.eos_id == None:
             self.eos_id = self.tokenizer.eos_token_id
+            gd.debuginfo(prj="mt", info=f'')
 
     def add_req(self, request_id: str, prompt_ids: List[int], sampling_params: SamplingParams, prompts: str = ""):
         """
         Add new request to req queue, during initialization all requests are held in waiting list.
         """
+        gd.debuginfo(prj="mt", info=f'')
         sampling_params.max_new_tokens = (
             self.engine.max_output_len
             if sampling_params.max_new_tokens > self.engine.max_output_len
@@ -78,6 +81,7 @@ class DynamicBatchManager:
         """
         Encode and Add new input to req queue. support one sequence input for now.
         """
+        gd.debuginfo(prj="mt", info=f'')
         prompt_ids = self.tokenizer.encode(prompts)
         prompt_len = len(prompt_ids)
         if prompt_len > self.engine.max_input_len:
@@ -87,7 +91,9 @@ class DynamicBatchManager:
         return
 
     def abort(self, request_id):
+        gd.debuginfo(prj="mt", info=f'')
         if self.running_batch is not None:
+            gd.debuginfo(prj="mt", info=f'')
             for req in self.running_batch.reqs:
                 if req.request_id == request_id:
                     req.has_generate_finished = True
@@ -102,6 +108,7 @@ class DynamicBatchManager:
         """
         The main loop for a dynamic batching process.
         """
+        gd.debuginfo(prj="mt", info=f'')
         counter_count = 0
         # self.running_batch is not None or self.req_queue.waiting_req_list
         while self.running_batch is not None or self.req_queue.waiting_req_list:
@@ -124,10 +131,12 @@ class DynamicBatchManager:
         """
         Logic for handling requests
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         if self.running_batch is None:
             new_batch = self.req_queue.generate_new_batch(self.running_batch)
+            gd.debuginfo(prj="mt", info=f'')
             if new_batch is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 self.stats_tool.count_prompt_tokens(new_batch)
                 self.running_batch = new_batch
                 yield from self._prefill_batch(self.running_batch)
@@ -136,6 +145,7 @@ class DynamicBatchManager:
             return
 
         if self.has_wait_tokens < self.max_wait_tokens:
+            gd.debuginfo(prj="mt", info=f'')
             self.stats_tool.count_output_tokens(self.running_batch)
             yield from self._decode_batch(self.running_batch)
             self._filter_runing_batch()
@@ -143,15 +153,19 @@ class DynamicBatchManager:
             return
         else:
             new_mini_batch = self.req_queue.generate_new_batch(self.running_batch)
+            gd.debuginfo(prj="mt", info=f'')
             if new_mini_batch is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 self.stats_tool.count_prompt_tokens(new_mini_batch)
                 yield from self._prefill_batch(new_mini_batch)
                 if not new_mini_batch.is_clear():
+                    gd.debuginfo(prj="mt", info=f'')
                     self._merge_batch(self.running_batch, new_mini_batch)
                     self.running_batch.merge(new_mini_batch)
                 self.has_wait_tokens = 0
 
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 self.stats_tool.count_output_tokens(self.running_batch)
                 yield from self._decode_batch(self.running_batch)
                 self._filter_runing_batch()
@@ -162,11 +176,12 @@ class DynamicBatchManager:
     def _init_batch(self, batch: Batch, dtype="fp16"):
         reqs = [r.to_rpc_obj() for r in batch.reqs]
         batch_id = batch.batch_id
-
+        gd.debuginfo(prj="mt", info=f'')
         import torch
 
         if dtype == "fp16":
             dtype = torch.float16
+            gd.debuginfo(prj="mt", info=f'')
         else:
             assert False, "error dtype"
 
@@ -186,7 +201,7 @@ class DynamicBatchManager:
         For all batches, no matter it is a new batch or a mini batch, we need to do prefill first.
         """
         self._init_batch(batch)
-
+        gd.debuginfo(prj="mt", info=f'')
         # TODO: figure out if cache and batch id is needed
         ans = self.engine._prefill_batch(batch.batch_id)
         req_to_out_token_id = ans
@@ -200,6 +215,7 @@ class DynamicBatchManager:
         """
         Decoding process
         """
+        gd.debuginfo(prj="mt", info=f'')
         ans = self.engine._decode_batch(batch.batch_id)
         req_to_out_token_id = ans
         self._add_token_id_to_req(batch, req_to_out_token_id)
@@ -207,6 +223,7 @@ class DynamicBatchManager:
         yield from self._handle_finish_req(batch, has_new_finished_req)
 
     def _filter_batch(self, batch: Batch):
+        gd.debuginfo(prj="mt", info=f'')
         batch_id = batch.batch_id
         req_id_list = [r.request_id for r in batch.reqs]
         batch = self.engine.cache.pop(batch_id)
@@ -218,6 +235,7 @@ class DynamicBatchManager:
         """
         Merge new mini batch into running batch.
         """
+        gd.debuginfo(prj="mt", info=f'')
         batch1 = self.engine.cache.pop(batch1.batch_id)
         batch2 = self.engine.cache.pop(batch2.batch_id)
 
@@ -230,24 +248,31 @@ class DynamicBatchManager:
         """
         Remove finished batch.
         """
+        gd.debuginfo(prj="mt", info=f'')
         batch = self.engine.cache.pop(batch.batch_id)
         batch.free_self()
         del batch
 
     def _handle_finish_req(self, batch: Batch, has_new_finished_req):
+        gd.debuginfo(prj="mt", info=f'')
         if has_new_finished_req:
             finished_reqs = batch.filter_finished()
             if batch.is_clear():
                 self._remove_batch(batch)
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 self._filter_batch(batch)
+                gd.debuginfo(prj="mt", info=f'')
             yield from self._output_process(finished_reqs)
 
     def _filter_runing_batch(self):
+        gd.debuginfo(prj="mt", info=f'')
         if self.running_batch is not None and self.running_batch.is_clear():
+            gd.debuginfo(prj="mt", info=f'')
             self.running_batch = None
 
     def _add_token_id_to_req(self, batch: Batch, req_ans):
+        gd.debuginfo(prj="mt", info=f'')
         for req_id, (new_token_id, new_gen_metadata) in req_ans.items():
             req = batch.id_to_reqs[req_id]
             req.output_ids.append(new_token_id)
@@ -258,6 +283,7 @@ class DynamicBatchManager:
         """
         Process the output of a batch.
         """
+        gd.debuginfo(prj="mt", info=f'')
         for req in finished_reqs:
             output = self.tokenizer.decode(req.output_ids)
             yield req.prompts + output
@@ -270,6 +296,7 @@ class DynamicBatchManager:
         """
         Generate the output of a request.
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.add_input(request_id, prompts, sampling_params)
         return self.loop_for_fwd()
 
@@ -278,6 +305,7 @@ class DynamicBatchManager:
 
 
 def start_dynamic_batching(args, tp_engine, waiting_req_list):
+    gd.debuginfo(prj="mt", info=f'')
     try:
         batch_manager = DynamicBatchManager(
             tp_engine=tp_engine,

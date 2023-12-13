@@ -33,6 +33,7 @@ class RewardModelTrainer(SLTrainer):
         loss_fn: Callable,
         max_epochs: int = 1,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(strategy, max_epochs, model, optim)
 
         self.loss_fn = loss_fn
@@ -41,7 +42,9 @@ class RewardModelTrainer(SLTrainer):
         self.num_train_step = 0
 
     def _eval(self, epoch):
+        gd.debuginfo(prj="mt", info=f'')
         if self.eval_dataloader is not None:
+            gd.debuginfo(prj="mt", info=f'')
             self.model.eval()
             dist, num_correct, num_samples = 0, 0, 0
             with torch.no_grad():
@@ -63,6 +66,7 @@ class RewardModelTrainer(SLTrainer):
                 self.writer.add_scalar("eval/acc", self.acc, epoch)
 
     def _train(self, epoch):
+        gd.debuginfo(prj="mt", info=f'')
         self.model.train()
         step_bar = tqdm.trange(
             len(self.train_dataloader), desc=f"Epoch {epoch + 1}/{self.max_epochs}", disable=not is_rank_0()
@@ -103,6 +107,7 @@ class RewardModelTrainer(SLTrainer):
             train_dataloader (DataLoader): the dataloader to use for training
             eval_dataloader (DataLoader): the dataloader to use for evaluation
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.train_dataloader = train_dataloader
         self.eval_dataloader = eval_dataloader
 

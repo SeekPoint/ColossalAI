@@ -28,8 +28,11 @@ def where_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem, Li
     bwd_compute_cost = 0
     if x_tensor.shape != output_tensor.shape:
         bwd_compute_cost += flop_mapping[torch.ops.aten.sum.dim_IntList]([output_tensor], [x_tensor])
+        gd.debuginfo(prj="mt", info=f'')
+
     if y_tensor.shape != output_tensor.shape:
         bwd_compute_cost += flop_mapping[torch.ops.aten.sum.dim_IntList]([output_tensor], [y_tensor])
+        gd.debuginfo(prj="mt", info=f'')
 
     compute_cost = TrainCycleItem(fwd=fwd_compute_cost, bwd=bwd_compute_cost, total=fwd_compute_cost + bwd_compute_cost)
 

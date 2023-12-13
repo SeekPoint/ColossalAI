@@ -7,6 +7,7 @@ from ...registry import meta_patched_module
 
 @meta_patched_module.register(torch.nn.AvgPool1d)
 def torch_nn_avgpool1d(self, input):
+    gd.debuginfo(prj="mt", info=f'')
     num_dim = input.dim()
     assert num_dim in [2, 3], f"expected the input to have 2 or 3 dimensions, but got {num_dim} dimensions"
 
@@ -14,8 +15,10 @@ def torch_nn_avgpool1d(self, input):
 
     def _convert_int_to_list(item):
         if isinstance(item, int):
+            gd.debuginfo(prj="mt", info=f'')
             return [item] * 1
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return item
 
     padding = _convert_int_to_list(self.padding)
@@ -30,6 +33,7 @@ def torch_nn_avgpool1d(self, input):
 
 @meta_patched_module.register(torch.nn.AvgPool2d)
 def torch_nn_avgpool2d(self, input):
+    gd.debuginfo(prj="mt", info=f'')
     num_dim = input.dim()
     assert num_dim in [3, 4], f"expected the input to have 3 or 4 dimensions, but got {num_dim} dimensions"
 
@@ -37,8 +41,10 @@ def torch_nn_avgpool2d(self, input):
 
     def _convert_int_to_list(item):
         if isinstance(item, int):
+            gd.debuginfo(prj="mt", info=f'')
             return [item] * 2
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return item
 
     padding = _convert_int_to_list(self.padding)
@@ -57,6 +63,7 @@ def torch_nn_avgpool2d(self, input):
 
 @meta_patched_module.register(torch.nn.AvgPool3d)
 def torch_nn_avgpool3d(self, input):
+    gd.debuginfo(prj="mt", info=f'')
     num_dim = input.dim()
     assert num_dim in [4, 5], f"expected the input to have 4 or 5 dimensions, but got {num_dim} dimensions"
 
@@ -64,8 +71,10 @@ def torch_nn_avgpool3d(self, input):
 
     def _convert_int_to_list(item):
         if isinstance(item, int):
+            gd.debuginfo(prj="mt", info=f'')
             return [item] * 3
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return item
 
     padding = _convert_int_to_list(self.padding)
@@ -86,6 +95,7 @@ def torch_nn_avgpool3d(self, input):
 
 @meta_patched_module.register(torch.nn.MaxPool1d)
 def torch_nn_maxpool1d(self, input):
+    gd.debuginfo(prj="mt", info=f'')
     num_dim = input.dim()
     assert num_dim in [2, 3], f"expected the input to have 2 or 3 dimensions, but got {num_dim} dimensions"
 
@@ -93,8 +103,10 @@ def torch_nn_maxpool1d(self, input):
 
     def _convert_int_to_list(item):
         if isinstance(item, int):
+            gd.debuginfo(prj="mt", info=f'')
             return [item] * 1
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return item
 
     padding = _convert_int_to_list(self.padding)
@@ -110,6 +122,7 @@ def torch_nn_maxpool1d(self, input):
 
 @meta_patched_module.register(torch.nn.MaxPool2d)
 def torch_nn_maxpool2d(self, input):
+    gd.debuginfo(prj="mt", info=f'')
     num_dim = input.dim()
     assert num_dim in [3, 4], f"expected the input to have 3 or 4 dimensions, but got {num_dim} dimensions"
 
@@ -117,8 +130,10 @@ def torch_nn_maxpool2d(self, input):
 
     def _convert_int_to_list(item):
         if isinstance(item, int):
+            gd.debuginfo(prj="mt", info=f'')
             return [item] * 2
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return item
 
     padding = _convert_int_to_list(self.padding)
@@ -138,6 +153,7 @@ def torch_nn_maxpool2d(self, input):
 
 @meta_patched_module.register(torch.nn.MaxPool3d)
 def torch_nn_maxpool3d(self, input):
+    gd.debuginfo(prj="mt", info=f'')
     num_dim = input.dim()
     assert num_dim in [4, 5], f"expected the input to have 4 or 5 dimensions, but got {num_dim} dimensions"
 
@@ -145,8 +161,10 @@ def torch_nn_maxpool3d(self, input):
 
     def _convert_int_to_list(item):
         if isinstance(item, int):
+            gd.debuginfo(prj="mt", info=f'')
             return [item] * 3
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return item
 
     padding = _convert_int_to_list(self.padding)
@@ -172,8 +190,10 @@ def torch_nn_adapative_pooling_1d(self, input):
     assert input.dim() in [2, 3]
     if isinstance(self.output_size, int):
         output_size = (self.output_size,)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         output_size = self.output_size
+        gd.debuginfo(prj="mt", info=f'')
     result_shape = tuple(input.shape[:-1]) + output_size
     return torch.empty(result_shape, device="meta")
 
@@ -184,8 +204,10 @@ def torch_nn_adapative_pooling_2d(self, input):
     assert input.dim() in [3, 4]
     if isinstance(self.output_size, int):
         output_size = (self.output_size,) * 2
+        gd.debuginfo(prj="mt", info=f'')
     else:
         output_size = self.output_size
+        gd.debuginfo(prj="mt", info=f'')
     result_shape = tuple(input.shape[:-2]) + output_size
     return torch.empty(result_shape, device="meta")
 
@@ -196,7 +218,9 @@ def torch_nn_adapative_pooling_3d(self, input):
     assert input.dim() in [4, 5]
     if isinstance(self.output_size, int):
         output_size = (self.output_size,) * 3
+        gd.debuginfo(prj="mt", info=f'')
     else:
         output_size = self.output_size
+        gd.debuginfo(prj="mt", info=f'')
     result_shape = tuple(input.shape[:-3]) + output_size
     return torch.empty(result_shape, device="meta")

@@ -18,12 +18,14 @@ class CycledDataLoader:
         self,
         dataloader: DataLoader,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.dataloader = dataloader
 
         self.count = 0
         self.dataloader_iter = None
 
     def next(self):
+        gd.debuginfo(prj="mt", info=f'')
         # defer initialization
         if self.dataloader_iter is None:
             self.dataloader_iter = iter(self.dataloader)

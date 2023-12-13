@@ -22,7 +22,9 @@ class DeviceMeshInfo:
     mesh_shape: Union[torch.Size, List[int], Tuple[int]] = None
 
     def __post_init__(self):
+        gd.debuginfo(prj="mt", info=f'')
         if self.mesh_shape is not None:
+            gd.debuginfo(prj="mt", info=f'')
             world_size = len(self.physical_ids)
             mesh_shape_numel = torch.Size(self.mesh_shape).numel()
             assert (
@@ -43,12 +45,14 @@ def initialize_device_mesh(device_mesh_info: DeviceMeshInfo):
     logical_mesh_shape = device_mesh_info.mesh_shape
 
     if logical_mesh_shape is None:
+        gd.debuginfo(prj="mt", info=f'')
         ab_profiler = AlphaBetaProfiler(physical_devices)
         # search for the best logical mesh shape
         logical_mesh_id = ab_profiler.search_best_logical_mesh()
         logical_mesh_id = torch.Tensor(logical_mesh_id).to(torch.int)
 
     else:
+        gd.debuginfo(prj="mt", info=f'')
         logical_mesh_id = physical_mesh.reshape(logical_mesh_shape)
 
     device_mesh = DeviceMesh(physical_mesh_id=physical_mesh, logical_mesh_id=logical_mesh_id, init_process_group=True)
@@ -73,6 +77,7 @@ class DeviceMeshManager:
             device_mesh_info (DeviceMeshInfo): the information used to initialize the device mesh
         """
         if name not in self.device_mesh_store:
+            gd.debuginfo(prj="mt", info=f'')
             device_mesh = initialize_device_mesh(device_mesh_info)
             self.device_mesh_store[name] = device_mesh
             return device_mesh
@@ -90,6 +95,7 @@ class DeviceMeshManager:
             DeviceMesh: the device mesh
         """
         if name in self.device_mesh_store:
+            gd.debuginfo(prj="mt", info=f'')
             return self.device_mesh_store[name]
         else:
             raise ValueError(f"Device mesh {name} does not exist.")
@@ -101,6 +107,7 @@ class DeviceMeshManager:
         Args:
             name (str): name of the device mesh
         """
+        gd.debuginfo(prj="mt", info=f'')
         if name in self.device_mesh_store:
             for pgs in self.device_mesh_store[name].process_groups_dict.values():
                 for pg in pgs:
@@ -113,6 +120,7 @@ class DeviceMeshManager:
         """
         Destroy all device meshes.
         """
+        gd.debuginfo(prj="mt", info=f'')
         for name in self.device_mesh_store:
             for pgs in self.device_mesh_store[name].process_groups_dict.values():
                 for pg in pgs:

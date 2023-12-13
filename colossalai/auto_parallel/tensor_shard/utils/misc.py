@@ -23,6 +23,7 @@ def ignore_sharding_exception(func):
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         try:
             logger = get_dist_logger()
             rst = func(*args, **kwargs)
@@ -43,6 +44,7 @@ def check_sharding_spec_validity(sharding_spec: ShardingSpec, tensor: torch.Tens
         3. the sharding spec's entire shape must match the tensor shape
     #
     """
+    gd.debuginfo(prj="mt", info=f'')
     # make sure all dims are covered in sharding spec
     sharding_len = len(sharding_spec.sharding_sequence)
     tensor_num_dim = tensor.dim()
@@ -89,12 +91,17 @@ def pytree_map(obj: Any, fn: Callable, process_types: Union[Type, Tuple[Type]] =
         :class:`Any`: returns have the same structure of `obj` and type in process_types after map of `fn`
     """
     if isinstance(obj, dict):
+        gd.debuginfo(prj="mt", info=f'')
         return {k: pytree_map(obj[k], fn, process_types, map_all) for k in obj}
     elif isinstance(obj, tuple):
+        gd.debuginfo(prj="mt", info=f'')
         return tuple(pytree_map(o, fn, process_types, map_all) for o in obj)
     elif isinstance(obj, list):
+        gd.debuginfo(prj="mt", info=f'')
         return list(pytree_map(o, fn, process_types, map_all) for o in obj)
     elif isinstance(obj, process_types):
+        gd.debuginfo(prj="mt", info=f'')
         return fn(obj)
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return fn(obj) if map_all else obj

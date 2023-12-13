@@ -17,6 +17,7 @@ def calculate_fwd_in(n: Node) -> bool:
     Returns:
         save_fwd_in (bool): the result of `save_fwd_in`
     """
+    gd.debuginfo(prj="mt", info=f'')
     return n.meta["save_fwd_in"]
 
 
@@ -30,6 +31,7 @@ def calculate_fwd_tmp(n: Node) -> int:
     Returns:
         fwd_tmp (int): the result of `fwd_tmp`
     """
+    gd.debuginfo(prj="mt", info=f'')
     return n.meta["fwd_mem_tmp"]
 
 
@@ -43,4 +45,5 @@ def calculate_fwd_out(n: Node) -> int:
     Returns:
         fwd_out (int): the result of `fwd_out`
     """
+    gd.debuginfo(prj="mt", info=f'')
     return n.meta["fwd_mem_out"]

@@ -19,9 +19,13 @@ class Lars(Optimizer):
         weight_decay (float, optional): weight decay (L2 penalty) (default: 0)
     """
 
-    def __init__(
-        self, params: Iterable[torch.nn.Parameter], lr=1e-3, momentum=0, eeta=1e-3, weight_decay=0, epsilon=0.0
-    ) -> None:
+    def __init__(self,
+                 params: Iterable[torch.nn.Parameter],
+                 lr=1e-3,
+                 momentum=0,
+                 eeta=1e-3,
+                 weight_decay=0,
+                epsilon=0.0) -> None:
         if not isinstance(lr, float) or lr < 0.0:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if momentum < 0.0:
@@ -44,8 +48,10 @@ class Lars(Optimizer):
             closure (callable, optional): A closure that reevaluates the model
                 and returns the loss.
         """
+        gd.debuginfo(prj="mt", info=f'')
         loss = None
         if closure is not None:
+            gd.debuginfo(prj="mt", info=f'')
             with torch.enable_grad():
                 loss = closure()
 

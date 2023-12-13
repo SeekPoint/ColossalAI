@@ -22,9 +22,12 @@ class GeminiZeROHook(ColoParamOpHook):
         self._gemini_manager = gemini_manager
         self._chunk_manager = gemini_manager.chunk_manager
         self._training_phase = TrainingPhase.FORWARD
+        gd.debuginfo(prj="mt", info=f'')
 
     def pre_op(self, params):
         params = [p for p in params if not is_ddp_ignored(p)]
+        gd.debuginfo(prj="mt", info=f'')
+
         chunks = self._chunk_manager.get_chunks(params)
         for p in params:
             self._chunk_manager.trans_tensor_state(p, TensorState.COMPUTE)
@@ -37,6 +40,7 @@ class GeminiZeROHook(ColoParamOpHook):
         self._gemini_manager.record_model_data_volume()
 
     def post_op(self, params):
+        gd.debuginfo(prj="mt", info=f'')
         params = [p for p in params if not is_ddp_ignored(p)]
         for p in params:
             tensor_state = (
@@ -47,20 +51,25 @@ class GeminiZeROHook(ColoParamOpHook):
             self._chunk_manager.trans_tensor_state(p, tensor_state)
 
     def pre_forward(self, params: List[torch.Tensor]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.pre_op(params)
 
     def post_forward(self, params: List[torch.Tensor]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.post_op(params)
 
     def pre_backward(self, params: List[torch.Tensor]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.pre_op(params)
 
     def post_backward(self, params: List[torch.Tensor]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.post_op(params)
 
     @contextmanager
     def switch_training_phase(self, training_phase: TrainingPhase = TrainingPhase.BACKWARD):
         old_training_phase = self._training_phase
+        gd.debuginfo(prj="mt", info=f'')
         try:
             self._training_phase = training_phase
             yield

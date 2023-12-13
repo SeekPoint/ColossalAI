@@ -53,9 +53,11 @@ def parameterize(argument: str, values: List[Any]) -> Callable:
         argument (str): the name of the argument to parameterize
         values (List[Any]): a list of values to iterate for this argument
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     def _wrapper(func):
+        gd.debuginfo(prj="mt", info=f'')
         def _execute_function_by_param(**kwargs):
+            gd.debuginfo(prj="mt", info=f'')
             for val in values:
                 arg_map = {argument: val}
                 partial_func = partial(func, **arg_map)
@@ -113,12 +115,14 @@ def rerun_on_exception(exception_type: Exception = Exception, pattern: str = Non
     """
 
     def _match_lines(lines, pattern):
+        gd.debuginfo(prj="mt", info=f'')
         for line in lines:
             if re.match(pattern, line):
                 return True
         return False
 
     def _wrapper(func):
+        gd.debuginfo(prj="mt", info=f'')
         def _run_until_success(*args, **kwargs):
             try_count = 0
             assert max_try is None or isinstance(
@@ -149,6 +153,7 @@ def rerun_on_exception(exception_type: Exception = Exception, pattern: str = Non
 
         return _run_until_success
 
+    gd.debuginfo(prj="mt", info=f'')
     return _wrapper
 
 
@@ -164,6 +169,8 @@ def rerun_if_address_is_in_use():
             ...
 
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     # check version
     torch_version = version.parse(torch.__version__)
     assert torch_version.major >= 1
@@ -171,8 +178,10 @@ def rerun_if_address_is_in_use():
     # only torch >= 1.8 has ProcessRaisedException
     if torch_version >= version.parse("1.8.0"):
         exception = torch.multiprocessing.ProcessRaisedException
+        gd.debuginfo(prj="mt", info=f'')
     else:
         exception = Exception
+        gd.debuginfo(prj="mt", info=f'')
 
     func_wrapper = rerun_on_exception(exception_type=exception, pattern=".*Address already in use.*")
     return func_wrapper
@@ -195,11 +204,14 @@ def skip_if_not_enough_gpus(min_gpus: int):
     Arg:
         min_gpus (int): the minimum number of GPUs required to run this test.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     def _wrap_func(f):
+        gd.debuginfo(prj="mt", info=f'')
         def _execute_by_gpu_num(*args, **kwargs):
+            gd.debuginfo(prj="mt", info=f'')
             num_avail_gpu = torch.cuda.device_count()
             if num_avail_gpu >= min_gpus:
+                gd.debuginfo(prj="mt", info=f'')
                 f(*args, **kwargs)
 
         return _execute_by_gpu_num
@@ -213,6 +225,7 @@ def free_port() -> int:
     Returns:
         int: A free port on localhost.
     """
+    gd.debuginfo(prj="mt", info=f'')
     while True:
         port = random.randint(20000, 65000)
         try:
@@ -245,6 +258,7 @@ def spawn(func, nprocs=1, **kwargs):
         func (Callable): The function to be spawned.
         nprocs (int, optional): The number of processes to spawn. Defaults to 1.
     """
+    gd.debuginfo(prj="mt", info=f'')
     port = free_port()
     wrapped_func = partial(func, world_size=nprocs, port=port, **kwargs)
     mp.spawn(wrapped_func, nprocs=nprocs)
@@ -259,9 +273,11 @@ def clear_cache_before_run():
         def test_something():
             ...
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     def _wrap_func(f):
+        gd.debuginfo(prj="mt", info=f'')
         def _clear_cache(*args, **kwargs):
+            gd.debuginfo(prj="mt", info=f'')
             torch.cuda.empty_cache()
             torch.cuda.reset_peak_memory_stats()
             torch.cuda.reset_max_memory_allocated()
@@ -280,6 +296,7 @@ class DummyDataloader:
         self.data_gen_fn = data_gen_fn
         self.length = length
         self.step = 0
+        gd.debuginfo(prj="mt", info=f'')
 
     def __iter__(self):
         self.step = 0

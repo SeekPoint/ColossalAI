@@ -22,6 +22,7 @@ class NaiveFP16MixedPrecisionMixin(FP16MixedPrecisionMixin):
         hysteresis: int = 2,
         max_scale: float = 2**32,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(
             initial_scale, min_scale, growth_factor, backoff_factor, growth_interval, hysteresis, max_scale
         )
@@ -50,6 +51,7 @@ class MixedPrecisionOptimizer(OptimizerWrapper):
     ):
         super().__init__(optim)
         if precision == "fp16":
+            gd.debuginfo(prj="mt", info=f'')
             working_params = []
             for group in self.optim.param_groups:
                 for p in group["params"]:
@@ -65,6 +67,7 @@ class MixedPrecisionOptimizer(OptimizerWrapper):
                 max_scale=max_scale,
             )
         elif precision == "bf16":
+            gd.debuginfo(prj="mt", info=f'')
             self.mixed_precision = BF16MixedPrecisionMixin()
         else:
             raise ValueError(f"Unsupported precision: {precision}")
@@ -86,14 +89,17 @@ class MixedPrecisionOptimizer(OptimizerWrapper):
             group["params"] = master_params
 
     def backward(self, loss: Tensor, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         loss = self.mixed_precision.pre_backward(loss)
         loss.backward(*args, **kwargs)
 
     def backward_by_grad(self, tensor: Tensor, grad: Tensor):
+        gd.debuginfo(prj="mt", info=f'')
         grad = self.mixed_precision.pre_backward_by_grad(tensor, grad)
         tensor.backward(grad)
 
     def zero_grad(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         for p in self.working_to_master_map.keys():
             p.grad = None
         self.mixed_precision.pre_zero_grad()
@@ -109,13 +115,16 @@ class MixedPrecisionOptimizer(OptimizerWrapper):
         Returns:
             None
         """
+        gd.debuginfo(prj="mt", info=f'')
         div_scale = 1.0
 
         # If mixed-precision training is used, get the gradient division scale from the mixed-precision handler.
         if self.mixed_precision is not None:
+            gd.debuginfo(prj="mt", info=f'')
             div_scale = self.mixed_precision.get_grad_div_scale()
 
         if self.max_norm > 0.0:
+            gd.debuginfo(prj="mt", info=f'')
             # Calculate the scaling factor for gradient clipping
             # The gradient norm is scaled by 'div_scale' and then clipped to 'max_norm'
             clip = ((total_norm / div_scale) + 1e-6) / self.max_norm
@@ -144,15 +153,18 @@ class MixedPrecisionOptimizer(OptimizerWrapper):
         """
 
         if len(param_gradient_pairs) == 0:
+            gd.debuginfo(prj="mt", info=f'')
             return 0.0
 
         # gradients used for norm calculation.
         gradients = [grad for param, grad in param_gradient_pairs]
 
         if norm_type == inf:
+            gd.debuginfo(prj="mt", info=f'')
             total_norm = max(grad.data.abs().max() for grad in gradients)
 
         else:
+            gd.debuginfo(prj="mt", info=f'')
             total_norm_exponentiated = 0.0
             for grad in gradients:
                 total_norm_exponentiated += grad.data.double().norm(norm_type) ** norm_type
@@ -162,6 +174,7 @@ class MixedPrecisionOptimizer(OptimizerWrapper):
 
     def step(self, *args, **kwargs):
         if self.mixed_precision.should_skip_step():
+            gd.debuginfo(prj="mt", info=f'')
             self.zero_grad()
             return
         # prepare grads
@@ -176,9 +189,11 @@ class MixedPrecisionOptimizer(OptimizerWrapper):
 
         # gradient unscale and clip.
         if self.max_norm <= 0:
+            gd.debuginfo(prj="mt", info=f'')
             # no need to compute gradient norm.
             total_norm = 0.0
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # compute the total norm.
             param_gradient_pairs = [
                 (self.master_to_working_map[p], p.grad)
@@ -199,6 +214,7 @@ class MixedPrecisionOptimizer(OptimizerWrapper):
                 working_param.data.copy_(p.data)
 
     def update_master_params(self, model: Module):
+        gd.debuginfo(prj="mt", info=f'')
         # Update master params from working params
         with torch.no_grad():
             for p in model.parameters():
@@ -208,7 +224,9 @@ class MixedPrecisionOptimizer(OptimizerWrapper):
                 master_param.data.copy_(p.data)
 
     def get_working_to_master_map(self) -> Dict[int, torch.Tensor]:
+        gd.debuginfo(prj="mt", info=f'')
         return {id(working_p): master_p for working_p, master_p in self.working_to_master_map.items()}
 
     def get_master_to_working_map(self) -> Dict[int, torch.Tensor]:
+        gd.debuginfo(prj="mt", info=f'')
         return {id(master_p): working_p for master_p, working_p in self.master_to_working_map.items()}

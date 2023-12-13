@@ -9,10 +9,12 @@ from pydebug import gd, infoTensor
 
 # this register are for torch under version 1.13.1, maybe removed in the future
 def _odict_flatten(d: "OrderedDict[Any, Any]") -> Tuple[List[Any], Any]:
+    gd.debuginfo(prj="mt", info=f'')
     return list(d.values()), list(d.keys())
 
 
 def _odict_unflatten(values: List[Any], context: Any) -> "OrderedDict[Any, Any]":
+    gd.debuginfo(prj="mt", info=f'')
     return OrderedDict((key, value) for key, value in zip(context, values))
 
 
@@ -20,6 +22,7 @@ _register_pytree_node(OrderedDict, _odict_flatten, _odict_unflatten)
 
 
 def tree_map_hf(fn: Any, pytree: Any):
+    gd.debuginfo(prj="mt", info=f'')
     flat_args, spec = tree_flatten_hf(pytree)
     return tree_unflatten([fn(i) for i in flat_args], spec)
 
@@ -30,6 +33,7 @@ def tree_flatten_hf(pytree: Any) -> Tuple[List[Any], TreeSpec]:
     to reconstruct the pytree.
     """
     if isinstance(pytree, OrderedDict):
+        gd.debuginfo(prj="mt", info=f'')
         node_type = OrderedDict
         flatten_fn = SUPPORTED_NODES[node_type].flatten_fn
         child_pytrees, context = flatten_fn(pytree)
@@ -43,6 +47,7 @@ def tree_flatten_hf(pytree: Any) -> Tuple[List[Any], TreeSpec]:
             children_specs.append(child_spec)
         return result, TreeSpec(node_type, context, children_specs)
     else:
+        gd.debuginfo(prj="mt", info=f'')
         result, tree_spec = tree_flatten(pytree)
         return result, tree_spec
 
@@ -57,6 +62,7 @@ def to_device(x: Any, device: Optional[torch.device] = None) -> Any:
     Returns:
         Any: Moved object.
     """
+    gd.debuginfo(prj="mt", info=f'')
     if isinstance(x, torch.Tensor):
         return x.to(device)
     return x
@@ -74,6 +80,7 @@ def get_batch_size(batch: Any) -> int:
     Returns:
         int: Batch size.
     """
+    gd.debuginfo(prj="mt", info=f'')
     data_list, _ = tree_flatten(batch)
     for data in data_list:
         if isinstance(data, torch.Tensor):
@@ -94,7 +101,9 @@ def get_micro_batch(batch: Any, start: int, micro_batch_size: int) -> Any:
     """
 
     def _get_tensor_slice(x: Any):
+        gd.debuginfo(prj="mt", info=f'')
         if isinstance(x, torch.Tensor):
+            gd.debuginfo(prj="mt", info=f'')
             return x[start : start + micro_batch_size]
         return x
 
@@ -112,11 +121,15 @@ def model_forward(model: Module, data: Any, internal_inputs: Optional[dict]) -> 
     Returns:
         Any: Outputs of the model.
     """
+    gd.debuginfo(prj="mt", info=f'')
     if internal_inputs is None:
+        gd.debuginfo(prj="mt", info=f'')
         internal_inputs = {}
     if isinstance(data, (list, tuple)):
+        gd.debuginfo(prj="mt", info=f'')
         return model(*data, **internal_inputs)
     elif isinstance(data, dict):
+        gd.debuginfo(prj="mt", info=f'')
         return model(**data, **internal_inputs)
     return model(data, **internal_inputs)
 
@@ -127,7 +140,9 @@ def retain_grad(x: Any) -> None:
     Args:
         x (Any): Object to be called.
     """
+    gd.debuginfo(prj="mt", info=f'')
     if isinstance(x, torch.Tensor) and x.requires_grad:
+        gd.debuginfo(prj="mt", info=f'')
         x.retain_grad()
 
 
@@ -140,7 +155,9 @@ def detach(x: Any) -> Any:
     Returns:
         Any: The detached object.
     """
+    gd.debuginfo(prj="mt", info=f'')
     if isinstance(x, torch.Tensor):
+        gd.debuginfo(prj="mt", info=f'')
         return x.detach()
     return x
 
@@ -154,7 +171,9 @@ def merge_batch(data: List[Any], batch_size_dim=0) -> Any:
     Returns:
         Any: Merge batch.
     """
+    gd.debuginfo(prj="mt", info=f'')
     if len(data) == 0:
+        gd.debuginfo(prj="mt", info=f'')
         return
     flattened_data = []
     tree_spec = None

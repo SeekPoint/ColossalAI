@@ -60,6 +60,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
         zero_stage: int,
         verbose: bool = True,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.dp_group = dp_group
         self.pp_group = pp_group
@@ -78,6 +79,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
     def _model_sharder(
         model: nn.Module, prefix: str = "", keep_vars: bool = False, size_per_shard: int = 1024
     ) -> Iterator[Tuple[OrderedDict, int]]:
+        gd.debuginfo(prj="mt", info=f'')
         # An internel method that breaks state_dict of model into shards within limited size.
 
         state_dict_sharder = StateDictSharder(size_per_shard)
@@ -106,6 +108,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             getattr(model.__class__, "get_extra_state", torch.nn.Module.get_extra_state)
             is not torch.nn.Module.get_extra_state
         ):
+            gd.debuginfo(prj="mt", info=f'')
             extra_state = model.get_extra_state()
             block, block_size = state_dict_sharder.append_param(extra_state_key, extra_state)
             if block is not None:
@@ -123,7 +126,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
         size_per_shard: int = 1024,
     ):
         # An internel method that breaks state_dict of optimizer into shards within limited size.
-
+        gd.debuginfo(prj="mt", info=f'')
         state_dict_sharder = StateDictSharder(size_per_shard)
         param_info = optimizer.param_info
         master_to_working_map = optimizer.get_master_to_working_map()
@@ -182,7 +185,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             size_per_shard (int, optional): Size per shard in MB. Defaults to 1024.
             use_safetensors (bool, optional): Whether to use safe tensors. Defaults to False.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(model, ModelWrapper), "Please boost the model before saving!"
         model = model.unwrap()
 
@@ -195,6 +198,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
         # Devices along the same dp_group share the same copies of model.
         # So only let the device with dp_rank == 0 save the model.
         if self.dp_rank != 0:
+            gd.debuginfo(prj="mt", info=f'')
             return
 
         # Then collect the sharded parameters & buffers along tp_group.
@@ -205,6 +209,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
         control_saving = self.tp_rank == 0
 
         if self.pp_size == 1:
+            gd.debuginfo(prj="mt", info=f'')
             # When pipeline is not used, save the model shards as in general checkpointIO
             total_size = save_state_dict_shards(
                 sharded_state_dict=state_dict_shard,
@@ -215,6 +220,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
                 use_safetensors=use_safetensors,
             )
             if control_saving:
+                gd.debuginfo(prj="mt", info=f'')
                 index_file.append_meta_data("total_size", total_size)
                 index_file.write_index_file(save_index_file)
                 save_config_file(model, checkpoint)
@@ -226,6 +232,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
                     )
 
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # When pipeline is used, each stage produces its own shard files and index files.
             # Index files belonging to each stage are saved under a temporary folder ./tmp_index_files/
             # After all the state_dicts have been saved, the master rank integrates all the index files into one final index file and deletes the tmp folder.
@@ -250,12 +257,14 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
                 use_pp_format=True,
             )
             if control_saving:
+                gd.debuginfo(prj="mt", info=f'')
                 assert (
                     self.dp_rank == 0 and self.tp_rank == 0
                 ), "The saving process should have both dp_rank and tp_rank as 0."
                 index_file.append_meta_data("total_size", total_size)
                 index_file.write_index_file(save_index_file)
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 return
 
             dist.barrier(self.pp_group)
@@ -291,6 +300,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             strict (bool, optional): For name matching during loading state_dict. Defaults to False.
                                      This argument should be manually set to False since params on same device might be stored in different files.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(model, ModelWrapper), "Please boost the model before loading!"
         model_before_wrapping = model  # backup for model before wrapping
         model = model.unwrap()
@@ -298,6 +308,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
         # Check whether the checkpoint uses safetensors.
         use_safetensors = False
         if "safetensors" in checkpoint_index_file.name:
+            gd.debuginfo(prj="mt", info=f'')
             use_safetensors = True
 
         if use_safetensors and not is_safetensors_available():
@@ -314,6 +325,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
         loaded_file = set()
 
         def _load(name: str):
+            gd.debuginfo(prj="mt", info=f'')
             if name not in weight_map:
                 raise ValueError(f"{name} is not stored in checkpoint, please check your checkpointing configuration!")
             filename = weight_map[name]
@@ -349,6 +361,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             getattr(model.__class__, "get_extra_state", torch.nn.Module.get_extra_state)
             is not torch.nn.Module.get_extra_state
         ):
+            gd.debuginfo(prj="mt", info=f'')
             _load(extra_state_key)
 
         # Update master params if mixed-precision training is enabled.
@@ -381,6 +394,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             prefix (str): Perfix of file to save
             size_per_shard (int): Max file size of each file shard that store state tensors
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(optimizer, OptimizerWrapper), "Please boost the optimizer before saving!"
         if os.path.isfile(checkpoint):
             logging.error(f"Provided path ({checkpoint}) should be a directory, not a file")
@@ -391,6 +405,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
         # Devices along the same dp_group share the same copies of states when zero is not used.
         # In this case only let the device with dp_rank == 0 save the model.
         if not self.use_zero and self.dp_rank != 0:
+            gd.debuginfo(prj="mt", info=f'')
             return
 
         # Then collect the sharded states along dp_group(if using zero)/tp_group.
@@ -402,11 +417,15 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             tp_group=self.tp_group,
             size_per_shard=size_per_shard,
         )
+
+        gd.debuginfo(prj="mt", info=f'')
+
         states_name, save_index_file, param_group_file = get_optimizer_base_filenames(prefix)
         index_file = CheckpointIndexFile(checkpoint)
         control_saving = self.dp_rank == 0 and self.tp_rank == 0
 
         if self.pp_size == 1:
+            gd.debuginfo(prj="mt", info=f'')
             # When pipeline is not used, save the optimizer shards as in general checkpointIO
             total_size = save_state_dict_shards(
                 sharded_state_dict=state_dict_shard,
@@ -417,6 +436,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             )
 
             if control_saving:
+                gd.debuginfo(prj="mt", info=f'')
                 # Store param groups.
                 index_file.append_meta_data("param_groups", param_group_file)
                 group_file_path = os.path.join(checkpoint, param_group_file)
@@ -432,6 +452,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
                     )
 
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # When pipeline is used, each stage produces its own shard files and index files.
             # Index files belonging to each stage are saved under a temporary folder ./tmp_index_files/
             # After all the state_dicts have been saved, the master rank integrates all the index files into one final index file and deletes the tmp folder.
@@ -455,18 +476,21 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             )
 
             if control_saving:
+                gd.debuginfo(prj="mt", info=f'')
                 assert (
                     self.dp_rank == 0 and self.tp_rank == 0
                 ), "The saving process should have both dp_rank and tp_rank as 0."
                 index_file.append_meta_data("total_size", total_size)
                 index_file.write_index_file(save_index_file)
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 return
 
             dist.barrier(self.pp_group)
 
             # The global master rank integrates the index files and clean the folder.
             if self.pp_rank == 0:
+                gd.debuginfo(prj="mt", info=f'')
                 final_index_file = CheckpointIndexFile(checkpoint)
                 final_index_file.append_meta_data("total_size", 0)
 
@@ -500,14 +524,17 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             checkpoint_index_file (str): Path to the index file of checkpointing folder.
             prefix (str): Not used.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(optimizer, OptimizerWrapper), "Please boost the optimizer before loading!"
 
         def _get_param_id_from_optimizer_param(
             param: torch.Tensor, master_to_working_map: Optional[Dict[int, torch.Tensor]] = None
         ):
             if master_to_working_map is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 working_param = master_to_working_map[id(param)]
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 working_param = param
             return optimizer.param_info["param2id"][id(working_param)]
 
@@ -592,6 +619,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             gather_dtensor (bool, optional): Whether to gather dtensor, currently not used. Defaults to True.
             use_safetensors (bool, optional): Whether to use safe tensors. Defaults to False.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if self.coordinator.is_master():
             logging.warning("Please avoid using unsharded checkpointing methods when dealing with large models!")
 
@@ -599,6 +627,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
         model = model.unwrap()
 
         if self.dp_rank != 0:
+            gd.debuginfo(prj="mt", info=f'')
             return
 
         # The logic of collecting parameter shards along tp degree
@@ -606,10 +635,13 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
         state_dict = model.state_dict()
 
         if self.pp_size == 1:
+            gd.debuginfo(prj="mt", info=f'')
             # When pipeline is not used, let master rank directly save the collected state_dict.
             if self.tp_rank == 0:
+                gd.debuginfo(prj="mt", info=f'')
                 save_state_dict(state_dict, checkpoint, use_safetensors)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # When pipeline is used, first collect state_dict from every pipeline stage, then save the complete state_dict.
             state_dict_list = [None for _ in range(self.pp_size)]
             dist.barrier(self.pp_group)
@@ -617,6 +649,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
 
             # Only the master rank do the saving.
             if self.coordinator.is_master():
+                gd.debuginfo(prj="mt", info=f'')
                 complete_state_dict = dict()
                 for _state_dict in state_dict_list:
                     complete_state_dict.update(_state_dict)
@@ -632,6 +665,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             strict (bool, optional): For name matching during loading state_dict. Defaults to False.
                                      This argument should be manually set to False since not all params in checkpoint are needed for each device when pipeline is enabled.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if self.coordinator.is_master():
             logging.warning("Please avoid using unsharded checkpointing methods when dealing with large models!")
 
@@ -658,6 +692,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             checkpoint (str): Path to save optimizer state_dict.
             gather_dtensor (bool): Whether to gather_dtensor, not used.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if self.coordinator.is_master():
             logging.warning("Please avoid using unsharded checkpointing methods when dealing with large models!")
 
@@ -692,11 +727,14 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             )
 
         if self.pp_size == 1:
+            gd.debuginfo(prj="mt", info=f'')
             # When pipeline is not used, let master rank directly save the collected state_dict.
             state_dict = {"param_groups": optimizer.param_info["param_groups"], "state": local_states}
             if self.coordinator.is_master():
+                gd.debuginfo(prj="mt", info=f'')
                 save_state_dict(state_dict, checkpoint, use_safetensors=False)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # When pipeline is used, first collect state_dict from every pipeline stage, then save the complete state_dict.
             states_list = [None for _ in range(self.pp_size)]
             dist.barrier(self.pp_group)
@@ -704,6 +742,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
 
             # Only the master rank do the saving.
             if self.coordinator.is_master():
+                gd.debuginfo(prj="mt", info=f'')
                 state_dict = {"param_groups": optimizer.param_info["param_groups"], "state": dict()}
                 for _states in states_list:
                     state_dict["state"].update(_states)
@@ -717,13 +756,15 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             optimizer (OptimizerWrapper): The optimizer to be loaded.
             checkpoint_index_file (str): Path to the checkpoint file.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         def _get_param_id_from_optimizer_param(
             param: torch.Tensor, master_to_working_map: Optional[Dict[int, torch.Tensor]] = None
         ):
             if master_to_working_map is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 working_param = master_to_working_map[id(param)]
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 working_param = param
             return optimizer.param_info["param2id"][id(working_param)]
 
@@ -774,7 +815,9 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
         """
         Save lr scheduler to checkpoint but only on master process.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if self.coordinator.is_master():
+            gd.debuginfo(prj="mt", info=f'')
             super().save_lr_scheduler(lr_scheduler, checkpoint)
 
     @staticmethod
@@ -808,6 +851,8 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
         tp_size = dist.get_world_size(tp_group)
         current_shape = param.shape
         state_ = state if inplace else copy.deepcopy(state)
+
+        gd.debuginfo(prj="mt", info=f'')
 
         for k, v in state_.items():
             if isinstance(v, torch.Tensor) and k != "step":
@@ -852,6 +897,8 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             OrderedDict: The sharded optimizer state of the given parameter.
         """
         state_ = state if inplace else copy.deepcopy(state)
+
+        gd.debuginfo(prj="mt", info=f'')
 
         for k, v in state_.items():
             if isinstance(v, torch.Tensor) and k != "step":

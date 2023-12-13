@@ -16,6 +16,7 @@ meta_table = {}
 
 
 def register_meta(op, register_dispatcher=True):
+    gd.debuginfo(prj="mt", info=f'')
     def wrapper(f):
         def add_func(op):
             meta_table[op] = f
@@ -46,6 +47,7 @@ def meta_conv(
     output_padding: List[int],
     groups: int,
 ):
+    gd.debuginfo(prj="mt", info=f'')
     def _formula(ln: int, p: int, d: int, k: int, s: int) -> int:
         """
         Formula to apply to calculate the length of some dimension of the output
@@ -59,6 +61,7 @@ def meta_conv(
         Returns:
             The output length
         """
+        gd.debuginfo(prj="mt", info=f'')
         return (ln + 2 * p - d * (k - 1) - 1) // s + 1
 
     def _formula_transposed(ln: int, p: int, d: int, k: int, s: int, op: int) -> int:
@@ -76,6 +79,7 @@ def meta_conv(
         Returns:
             The output length
         """
+        gd.debuginfo(prj="mt", info=f'')
         return (ln - 1) * s - 2 * p + d * (k - 1) + op + 1
 
     def calc_conv_nd_return_shape(
@@ -86,6 +90,7 @@ def meta_conv(
         dilation: Union[List[int], int],
         output_padding: Optional[Union[List[int], int]] = None,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         ret_shape = []
         if isinstance(stride, int):
             stride = [stride] * len(dims)
@@ -106,10 +111,13 @@ def meta_conv(
         if output_padding:
             if isinstance(output_padding, int):
                 output_padding_list = [output_padding] * len(dims)
+                gd.debuginfo(prj="mt", info=f'')
             elif len(output_padding) == 1:
                 output_padding_list = [output_padding[0]] * len(dims)
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 output_padding_list = output_padding
+                gd.debuginfo(prj="mt", info=f'')
 
         for i in range(len(dims)):
             # If output_padding is present, we are dealing with a transposed convolution
@@ -130,15 +138,19 @@ def meta_conv(
 
     def pick_memory_format():
         if input_tensor.is_contiguous(memory_format=torch.channels_last):
+            gd.debuginfo(prj="mt", info=f'')
             return torch.channels_last
         elif input_tensor.is_contiguous(memory_format=torch.contiguous_format):
+            gd.debuginfo(prj="mt", info=f'')
             return torch.contiguous_format
         elif input_tensor.is_contiguous(memory_format=torch.preserve_format):
+            gd.debuginfo(prj="mt", info=f'')
             return torch.preserve_format
 
     kernel_size = weight.shape[2:]
     dims = input_tensor.shape[2:]
     if is_transposed:
+        gd.debuginfo(prj="mt", info=f'')
         out_channels = groups * weight.shape[1]
 
         shape_out = calc_conv_nd_return_shape(
@@ -151,6 +163,7 @@ def meta_conv(
         )
 
     else:
+        gd.debuginfo(prj="mt", info=f'')
         out_channels = weight.shape[0]
         if weight.shape[1] != input_tensor.shape[1] / groups:
             raise RuntimeError("Invalid channel dimensions")
@@ -175,6 +188,7 @@ def meta_conv_1(
     *extra_args,
 ):
     out = meta_conv(input_tensor, weight, bias, stride, padding, dilation, is_transposed, output_padding, groups)
+    gd.debuginfo(prj="mt", info=f'')
     return out
 
 
@@ -192,6 +206,7 @@ def meta_conv_backward(
     groups,
     output_mask,
 ):
+    gd.debuginfo(prj="mt", info=f'')
     return torch.empty_like(input), torch.empty_like(weight), torch.empty((bias_sizes), device="meta")
 
 
@@ -202,6 +217,7 @@ def meta_adaptive_avg_pool2d_backward(
     input: torch.Tensor,
 ):
     grad_input = torch.empty_like(input)
+    gd.debuginfo(prj="mt", info=f'')
     return grad_input
 
 
@@ -231,21 +247,25 @@ def meta_cuda_rnn(
         seq_length = len(batch_sizes)
         mini_batch = batch_sizes[0]
         batch_sizes_sum = input.shape[0]
+        gd.debuginfo(prj="mt", info=f'')
     else:
         seq_length = input.shape[1] if batch_first else input.shape[0]
         mini_batch = input.shape[0] if batch_first else input.shape[1]
         batch_sizes_sum = -1
+        gd.debuginfo(prj="mt", info=f'')
 
     num_directions = 2 if bidirectional else 1
     out_size = proj_size if proj_size != 0 else hidden_size
     if is_input_packed:
         out_shape = [batch_sizes_sum, out_size * num_directions]
+        gd.debuginfo(prj="mt", info=f'')
     else:
         out_shape = (
             [mini_batch, seq_length, out_size * num_directions]
             if batch_first
             else [seq_length, mini_batch, out_size * num_directions]
         )
+        gd.debuginfo(prj="mt", info=f'')
     output = input.new_empty(out_shape)
 
     cell_shape = [num_layers * num_directions, mini_batch, hidden_size]
@@ -276,6 +296,8 @@ def meta_cudnn_rnn_backward(
     grad_weight = torch.empty_like(weight)
     grad_hx = torch.empty_like(hx)
     grad_cx = torch.empty_like(cx) if cx is not None else torch.empty((), device="meta")
+    gd.debuginfo(prj="mt", info=f'')
+
     return grad_input, grad_weight, grad_hx, grad_cx
 
 
@@ -283,33 +305,39 @@ def meta_cudnn_rnn_backward(
 # ============================== Activations =======================================
 @register_meta(aten.relu.default)
 def meta_relu(input: torch.Tensor):
+    gd.debuginfo(prj="mt", info=f'')
     return torch.empty_like(input)
 
 
 @register_meta(aten.prelu.default)
 def meta_prelu(input: torch.Tensor, weight: torch.Tensor):
+    gd.debuginfo(prj="mt", info=f'')
     return torch.empty_like(input)
 
 
 @register_meta(aten.hardswish.default)
 def meta_hardswish(input: torch.Tensor):
+    gd.debuginfo(prj="mt", info=f'')
     return torch.empty_like(input)
 
 
 @register_meta(aten.hardtanh.default)
 def meta_hardtanh(input: torch.Tensor, min, max):
+    gd.debuginfo(prj="mt", info=f'')
     return torch.empty_like(input)
 
 
 @register_meta(aten.hardswish_backward.default)
 def meta_hardswish_backward(grad_out: torch.Tensor, input: torch.Tensor):
     grad_in = torch.empty_like(input)
+    gd.debuginfo(prj="mt", info=f'')
     return grad_in
 
 
 @register_meta(aten.hardtanh_backward.default)
 def meta_hardtanh_backward(grad_out: torch.Tensor, input: torch.Tensor, min_val: int, max_val: int):
     grad_in = torch.empty_like(input)
+    gd.debuginfo(prj="mt", info=f'')
     return grad_in
 
 
@@ -322,6 +350,7 @@ def meta_bn(input: torch.Tensor, weight, bias, running_mean, running_var, traini
     output = torch.empty_like(input)
     running_mean = torch.empty((n_input), device="meta")
     running_var = torch.empty((n_input), device="meta")
+    gd.debuginfo(prj="mt", info=f'')
     return output, running_mean, running_var
 
 
@@ -342,6 +371,7 @@ def meta_bn_backward(
     dX = torch.empty_like(input)
     dgamma = torch.empty_like(weight)
     dbeta = torch.empty_like(weight)
+    gd.debuginfo(prj="mt", info=f'')
     return dX, dgamma, dbeta
 
 
@@ -354,6 +384,7 @@ def meta_cudnn_bn(input: torch.Tensor, weight, bias, running_mean, running_var, 
     running_mean = torch.empty((n_input), device="meta")
     running_var = torch.empty((n_input), device="meta")
     reserve = torch.empty((0), dtype=torch.uint8, device="meta")
+    gd.debuginfo(prj="mt", info=f'')
     return output, running_mean, running_var, reserve
 
 
@@ -376,6 +407,7 @@ def meta_cudnn_bn_backward(
     dX = torch.empty_like(input)
     dgamma = torch.empty_like(weight)
     dbeta = torch.empty_like(weight)
+    gd.debuginfo(prj="mt", info=f'')
     return dX, dgamma, dbeta
 
 
@@ -388,6 +420,7 @@ def meta_ln(input: torch.Tensor, normalized_shape, weight, bias, eps):
     output = torch.empty_like(input)
     running_mean = torch.empty((bs, n_input, 1), device="meta")
     running_var = torch.empty((bs, n_input, 1), device="meta")
+    gd.debuginfo(prj="mt", info=f'')
     return output, running_mean, running_var
 
 
@@ -399,6 +432,7 @@ def meta_ln_backward(
     dX = torch.empty_like(input)
     dgamma = torch.empty_like(weight)
     dbeta = torch.empty_like(bias)
+    gd.debuginfo(prj="mt", info=f'')
     return dX, dgamma, dbeta
 
 
@@ -408,6 +442,7 @@ def meta_gn_backward(dY: torch.Tensor, input: torch.Tensor, mean, rstd, gamma, N
     dX = torch.empty_like(input)
     dgamma = torch.empty_like(gamma)
     dbeta = torch.empty_like(gamma)
+    gd.debuginfo(prj="mt", info=f'')
     return dX, dgamma, dbeta
 
 
@@ -415,6 +450,7 @@ def meta_gn_backward(dY: torch.Tensor, input: torch.Tensor, mean, rstd, gamma, N
 # https://github.com/pytorch/pytorch/blob/master/aten/src/ATen/native/native_functions.yaml
 @register_meta(aten.roll.default)
 def meta_roll(input: torch.Tensor, shifts, dims):
+    gd.debuginfo(prj="mt", info=f'')
     return input
 
 
@@ -428,11 +464,13 @@ def meta_local_scalar_dense(self: torch.Tensor):
 @register_meta(aten.where.self)
 def meta_where_self(condition: torch.Tensor, self: torch.Tensor, other: torch.Tensor):
     result_type = torch.result_type(self, other)
+    gd.debuginfo(prj="mt", info=f'')
     return torch.empty_like(condition + self + other, dtype=result_type)
 
 
 @register_meta(aten.index.Tensor)
 def meta_index_Tensor(self, indices):
+    gd.debuginfo(prj="mt", info=f'')
     assert indices, "at least one index must be provided"
     # aten::index is the internal advanced indexing implementation
     # checkIndexTensorTypes and expandTensors
@@ -485,12 +523,14 @@ def meta_index_Tensor(self, indices):
             if index is not None:
                 break
     else:
+        gd.debuginfo(prj="mt", info=f'')
         has_contiguous_subspace = True
 
     # transposeToFront
     # This is the logic that causes the newly inserted dimensions to show up
     # at the beginning of the tensor, if they're not contiguous
     if not has_contiguous_subspace:
+        gd.debuginfo(prj="mt", info=f'')
         dims = []
         transposed_indices = []
         for i, index in enumerate(indices):
@@ -527,9 +567,12 @@ def meta_index_Tensor(self, indices):
 # ============================== Embedding =========================================
 # https://github.com/pytorch/pytorch/blob/master/aten/src/ATen/native/Embedding.cpp
 @register_meta(aten.embedding_dense_backward.default)
-def meta_embedding_dense_backward(
-    grad_output: torch.Tensor, indices: torch.Tensor, num_weights, padding_idx, scale_grad_by_freq
-):
+def meta_embedding_dense_backward(grad_output: torch.Tensor,
+                                  indices: torch.Tensor,
+                                  num_weights,
+                                  padding_idx,
+                                  scale_grad_by_freq):
+    gd.debuginfo(prj="mt", info=f'')
     return torch.empty(
         (num_weights, grad_output.size(-1)),
         dtype=grad_output.dtype,
@@ -542,6 +585,7 @@ def meta_embedding_dense_backward(
 # https://github.com/pytorch/pytorch/blob/master/aten/src/ATen/native/Dropout.cpp
 @register_meta(aten.native_dropout.default)
 def meta_native_dropout_default(input: torch.Tensor, p: float, train: bool = False):
+    gd.debuginfo(prj="mt", info=f'')
     # notice that mask is bool
     output = torch.empty_like(input)
     mask = torch.empty_like(input, dtype=torch.bool)
@@ -551,4 +595,5 @@ def meta_native_dropout_default(input: torch.Tensor, p: float, train: bool = Fal
 # https://github.com/pytorch/pytorch/blob/master/aten/src/ATen/native/Dropout.cpp
 @register_meta(aten.native_dropout_backward.default)
 def meta_native_dropout_backward_default(grad: torch.Tensor, mask: torch.Tensor, scale: float):
+    gd.debuginfo(prj="mt", info=f'')
     return torch.empty_like(grad)

@@ -83,6 +83,7 @@ class Linear1D_Col(ParallelModule):
         weight_initializer: Callable = init.kaiming_uniform_(a=math.sqrt(5)),
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
         # Keep input parameters
@@ -113,33 +114,42 @@ class Linear1D_Col(ParallelModule):
         if weight is None:
             factory_kwargs = {"device": device, "dtype": dtype}
             self.weight = Parameter(torch.empty(self.out_features, self.in_features, **factory_kwargs))
+            gd.debuginfo(prj="mt", info=f'')
         else:
             weight.data = weight.data.to(device=device, dtype=dtype)
             self.weight = weight
+            gd.debuginfo(prj="mt", info=f'')
         if not is_distributed_tensor(self.weight):
             sharded_weight = shard_rowwise(self.weight.data, self.process_group)
             sharded_tensor_to_existing_param(sharded_weight, self.weight)
+            gd.debuginfo(prj="mt", info=f'')
 
         if bias:
             if bias_ is None:
                 self.bias = Parameter(torch.empty(self.out_features, **factory_kwargs))
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 bias_.data = bias_.data.to(device=device, dtype=dtype)
                 self.bias = bias_
+                gd.debuginfo(prj="mt", info=f'')
             if not is_distributed_tensor(self.bias):
                 sharded_bias = shard_colwise(self.bias.data, self.process_group)
                 sharded_tensor_to_existing_param(sharded_bias, self.bias)
+                gd.debuginfo(prj="mt", info=f'')
         else:
             self.bias = None
+            gd.debuginfo(prj="mt", info=f'')
 
         if weight is None:
             # init weights
             self.reset_parameters(weight_initializer, bias_initializer)
+            gd.debuginfo(prj="mt", info=f'')
 
     @staticmethod
     def from_native_module(
         module: nn.Linear, process_group: Union[ProcessGroup, List[ProcessGroup]], *args, **kwargs
     ) -> ParallelModule:
+        gd.debuginfo(prj="mt", info=f'')
         r"""
         Convert a native PyTorch linear layer to a parallelized linear layer.
         """
@@ -157,6 +167,7 @@ class Linear1D_Col(ParallelModule):
 
         tp_size = dist.get_world_size(process_group)
         if out_features < tp_size:
+            gd.debuginfo(prj="mt", info=f'')
             return module
 
         if out_features % tp_size != 0:
@@ -175,14 +186,17 @@ class Linear1D_Col(ParallelModule):
             *args,
             **kwargs,
         )
+        gd.debuginfo(prj="mt", info=f'')
 
         return linear_1d
 
     def reset_parameters(self, weight_initializer, bias_initializer) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         with self.randomizer.fork_rng(enable_cpu=True):
             fan_in, fan_out = self.in_features, self.out_features
             weight_initializer(self.weight, fan_in=fan_in, fan_out=fan_out)
             if self.bias is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 bias_initializer(self.bias, fan_in=fan_in)
 
     def forward(self, input_: Tensor) -> Tuple[Tensor, Tensor]:
@@ -195,24 +209,32 @@ class Linear1D_Col(ParallelModule):
         # Set up backprop all-reduce.
         input_parallel = input_
 
+        gd.debuginfo(prj="mt", info=f'')
+
         # Matrix multiply.
         bias = self.bias if not self.skip_bias_add else None
         if self.seq_parallel:
             output_parallel = linear_gather_forward_reducescatter_backward(
                 input_parallel, self.weight, bias, self.process_group, True, self.seq_parallel_dim, self.overlap
             )
+            gd.debuginfo(prj="mt", info=f'')
         else:
             output_parallel = linear_with_async_comm(input_parallel, self.weight, bias, self.process_group, True)
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.gather_output:
             # All-gather across the partitions.
             output = gather_forward_split_backward(output_parallel, dim=-1, process_group=self.process_group)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             output = output_parallel
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.skip_bias_add:
+            gd.debuginfo(prj="mt", info=f'')
             return output, self.bias
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return output
 
 
@@ -256,6 +278,7 @@ class Linear1D_Row(ParallelModule):
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
         stream_chunk_num: int = 1,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
         self.stream_chunk_num = stream_chunk_num
@@ -288,27 +311,35 @@ class Linear1D_Row(ParallelModule):
             # Initialize weight.
             factory_kwargs = {"device": device, "dtype": dtype}
             self.weight = Parameter(torch.empty(self.out_features, self.in_features, **factory_kwargs))
+            gd.debuginfo(prj="mt", info=f'')
         else:
             weight.data = weight.data.to(device=device, dtype=dtype)
             self.weight = weight
+            gd.debuginfo(prj="mt", info=f'')
         if not is_distributed_tensor(self.weight):
             sharded_weight = shard_colwise(self.weight.data, self.process_group)
             sharded_tensor_to_existing_param(sharded_weight, self.weight)
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.stream_chunk_num > 1:
+            gd.debuginfo(prj="mt", info=f'')
             # TODO() work for inference only
             self.chunk_weight()
 
         if bias:
             if bias_ is None:
+                gd.debuginfo(prj="mt", info=f'')
                 self.bias = Parameter(torch.empty(self.out_features, **factory_kwargs))
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 bias_.data = bias_.data.to(device=device, dtype=dtype)
                 self.bias = bias_
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.bias = None
 
         if weight is None:
+            gd.debuginfo(prj="mt", info=f'')
             with self.randomizer.fork_rng(enable_cpu=True):
                 self.reset_parameters(weight_initializer, bias_initializer)
 
@@ -319,6 +350,7 @@ class Linear1D_Row(ParallelModule):
         r"""
         Convert a native PyTorch linear layer to a parallelized linear layer.
         """
+        gd.debuginfo(prj="mt", info=f'')
         LazyInitContext.materialize(module)
         # get the attributes
         in_features = module.in_features
@@ -333,6 +365,7 @@ class Linear1D_Row(ParallelModule):
 
         tp_size = dist.get_world_size(process_group)
         if in_features < tp_size:
+            gd.debuginfo(prj="mt", info=f'')
             return module
 
         if in_features % tp_size != 0:
@@ -355,19 +388,24 @@ class Linear1D_Row(ParallelModule):
         return linear_1d
 
     def chunk_weight(self):
+        gd.debuginfo(prj="mt", info=f'')
         self.weight_list = torch.chunk(self.weight, self.stream_chunk_num, dim=0)
 
     @torch.no_grad()
     def reset_parameters(self, weight_initializer, bias_initializer) -> None:
         fan_in, fan_out = self.in_features, self.out_features
         weight_initializer(self.weight, fan_in=fan_in, fan_out=fan_out)
+        gd.debuginfo(prj="mt", info=f'')
 
         if self.bias is not None:
+            gd.debuginfo(prj="mt", info=f'')
             bias_initializer(self.bias, fan_in=fan_in)
             if self.process_group is None:
                 src_rank = 0
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 src_rank = dist.distributed_c10d._get_global_rank(self.process_group, 0)
+                gd.debuginfo(prj="mt", info=f'')
 
             origin_device = self.bias.device
             bias = self.bias.cuda()
@@ -384,6 +422,7 @@ class Linear1D_Row(ParallelModule):
                 input_.shape, self.weight.shape, self.weight.shape[-1]
             )
             input_ = input_
+            gd.debuginfo(prj="mt", info=f'')
         else:
             assert (
                 divide(input_.shape[-1], self.num_partitions) == self.weight.shape[-1]
@@ -391,8 +430,10 @@ class Linear1D_Row(ParallelModule):
                 input_.shape, self.weight.shape, self.weight.shape[-1] * self.num_partitions
             )
             input_ = split_forward_gather_backward(input_, dim=-1, process_group=self.process_group)
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.stream_chunk_num > 1:
+            gd.debuginfo(prj="mt", info=f'')
             if self.training:
                 raise RuntimeError("use stream_chunk_num=1 in Linear1D_Row for training!")
             with torch.no_grad():
@@ -409,17 +450,23 @@ class Linear1D_Row(ParallelModule):
                     handle.wait()
                 output = torch.cat(output_parallel_list, dim=-1)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             output_parallel = F.linear(input_, self.weight)
             if self.seq_parallel:
+                gd.debuginfo(prj="mt", info=f'')
                 output = linear_reducescatter_forward_gather_backward(
                     output_parallel, self.process_group, self.seq_parallel_dim
                 )
             else:
                 output = reduce_forward(output_parallel, self.process_group)
+                gd.debuginfo(prj="mt", info=f'')
 
         if not self.skip_bias_add:
+            gd.debuginfo(prj="mt", info=f'')
             if self.bias is not None:
                 output = output + self.bias
+                gd.debuginfo(prj="mt", info=f'')
             return output
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return output, self.bias

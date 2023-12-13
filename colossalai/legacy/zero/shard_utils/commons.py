@@ -4,6 +4,7 @@ import torch
 from pydebug import gd, infoTensor
 
 def get_shard(tensor: torch.Tensor, rank: int, world_size: int) -> Tuple[torch.Tensor, int]:
+    gd.debuginfo(prj="mt", info=f'')
     """Return the local shard of a full tensor."""
     # Shard using torch.chunk to match all-gather/reduce-scatter.
     chunks = list(torch.flatten(tensor).chunk(world_size))

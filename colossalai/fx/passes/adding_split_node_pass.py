@@ -15,6 +15,7 @@ def block_split():
 
 # Construct blocks with the condition that (block_flops / total_flops) >= limit.
 def construct_blocks(gm: torch.fx.GraphModule, limit=0.01):
+    gd.debuginfo(prj="mt", info=f'')
     total_fwd_flop = 0
     total_bwd_flop = 0
     for node in gm.graph.nodes:
@@ -44,12 +45,14 @@ def construct_blocks(gm: torch.fx.GraphModule, limit=0.01):
 
 
 def remove_blocks(gm: torch.fx.GraphModule):
+    gd.debuginfo(prj="mt", info=f'')
     for node in gm.graph.nodes:
         if (node.op, node.target) == ("call_function", block_split):
             gm.graph.erase_node(node)
 
 
 def get_compute_costs(node_list):
+    gd.debuginfo(prj="mt", info=f'')
     num_nodes = len(node_list)
     all_compute_cost = np.full((num_nodes, num_nodes), np.inf, dtype=np.float64)
 
@@ -62,6 +65,7 @@ def get_compute_costs(node_list):
 
 
 def do_dp_split_gpipe_impl(num_nodes, num_stages, num_microbatches, compute_costs, max_compute_cost):
+    gd.debuginfo(prj="mt", info=f'')
     """The core implementation of the DP algorithm."""
     # Adapted from Alpa DP Formulation.
     # For f, node ID start from 0
@@ -108,6 +112,7 @@ def do_dp_split_gpipe_impl(num_nodes, num_stages, num_microbatches, compute_cost
 
 
 def do_dp_split_gpipe(node_list, compute_costs, num_stages: int, num_microbatches: int):
+    gd.debuginfo(prj="mt", info=f'')
     # Ignore the memory cost profiling in Alpa's design for convenience.
     max_compute_costs = np.sort(np.unique(compute_costs))
     best_cost = np.inf
@@ -138,7 +143,12 @@ def do_dp_split_gpipe(node_list, compute_costs, num_stages: int, num_microbatche
 # split_mode:
 #   'node': fx_node
 #   'block': many fx_nodes construct a block
-def gpipe_dp_split_pass(gm: torch.fx.GraphModule, pp_size: int, num_microbatches: int, mode="block", block_limit=0.01):
+def gpipe_dp_split_pass(gm: torch.fx.GraphModule,
+                        pp_size: int,
+                        num_microbatches: int,
+                        mode="block",
+                        block_limit=0.01):
+    gd.debuginfo(prj="mt", info=f'')
     assert mode in ["node", "block"]
 
     # nodes or blocks will be used in partition.
@@ -146,8 +156,10 @@ def gpipe_dp_split_pass(gm: torch.fx.GraphModule, pp_size: int, num_microbatches
     if mode == "node":
         for node in gm.graph.nodes:
             node_list.append(node)
+        gd.debuginfo(prj="mt", info=f'')
     elif mode == "block":
         node_list = construct_blocks(gm, limit=block_limit)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         pass
 
@@ -175,11 +187,13 @@ def avgcompute_split_pass(gm: torch.fx.GraphModule, pp_size: int):
     """
     In avgcompute_split_pass, we split module by the fwd flops.
     """
+    gd.debuginfo(prj="mt", info=f'')
     mod_graph = gm.graph
     # To use avgcompute_split_pass, we need run meta_info_prop interpreter first.
     # If nodes don't have meta info, this pass will fall back to normal balanced split pass.
     check_node = list(mod_graph.nodes)[0]
     if "tensor_meta" not in check_node.meta:
+        gd.debuginfo(prj="mt", info=f'')
         return balanced_split_pass(gm, pp_size)
 
     total_fwd_flop = 0
@@ -209,6 +223,7 @@ def avgnode_split_pass(gm: torch.fx.GraphModule, pp_size: int):
     """
     In avgnode_split_pass, simply split graph by node number.
     """
+    gd.debuginfo(prj="mt", info=f'')
     mod_graph = gm.graph
     avg_num_node = len(mod_graph.nodes) // pp_size
     accumulate_num_node = 0
@@ -233,6 +248,7 @@ def balanced_split_pass(gm: torch.fx.GraphModule, pp_size: int):
     """
     In balanced_split_pass, we split module by the size of parameters(weights+bias).
     """
+    gd.debuginfo(prj="mt", info=f'')
     mod_graph = gm.graph
     total_param_amount = 0
     for param in mod_graph.owning_module.parameters():
@@ -280,11 +296,13 @@ def balanced_split_pass_v2(gm: torch.fx.GraphModule, pp_size: int):
     """
     In balanced_split_pass_v12, we split module by the size of nodes(weights+bias+outputs).
     """
+    gd.debuginfo(prj="mt", info=f'')
     mod_graph = gm.graph
     # To use balanced_split_pass_v2, we need run meta_info_prop interpreter first.
     # If nodes don't have meta info, this pass will fall back to normal balanced split pass.
     check_node = list(mod_graph.nodes)[0]
     if "tensor_meta" not in check_node.meta:
+        gd.debuginfo(prj="mt", info=f'')
         return balanced_split_pass(gm, pp_size)
 
     total_element_size = 0
@@ -311,6 +329,7 @@ def balanced_split_pass_v2(gm: torch.fx.GraphModule, pp_size: int):
 
 
 def uniform_split_pass(gm: torch.fx.GraphModule, pp_size: int):
+    gd.debuginfo(prj="mt", info=f'')
     mod_graph = gm.graph
     valid_children_size = 0
     valid_children = []
@@ -319,6 +338,7 @@ def uniform_split_pass(gm: torch.fx.GraphModule, pp_size: int):
         valid_children.append(module)
 
     if valid_children_size < pp_size:
+        gd.debuginfo(prj="mt", info=f'')
         # If valid children is not enough to shard, we will use balanced policy instead of uniform policy.
         return balanced_split_pass(gm, pp_size)
     layers_per_partition = valid_children_size // pp_size
@@ -344,8 +364,9 @@ def split_with_split_nodes_pass(annotated_gm: torch.fx.GraphModule, merge_output
     # Currently: analyzing graph -> annotate graph by inserting split node -> use split module pass to split graph
     # In future: graph to partitions -> analyzing partition IR -> recombining partitions to get best performance -> assign partition ID to each node
     part_idx = 0
-
+    gd.debuginfo(prj="mt", info=f'')
     def split_callback(n: torch.fx.Node):
+        gd.debuginfo(prj="mt", info=f'')
         nonlocal part_idx
         if (n.op, n.target) == ("call_function", pipe_split):
             part_idx += 1

@@ -8,11 +8,14 @@ from .bias_addition_function import LinearBasedBiasFunc
 @bias_addition_function.register(torch.addmm)
 class Addmm(LinearBasedBiasFunc):
     def extract_kwargs_from_origin_func(self):
+        gd.debuginfo(prj="mt", info=f'')
         kwargs = {}
         if "beta" in self.kwargs:
             kwargs["beta"] = self.kwargs["beta"]
+            gd.debuginfo(prj="mt", info=f'')
         if "alpha" in self.kwargs:
             kwargs["alpha"] = self.kwargs["alpha"]
+            gd.debuginfo(prj="mt", info=f'')
         return kwargs
 
     def transpose_other_operand_for_linear(self, other_proxy):
@@ -27,6 +30,7 @@ class Addmm(LinearBasedBiasFunc):
             # before we call the linear function.
             new_output = torch.linear(m1, m2.transpose(0, 1)) + input
         """
+        gd.debuginfo(prj="mt", info=f'')
         node_kind = "call_function"
         node_target = torch.transpose
         node_args = (other_proxy, 0, 1)
@@ -35,6 +39,7 @@ class Addmm(LinearBasedBiasFunc):
         return transpose_proxy
 
     def generate(self):
+        gd.debuginfo(prj="mt", info=f'')
         transpose_proxy = self.transpose_other_operand_for_linear(self.args[2])
         non_bias_linear_func_proxy = self.create_non_bias_func_proxy(self.args[1], transpose_proxy)
         kwargs = self.extract_kwargs_from_origin_func()
@@ -42,14 +47,18 @@ class Addmm(LinearBasedBiasFunc):
         if "beta" in kwargs:
             beta = kwargs["beta"]
             beta_proxy = self.create_mul_node(self.args[0], beta)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             beta_proxy = self.args[0]
+            gd.debuginfo(prj="mt", info=f'')
 
         if "alpha" in kwargs:
             alpha = kwargs["alpha"]
             alpha_proxy = self.create_mul_node(alpha, non_bias_linear_func_proxy)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             alpha_proxy = non_bias_linear_func_proxy
+            gd.debuginfo(prj="mt", info=f'')
 
         bias_addition_proxy = self.create_bias_addition_proxy(alpha_proxy, beta_proxy)
 

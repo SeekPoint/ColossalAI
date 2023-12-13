@@ -43,6 +43,7 @@ def calculate_tensor_size(tensor: torch.Tensor) -> float:
     Returns:
         float: size of the tensor in MB.
     """
+    gd.debuginfo(prj="mt", info=f'')
     return tensor.numel() * tensor.element_size() / 1024 / 1024
 
 
@@ -53,6 +54,7 @@ def is_safetensors_available() -> bool:
     Returns:
         bool: whether safetensors is available.
     """
+    gd.debuginfo(prj="mt", info=f'')
     try:
         return True
     except ImportError:
@@ -70,8 +72,10 @@ def is_dtensor_checkpoint(checkpoint_file_path: str) -> bool:
         bool: whether the checkpoint file is a dtensor checkpoint.
     """
     if checkpoint_file_path.endswith(".*.safetensors") or checkpoint_file_path.endswith(".*.bin"):
+        gd.debuginfo(prj="mt", info=f'')
         return True
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return False
 
 
@@ -86,8 +90,10 @@ def is_safetensor_checkpoint(checkpoint_file_path: str) -> bool:
         bool: whether the checkpoint file is a safetensor checkpoint.
     """
     if checkpoint_file_path.endswith(".safetensors"):
+        gd.debuginfo(prj="mt", info=f'')
         return True
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return False
 
 
@@ -105,6 +111,7 @@ def search_tp_partition_dim(current_shape: torch.Size, original_shape: torch.Siz
     Returns:
         Optional[int]: The dimension along which parameter is partitioned.
     """
+    gd.debuginfo(prj="mt", info=f'')
     partition_dim = None
     for dim, length in enumerate(original_shape):
         if length > current_shape[dim]:
@@ -126,11 +133,13 @@ def search_tp_partition_dim(current_shape: torch.Size, original_shape: torch.Siz
 
 class StateDictSharder:
     def __init__(self, size_per_shard: int) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.max_shard_size = size_per_shard
         self.current_block = OrderedDict()
         self.current_block_size = 0
 
     def append_param(self, name: str, tensor: torch.Tensor) -> Tuple[Optional[OrderedDict], int]:
+        gd.debuginfo(prj="mt", info=f'')
         tensor_size = calculate_tensor_size(tensor)
         ret_block = None
         ret_block_size = 0
@@ -138,6 +147,7 @@ class StateDictSharder:
         # before we return the current block and create a new block,
         # we need to ensure that the current block is not empty
         if self.current_block_size + tensor_size > self.max_shard_size and self.current_block_size > 0:
+            gd.debuginfo(prj="mt", info=f'')
             ret_block = self.current_block
             ret_block_size = self.current_block_size
             self.current_block = OrderedDict()
@@ -147,7 +157,10 @@ class StateDictSharder:
         self.current_block_size += tensor_size
         return ret_block, ret_block_size
 
-    def append_optim_state(self, param_id: int, state: OrderedDict) -> Tuple[Optional[OrderedDict], int]:
+    def append_optim_state(self,
+                           param_id: int,
+                           state: OrderedDict) -> Tuple[Optional[OrderedDict], int]:
+        gd.debuginfo(prj="mt", info=f'')
         # A state might contain more than one tensors.
         # e.g. each Adam state includes: 'step', 'exp_avg', 'exp_avg_sq'
         state_size = 0
@@ -169,11 +182,13 @@ class StateDictSharder:
 
         # directly return if state is stored as distributed tensor
         if isDTensor:
+            gd.debuginfo(prj="mt", info=f'')
             return ret_block, ret_block_size
 
         # before we return the current block and create a new block,
         # we need to ensure that the current block is not empty
         if self.current_block_size + state_size > self.max_shard_size and self.current_block_size > 0:
+            gd.debuginfo(prj="mt", info=f'')
             ret_block = self.current_block
             ret_block_size = self.current_block_size
             self.current_block = OrderedDict()
@@ -197,10 +212,13 @@ def gather_distributed_param(param: torch.Tensor, keep_vars: bool = False) -> to
     """
     param_ = param if keep_vars else param.detach()
     if is_distributed_tensor(param_):
+        gd.debuginfo(prj="mt", info=f'')
         return to_global(param_)
     elif is_customized_distributed_tensor(param_):
+        gd.debuginfo(prj="mt", info=f'')
         return to_global_for_customized_distributed_tensor(param_)
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return param_
 
 
@@ -227,7 +245,7 @@ def save_state_dict_shards(
     Returns:
         int: the total size of shards
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     total_size = 0
     shard_filenames = []
     for idx, shard_pair in enumerate(sharded_state_dict):
@@ -257,6 +275,7 @@ def shard_model_checkpoint(state_dict: torch.Tensor, max_shard_size: int = 1024)
     Splits a model state dictionary in sub-checkpoints so that the final size of each sub-checkpoint does not exceed a
     given size.
     """
+    gd.debuginfo(prj="mt", info=f'')
     state_dict_sharder = StateDictSharder(max_shard_size)
 
     for key, weight in state_dict.items():
@@ -275,7 +294,7 @@ def shard_optimizer_checkpoint(state_dict: dict, max_shard_size: int = 1024) -> 
     Splits an optimizer state dictionary in sub-checkpoints so that the final size of each sub-checkpoint does not exceed a
     given size.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     # Only split state_dict['state']; state_dict['param_group'] is not considered in this function.
     states = state_dict["state"]
     state_dict_sharder = StateDictSharder(max_shard_size)
@@ -304,6 +323,7 @@ def save_state_dict(state_dict: dict, checkpoint_file_path: str, use_safetensors
         use_safetensors (bool): whether to use safetensors to save the checkpoint.
     """
     if use_safetensors:
+        gd.debuginfo(prj="mt", info=f'')
         assert is_safetensors_available(), "safetensors is not available."
         assert checkpoint_file_path.endswith(
             ".safetensors"
@@ -312,6 +332,7 @@ def save_state_dict(state_dict: dict, checkpoint_file_path: str, use_safetensors
 
         safe_save_file(state_dict, checkpoint_file_path, metadata={"format": "pt"})
     else:
+        gd.debuginfo(prj="mt", info=f'')
         torch.save(state_dict, checkpoint_file_path)
 
 
@@ -323,6 +344,7 @@ def save_param_groups(state_dict: dict, group_file_path: str) -> None:
         state_dict (dict): state dict.
         group_file_path (str): path to the group file.
     """
+    gd.debuginfo(prj="mt", info=f'')
     param_groups = state_dict["param_groups"]
     torch.save(param_groups, group_file_path)
 
@@ -345,7 +367,9 @@ def clean_folder(
         use_pp_format: (bool, optional): Whether to save the files in pipeline format including stage information. Defaults to False.
 
     """
+    gd.debuginfo(prj="mt", info=f'')
     if is_master:
+        gd.debuginfo(prj="mt", info=f'')
         for filename in os.listdir(checkpoint_path):
             full_filename = os.path.join(checkpoint_path, filename)
             weights_no_suffix = weights_name.replace(".bin", "").replace(".safetensors", "")
@@ -374,6 +398,7 @@ def save_config_file(model: nn.Module, checkpoint_path: str, is_master: bool = T
         checkpoint_path (str): Path to the checkpoint directory.
         is_master (bool): Whether current rank is main process.
     """
+    gd.debuginfo(prj="mt", info=f'')
     try:
         from transformers.modeling_utils import PreTrainedModel, get_parameter_dtype
         from transformers.modeling_utils import unwrap_model as unwrap_huggingface_model
@@ -408,6 +433,7 @@ def save_dtensor(name: str, tensor: torch.Tensor, index_file: "CheckpointIndexFi
         index_file (CheckpointIndexFile): path to the checkpoint file.
         size_per_shard (int): size per shard in MB.
     """
+    gd.debuginfo(prj="mt", info=f'')
     root_path = index_file.root_path
     output_root_path = root_path.joinpath("dtensor")
 
@@ -444,8 +470,10 @@ def get_checkpoint_file_suffix(use_safetensors: bool) -> str:
         str: checkpoint file suffix.
     """
     if use_safetensors:
+        gd.debuginfo(prj="mt", info=f'')
         return ".safetensors"
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return ".bin"
 
 
@@ -467,8 +495,10 @@ def generate_checkpoint_shard_file_name(
     suffix = get_checkpoint_file_suffix(use_safetensors)
 
     if prefix is None:
+        gd.debuginfo(prj="mt", info=f'')
         return f"{index:05d}-of-{total_number:05d}.{suffix}"
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return f"{prefix}-{index:05d}-of-{total_number:05d}.{suffix}"
 
 
@@ -485,6 +515,7 @@ def generate_dtensor_file_name(param_name: str, index: int, use_safetensors: boo
         str: dtensor file name.
     """
     suffix = get_checkpoint_file_suffix(use_safetensors)
+    gd.debuginfo(prj="mt", info=f'')
     return f"{param_name}.{index}.{suffix}"
 
 
@@ -500,6 +531,7 @@ def load_shard_state_dict(checkpoint_file: Path, use_safetensors: bool = False):
     if use_safetensors and not checkpoint_file.suffix == ".safetensors":
         raise Exception("load the model using `safetensors`, but no file endwith .safetensors")
     if use_safetensors:
+        gd.debuginfo(prj="mt", info=f'')
         from safetensors.torch import load_file as safe_load_file
         from safetensors.torch import safe_open
 
@@ -511,6 +543,7 @@ def load_shard_state_dict(checkpoint_file: Path, use_safetensors: bool = False):
             )
         return safe_load_file(checkpoint_file)
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return torch.load(checkpoint_file, map_location=torch.device("cpu"))
 
 
@@ -524,6 +557,7 @@ def load_state_dict_into_model(
         state_dict (dict): a dict containing parameters and
             persistent buffers.
     """
+    gd.debuginfo(prj="mt", info=f'')
     if not isinstance(state_dict, Mapping):
         raise TypeError("Expected state_dict to be dict-like, got {}.".format(type(state_dict)))
 
@@ -535,6 +569,7 @@ def load_state_dict_into_model(
     metadata = getattr(state_dict, "_metadata", None)
     state_dict = OrderedDict(state_dict)
     if metadata is not None:
+        gd.debuginfo(prj="mt", info=f'')
         state_dict._metadata = metadata
 
     def load(module: nn.Module, state_dict, prefix="", load_sub_module: bool = True):
@@ -543,8 +578,10 @@ def load_state_dict_into_model(
         # Parameters of module and children will start with prefix. We can exit early if there are none in this
         # state_dict
         if len([key for key in state_dict if key.startswith(prefix)]) > 0:
+            gd.debuginfo(prj="mt", info=f'')
             module._load_from_state_dict(*args)
         if load_sub_module:
+            gd.debuginfo(prj="mt", info=f'')
             for name, child in module._modules.items():
                 if child is not None:
                     load(child, state_dict, prefix + name + ".")
@@ -568,7 +605,7 @@ def load_param_groups_into_optimizer(optimizer: Optimizer, param_group_path: str
     """
     Load information of param_groups into an initialized optimizer.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     # Load list of param_groups from given file path.
     # The params in saved_groups are in the form of integer indices.
     saved_groups = torch.load(param_group_path, map_location=torch.device("cpu"))
@@ -600,6 +637,7 @@ def load_param_groups_into_optimizer(optimizer: Optimizer, param_group_path: str
 
     # Update parameter groups, setting their 'params' value.
     def update_group(group, new_group):
+        gd.debuginfo(prj="mt", info=f'')
         new_group["params"] = group["params"]
         return new_group
 
@@ -620,7 +658,7 @@ def load_states_into_optimizer(optimizer: Optimizer, state_dict: dict, id_map: d
             to its corresponding parameter (a tensor) whose states will be updated.
         strict(bool, optional): If set to True, only load the parameters with its id in id_map. Defaults to False.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     # Ensure that the keys of state_dict are integers.
     state_dict = {int(k): v for k, v in state_dict.items()}
 
@@ -666,8 +704,10 @@ def sharded_optimizer_loading_epilogue(optimizer: Optimizer):
     # Do the cleaning up as in src code of Pytorch.
     if Version(torch.__version__) >= Version("2.0.0"):
         optimizer._patch_step_function()  # To support multiprocessing pickle/unpickle
+        gd.debuginfo(prj="mt", info=f'')
     else:
         optimizer._hook_for_profile()  # To support multiprocessing pickle/unpickle.
+        gd.debuginfo(prj="mt", info=f'')
     optimizer.defaults.setdefault("differentiable", False)
 
 
@@ -681,13 +721,16 @@ def has_index_file(checkpoint_path: str) -> Tuple[bool, Optional[Path]]:
     Returns:
         Tuple[bool, Optional[Path]]: a tuple of (has_index_file, index_file_path)
     """
+    gd.debuginfo(prj="mt", info=f'')
     checkpoint_path = Path(checkpoint_path)
     if checkpoint_path.is_file():
         # check if it is .index.json
         reg = re.compile("(.*?).index((\..*)?).json")
         if reg.fullmatch(checkpoint_path.name) is not None:
+            gd.debuginfo(prj="mt", info=f'')
             return True, checkpoint_path
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return False, None
     elif checkpoint_path.is_dir():
         # check if there is only one a file ending with .index.json in this directory
@@ -700,8 +743,10 @@ def has_index_file(checkpoint_path: str) -> Tuple[bool, Optional[Path]]:
             ), f"Expected to find one .index.json file in {checkpoint_path}, but found {len(index_files)}"
 
         if len(index_files) == 1:
+            gd.debuginfo(prj="mt", info=f'')
             return True, index_files[0]
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return False, None
     else:
         raise RuntimeError(f"Invalid checkpoint path {checkpoint_path}. Expected a file or a directory.")
@@ -717,12 +762,13 @@ def load_state_dict(checkpoint_file_path: Path):
     Returns:
         dict: state dict.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     assert not is_dtensor_checkpoint(
         checkpoint_file_path
     ), f"Cannot load state dict from dtensor checkpoint {checkpoint_file_path}, you should convert the distributed tensors to gathered tensors with our CLI offline."
 
     if is_safetensor_checkpoint(checkpoint_file_path):
+        gd.debuginfo(prj="mt", info=f'')
         assert (
             is_safetensors_available()
         ), f"Cannot load state dict from safetensor checkpoint {checkpoint_file_path}, because safetensors is not available. Please install safetensors first with pip install safetensors."
@@ -736,12 +782,15 @@ def load_state_dict(checkpoint_file_path: Path):
         return state_dict
 
     else:
+        gd.debuginfo(prj="mt", info=f'')
         # load with torch
         return torch.load(checkpoint_file_path, map_location=torch.device("cpu"))
 
 
 def add_prefix(weights_name: str, prefix: Optional[str] = None) -> str:
+    gd.debuginfo(prj="mt", info=f'')
     if prefix is not None and len(prefix) > 0:
+        gd.debuginfo(prj="mt", info=f'')
         splits = weights_name.split(".")
         splits = splits[:-1] + [prefix] + splits[-1:]
         weights_name = ".".join(splits)
@@ -753,6 +802,8 @@ def get_model_base_filenames(prefix: str = None, use_safetensors: bool = False):
     """
     generate base model weight filenames
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     weights_name = SAFE_WEIGHTS_NAME if use_safetensors else WEIGHTS_NAME
     weights_name = add_prefix(weights_name, prefix)
 
@@ -766,6 +817,7 @@ def get_optimizer_base_filenames(prefix: str = None):
     """
     generate base optimizer state filenames
     """
+    gd.debuginfo(prj="mt", info=f'')
     states_name = STATES_NAME
     states_name = add_prefix(states_name, prefix)
 
@@ -782,6 +834,7 @@ def get_shard_filename(weights_name: str, idx: int):
     """
     get shard file name
     """
+    gd.debuginfo(prj="mt", info=f'')
     shard_file = weights_name.replace(".bin", f"-{idx+1:05d}.bin")
     shard_file = shard_file.replace(".safetensors", f"-{idx+1:05d}.safetensors")
     return shard_file

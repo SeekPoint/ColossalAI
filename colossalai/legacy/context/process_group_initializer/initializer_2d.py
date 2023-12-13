@@ -10,6 +10,7 @@ from .process_group_initializer import ProcessGroupInitializer
 from pydebug import gd, infoTensor
 
 def _check_summa_env_var(summa_dim):
+    gd.debuginfo(prj="mt", info=f'')
     # check environment variable for SUMMA
     env_summa_dim = env.summa_dim
 
@@ -37,11 +38,13 @@ class Initializer_2D_Row(ProcessGroupInitializer):
     """
 
     def __init__(self, num_group, summa_dim, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super(Initializer_2D_Row, self).__init__(*args, **kwargs)
         self.num_group = num_group
         self.summa_dim = summa_dim
 
     def init_dist_group(self):
+        gd.debuginfo(prj="mt", info=f'')
         """Initialize 2D tensor row parallel groups, and assign local_ranks and groups to each gpu.
         Returns:
             Tuple (local_rank, group_world_size, process_group, ranks_in_group, mode):
@@ -85,11 +88,13 @@ class Initializer_2D_Col(ProcessGroupInitializer):
     """
 
     def __init__(self, num_group, summa_dim, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super(Initializer_2D_Col, self).__init__(*args, **kwargs)
         self.num_group = num_group
         self.summa_dim = summa_dim
 
     def init_dist_group(self):
+        gd.debuginfo(prj="mt", info=f'')
         """Initialize 2D tensor row parallel groups, and assign local_ranks and groups to each gpu.
 
         Returns:
@@ -134,6 +139,7 @@ class Initializer_2D(ProcessGroupInitializer):
     """
 
     def __init__(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(*args, **kwargs)
         self.num_group = self.world_size // self.tensor_parallel_size
         self.summa_dim = int(math.sqrt(self.tensor_parallel_size))
@@ -147,6 +153,7 @@ class Initializer_2D(ProcessGroupInitializer):
         self.row_initializer = Initializer_2D_Row(self.num_group, self.summa_dim, *args, **kwargs)
 
     def init_dist_group(self):
+        gd.debuginfo(prj="mt", info=f'')
         """Initialize 2D tensor row and col parallel groups, and assign local_ranks and groups to each gpu.
 
         Returns:

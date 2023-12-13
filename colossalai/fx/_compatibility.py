@@ -24,7 +24,7 @@ def compatibility(is_backward_compatible: bool = False) -> Callable:
     Returns:
         Callable: The decorated function
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     def decorator(func):
         if META_COMPATIBILITY:
             return func

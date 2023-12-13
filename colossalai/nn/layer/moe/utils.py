@@ -9,6 +9,7 @@ from .experts import FFNExperts, TPExperts
 
 class ForceFP32Parameter(torch.nn.Parameter):
     def half(self, memory_format=None):
+        gd.debuginfo(prj="mt", info=f'')
         return self.data.clone()
 
 
@@ -23,12 +24,14 @@ class NormalNoiseGenerator:
     """
 
     def __init__(self, num_experts: int):
+        gd.debuginfo(prj="mt", info=f'')
         self.normal = torch.distributions.normal.Normal(
             loc=torch.tensor(0.0, device=get_current_device()),
             scale=torch.tensor(1.0 / num_experts**2, device=get_current_device()),
         ).rsample
 
     def __call__(self, inputs: torch.Tensor):
+        gd.debuginfo(prj="mt", info=f'')
         noisy = self.normal(inputs.shape)
         return inputs + noisy
 
@@ -45,18 +48,22 @@ class UniformNoiseGenerator:
     """
 
     def __init__(self, eps: float = 1e-2):
+        gd.debuginfo(prj="mt", info=f'')
         self.uniform = torch.distributions.uniform.Uniform(
             low=torch.tensor(1.0 - eps, device=get_current_device()),
             high=torch.tensor(1.0 + eps, device=get_current_device()),
         ).rsample
 
     def __call__(self, inputs: torch.Tensor):
+        gd.debuginfo(prj="mt", info=f'')
         noisy = self.uniform(inputs.shape)
         return inputs * noisy
 
 
 def autocast_softmax(logit: torch.Tensor, dim: int):
+    gd.debuginfo(prj="mt", info=f'')
     if logit.dtype != torch.float32:
+        gd.debuginfo(prj="mt", info=f'')
         logit = logit.float()
     return F.softmax(logit, dim=dim)
 
@@ -64,8 +71,10 @@ def autocast_softmax(logit: torch.Tensor, dim: int):
 def build_ffn_experts(num_experts: int, d_model: int, d_ff: int, activation=None, drop_rate: float = 0):
     mep_size = MOE_CONTEXT.max_ep_size
     if num_experts % mep_size == 0 or mep_size % num_experts == 0:
+        gd.debuginfo(prj="mt", info=f'')
         return FFNExperts(num_experts, d_model, d_ff, activation, drop_rate)
     elif d_ff % mep_size == 0:
+        gd.debuginfo(prj="mt", info=f'')
         return TPExperts(num_experts, d_model, d_ff, activation, drop_rate)
     else:
         raise NotImplementedError(f"Can not build {num_experts} experts in {mep_size} GPUS.")

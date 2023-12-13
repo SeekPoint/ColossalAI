@@ -21,14 +21,18 @@ class CustomizedTritonAutoTuner(triton.KernelInterface):
     ):
         if not configs:
             self.configs = [triton.Config({}, num_warps=4, num_stages=2)]
+            gd.debuginfo(prj="mt", info=f'')
         else:
             self.configs = configs
+            gd.debuginfo(prj="mt", info=f'')
+
         self.key_idx = [arg_names.index(k) for k in key]
         self.nearest_power_of_two = nearest_power_of_two
         self.cache = {}
         # hook to reset all required tensor to zeros before relaunching a kernel
         self.hook = lambda args: 0
         if reset_to_zero is not None:
+            gd.debuginfo(prj="mt", info=f'')
             self.reset_idx = [arg_names.index(k) for k in reset_to_zero]
 
             def _hook(args):
@@ -39,16 +43,20 @@ class CustomizedTritonAutoTuner(triton.KernelInterface):
         self.arg_names = arg_names
         # prune configs
         if prune_configs_by:
+            gd.debuginfo(prj="mt", info=f'')
             perf_model, top_k = prune_configs_by["perf_model"], prune_configs_by["top_k"]
             if "early_config_prune" in prune_configs_by:
                 early_config_prune = prune_configs_by["early_config_prune"]
+                gd.debuginfo(prj="mt", info=f'')
         else:
             perf_model, top_k, early_config_prune = None, None, None
+            gd.debuginfo(prj="mt", info=f'')
         self.perf_model, self.configs_top_k = perf_model, top_k
         self.early_config_prune = early_config_prune
         self.fn = fn
 
     def _bench(self, *args, config, **meta):
+        gd.debuginfo(prj="mt", info=f'')
         # check for conflicts, i.e. meta-parameters both provided
         # as kwargs and by the autotuner
         conflicts = meta.keys() & config.kwargs.keys()
@@ -61,8 +69,10 @@ class CustomizedTritonAutoTuner(triton.KernelInterface):
         current = dict(meta, **config.kwargs)
 
         def kernel_call():
+            gd.debuginfo(prj="mt", info=f'')
             if config.pre_hook:
                 config.pre_hook(self.nargs)
+                gd.debuginfo(prj="mt", info=f'')
             self.hook(args)
             self.fn.run(*args, num_warps=config.num_warps, num_stages=config.num_stages, **current)
 
@@ -74,16 +84,20 @@ class CustomizedTritonAutoTuner(triton.KernelInterface):
             return (float("inf"), float("inf"), float("inf"))
 
     def run(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         self.nargs = dict(zip(self.arg_names, args))
         if len(self.configs) > 1:
+            gd.debuginfo(prj="mt", info=f'')
             key = tuple(args[i] for i in self.key_idx)
 
             # This reduces the amount of autotuning by rounding the keys to the nearest power of two
             # In my testing this gives decent results, and greatly reduces the amount of tuning required
             if self.nearest_power_of_two:
                 key = tuple([2 ** int(math.log2(x) + 0.5) for x in key])
+                gd.debuginfo(prj="mt", info=f'')
 
             if key not in self.cache:
+                gd.debuginfo(prj="mt", info=f'')
                 # prune configs
                 pruned_configs = self.prune_configs(kwargs)
                 bench_start = time.time()
@@ -96,20 +110,28 @@ class CustomizedTritonAutoTuner(triton.KernelInterface):
             config = self.cache[key]
         else:
             config = self.configs[0]
+            gd.debuginfo(prj="mt", info=f'')
+
         self.best_config = config
         if config.pre_hook is not None:
             config.pre_hook(self.nargs)
+            gd.debuginfo(prj="mt", info=f'')
+
         return self.fn.run(*args, num_warps=config.num_warps, num_stages=config.num_stages, **kwargs, **config.kwargs)
 
     def prune_configs(self, kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         pruned_configs = self.configs
         if self.early_config_prune:
             pruned_configs = self.early_config_prune(self.configs, self.nargs)
+            gd.debuginfo(prj="mt", info=f'')
         if self.perf_model:
             top_k = self.configs_top_k
             if isinstance(top_k, float) and top_k <= 1.0:
                 top_k = int(len(self.configs) * top_k)
+                gd.debuginfo(prj="mt", info=f'')
             if len(pruned_configs) > top_k:
+                gd.debuginfo(prj="mt", info=f'')
                 est_timing = {
                     config: self.perf_model(
                         **self.nargs,
@@ -124,6 +146,7 @@ class CustomizedTritonAutoTuner(triton.KernelInterface):
         return pruned_configs
 
     def warmup(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         self.nargs = dict(zip(self.arg_names, args))
         for config in self.prune_configs(kwargs):
             self.fn.warmup(
@@ -137,7 +160,9 @@ class CustomizedTritonAutoTuner(triton.KernelInterface):
 
 
 def autotune(configs, key, prune_configs_by=None, reset_to_zero=None, nearest_power_of_two=False):
+    gd.debuginfo(prj="mt", info=f'')
     def decorator(fn):
+        gd.debuginfo(prj="mt", info=f'')
         return CustomizedTritonAutoTuner(
             fn, fn.arg_names, configs, key, reset_to_zero, prune_configs_by, nearest_power_of_two
         )

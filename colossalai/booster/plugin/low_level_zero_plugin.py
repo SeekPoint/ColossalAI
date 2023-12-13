@@ -47,19 +47,25 @@ class LowLevelZeroModel(ModelWrapper, AMPModelMixin):
         super().__init__(module)
         self.dtype = None
         if precision == "fp16":
+            gd.debuginfo(prj="mt", info=f'')
             self.dtype = torch.float16
         elif precision == "bf16":
+            gd.debuginfo(prj="mt", info=f'')
             self.dtype = torch.bfloat16
         if self.dtype is not None:
+            gd.debuginfo(prj="mt", info=f'')
             module = module.to(self.dtype)
         module = module.to(get_current_device())
         self.module = module
         self.convert_fn = None
         if self.dtype is not None:
+            gd.debuginfo(prj="mt", info=f'')
             self.convert_fn = partial(_convert_floating_point, dtype=self.dtype)
 
     def forward(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         if self.convert_fn is not None:
+            gd.debuginfo(prj="mt", info=f'')
             args = tree_map(self.convert_fn, args)
             kwargs = tree_map(self.convert_fn, kwargs)
         return super().forward(*args, **kwargs)
@@ -74,12 +80,14 @@ class LowLevelZeroCheckpointIO(TorchDDPCheckpointIO):
             checkpoint (str): Path to save checkpoint
             gather_dtensor (bool): Whether to gather_dtensor, not used
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(optimizer, LowLevelZeroOptimizer), "Please boost the optimizer before saving!"
         # the `state_dict` in LowLevelZeroOptimizer has communication
         # if only the master rank collect state_dict and save,
         # the communication on each rank would not match
         state_dict = optimizer.state_dict()
         if self.coordinator.is_master():
+            gd.debuginfo(prj="mt", info=f'')
             save_state_dict(state_dict, checkpoint, use_safetensors=False)
 
     def save_sharded_optimizer(
@@ -104,6 +112,7 @@ class LowLevelZeroCheckpointIO(TorchDDPCheckpointIO):
             prefix (str): Perfix of file to save
             size_per_shard (int): Max file size of each file that store state tensors
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(optimizer, LowLevelZeroOptimizer), "Please boost the optimizer before saving!"
         if os.path.isfile(checkpoint):
             logging.error(f"Provided path ({checkpoint}) should be a directory, not a file")
@@ -123,6 +132,7 @@ class LowLevelZeroCheckpointIO(TorchDDPCheckpointIO):
 
         # Store the information of param groups to param_group_file.
         if self.coordinator.is_master():
+            gd.debuginfo(prj="mt", info=f'')
             group_file_path = os.path.join(checkpoint, param_group_file)
             save_param_groups(state_dict, group_file_path)
 
@@ -142,6 +152,7 @@ class LowLevelZeroCheckpointIO(TorchDDPCheckpointIO):
         # Wrap up index file.
         index_file.append_meta_data("total_size", total_size)
         if self.coordinator.is_master():
+            gd.debuginfo(prj="mt", info=f'')
             index_file.write_index_file(save_index_file)
         logging.info(
             f"The optimizer is going to be split to checkpoint shards. "
@@ -157,6 +168,7 @@ class LowLevelZeroCheckpointIO(TorchDDPCheckpointIO):
             index_file_path (str): Path to the index file
             prefix (str): Not used.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(optimizer, LowLevelZeroOptimizer), "Please boost the optimizer before Loading!"
         optimizer = optimizer.unwrap()
 
@@ -193,6 +205,7 @@ class LowLevelZeroCheckpointIO(TorchDDPCheckpointIO):
         sharded_optimizer_loading_epilogue(optimizer)
 
     def load_unsharded_model(self, model: ModelWrapper, checkpoint: str, strict: bool = True):
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(model, LowLevelZeroModel), "Please boost the model before loading!"
         super().load_unsharded_model(model, checkpoint, strict)
         model.update_master_params()
@@ -205,6 +218,7 @@ class LowLevelZeroCheckpointIO(TorchDDPCheckpointIO):
         use_safetensors: bool = False,
         load_sub_module: bool = True,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(model, LowLevelZeroModel), "Please boost the model before loading!"
         super().load_sharded_model(model, checkpoint_index_file, strict, use_safetensors, load_sub_module)
         model.update_master_params()
@@ -266,6 +280,7 @@ class LowLevelZeroPlugin(DPPluginBase):
         master_weights: bool = True,
         verbose: bool = False,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         assert stage in (1, 2), f"LowLevelZeroPlugin only supports stage 1/2 training"
         assert precision in SUPPORTED_PRECISION, f"LowLevelZeroPlugin only supports {SUPPORTED_PRECISION} training"
@@ -316,10 +331,13 @@ class LowLevelZeroPlugin(DPPluginBase):
         dataloader: Optional[DataLoader] = None,
         lr_scheduler: Optional[LRScheduler] = None,
     ) -> Tuple[nn.Module, OptimizerWrapper, Callable, DataLoader, LRScheduler]:
+        gd.debuginfo(prj="mt", info=f'')
         if not isinstance(model, ModelWrapper):
+            gd.debuginfo(prj="mt", info=f'')
             model = LowLevelZeroModel(model, self.precision)
 
         if optimizer is not None and not isinstance(optimizer, OptimizerWrapper):
+            gd.debuginfo(prj="mt", info=f'')
             optimizer: LowLevelZeroOptimizer = LowLevelZeroOptimizer(
                 optimizer, **self.zero_optim_kwargs, verbose=self.verbose
             )
@@ -335,5 +353,6 @@ class LowLevelZeroPlugin(DPPluginBase):
         return LowLevelZeroCheckpointIO()
 
     def no_sync(self, model: nn.Module, optimizer: OptimizerWrapper) -> Iterator[None]:
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(optimizer, LowLevelZeroOptimizer)
         return optimizer.no_sync()

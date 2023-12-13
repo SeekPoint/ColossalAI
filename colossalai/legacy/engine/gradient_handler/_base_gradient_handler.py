@@ -14,6 +14,7 @@ class BaseGradientHandler(ABC):
     """
 
     def __init__(self, model, optimizer):
+        gd.debuginfo(prj="mt", info=f'')
         self._model = model
         self._optimizer = optimizer
 

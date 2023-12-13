@@ -6,6 +6,7 @@ from pydebug import gd, infoTensor
 @meta_patched_module.register(torch.nn.GRU)
 @meta_patched_module.register(torch.nn.RNN)
 def torch_nn_rnn(self, input, hx):
+    gd.debuginfo(prj="mt", info=f'')
     assert (
         input.shape[-1] == self.input_size
     ), f"Expected input to have input size {self.input_size} but got {input.shape[-1]} for the torch.nn.RNN patch"

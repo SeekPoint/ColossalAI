@@ -38,6 +38,7 @@ def _extract_tensor_metadata(result: torch.Tensor) -> TensorMetadata:
     """
     Extract a TensorMetadata NamedTuple describing `result`.
     """
+    gd.debuginfo(prj="mt", info=f'')
     shape = result.shape
     dtype = result.dtype
     requires_grad = result.requires_grad
@@ -82,7 +83,7 @@ class MetaInfoProp(torch.fx.Interpreter):
          module (GraphModule): The module to be executed
 
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     _is_proped: bool = False
 
     @compatibility(is_backward_compatible=True)
@@ -99,13 +100,16 @@ class MetaInfoProp(torch.fx.Interpreter):
         Returns:
             Any: The result of executing ``n``
         """
+        gd.debuginfo(prj="mt", info=f'')
         self._is_proped = True
         result, meta_info = super().run_node(n)
 
         def extract_tensor_meta(obj):
             if isinstance(obj, torch.Tensor):
+                gd.debuginfo(prj="mt", info=f'')
                 return _extract_tensor_metadata(obj)
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 return TensorMetadata(None, None, False, None, 0, False)
 
         tensor_meta = tree_map(extract_tensor_meta, result)
@@ -143,6 +147,7 @@ class MetaInfoProp(torch.fx.Interpreter):
             result (Any): The argument value that was retrieved
             meta_info (MetaInfo): The memory cost and FLOPs estimated with `MetaTensor`.
         """
+        gd.debuginfo(prj="mt", info=f'')
         return super().placeholder(target, args, kwargs), GraphInfo()
 
     @compatibility(is_backward_compatible=True)
@@ -162,6 +167,7 @@ class MetaInfoProp(torch.fx.Interpreter):
             result (Any): The argument value that was retrieved
             meta_info (MetaInfo): The memory cost and FLOPs estimated with `MetaTensor`.
         """
+        gd.debuginfo(prj="mt", info=f'')
         return super().get_attr(target, args, kwargs), GraphInfo()
 
     @compatibility(is_backward_compatible=True)
@@ -180,6 +186,7 @@ class MetaInfoProp(torch.fx.Interpreter):
             result (Any): The argument value that was retrieved
             meta_info (MetaInfo): The memory cost and FLOPs estimated with `MetaTensor`.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert not isinstance(target, str)
         return profile_function(target)(*args, **kwargs)
 
@@ -199,6 +206,7 @@ class MetaInfoProp(torch.fx.Interpreter):
             result (Any): The argument value that was retrieved
             meta_info (MetaInfo): The memory cost and FLOPs estimated with `MetaTensor`.
         """
+        gd.debuginfo(prj="mt", info=f'')
         return profile_method(target)(*args, **kwargs)
 
     @compatibility(is_backward_compatible=True)
@@ -217,6 +225,7 @@ class MetaInfoProp(torch.fx.Interpreter):
             result (Any): The argument value that was retrieved
             meta_info (MetaInfo): The memory cost and FLOPs estimated with `MetaTensor`.
         """
+        gd.debuginfo(prj="mt", info=f'')
         # Retrieve executed args and kwargs values from the environment
         # Execute the method and return the result
         assert isinstance(target, str)
@@ -240,7 +249,9 @@ class MetaInfoProp(torch.fx.Interpreter):
             result (Any): The argument value that was retrieved
             meta_info (MetaInfo): The memory cost and FLOPs estimated with `MetaTensor`.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if hasattr(args[0], "_tensor"):
+            gd.debuginfo(prj="mt", info=f'')
             return args[0], GraphInfo(fwd_in=[args[0]._tensor])
         return args[0], GraphInfo(save_fwd_in=True)
 
@@ -255,6 +266,7 @@ class MetaInfoProp(torch.fx.Interpreter):
         Returns:
             Any: The value returned from executing the Module
         """
+        gd.debuginfo(prj="mt", info=f'')
         return super().run(*args)
 
     def summary(self, unit: str = "MB") -> str:
@@ -263,6 +275,7 @@ class MetaInfoProp(torch.fx.Interpreter):
         tabular format. Note that this API requires the ``tabulate`` module
         to be installed.
         """
+        gd.debuginfo(prj="mt", info=f'')
         # https://github.com/pytorch/pytorch/blob/master/torch/fx/graph.py
         try:
             from tabulate import tabulate
@@ -285,6 +298,7 @@ class MetaInfoProp(torch.fx.Interpreter):
                 "gb": 1024**3,
                 "tb": 1024**4,
             }
+            gd.debuginfo(prj="mt", info=f'')
             return f"{mem / unit_divisor_map[unit.lower()]:.2f} {unit.upper()}"
 
         def flops_repr(flop: int) -> str:
@@ -348,9 +362,11 @@ def metainfo_trace(gm: torch.fx.GraphModule, *args, verbose: bool = False, unit:
     Returns:
         torch.fx.GraphModule: The ``GraphModule`` annotated with MetaInfo.
     """
+    gd.debuginfo(prj="mt", info=f'')
     device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
     interp = MetaInfoProp(gm.to(device))
     if is_compatible_with_meta():
+        gd.debuginfo(prj="mt", info=f'')
         from colossalai.fx.profiler import MetaTensor
 
         args = tree_map(lambda x: MetaTensor(x, fake_device=device), args)

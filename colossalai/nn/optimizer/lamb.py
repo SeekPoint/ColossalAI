@@ -27,6 +27,7 @@ class Lamb(Optimizer):
     """
 
     def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-6, weight_decay=0, adam=False):
+        gd.debuginfo(prj="mt", info=f'')
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:
@@ -46,9 +47,11 @@ class Lamb(Optimizer):
             closure (callable, optional): A closure that reevaluates the model
                 and returns the loss.
         """
+        gd.debuginfo(prj="mt", info=f'')
         loss = None
         if closure is not None:
             loss = closure()
+            gd.debuginfo(prj="mt", info=f'')
 
         for group in self.param_groups:
             for p in group["params"]:
@@ -67,6 +70,7 @@ class Lamb(Optimizer):
                     state["exp_avg"] = torch.zeros_like(p)
                     # Exponential moving average of squared gradient values
                     state["exp_avg_sq"] = torch.zeros_like(p)
+                    gd.debuginfo(prj="mt", info=f'')
 
                 exp_avg, exp_avg_sq = state["exp_avg"], state["exp_avg_sq"]
                 beta1, beta2 = group["betas"]
@@ -89,19 +93,24 @@ class Lamb(Optimizer):
                 weight_norm = p.data.pow(2).sum().sqrt()
 
                 adam_step = exp_avg / exp_avg_sq.sqrt().add(group["eps"])
+
                 if group["weight_decay"] != 0:
                     adam_step.add_(p.data, alpha=group["weight_decay"])
+                    gd.debuginfo(prj="mt", info=f'')
 
                 adam_norm = adam_step.pow(2).sum().sqrt()
                 if weight_norm == 0 or adam_norm == 0:
                     trust_ratio = 1
                 else:
                     trust_ratio = weight_norm / adam_norm
+                    gd.debuginfo(prj="mt", info=f'')
+
                 state["weight_norm"] = weight_norm
                 state["adam_norm"] = adam_norm
                 state["trust_ratio"] = trust_ratio
                 if self.adam:
                     trust_ratio = 1
+                    gd.debuginfo(prj="mt", info=f'')
 
                 p.data.add_(adam_step, alpha=-step_size * trust_ratio)
 

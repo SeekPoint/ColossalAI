@@ -30,6 +30,7 @@ class CheckpointSolverChen(CheckpointSolverBase):
             cnode (List[str], optional): Common node List, should be the subset of input. Defaults to None.
             num_grids (int, optional): Number of grids to search for b. Defaults to 6.
         """
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(graph, 0, 0, True, cnode)
         self.num_grids = num_grids
 
@@ -39,6 +40,7 @@ class CheckpointSolverChen(CheckpointSolverBase):
         Returns:
             graph (Graph): The optimized graph, should be a copy of the original graph.
         """
+        gd.debuginfo(prj="mt", info=f'')
         checkpointable_op = ["call_module", "call_method", "call_function", "get_attr"]
         ckpt = self.grid_search()
         for i, seg in enumerate(ckpt):
@@ -53,6 +55,7 @@ class CheckpointSolverChen(CheckpointSolverBase):
         """
         This is the simple implementation of Algorithm 3 in https://arxiv.org/abs/1604.06174.
         """
+        gd.debuginfo(prj="mt", info=f'')
         ckpt_intv = []
         temp = 0
         x = 0
@@ -75,6 +78,7 @@ class CheckpointSolverChen(CheckpointSolverBase):
         Search ckpt strategy with b = 0, then run the allocation algorithm again with b = √xy.
         Grid search over [√2/2 b, √2 b] for ``ckpt_opt`` over ``num_grids`` as in appendix A.
         """
+        gd.debuginfo(prj="mt", info=f'')
         _, b_approx = self.run_chen_greedy(0)
         b_min, b_max = math.floor(b_approx / math.sqrt(2)), math.ceil(b_approx * math.sqrt(2))
         b_opt = math.inf

@@ -36,6 +36,7 @@ class BatchNormStrategyGenerator(StrategyGenerator):
         For BatchNorm2d, the dim of input data should be 4([N, C, H, W]).
         For BatchNorm3d, the dim of input data should be 5([N, C, H, W, D]).
         """
+        gd.debuginfo(prj="mt", info=f'')
         input_op_data = self.op_data["input"]
         assert input_op_data.data.dim() in (
             3,
@@ -49,6 +50,7 @@ class BatchNormStrategyGenerator(StrategyGenerator):
 
         Note: compute_cost need to be divided by TFLOPS, now it just shows the computation size.
         """
+        gd.debuginfo(prj="mt", info=f'')
         # TODO: a constant coefficient need to be added.
         # 1D: (L) * N * Cin
         # 2D: (H * W) * N  * Cin
@@ -71,6 +73,7 @@ class BatchNormStrategyGenerator(StrategyGenerator):
         strategy.compute_cost = compute_cost
 
     def update_memory_cost(self, strategy: ShardingStrategy):
+        gd.debuginfo(prj="mt", info=f'')
         forward_size_mapping = {
             "input": self._compute_size_in_bytes(strategy, "input"),
             "other": self._compute_size_in_bytes(strategy, "other"),
@@ -114,6 +117,7 @@ class BatchNormStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def split_input_channel(self, mesh_dim_0):
         name = f"RS{mesh_dim_0} = RS{mesh_dim_0} x S{mesh_dim_0}"
+        gd.debuginfo(prj="mt", info=f'name={name}')
         dim_partition_dict_mapping = {
             "input": {1: [mesh_dim_0]},
             "other": {0: [mesh_dim_0]},
@@ -138,6 +142,7 @@ class BatchNormStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def split_input_channel_1d(self, mesh_dim_0, mesh_dim_1):
         name = f"RS{mesh_dim_0}{mesh_dim_1} = RS{mesh_dim_0}{mesh_dim_1} x S{mesh_dim_0}{mesh_dim_1}"
+        gd.debuginfo(prj="mt", info=f'name={name}')
         dim_partition_dict_mapping = {
             "input": {1: [mesh_dim_0, mesh_dim_1]},
             "other": {0: [mesh_dim_0, mesh_dim_1]},
@@ -147,6 +152,7 @@ class BatchNormStrategyGenerator(StrategyGenerator):
             "num_batches_tracked": {},
         }
         if self.has_bias:
+            gd.debuginfo(prj="mt", info=f'')
             dim_partition_dict_mapping["bias"] = {0: [mesh_dim_0, mesh_dim_1]}
 
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict_mapping)
@@ -162,6 +168,7 @@ class BatchNormStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def non_split(self):
         name = f"RR = RR x R"
+        gd.debuginfo(prj="mt", info=f'name={name}')
         dim_partition_dict_mapping = {
             "input": {},
             "other": {},
@@ -186,6 +193,7 @@ class BatchNormStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def split_input_batch(self, mesh_dim_0):
         name = f"S{mesh_dim_0}R = S{mesh_dim_0}R x R WITH SYNC_BN"
+        gd.debuginfo(prj="mt", info=f'name={name}')
         dim_partition_dict_mapping = {
             "input": {0: [mesh_dim_0]},
             "other": {},
@@ -195,6 +203,7 @@ class BatchNormStrategyGenerator(StrategyGenerator):
             "num_batches_tracked": {},
         }
         if self.has_bias:
+            gd.debuginfo(prj="mt", info=f'')
             dim_partition_dict_mapping["bias"] = {}
 
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict_mapping)
@@ -223,6 +232,7 @@ class BatchNormStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def split_input_batch_1d(self, mesh_dim_0, mesh_dim_1):
         name = f"S{mesh_dim_0}{mesh_dim_1}R = S{mesh_dim_0}{mesh_dim_1}R x R WITH SYNC_BN"
+        gd.debuginfo(prj="mt", info=f'name={name}')
         dim_partition_dict_mapping = {
             "input": {0: [mesh_dim_0, mesh_dim_1]},
             "other": {},
@@ -232,6 +242,7 @@ class BatchNormStrategyGenerator(StrategyGenerator):
             "num_batches_tracked": {},
         }
         if self.has_bias:
+            gd.debuginfo(prj="mt", info=f'')
             dim_partition_dict_mapping["bias"] = {}
 
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict_mapping)
@@ -260,6 +271,7 @@ class BatchNormStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def split_input_both_dim(self, mesh_dim_0, mesh_dim_1):
         name = f"S{mesh_dim_0}S{mesh_dim_1} = S{mesh_dim_0}S{mesh_dim_1} x S{mesh_dim_1} WITH SYNC_BN"
+        gd.debuginfo(prj="mt", info=f'name={name}')
         dim_partition_dict_mapping = {
             "input": {
                 0: [mesh_dim_0],
@@ -312,7 +324,7 @@ class BatchNormStrategyGenerator(StrategyGenerator):
         """
         Generate every possible strategies for a BatchNorm node, and record all strategies into the strategies_vector.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         strategy_list = []
         # RS = RS x S
         strategy_list.append(self.split_input_channel(0))

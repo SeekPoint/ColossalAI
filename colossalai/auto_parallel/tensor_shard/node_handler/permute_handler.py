@@ -18,6 +18,7 @@ class PermuteHandler(NodeHandler):
     """
 
     def get_strategy_generator(self) -> List[StrategyGenerator]:
+        gd.debuginfo(prj="mt", info=f'')
         op_data_mapping = self.get_operation_data_mapping()
         generators = []
         generators.append(PermuteGenerator(op_data_mapping, self.device_mesh, self.node.args[0]))
@@ -27,14 +28,17 @@ class PermuteHandler(NodeHandler):
         # check if the input operand is a parameter
         if isinstance(self.node.args[0]._meta_data, torch.nn.parameter.Parameter):
             data_type = OperationDataType.PARAM
+            gd.debuginfo(prj="mt", info=f'')
         else:
             data_type = OperationDataType.ARG
+            gd.debuginfo(prj="mt", info=f'')
 
         input_data = self.node.args[0]._meta_data
         physical_input_operand = OperationData(name=str(self.node.args[0]), type=data_type, data=input_data)
 
         permute_dims = []
         if self.node.op == "call_method":
+            gd.debuginfo(prj="mt", info=f'')
             # torch.Tensor.permute (input, *dims)
             for arg in self.node.args:
                 if isinstance(arg, torch.fx.Node):
@@ -44,6 +48,7 @@ class PermuteHandler(NodeHandler):
                     assert isinstance(arg, int), "The argument in permute node should be either type of Node or int."
                     permute_dims.append(arg)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # torch.permute (input, dims)
             for arg in self.node.args:
                 if isinstance(arg, torch.fx.Node):

@@ -17,14 +17,18 @@ def get_moe_epsize_param_dict(model: nn.Module) -> Dict[int, List[nn.Parameter]]
     Args:
         model (:class:`torch.nn.Module`): A pyTorch `nn.Module` from which we get dict.
     """
+    gd.debuginfo(prj="mt", info=f'')
     epsize_param_dict = dict()
     for param in model.parameters():
         if not hasattr(param, "moe_info"):
             ep_size = 1  # set ep_size to 1 for dp parameters
+            gd.debuginfo(prj="mt", info=f'')
         else:
             ep_size = param.moe_info.ep_size
+            gd.debuginfo(prj="mt", info=f'')
         if ep_size not in epsize_param_dict:
             epsize_param_dict[ep_size] = []
+            gd.debuginfo(prj="mt", info=f'')
         epsize_param_dict[ep_size].append(param)
 
     return epsize_param_dict
@@ -36,12 +40,14 @@ def sync_moe_model_param(model: nn.Module):
     Args:
         model (:class:`torch.nn.Module`): A pyTorch model on whose parameters you check the consistency.
     """
+    gd.debuginfo(prj="mt", info=f'')
     if is_using_ddp():
         param_dict = get_moe_epsize_param_dict(model)
 
         # synchronize the parameters whose dp_group is the whole world
         if 1 in param_dict:
             src_rank = gpc.get_ranks_in_group(ParallelMode.DATA)[0]
+            gd.debuginfo(prj="mt", info=f'')
             for param in param_dict[1]:
                 dist.broadcast(param, src=src_rank, group=gpc.get_group(ParallelMode.DATA))
 

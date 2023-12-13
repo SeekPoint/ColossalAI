@@ -82,7 +82,7 @@ class BertPipelineForwards:
             `past_key_values`).
         """
         logger = logging.get_logger(__name__)
-
+        gd.debuginfo(prj="mt", info=f'')
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
@@ -91,16 +91,20 @@ class BertPipelineForwards:
 
         if self.config.is_decoder:
             use_cache = use_cache if use_cache is not None else self.config.use_cache
+            gd.debuginfo(prj="mt", info=f'')
         else:
             use_cache = False
+            gd.debuginfo(prj="mt", info=f'')
 
         if stage_manager.is_first_stage():
             if input_ids is not None and inputs_embeds is not None:
                 raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
             elif input_ids is not None:
                 input_shape = input_ids.size()
+                gd.debuginfo(prj="mt", info=f'')
             elif inputs_embeds is not None:
                 input_shape = inputs_embeds.size()[:-1]
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 raise ValueError("You have to specify either input_ids or inputs_embeds")
             batch_size, seq_length = input_shape
@@ -110,12 +114,15 @@ class BertPipelineForwards:
                     buffered_token_type_ids = self.embeddings.token_type_ids[:, :seq_length]
                     buffered_token_type_ids_expanded = buffered_token_type_ids.expand(batch_size, seq_length)
                     token_type_ids = buffered_token_type_ids_expanded
+                    gd.debuginfo(prj="mt", info=f'')
                 else:
                     token_type_ids = torch.zeros(input_shape, dtype=torch.long, device=device)
+                    gd.debuginfo(prj="mt", info=f'')
         else:
             input_shape = hidden_states.size()[:-1]
             batch_size, seq_length = input_shape
             device = hidden_states.device
+            gd.debuginfo(prj="mt", info=f'')
 
         # TODO(jianghai): left the recording kv-value tensors as () or None type, this feature may be added in the future.
         if output_attentions:
@@ -133,6 +140,7 @@ class BertPipelineForwards:
 
         if attention_mask is None:
             attention_mask = torch.ones(((batch_size, seq_length + past_key_values_length)), device=device)
+            gd.debuginfo(prj="mt", info=f'')
 
         # We can provide a self-attention mask of dimensions [batch_size, from_seq_length, to_seq_length]
         # ourselves in which case we just need to make it broadcastable to all heads.
@@ -145,9 +153,13 @@ class BertPipelineForwards:
             encoder_hidden_shape = (encoder_batch_size, encoder_sequence_length)
             if encoder_attention_mask is None:
                 encoder_attention_mask = torch.ones(encoder_hidden_shape, device=device)
+                gd.debuginfo(prj="mt", info=f'')
+
             encoder_extended_attention_mask = self.invert_attention_mask(encoder_attention_mask)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             encoder_extended_attention_mask = None
+            gd.debuginfo(prj="mt", info=f'')
 
         # Prepare head mask if needed
         # 1.0 in head_mask indicate we keep the head
@@ -158,6 +170,7 @@ class BertPipelineForwards:
         hidden_states = hidden_states if hidden_states is not None else None
 
         if stage_manager.is_first_stage():
+            gd.debuginfo(prj="mt", info=f'')
             hidden_states = self.embeddings(
                 input_ids=input_ids,
                 position_ids=position_ids,
@@ -172,11 +185,13 @@ class BertPipelineForwards:
         all_cross_attentions = () if output_attentions and self.config.add_cross_attention else None
 
         if self.encoder.gradient_checkpointing and self.encoder.training:
+            gd.debuginfo(prj="mt", info=f'')
             if use_cache:
                 logger.warning_once(
                     "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
                 )
                 use_cache = False
+                gd.debuginfo(prj="mt", info=f'')
         next_decoder_cache = () if use_cache else None
 
         start_idx, end_idx = stage_index[0], stage_index[1]
@@ -189,25 +204,30 @@ class BertPipelineForwards:
             hidden_states = split_forward_gather_backward(
                 hidden_states, dim=1, process_group=shard_config.tensor_parallel_process_group
             )
+            gd.debuginfo(prj="mt", info=f'')
             if encoder_hidden_states is not None:
                 encoder_hidden_states = split_forward_gather_backward(
                     encoder_hidden_states, dim=1, process_group=shard_config.tensor_parallel_process_group
                 )
+                gd.debuginfo(prj="mt", info=f'')
 
         for idx, encoder_layer in enumerate(self.encoder.layer[start_idx:end_idx], start=start_idx):
             if stage_manager.is_first_stage() and idx == 0:
                 encoder_attention_mask = encoder_extended_attention_mask
+                gd.debuginfo(prj="mt", info=f'')
 
             if output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states,)
+                gd.debuginfo(prj="mt", info=f'')
 
             layer_head_mask = head_mask[idx] if head_mask is not None else None
             past_key_value = past_key_values[idx] if past_key_values is not None else None
 
             if self.encoder.gradient_checkpointing and self.encoder.training:
-
                 def create_custom_forward(module):
+                    gd.debuginfo(prj="mt", info=f'')
                     def custom_forward(*inputs):
+                        gd.debuginfo(prj="mt", info=f'')
                         return module(*inputs, past_key_value, output_attentions)
 
                     return custom_forward
@@ -220,6 +240,7 @@ class BertPipelineForwards:
                     encoder_hidden_states,
                     encoder_attention_mask,
                 )
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 layer_outputs = encoder_layer(
                     hidden_states,
@@ -230,32 +251,43 @@ class BertPipelineForwards:
                     past_key_value,
                     output_attentions,
                 )
+                gd.debuginfo(prj="mt", info=f'')
+
             hidden_states = layer_outputs[0]
             if use_cache:
                 next_decoder_cache += (layer_outputs[-1],)
+                gd.debuginfo(prj="mt", info=f'')
+
             if output_attentions:
                 all_self_attentions = all_self_attentions + (layer_outputs[1],)
+                gd.debuginfo(prj="mt", info=f'')
                 if self.config.add_cross_attention:
                     all_cross_attentions = all_cross_attentions + (layer_outputs[2],)
+                    gd.debuginfo(prj="mt", info=f'')
 
         # When sequence parallelism done, gather the output tensor in forward and split it in backward
         if shard_config is not None and shard_config.enable_sequence_parallelism:
             hidden_states = gather_forward_split_backward(
                 hidden_states, dim=1, process_group=shard_config.tensor_parallel_process_group
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         if output_hidden_states:
             all_hidden_states = all_hidden_states + (hidden_states,)
+            gd.debuginfo(prj="mt", info=f'')
 
         # end of a stage loop
         sequence_output = hidden_states if hidden_states is not None else None
 
         if stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             pooled_output = self.pooler(sequence_output) if self.pooler is not None else None
             if not return_dict:
+                gd.debuginfo(prj="mt", info=f'')
                 return (sequence_output, pooled_output) + layer_outputs[1:]
             # return dict is not supported at this moment
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 return BaseModelOutputWithPoolingAndCrossAttentions(
                     last_hidden_state=sequence_output,
                     pooler_output=pooled_output,
@@ -267,6 +299,7 @@ class BertPipelineForwards:
 
         # output of non-first and non-last stages: must be a dict
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # intermediate stage always return dict
             return {
                 "hidden_states": hidden_states,
@@ -292,6 +325,7 @@ class BertPipelineForwards:
         shard_config: ShardConfig = None,
     ):
         logger = logging.get_logger(__name__)
+        gd.debuginfo(prj="mt", info=f'')
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
         # TODO(jianghai) left the recording kv-value tensors as () or None type, this feature may be added in the future.
@@ -320,17 +354,20 @@ class BertPipelineForwards:
         )
 
         if stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             sequence_output, pooled_output = outputs[:2]
             prediction_scores, seq_relationship_score = self.cls(sequence_output, pooled_output)
             # the last stage for pretraining model
             total_loss = None
             if labels is not None and next_sentence_label is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 loss_fct = CrossEntropyLoss()
                 masked_lm_loss = loss_fct(prediction_scores.view(-1, self.config.vocab_size), labels.view(-1))
                 next_sentence_loss = loss_fct(seq_relationship_score.view(-1, 2), next_sentence_label.view(-1))
                 total_loss = masked_lm_loss + next_sentence_loss
 
             if not return_dict:
+                gd.debuginfo(prj="mt", info=f'')
                 output = (prediction_scores, seq_relationship_score) + outputs[2:]
                 return ((total_loss,) + output) if total_loss is not None else output
 
@@ -343,6 +380,7 @@ class BertPipelineForwards:
             )
         else:
             hidden_states = outputs.get("hidden_states")
+            gd.debuginfo(prj="mt", info=f'')
 
             # intermediate stage always return dict
             return {
@@ -397,9 +435,12 @@ class BertPipelineForwards:
         """
         logger = logging.get_logger(__name__)
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        gd.debuginfo(prj="mt", info=f'')
 
         if labels is not None:
             use_cache = False
+            gd.debuginfo(prj="mt", info=f'')
+
         if output_attentions:
             logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
@@ -430,6 +471,7 @@ class BertPipelineForwards:
         past_key_values = None
 
         if stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             sequence_output = outputs[0]
             prediction_scores = self.cls(sequence_output)
 
@@ -440,9 +482,11 @@ class BertPipelineForwards:
                 labels = labels[:, 1:].contiguous()
                 loss_fct = CrossEntropyLoss()
                 lm_loss = loss_fct(shifted_prediction_scores.view(-1, self.config.vocab_size), labels.view(-1))
+                gd.debuginfo(prj="mt", info=f'')
 
             if not return_dict:
                 output = (prediction_scores,) + outputs[2:]
+                gd.debuginfo(prj="mt", info=f'')
                 return ((lm_loss,) + output) if lm_loss is not None else output
 
             return CausalLMOutputWithCrossAttentions(
@@ -455,6 +499,8 @@ class BertPipelineForwards:
             )
         else:
             hidden_states = outputs.get("hidden_states")
+            gd.debuginfo(prj="mt", info=f'')
+
             # intermediate stage always return dict
             return {"hidden_states": hidden_states}
 
@@ -487,6 +533,7 @@ class BertPipelineForwards:
         logger = logging.get_logger(__name__)
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        gd.debuginfo(prj="mt", info=f'')
 
         if output_attentions:
             logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
@@ -517,14 +564,17 @@ class BertPipelineForwards:
         if stage_manager.is_last_stage():
             sequence_output = outputs[0]
             prediction_scores = self.cls(sequence_output)
+            gd.debuginfo(prj="mt", info=f'')
 
             masked_lm_loss = None
             if labels is not None:
                 loss_fct = CrossEntropyLoss()  # -100 index = padding token
                 masked_lm_loss = loss_fct(prediction_scores.view(-1, self.config.vocab_size), labels.view(-1))
+                gd.debuginfo(prj="mt", info=f'')
 
             if not return_dict:
                 output = (prediction_scores,) + outputs[2:]
+                gd.debuginfo(prj="mt", info=f'')
                 return ((masked_lm_loss,) + output) if masked_lm_loss is not None else output
 
             return MaskedLMOutput(
@@ -535,6 +585,7 @@ class BertPipelineForwards:
             )
         else:
             hidden_states = outputs.get("hidden_states")
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": hidden_states}
 
     @staticmethod
@@ -586,6 +637,7 @@ class BertPipelineForwards:
         ```
         """
         logger = logging.get_logger(__name__)
+        gd.debuginfo(prj="mt", info=f'')
 
         if "next_sentence_label" in kwargs:
             warnings.warn(
@@ -624,14 +676,17 @@ class BertPipelineForwards:
         if stage_manager.is_last_stage():
             pooled_output = outputs[1]
             seq_relationship_scores = self.cls(pooled_output)
+            gd.debuginfo(prj="mt", info=f'')
 
             next_sentence_loss = None
             if labels is not None:
                 loss_fct = CrossEntropyLoss()
                 next_sentence_loss = loss_fct(seq_relationship_scores.view(-1, 2), labels.view(-1))
+                gd.debuginfo(prj="mt", info=f'')
 
             if not return_dict:
                 output = (seq_relationship_scores,) + outputs[2:]
+                gd.debuginfo(prj="mt", info=f'')
                 return ((next_sentence_loss,) + output) if next_sentence_loss is not None else output
 
             return NextSentencePredictorOutput(
@@ -642,6 +697,8 @@ class BertPipelineForwards:
             )
         else:
             hidden_states = outputs.get("hidden_states")
+            gd.debuginfo(prj="mt", info=f'')
+
             # intermediate stage always return dict
             return {"hidden_states": hidden_states}
 
@@ -670,6 +727,7 @@ class BertPipelineForwards:
             `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
         """
         logger = logging.get_logger(__name__)
+        gd.debuginfo(prj="mt", info=f'')
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -702,31 +760,41 @@ class BertPipelineForwards:
 
             pooled_output = self.dropout(pooled_output)
             logits = self.classifier(pooled_output)
+            gd.debuginfo(prj="mt", info=f'')
 
             loss = None
             if labels is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 if self.config.problem_type is None:
                     if self.num_labels == 1:
                         self.config.problem_type = "regression"
+                        gd.debuginfo(prj="mt", info=f'')
                     elif self.num_labels > 1 and (labels.dtype == torch.long or labels.dtype == torch.int):
                         self.config.problem_type = "single_label_classification"
+                        gd.debuginfo(prj="mt", info=f'')
                     else:
                         self.config.problem_type = "multi_label_classification"
+                        gd.debuginfo(prj="mt", info=f'')
 
                 if self.config.problem_type == "regression":
                     loss_fct = MSELoss()
                     if self.num_labels == 1:
                         loss = loss_fct(logits.squeeze(), labels.squeeze())
+                        gd.debuginfo(prj="mt", info=f'')
                     else:
                         loss = loss_fct(logits, labels)
+                        gd.debuginfo(prj="mt", info=f'')
                 elif self.config.problem_type == "single_label_classification":
                     loss_fct = CrossEntropyLoss()
                     loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                    gd.debuginfo(prj="mt", info=f'')
                 elif self.config.problem_type == "multi_label_classification":
                     loss_fct = BCEWithLogitsLoss()
                     loss = loss_fct(logits, labels)
+                    gd.debuginfo(prj="mt", info=f'')
             if not return_dict:
                 output = (logits,) + outputs[2:]
+                gd.debuginfo(prj="mt", info=f'')
                 return ((loss,) + output) if loss is not None else output
 
             return SequenceClassifierOutput(
@@ -764,6 +832,7 @@ class BertPipelineForwards:
         logger = logging.get_logger(__name__)
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        gd.debuginfo(prj="mt", info=f'')
 
         if output_attentions:
             logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
@@ -794,14 +863,17 @@ class BertPipelineForwards:
 
             sequence_output = self.dropout(sequence_output)
             logits = self.classifier(sequence_output)
+            gd.debuginfo(prj="mt", info=f'')
 
             loss = None
             if labels is not None:
                 loss_fct = CrossEntropyLoss()
                 loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                gd.debuginfo(prj="mt", info=f'')
 
             if not return_dict:
                 output = (logits,) + outputs[2:]
+                gd.debuginfo(prj="mt", info=f'')
                 return ((loss,) + output) if loss is not None else output
 
             return TokenClassifierOutput(
@@ -812,6 +884,7 @@ class BertPipelineForwards:
             )
         else:
             hidden_states = outputs.get("hidden_states")
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": hidden_states}
 
     @staticmethod
@@ -841,6 +914,7 @@ class BertPipelineForwards:
         logger = logging.get_logger(__name__)
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        gd.debuginfo(prj="mt", info=f'')
 
         if output_attentions:
             logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
@@ -853,6 +927,7 @@ class BertPipelineForwards:
         # the input_ids for multiple choice model is [batch_size, num_choices, sequence_length]
         if stage_manager.is_last_stage():
             num_choices = input_ids.shape[1] if input_ids is not None else inputs_embeds.shape[1]
+            gd.debuginfo(prj="mt", info=f'')
 
         input_ids = input_ids.view(-1, input_ids.size(-1)) if input_ids is not None else None
         attention_mask = attention_mask.view(-1, attention_mask.size(-1)) if attention_mask is not None else None
@@ -886,13 +961,17 @@ class BertPipelineForwards:
             logits = self.classifier(pooled_output)
             reshaped_logits = logits.view(-1, num_choices)
 
+            gd.debuginfo(prj="mt", info=f'')
+
             loss = None
             if labels is not None:
                 loss_fct = CrossEntropyLoss()
                 loss = loss_fct(reshaped_logits, labels)
+                gd.debuginfo(prj="mt", info=f'')
 
             if not return_dict:
                 output = (reshaped_logits,) + outputs[2:]
+                gd.debuginfo(prj="mt", info=f'')
                 return ((loss,) + output) if loss is not None else output
 
             return MultipleChoiceModelOutput(
@@ -903,6 +982,7 @@ class BertPipelineForwards:
             )
         else:
             hidden_states = outputs.get("hidden_states")
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": hidden_states}
 
     @staticmethod
@@ -938,6 +1018,7 @@ class BertPipelineForwards:
         logger = logging.get_logger(__name__)
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        gd.debuginfo(prj="mt", info=f'')
 
         if output_attentions:
             logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
@@ -969,14 +1050,19 @@ class BertPipelineForwards:
             start_logits, end_logits = logits.split(1, dim=-1)
             start_logits = start_logits.squeeze(-1).contiguous()
             end_logits = end_logits.squeeze(-1).contiguous()
+            gd.debuginfo(prj="mt", info=f'')
 
             total_loss = None
             if start_positions is not None and end_positions is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 # If we are on multi-GPU, split add a dimension
                 if len(start_positions.size()) > 1:
                     start_positions = start_positions.squeeze(-1)
+                    gd.debuginfo(prj="mt", info=f'')
                 if len(end_positions.size()) > 1:
                     end_positions = end_positions.squeeze(-1)
+                    gd.debuginfo(prj="mt", info=f'')
+
                 # sometimes the start/end positions are outside our model inputs, we ignore these terms
                 ignored_index = start_logits.size(1)
                 start_positions = start_positions.clamp(0, ignored_index)
@@ -989,6 +1075,7 @@ class BertPipelineForwards:
 
             if not return_dict:
                 output = (start_logits, end_logits) + outputs[2:]
+                gd.debuginfo(prj="mt", info=f'')
                 return ((total_loss,) + output) if total_loss is not None else output
 
             return QuestionAnsweringModelOutput(
@@ -1000,6 +1087,7 @@ class BertPipelineForwards:
             )
         else:
             hidden_states = outputs.get("hidden_states")
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": hidden_states}
 
 
@@ -1020,6 +1108,7 @@ def get_bert_flash_attention_forward():
         past_key_value: Optional[Tuple[Tuple[torch.FloatTensor]]] = None,
         output_attentions: Optional[bool] = False,
     ) -> Tuple[torch.Tensor]:
+        gd.debuginfo(prj="mt", info=f'')
         mixed_query_layer = self.query(hidden_states)
 
         # If this is instantiated as a cross-attention module, the keys
@@ -1032,18 +1121,22 @@ def get_bert_flash_attention_forward():
             key_layer = past_key_value[0]
             value_layer = past_key_value[1]
             attention_mask = encoder_attention_mask
+            gd.debuginfo(prj="mt", info=f'')
         elif is_cross_attention:
             key_layer = self.transpose_for_scores(self.key(encoder_hidden_states))
             value_layer = self.transpose_for_scores(self.value(encoder_hidden_states))
             attention_mask = encoder_attention_mask
+            gd.debuginfo(prj="mt", info=f'')
         elif past_key_value is not None:
             key_layer = self.transpose_for_scores(self.key(hidden_states))
             value_layer = self.transpose_for_scores(self.value(hidden_states))
             key_layer = torch.cat([past_key_value[0], key_layer], dim=2)
             value_layer = torch.cat([past_key_value[1], value_layer], dim=2)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             key_layer = self.transpose_for_scores(self.key(hidden_states))
             value_layer = self.transpose_for_scores(self.value(hidden_states))
+            gd.debuginfo(prj="mt", info=f'')
 
         query_layer = self.transpose_for_scores(mixed_query_layer)
 
@@ -1057,14 +1150,17 @@ def get_bert_flash_attention_forward():
             # can concat previous decoder key/value_states to current projected key/value_states (third "elif" case)
             # if encoder bi-directional self-attention `past_key_value` is always `None`
             past_key_value = (key_layer, value_layer)
+            gd.debuginfo(prj="mt", info=f'')
 
         final_attention_mask = None
         if self.position_embedding_type == "relative_key" or self.position_embedding_type == "relative_key_query":
             query_length, key_length = query_layer.shape[2], key_layer.shape[2]
             if use_cache:
                 position_ids_l = torch.tensor(key_length - 1, dtype=torch.long, device=hidden_states.device).view(-1, 1)
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 position_ids_l = torch.arange(query_length, dtype=torch.long, device=hidden_states.device).view(-1, 1)
+                gd.debuginfo(prj="mt", info=f'')
             position_ids_r = torch.arange(key_length, dtype=torch.long, device=hidden_states.device).view(1, -1)
             distance = position_ids_l - position_ids_r
 
@@ -1074,17 +1170,21 @@ def get_bert_flash_attention_forward():
             if self.position_embedding_type == "relative_key":
                 relative_position_scores = torch.einsum("bhld,lrd->bhlr", query_layer, positional_embedding)
                 final_attention_mask = relative_position_scores
+                gd.debuginfo(prj="mt", info=f'')
             elif self.position_embedding_type == "relative_key_query":
                 relative_position_scores_query = torch.einsum("bhld,lrd->bhlr", query_layer, positional_embedding)
                 relative_position_scores_key = torch.einsum("bhrd,lrd->bhlr", key_layer, positional_embedding)
                 final_attention_mask = relative_position_scores_query + relative_position_scores_key
+                gd.debuginfo(prj="mt", info=f'')
 
         scale = 1 / math.sqrt(self.attention_head_size)
         if attention_mask is not None:
             if final_attention_mask != None:
                 final_attention_mask = final_attention_mask * scale + attention_mask
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 final_attention_mask = attention_mask
+                gd.debuginfo(prj="mt", info=f'')
 
         if final_attention_mask is not None:
             batch_size, src_len = query_layer.size()[0], query_layer.size()[2]
@@ -1092,6 +1192,7 @@ def get_bert_flash_attention_forward():
             final_attention_mask = final_attention_mask.expand(
                 batch_size, self.num_attention_heads, src_len, tgt_len
             ).contiguous()
+            gd.debuginfo(prj="mt", info=f'')
 
         query_layer = query_layer.permute(0, 2, 1, 3).contiguous()
         key_layer = key_layer.permute(0, 2, 1, 3).contiguous()
@@ -1107,6 +1208,7 @@ def get_bert_flash_attention_forward():
 
         if self.is_decoder:
             outputs = outputs + (past_key_value,)
+            gd.debuginfo(prj="mt", info=f'')
         return outputs
 
     return forward
@@ -1116,10 +1218,13 @@ def get_jit_fused_bert_self_output_forward():
     from transformers.models.bert.modeling_bert import BertSelfOutput
 
     def forward(self: BertSelfOutput, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         hidden_states = self.dense(hidden_states)
         hidden_states = self.dropout_add(hidden_states, input_tensor, self.dropout.p, self.dropout.training)
         hidden_states = self.LayerNorm(hidden_states)
         return hidden_states
+
+    gd.debuginfo(prj="mt", info=f'')
 
     return forward
 
@@ -1128,10 +1233,13 @@ def get_jit_fused_bert_output_forward():
     from transformers.models.bert.modeling_bert import BertOutput
 
     def forward(self: BertOutput, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         hidden_states = self.dense(hidden_states)
         hidden_states = self.dropout_add(hidden_states, input_tensor, self.dropout.p, self.dropout.training)
         hidden_states = self.LayerNorm(hidden_states)
         return hidden_states
+
+    gd.debuginfo(prj="mt", info=f'')
 
     return forward
 
@@ -1178,18 +1286,23 @@ def bert_sequence_parallel_forward_fn(shard_config: ShardConfig):
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        gd.debuginfo(prj="mt", info=f'')
 
         if self.config.is_decoder:
             use_cache = use_cache if use_cache is not None else self.config.use_cache
+            gd.debuginfo(prj="mt", info=f'')
         else:
             use_cache = False
+            gd.debuginfo(prj="mt", info=f'')
 
         if input_ids is not None and inputs_embeds is not None:
             raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
         elif input_ids is not None:
             input_shape = input_ids.size()
+            gd.debuginfo(prj="mt", info=f'')
         elif inputs_embeds is not None:
             input_shape = inputs_embeds.size()[:-1]
+            gd.debuginfo(prj="mt", info=f'')
         else:
             raise ValueError("You have to specify either input_ids or inputs_embeds")
 
@@ -1201,14 +1314,17 @@ def bert_sequence_parallel_forward_fn(shard_config: ShardConfig):
 
         if attention_mask is None:
             attention_mask = torch.ones(((batch_size, seq_length + past_key_values_length)), device=device)
+            gd.debuginfo(prj="mt", info=f'')
 
         if token_type_ids is None:
             if hasattr(self.embeddings, "token_type_ids"):
                 buffered_token_type_ids = self.embeddings.token_type_ids[:, :seq_length]
                 buffered_token_type_ids_expanded = buffered_token_type_ids.expand(batch_size, seq_length)
                 token_type_ids = buffered_token_type_ids_expanded
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 token_type_ids = torch.zeros(input_shape, dtype=torch.long, device=device)
+                gd.debuginfo(prj="mt", info=f'')
 
         # We can provide a self-attention mask of dimensions [batch_size, from_seq_length, to_seq_length]
         # ourselves in which case we just need to make it broadcastable to all heads.
@@ -1217,13 +1333,17 @@ def bert_sequence_parallel_forward_fn(shard_config: ShardConfig):
         # If a 2D or 3D attention mask is provided for the cross-attention
         # we need to make broadcastable to [batch_size, num_heads, seq_length, seq_length]
         if self.config.is_decoder and encoder_hidden_states is not None:
+            gd.debuginfo(prj="mt", info=f'')
             encoder_batch_size, encoder_sequence_length, _ = encoder_hidden_states.size()
             encoder_hidden_shape = (encoder_batch_size, encoder_sequence_length)
             if encoder_attention_mask is None:
                 encoder_attention_mask = torch.ones(encoder_hidden_shape, device=device)
+                gd.debuginfo(prj="mt", info=f'')
             encoder_extended_attention_mask = self.invert_attention_mask(encoder_attention_mask)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             encoder_extended_attention_mask = None
+            gd.debuginfo(prj="mt", info=f'')
 
         # Prepare head mask if needed
         # 1.0 in head_mask indicate we keep the head
@@ -1249,6 +1369,7 @@ def bert_sequence_parallel_forward_fn(shard_config: ShardConfig):
             encoder_hidden_states = split_forward_gather_backward(
                 encoder_hidden_states, dim=1, process_group=shard_config.tensor_parallel_process_group
             )
+        gd.debuginfo(prj="mt", info=f'')
 
         encoder_outputs = self.encoder(
             embedding_output,
@@ -1273,6 +1394,7 @@ def bert_sequence_parallel_forward_fn(shard_config: ShardConfig):
         pooled_output = self.pooler(sequence_output) if self.pooler is not None else None
 
         if not return_dict:
+            gd.debuginfo(prj="mt", info=f'')
             return (sequence_output, pooled_output) + encoder_outputs[1:]
 
         return BaseModelOutputWithPoolingAndCrossAttentions(

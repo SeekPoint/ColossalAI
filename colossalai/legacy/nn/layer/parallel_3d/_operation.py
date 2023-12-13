@@ -27,6 +27,7 @@ class _Linear3D(torch.autograd.Function):
         weight_parallel_mode: ParallelMode,
         output_parallel_mode: ParallelMode,
     ) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         ctx.weight_id = weight_id
         ctx.input_parallel_mode = input_parallel_mode
         ctx.weight_parallel_mode = weight_parallel_mode
@@ -44,6 +45,7 @@ class _Linear3D(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx, output_grad: Tensor) -> Tuple[Tensor, ...]:
+        gd.debuginfo(prj="mt", info=f'')
         input_, weight = ctx.saved_tensors
         output_grad = all_gather(output_grad, 0, ctx.output_parallel_mode)
 
@@ -81,6 +83,7 @@ def linear_3d(
         The parallel_mode should be concluded in ``ParallelMode``. More details about ``ParallelMode`` could be found
         in `parallel_mode <https://github.com/hpcaitech/ColossalAI/blob/main/colossalai/context/parallel_mode.py>`_
     """
+    gd.debuginfo(prj="mt", info=f'')
     return _Linear3D.apply(
         input_,
         weight,
@@ -105,6 +108,7 @@ class _Classifier3D(torch.autograd.Function):
         weight_parallel_mode: ParallelMode,
         output_parallel_mode: ParallelMode,
     ) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         ctx.use_bias = bias is not None
         ctx.weight_id = weight_id
 
@@ -128,6 +132,7 @@ class _Classifier3D(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx, output_grad: Tensor) -> Tuple[Tensor, ...]:
+        gd.debuginfo(prj="mt", info=f'')
         input_, weight = ctx.saved_tensors
         weight_grad = torch.matmul(
             output_grad.reshape(-1, output_grad.shape[-1]).transpose(0, 1), input_.reshape(-1, input_.shape[-1])
@@ -174,6 +179,7 @@ def classifier_3d(
         The parallel_mode should be concluded in ``ParallelMode``. More details about ``ParallelMode`` could be found
         in `parallel_mode <https://github.com/hpcaitech/ColossalAI/blob/main/colossalai/context/parallel_mode.py>`_
     """
+    gd.debuginfo(prj="mt", info=f'')
     return _Classifier3D.apply(
         input_,
         weight,
@@ -200,6 +206,7 @@ class _VocabParallelClassifier3D(torch.autograd.Function):
         weight_parallel_mode: ParallelMode,
         output_parallel_mode: ParallelMode,
     ) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         ctx.use_bias = bias is not None
         ctx.weight_id = weight_id
 
@@ -222,6 +229,7 @@ class _VocabParallelClassifier3D(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx, output_grad: Tensor) -> Tuple[Tensor, ...]:
+        gd.debuginfo(prj="mt", info=f'')
         input_, weight = ctx.saved_tensors
         output_grad = all_gather(output_grad, 0, ctx.output_parallel_mode)
 
@@ -254,6 +262,7 @@ def vocab_parallel_classifier_3d(
     weight_parallel_mode: ParallelMode,
     output_parallel_mode: ParallelMode,
 ) -> Tensor:
+    gd.debuginfo(prj="mt", info=f'')
     r"""3D vocab parallel classifier.
 
     Args:
@@ -319,6 +328,7 @@ class _Layernorm3D(torch.autograd.Function):
         output_parallel_mode: ParallelMode,
         input_x_weight_parallel_mode: ParallelMode,
     ) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         ctx.weight_id = weight_id
         ctx.bias_id = bias_id
 
@@ -339,6 +349,7 @@ class _Layernorm3D(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx, output_grad: Tensor) -> Tuple[Tensor, ...]:
+        gd.debuginfo(prj="mt", info=f'')
         mu, sigma, weight = ctx.saved_tensors
 
         bias_grad, weight_grad = output_grad, output_grad * mu / sigma
@@ -384,6 +395,7 @@ def layernorm_3d(
         The parallel_mode should be concluded in ``ParallelMode``. More details about ``ParallelMode`` could be found
         in `parallel_mode <https://github.com/hpcaitech/ColossalAI/blob/main/colossalai/context/parallel_mode.py>`_
     """
+    gd.debuginfo(prj="mt", info=f'')
     return _Layernorm3D.apply(
         input_,
         weight,
@@ -412,6 +424,7 @@ def split_tensor_3d(tensor: Tensor, dim: int, parallel_mode: ParallelMode) -> Te
         The parallel_mode should be concluded in ``ParallelMode``. More details about ``ParallelMode`` could be found
         in `parallel_mode <https://github.com/hpcaitech/ColossalAI/blob/main/colossalai/context/parallel_mode.py>`_.
     """
+    gd.debuginfo(prj="mt", info=f'')
     dim_size = tensor.size(dim)
     world_size = gpc.get_world_size(parallel_mode)
     assert dim_size % world_size == 0, (
@@ -447,6 +460,7 @@ def split_batch_3d(
         The parallel_mode should be concluded in ``ParallelMode``. More details about ``ParallelMode`` could be found
         in `parallel_mode <https://github.com/hpcaitech/ColossalAI/blob/main/colossalai/context/parallel_mode.py>`_.
     """
+    gd.debuginfo(prj="mt", info=f'')
     if input_.size(dim) <= 1:
         return input_
     weight_parallel_mode = get_parallel_mode_from_env(WEIGHT_GROUP_3D)
@@ -461,10 +475,12 @@ def split_batch_3d(
 class _ReduceTensor3D(torch.autograd.Function):
     @staticmethod
     def forward(ctx, input_, parallel_mode):
+        gd.debuginfo(prj="mt", info=f'')
         return all_reduce(input_, parallel_mode)
 
     @staticmethod
     def backward(ctx, output_grad):
+        gd.debuginfo(prj="mt", info=f'')
         return output_grad, None
 
 
@@ -479,12 +495,14 @@ def reduce_tensor_3d(tensor: Tensor, parallel_mode: ParallelMode) -> Tensor:
         The parallel_mode should be concluded in ``ParallelMode``. More details about ``ParallelMode`` could be found
         in `parallel_mode <https://github.com/hpcaitech/ColossalAI/blob/main/colossalai/context/parallel_mode.py>`_.
     """
+    gd.debuginfo(prj="mt", info=f'')
     return _ReduceTensor3D.apply(tensor, parallel_mode)
 
 
 class _AllGatherTensor3D(torch.autograd.Function):
     @staticmethod
     def forward(ctx, input_, dim, parallel_mode):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.dim = dim
         ctx.parallel_mode = parallel_mode
         output = all_gather(input_, dim, parallel_mode)
@@ -492,6 +510,7 @@ class _AllGatherTensor3D(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, output_grad):
+        gd.debuginfo(prj="mt", info=f'')
         input_grad = reduce_scatter(output_grad, ctx.dim, ctx.parallel_mode)
         return input_grad, None, None
 
@@ -508,18 +527,21 @@ def all_gather_tensor_3d(tensor: Tensor, dim: int, parallel_mode: ParallelMode) 
         The parallel_mode should be concluded in ``ParallelMode``. More details about ``ParallelMode`` could be found
         in `parallel_mode <https://github.com/hpcaitech/ColossalAI/blob/main/colossalai/context/parallel_mode.py>`_.
     """
+    gd.debuginfo(prj="mt", info=f'')
     return _AllGatherTensor3D.apply(tensor, dim, parallel_mode)
 
 
 class _ReduceScatterTensor3D(torch.autograd.Function):
     @staticmethod
     def forward(ctx, input_, dim, parallel_mode):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.dim = dim
         ctx.parallel_mode = parallel_mode
         return reduce_scatter(input_, dim, parallel_mode)
 
     @staticmethod
     def backward(ctx, output_grad):
+        gd.debuginfo(prj="mt", info=f'')
         input_grad = all_gather(output_grad, ctx.dim, ctx.parallel_mode)
         return input_grad, None, None
 
@@ -536,6 +558,7 @@ def reduce_scatter_tensor_3d(tensor: Tensor, dim: int, parallel_mode: ParallelMo
         The parallel_mode should be concluded in ``ParallelMode``. More details about ``ParallelMode`` could be found
         in `parallel_mode <https://github.com/hpcaitech/ColossalAI/blob/main/colossalai/context/parallel_mode.py>`_
     """
+    gd.debuginfo(prj="mt", info=f'')
     dim_size = tensor.size(dim)
     world_size = gpc.get_world_size(parallel_mode)
     assert (
@@ -555,6 +578,7 @@ class _ReduceByBatch3D(torch.autograd.Function):
         weight_parallel_mode: ParallelMode,
         reduce_mean: bool = False,
     ) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         output = all_reduce(input_, input_parallel_mode)
         output = all_reduce(output, weight_parallel_mode)
         ctx.reduce_mean = reduce_mean
@@ -567,6 +591,7 @@ class _ReduceByBatch3D(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx, output_grad: Tensor) -> Tuple[Tensor, ...]:
+        gd.debuginfo(prj="mt", info=f'')
         if ctx.reduce_mean:
             return output_grad / ctx.reduce_size, None, None, None
         else:
@@ -588,4 +613,5 @@ def reduce_by_batch_3d(
         The parallel_mode should be concluded in ``ParallelMode``. More details about ``ParallelMode`` could be found
         in `parallel_mode <https://github.com/hpcaitech/ColossalAI/blob/main/colossalai/context/parallel_mode.py>`_
     """
+    gd.debuginfo(prj="mt", info=f'')
     return _ReduceByBatch3D.apply(tensor, input_parallel_mode, weight_parallel_mode, reduce_mean)

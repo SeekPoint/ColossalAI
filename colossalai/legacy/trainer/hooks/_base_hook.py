@@ -15,6 +15,7 @@ class BaseHook(ABC):
     """
 
     def __init__(self, priority: int) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.priority = priority
 
     def after_hook_is_attached(self, trainer):

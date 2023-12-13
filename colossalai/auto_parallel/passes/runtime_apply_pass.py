@@ -17,6 +17,7 @@ def runtime_apply(node: Node, origin_dict: Dict, input_dict: Dict, node_index: i
     This method will be invoked during runtime to do the shape consistency, which make sure the activations is converted into
     the user node expected form.
     """
+    gd.debuginfo(prj="mt", info=f'')
     origin_sharding_spec = origin_dict[node_index]
     target_sharding_spec = input_dict[node_index][user_node_index]
     return shape_consistency_manager.apply_for_autoparallel_runtime(node, origin_sharding_spec, target_sharding_spec)
@@ -29,6 +30,7 @@ def runtime_apply_for_iterable_object(
     This method will be invoked during runtime to do the shape consistency, which makes sure the activations in type of tuple or list
     is converted into the user node expected form.
     """
+    gd.debuginfo(prj="mt", info=f'')
     rst = []
     for index, (origin_sharding_spec, target_sharding_spec) in enumerate(
         zip(origin_dict[node_index], input_dict[node_index][user_node_index])
@@ -46,6 +48,7 @@ def runtime_comm_spec_apply(tensor: torch.Tensor, comm_actions_dict: Dict, node_
     """
     This method will be invoked during runtime to apply the comm action following the instruction of comm spec.
     """
+    gd.debuginfo(prj="mt", info=f'')
     comm_action = comm_actions_dict[node_index][op_data_name]
     if isinstance(comm_action.comm_spec, CommSpec):
         rst = comm_action.comm_spec.covert_spec_to_action(tensor)
@@ -61,6 +64,7 @@ def _preprocess_graph(nodes: List[Node]):
     This method is used to extract all the placeholders with sharding information,
     and mapping the nodes into the index of the origin graph.
     """
+    gd.debuginfo(prj="mt", info=f'')
     # mapping the node into the origin graph index
     node_to_index_dict = {}
     index = 0
@@ -86,6 +90,8 @@ def _shape_consistency_apply(gm: torch.fx.GraphModule):
     """
     This pass is used to add the shape consistency node to the origin graph.
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     mod_graph = gm.graph
     nodes = tuple(mod_graph.nodes)
 
@@ -152,6 +158,8 @@ def _comm_spec_apply(gm: torch.fx.GraphModule):
     """
     This pass is used to add the comm spec apply node to the origin graph.
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     mod_graph = gm.graph
     nodes = tuple(mod_graph.nodes)
 
@@ -226,6 +234,7 @@ def _act_annotation_pass(gm: torch.fx.GraphModule):
     """
     This pass is used to add the act annotation to the new inserted nodes.
     """
+    gd.debuginfo(prj="mt", info=f'')
     mod_graph = gm.graph
     nodes = tuple(mod_graph.nodes)
 
@@ -253,6 +262,7 @@ def runtime_apply_pass(gm: torch.fx.GraphModule):
     """
     The method manages all the passes acting on the distributed training runtime.
     """
+    gd.debuginfo(prj="mt", info=f'')
     gm = _shape_consistency_apply(gm)
     gm = _comm_spec_apply(gm)
 

@@ -13,6 +13,7 @@ def get_obj_list_element(obj, attr: str):
         attr (str): The suffix of the attribute to get
 
     """
+    gd.debuginfo(prj="mt", info=f'')
     re_pattern = r"\[\d+\]"
     prog = re.compile(re_pattern)
     result = prog.search(attr)
@@ -38,6 +39,7 @@ def set_obj_list_element(obj, attr: str, value):
         obj (object): The object to set
         attr (str): the string including a list index like `layers[0]`
     """
+    gd.debuginfo(prj="mt", info=f'')
     re_pattern = r"\[\d+\]"
     prog = re.compile(re_pattern)
     result = prog.search(attr)

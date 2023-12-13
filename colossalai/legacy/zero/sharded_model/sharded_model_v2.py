@@ -92,6 +92,7 @@ class ShardedModelV2(nn.Module):
         *args,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         assert not isinstance(module, ShardedModelV2), "Nested ShardedModelV2 is not supported."
         super().__init__()
         self.logger = get_dist_logger()

@@ -27,6 +27,7 @@ class Accuracy3D(nn.Module):
         Returns:
             float: the accuracy of prediction.
         """
+        gd.debuginfo(prj="mt", info=f'')
         with torch.no_grad():
             targets = split_tensor_3d(targets, 0, self.weight_parallel_mode)
             targets = split_tensor_3d(targets, 0, self.input_parallel_mode)

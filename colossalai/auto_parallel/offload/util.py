@@ -45,6 +45,7 @@ class GlobalRuntimeInfo(metaclass=SingletonMeta):
 
 
 def compute_act_peak_mem(region_list: List[Region]) -> float:
+    gd.debuginfo(prj="mt", info=f'')
     act_peak_mem = 0
     runtime_mem = 0
     # forward
@@ -75,10 +76,12 @@ def compute_act_peak_mem(region_list: List[Region]) -> float:
 
 
 def compute_max_param_mem(region_list: List[Region]) -> float:
+    gd.debuginfo(prj="mt", info=f'')
     return max(region.param_size for region in region_list)
 
 
 def compute_total_param_mem(region_list: List[Region]) -> float:
+    gd.debuginfo(prj="mt", info=f'')
     return sum(region.param_size for region in region_list if region.r_id <= region.shared_rid)
 
 
@@ -89,10 +92,12 @@ def requires_upload_p_in_fwd(shared_reg: Region):
 
 
 def requires_release_p_in_bwd(shared_reg: Region):
+    gd.debuginfo(prj="mt", info=f'')
     return (shared_reg.r_id >= shared_reg.shared_rid) or (
         shared_reg.r_id < shared_reg.shared_rid and shared_reg.need_offload
     )
 
 
 def requires_offload_g_in_bwd(region: Region):
+    gd.debuginfo(prj="mt", info=f'')
     return region.param_size and (region.r_id <= region.shared_rid)

@@ -36,6 +36,7 @@ class SFTTrainer(SLTrainer):
         max_epochs: int = 2,
         accumulation_steps: int = 8,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         if accumulation_steps > 1:
             assert not isinstance(
                 strategy, GeminiStrategy
@@ -56,6 +57,7 @@ class SFTTrainer(SLTrainer):
             desc=f"Epoch {epoch + 1}/{self.max_epochs}",
             disable=not is_rank_0(),
         )
+        gd.debuginfo(prj="mt", info=f'')
         for i, batch in enumerate(self.train_dataloader):
             batch = to_device(batch, torch.cuda.current_device())
             outputs = self.model(batch["input_ids"], attention_mask=batch["attention_mask"], labels=batch["labels"])
@@ -76,6 +78,7 @@ class SFTTrainer(SLTrainer):
         step_bar.close()
 
     def _eval(self, epoch: int):
+        gd.debuginfo(prj="mt", info=f'')
         if self.eval_dataloader is not None:
             self.model.eval()
             with torch.no_grad():
@@ -107,6 +110,7 @@ class SFTTrainer(SLTrainer):
             train_dataloader: the dataloader to use for training
             eval_dataloader: the dataloader to use for evaluation
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.train_dataloader = train_dataloader
         self.eval_dataloader = eval_dataloader
 

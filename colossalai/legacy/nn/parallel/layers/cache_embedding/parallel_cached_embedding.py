@@ -12,6 +12,7 @@ from .cached_embedding import CachedEmbeddingBag
 
 
 def get_partition(embedding_dim, rank, world_size) -> Tuple[int, int, bool]:
+    gd.debuginfo(prj="mt", info=f'')
     if world_size == 1:
         return 0, embedding_dim, True
 
@@ -52,6 +53,7 @@ class ParallelCachedEmbeddingBag(CachedEmbeddingBag):
         pin_weight=False,
         evict_strategy: EvictionStrategy = EvictionStrategy.DATASET,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         self.rank = torch.distributed.get_rank()
         self.world_size = torch.distributed.get_world_size()
 

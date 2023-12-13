@@ -23,6 +23,7 @@ class Initializer_Data(ProcessGroupInitializer):
     """
 
     def __init__(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(*args, **kwargs)
         self.num_data_parallel_group = self.world_size // self.data_parallel_size
 
@@ -33,6 +34,7 @@ class Initializer_Data(ProcessGroupInitializer):
             Tuple (local_rank, group_world_size, process_group, ranks_in_group, mode):
                 A Data parallelism's information tuple.
         """
+        gd.debuginfo(prj="mt", info=f'')
         local_rank = None
         ranks_in_group = None
         process_group = None

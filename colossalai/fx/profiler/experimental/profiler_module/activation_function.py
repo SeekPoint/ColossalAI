@@ -30,6 +30,7 @@ _multiplier = {
 @meta_profiler_module.register(torch.nn.Hardswish)
 @meta_profiler_module.register(torch.nn.Hardsigmoid)
 def torch_nn_non_linear_act(self: torch.nn.Module, input: torch.Tensor) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
     flops = input.numel()
     macs = 0
     return flops, macs

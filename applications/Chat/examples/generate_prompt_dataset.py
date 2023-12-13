@@ -6,6 +6,7 @@ random.seed(42)
 from pydebug import gd, infoTensor
 
 def sample(args):
+    gd.debuginfo(prj="mt", info=f'')
     with open(args.dataset_path, mode="r") as f:
         dataset_list = json.load(f)
 
@@ -19,6 +20,7 @@ def sample(args):
 
 
 if __name__ == "__main__":
+    gd.debuginfo(prj="mt", info=f'')
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_path", type=str, default=None, required=True, help="path to the pretrain dataset")
     parser.add_argument("--save_path", type=str, default="prompt.json", help="path to save the prompt dataset")

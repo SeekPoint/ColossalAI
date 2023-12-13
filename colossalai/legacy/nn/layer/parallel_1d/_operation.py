@@ -25,6 +25,7 @@ class FusedLayerNormAffineFunction1D(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input, weight, bias, normalized_shape, eps):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.normalized_shape = normalized_shape
         ctx.eps = eps
         input_ = input.contiguous()
@@ -38,6 +39,7 @@ class FusedLayerNormAffineFunction1D(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         input_, weight_, bias_, mean, invvar = ctx.saved_tensors
         grad_input = grad_weight = grad_bias = None
         grad_input, grad_weight, grad_bias = fused_mix_prec_layer_norm_cuda.backward_affine(
@@ -54,6 +56,7 @@ class LinearWithAsyncCommunication(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input_, weight, bias, parallel_mode, async_grad_allreduce):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.save_for_backward(input_, weight)
         ctx.use_bias = bias is not None
         ctx.parallel_mode = parallel_mode
@@ -66,6 +69,7 @@ class LinearWithAsyncCommunication(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         input, weight = ctx.saved_tensors
         use_bias = ctx.use_bias
 
@@ -93,4 +97,5 @@ class LinearWithAsyncCommunication(torch.autograd.Function):
 
 
 def linear_with_async_comm(input_, weight, bias, parallel_mode, async_grad_allreduce):
+    gd.debuginfo(prj="mt", info=f'')
     return LinearWithAsyncCommunication.apply(input_, weight, bias, parallel_mode, async_grad_allreduce)

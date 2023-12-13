@@ -43,6 +43,7 @@ class ShardConfig:
 
     @property
     def tensor_parallel_size(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self._tensor_parallel_size
 
     def __post_init__(self):
@@ -54,12 +55,15 @@ class ShardConfig:
             raise ValueError("enable_sequence_overlap can only be set to True when enable_sequence_parallelism is True")
         if not self.enable_tensor_parallelism:
             self._tensor_parallel_size = 1
+            gd.debuginfo(prj="mt", info=f'')
         else:
             # get the parallel size
             self._tensor_parallel_size = dist.get_world_size(self.tensor_parallel_process_group)
+            gd.debuginfo(prj="mt", info=f'')
         # turn on all optimization if all_optimization is set to True
         if self.enable_all_optimization:
             self._turn_on_all_optimization()
+            gd.debuginfo(prj="mt", info=f'')
 
     def _turn_on_all_optimization(self):
         """
@@ -71,6 +75,7 @@ class ShardConfig:
         self.enable_jit_fused = True
         self.enable_sequence_parallelism = True
         self.enable_sequence_overlap = True
+        gd.debuginfo(prj="mt", info=f'')
 
     def _infer(self):
         """

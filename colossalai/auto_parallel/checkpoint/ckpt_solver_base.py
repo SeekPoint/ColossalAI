@@ -16,6 +16,7 @@ __all___ = ["CheckpointSolverBase"]
 
 from pydebug import gd, infoTensor
 def _copy_output(src: Graph, dst: Graph):
+    gd.debuginfo(prj="mt", info=f'')
     """Copy the output node from src to dst"""
     for n_src, n_dst in zip(src.nodes, dst.nodes):
         if n_src.op == "output":
@@ -23,6 +24,7 @@ def _copy_output(src: Graph, dst: Graph):
 
 
 def _get_param_size(module: torch.nn.Module):
+    gd.debuginfo(prj="mt", info=f'')
     """Get the size of the parameters in the module"""
     return sum([p.numel() * torch.tensor([], dtype=p.dtype).element_size() for p in module.parameters()])
 
@@ -58,6 +60,7 @@ class CheckpointSolverBase(ABC):
         # super-dainiu: this graph is a temporary graph which can refer to
         # the owning module, but we will return another deepcopy of it after
         # the solver is executed.
+        gd.debuginfo(prj="mt", info=f'')
         self.graph = deepcopy(graph)
         self.graph.owning_module = graph.owning_module
         _copy_output(graph, self.graph)
@@ -74,8 +77,10 @@ class CheckpointSolverBase(ABC):
         self.cnode = cnode
         self.requires_linearize = requires_linearize
         if self.requires_linearize:
+            gd.debuginfo(prj="mt", info=f'')
             self.node_list = self._linearize_graph()
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.node_list = self.get_node_list()
 
     @abstractmethod
@@ -112,6 +117,7 @@ class CheckpointSolverBase(ABC):
         # newly born common node.
         # List of target name that could be seen as common node
         common_ops = ["getattr", "getitem", "size"]
+        gd.debuginfo(prj="mt", info=f'')
 
         def _is_cop(target: Any) -> bool:
             """Check if an op could be seen as common node
@@ -156,6 +162,7 @@ class CheckpointSolverBase(ABC):
 
         # make sure that item in cnode is valid
         if self.cnode:
+            gd.debuginfo(prj="mt", info=f'')
             for name in self.cnode:
                 try:
                     assert (
@@ -166,6 +173,7 @@ class CheckpointSolverBase(ABC):
 
         else:
             self.cnode = []
+            gd.debuginfo(prj="mt", info=f'')
 
         deps = {}
         node_list = []

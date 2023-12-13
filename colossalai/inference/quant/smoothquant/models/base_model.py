@@ -31,6 +31,7 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
     layer_type: str = None
 
     def __init__(self, model: PreTrainedModel, quantized: bool = False):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
         self.model = model
@@ -42,10 +43,13 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
 
     @property
     def quantized(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self._quantized
 
     def init_cache_manager(self, max_total_token_num=2048):
+        gd.debuginfo(prj="mt", info=f'')
         if self.config.model_type == "llama":
+            gd.debuginfo(prj="mt", info=f'')
             head_num = self.config.num_key_value_heads
             layer_num = self.config.num_hidden_layers
             head_dim = self.config.hidden_size // head_num
@@ -54,6 +58,7 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
         self.max_total_token_num = max_total_token_num
 
     def init_batch_state(self, max_output_len=256, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         input_ids = kwargs["input_ids"]
         batch_size = len(input_ids)
 
@@ -70,13 +75,16 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
             max_len_in_batch = seq_len if seq_len > max_len_in_batch else max_len_in_batch
 
         if "max_total_token_num" in kwargs.keys():
+            gd.debuginfo(prj="mt", info=f'')
             max_total_token_num = kwargs["max_total_token_num"]
             self.init_cache_manager(max_total_token_num)
 
         if "max_new_tokens" in kwargs.keys():
+            gd.debuginfo(prj="mt", info=f'')
             max_output_len = kwargs["max_new_tokens"]
 
         if batch_size * (max_len_in_batch + max_output_len) > self.max_total_token_num:
+            gd.debuginfo(prj="mt", info=f'')
             max_total_token_num = batch_size * (max_len_in_batch + max_output_len)
             warnings.warn(f"reset max tokens to {max_total_token_num}")
             self.init_cache_manager(max_total_token_num)
@@ -102,13 +110,16 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
             raise EnvironmentError("can't execute quantize because the model is quantized.")
 
     def forward(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         return self.model(*args, **kwargs)
 
     def generate(self, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         """shortcut for model.generate"""
 
         batch_infer_state = self.init_batch_state(**kwargs)
         if self.config.model_type == "llama":
+            gd.debuginfo(prj="mt", info=f'')
             setattr(self.model.model, "infer_state", batch_infer_state)
 
         with torch.inference_mode():
@@ -116,14 +127,17 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
 
     def prepare_inputs_for_generation(self, *args, **kwargs):
         """shortcut for model.prepare_inputs_for_generation"""
+        gd.debuginfo(prj="mt", info=f'')
         return self.model.prepare_inputs_for_generation(*args, **kwargs)
 
     def collect_act_scales(self, model, tokenizer, dataset, device, num_samples=512, seq_len=512):
+        gd.debuginfo(prj="mt", info=f'')
         for text in tqdm(dataset):
             input_ids = tokenizer(text, return_tensors="pt", max_length=seq_len, truncation=True).input_ids.to(device)
             model(input_ids)
 
     def collect_act_dict(self, model, tokenizer, dataset, act_dict, device, num_samples=512, seq_len=512):
+        gd.debuginfo(prj="mt", info=f'')
         pbar = tqdm(dataset)
         for text in pbar:
             input_ids = tokenizer(text, return_tensors="pt", max_length=seq_len, truncation=True).input_ids.to(device)
@@ -133,20 +147,25 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
 
     # Adatped from https://github.com/mit-han-lab/smoothquant/blob/main/smoothquant/calibration.py
     def get_act_scales(self, model, tokenizer, dataset, num_samples=512, seq_len=512):
+        gd.debuginfo(prj="mt", info=f'')
         model.eval()
         device = next(model.parameters()).device
         act_scales = {}
 
         def stat_tensor(name, tensor):
+            gd.debuginfo(prj="mt", info=f'')
             hidden_dim = tensor.shape[-1]
             tensor = tensor.view(-1, hidden_dim).abs().detach()
             comming_max = torch.max(tensor, dim=0)[0].float().cpu()
             if name in act_scales:
                 act_scales[name] = torch.max(act_scales[name], comming_max)
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 act_scales[name] = comming_max
+                gd.debuginfo(prj="mt", info=f'')
 
         def stat_input_hook(m, x, y, name):
+            gd.debuginfo(prj="mt", info=f'')
             if isinstance(x, tuple):
                 x = x[0]
             stat_tensor(name, x)
@@ -166,8 +185,11 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
     # Adapted from https://github.com/mit-han-lab/smoothquant/blob/main/smoothquant/smooth.py
     @torch.no_grad()
     def smooth_ln_fcs(self, ln, fcs, act_scales, alpha=0.5):
+        gd.debuginfo(prj="mt", info=f'')
         if not isinstance(fcs, list):
             fcs = [fcs]
+            gd.debuginfo(prj="mt", info=f'')
+
         for fc in fcs:
             assert isinstance(fc, nn.Linear)
             assert ln.weight.numel() == fc.in_features == act_scales.numel()
@@ -182,6 +204,7 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
         ln.weight.div_(scales)
         if hasattr(ln, "bias"):
             ln.bias.div_(scales)
+            gd.debuginfo(prj="mt", info=f'')
 
         for fc in fcs:
             fc.weight.mul_(scales.view(1, -1))
@@ -198,6 +221,7 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
         use_safetensors: bool = False,
         safetensors_metadata: Optional[Dict[str, str]] = None,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         """save quantized model and configs to local disk"""
         os.makedirs(save_dir, exist_ok=True)
 
@@ -208,11 +232,13 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
 
         model_base_name = model_basename  # or f"smooth-"
         if use_safetensors:
+            gd.debuginfo(prj="mt", info=f'')
             model_save_name = model_base_name + ".safetensors"
             state_dict = self.model.state_dict()
             state_dict = {k: v.clone().contiguous() for k, v in state_dict.items()}
             if safetensors_metadata is None:
                 safetensors_metadata = {}
+                gd.debuginfo(prj="mt", info=f'')
             elif not isinstance(safetensors_metadata, dict):
                 raise TypeError("safetensors_metadata must be a dictionary.")
             else:
@@ -246,6 +272,7 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
 
             safe_save(state_dict, join(save_dir, model_save_name), safetensors_metadata)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             model_save_name = model_base_name + ".bin"
             torch.save(self.model.state_dict(), join(save_dir, model_save_name))
 
@@ -273,6 +300,8 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
         torch_dtype: torch.dtype = torch.float16,
         **model_init_kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'')
+
         if not torch.cuda.is_available():
             raise EnvironmentError("Load pretrained model to do quantization requires CUDA available.")
 
@@ -313,6 +342,7 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
         model_init_kwargs["torch_dtype"] = torch_dtype
         model_init_kwargs["trust_remote_code"] = trust_remote_code
         if max_memory:
+            gd.debuginfo(prj="mt", info=f'')
             if "disk" in max_memory:
                 raise NotImplementedError("disk offload not support yet.")
             with accelerate.init_empty_weights():
@@ -352,6 +382,7 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
                     model.seqlen = model_config[key]
                     break
         else:
+            gd.debuginfo(prj="mt", info=f'')
             warnings.warn("can't get model's sequence length from model config, will set to 4096.")
             model.seqlen = 4096
         model.eval()
@@ -373,6 +404,7 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
         trust_remote_code: bool = False,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         """load quantized model from local disk"""
 
         # Parameters related to loading from Hugging Face Hub
@@ -410,20 +442,24 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
         extensions = []
         if use_safetensors:
             extensions.append(".safetensors")
+            gd.debuginfo(prj="mt", info=f'')
         else:
             extensions += [".bin", ".pt"]
+            gd.debuginfo(prj="mt", info=f'')
 
         model_name_or_path = str(model_name_or_path)
         is_local = isdir(model_name_or_path)
 
         resolved_archive_file = None
         if is_local:
+            gd.debuginfo(prj="mt", info=f'')
             model_save_name = join(model_name_or_path, model_basename)
             for ext in extensions:
                 if isfile(model_save_name + ext):
                     resolved_archive_file = model_save_name + ext
                     break
         else:  # remote
+            gd.debuginfo(prj="mt", info=f'')
             for ext in extensions:
                 resolved_archive_file = cached_file(model_name_or_path, model_basename + ext, **cached_file_kwargs)
                 if resolved_archive_file is not None:
@@ -464,6 +500,7 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
         model_config = model.config.to_dict()
         seq_len_keys = ["max_position_embeddings", "seq_length", "n_positions"]
         if any([k in model_config for k in seq_len_keys]):
+            gd.debuginfo(prj="mt", info=f'')
             for key in seq_len_keys:
                 if key in model_config:
                     model.seqlen = model_config[key]
@@ -471,6 +508,7 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
         else:
             warnings.warn("can't get model's sequence length from model config, will set to 4096.")
             model.seqlen = 4096
+            gd.debuginfo(prj="mt", info=f'')
 
         return cls(
             model,

@@ -10,6 +10,7 @@ _parallel_split_batch = {"2d": split_batch_2d, "2.5d": split_batch_2p5d, "3d": s
 
 
 def partition_batch(input_) -> Tensor:
+    gd.debuginfo(prj="mt", info=f'')
     tensor_parallel_mode = get_tensor_parallel_mode()
     if tensor_parallel_mode in _parallel_split_batch:
         if isinstance(input_, dict):
@@ -22,6 +23,7 @@ def partition_batch(input_) -> Tensor:
 
 class ColossalaiModule(nn.Module):
     def __init__(self, module: nn.Module, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.module = module
         for k, v in kwargs.items():

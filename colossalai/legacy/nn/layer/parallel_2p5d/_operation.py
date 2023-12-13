@@ -42,6 +42,7 @@ class _Classifier2p5D(torch.autograd.Function):
         pipeline_parallel_size: int,
         tensor_parallel_size: int,
     ) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         A = A.clone().detach()
         A_shape = A.shape
         A = A.reshape((-1, A_shape[-1]))
@@ -79,6 +80,7 @@ class _Classifier2p5D(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx: Any, output_grad: Tensor) -> Tuple[Tensor, ...]:
+        gd.debuginfo(prj="mt", info=f'')
         A, B = ctx.saved_tensors
 
         with torch.no_grad():
@@ -133,6 +135,7 @@ def classifier_2p5d(
         The parallel_mode should be concluded in ``ParallelMode``. More details about ``ParallelMode`` could be found
         in `parallel_mode <https://github.com/hpcaitech/ColossalAI/blob/main/colossalai/context/parallel_mode.py>`_
     """
+    gd.debuginfo(prj="mt", info=f'')
     return _Classifier2p5D.apply(
         A,
         B,
@@ -191,6 +194,7 @@ class Matmul_AB_2p5D(torch.autograd.Function):
         pipeline_parallel_size: int,
         tensor_parallel_size: int,
     ) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         # A: [b / dq, s, h / q] -> [(b * s) / dq, h / q]
         # B: [h / dq, s / q]
         # C: [b / dq, s, s / q] -> [(b * s) / dq, s / q]
@@ -276,6 +280,7 @@ class Matmul_AB_2p5D(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx: Any, output_grad: Tensor) -> Tuple[Tensor, ...]:
+        gd.debuginfo(prj="mt", info=f'')
         A, B = ctx.saved_tensors
         with torch.no_grad():
             A_grad = Matmul_ABT_2p5D.apply(
@@ -352,6 +357,7 @@ class Matmul_ABT_2p5D(torch.autograd.Function):
         pipeline_parallel_size: int,
         tensor_parallel_size: int,
     ) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         assert A.shape[-1] == B.shape[-1], "Invalid shapes: A={}, B={} for ABT.".format(A.shape, B.shape)
 
         if ctx:
@@ -441,6 +447,7 @@ class Matmul_ABT_2p5D(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx: Any, output_grad: Tensor) -> Tuple[Tensor, ...]:
+        gd.debuginfo(prj="mt", info=f'')
         A, B = ctx.saved_tensors
         with torch.no_grad():
             A_grad = Matmul_AB_2p5D.apply(
@@ -517,6 +524,7 @@ class Matmul_ATB_2p5D(torch.autograd.Function):
         pipeline_parallel_size: int,
         tensor_parallel_size: int,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         assert A.shape[-2] == B.shape[-2], "Invalid shapes: A={}, B={} for ATB.".format(A.shape, B.shape)
 
         if ctx:
@@ -604,6 +612,7 @@ class Matmul_ATB_2p5D(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx: Any, output_grad: Tensor) -> Tuple[Tensor, ...]:
+        gd.debuginfo(prj="mt", info=f'')
         A, B = ctx.saved_tensors
         with torch.no_grad():
             A_grad = Matmul_ABT_2p5D.apply(
@@ -658,6 +667,7 @@ class _Add_Bias_2p5D(torch.autograd.Function):
         pipeline_parallel_size: int,
         tensor_parallel_size: int,
     ) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         if row_rank == 0:
             bias_temp = bias.clone()
         else:
@@ -690,6 +700,7 @@ class _Add_Bias_2p5D(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx: Any, output_grad: Tensor) -> Tuple[Tensor, ...]:
+        gd.debuginfo(prj="mt", info=f'')
         row_rank = ctx.row_rank
         col_rank = ctx.col_rank
         dep_rank = ctx.dep_rank
@@ -837,6 +848,7 @@ def add_bias_2p5d(
         The parallel_mode should be concluded in ``ParallelMode``. More details about ``ParallelMode`` could be found
         in `parallel_mode <https://github.com/hpcaitech/ColossalAI/blob/main/colossalai/context/parallel_mode.py>`_
     """
+    gd.debuginfo(prj="mt", info=f'')
     return _Add_Bias_2p5D.apply(
         input,
         bias,
@@ -874,6 +886,7 @@ class _Layernorm2p5D(torch.autograd.Function):
     def forward(
         ctx: Any, input: Tensor, E_x: Tensor, Var_x: Tensor, hidden_size: int, row_parallel_mode: ParallelMode
     ) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         input = input - E_x
         # in here, input = x - E[x], Var_x = 1 / sqrt(Var[x] + eps)
         ctx.hidden_size = hidden_size
@@ -885,6 +898,7 @@ class _Layernorm2p5D(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx, output_grad):
+        gd.debuginfo(prj="mt", info=f'')
         row_parallel_mode = ctx.row_parallel_mode
         x, Var_x = ctx.saved_tensors
         # in here, Var_x = 1 / sqrt(Var[x] + eps), x = (x - E[x]) * Var_x
@@ -928,6 +942,7 @@ class _AllGatherTensor2p5D(torch.autograd.Function):
     @staticmethod
     @custom_fwd(cast_inputs=torch.float16)
     def forward(ctx: Any, inputs: Tensor, dim: int, col_parallel_mode: ParallelMode) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         ctx.dim = dim
         ctx.col_parallel_mode = col_parallel_mode
 
@@ -937,6 +952,7 @@ class _AllGatherTensor2p5D(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx: Any, output_grad: Tensor) -> Tuple[Tensor, ...]:
+        gd.debuginfo(prj="mt", info=f'')
         grad = reduce_scatter(output_grad, ctx.dim, ctx.col_parallel_mode)
         return grad.contiguous(), None, None
 
@@ -953,6 +969,7 @@ def all_gather_tensor_2p5d(inputs: Tensor, dim: int, col_parallel_mode: Parallel
         The parallel_mode should be concluded in ``ParallelMode``. More details about ``ParallelMode`` could be found
         in `parallel_mode <https://github.com/hpcaitech/ColossalAI/blob/main/colossalai/context/parallel_mode.py>`_.
     """
+    gd.debuginfo(prj="mt", info=f'')
     return _AllGatherTensor2p5D.apply(inputs, dim, col_parallel_mode)
 
 
@@ -972,6 +989,7 @@ class SplitFirst(torch.autograd.Function):
     @staticmethod
     @custom_fwd(cast_inputs=torch.float16)
     def forward(ctx: Any, inputs: Tensor, tesseract_dim: int, col_parallel_mode: ParallelMode) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         ctx.tesseract_dim = tesseract_dim
         ctx.batch_size = inputs.size(0)
         ctx.para_mode = col_parallel_mode
@@ -983,6 +1001,7 @@ class SplitFirst(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx: Any, output_grad: Tensor) -> Tuple[Tensor, ...]:
+        gd.debuginfo(prj="mt", info=f'')
         grad_shape = (ctx.batch_size,) + output_grad.shape[1:]
         grad = torch.empty(grad_shape, dtype=output_grad.dtype, device=get_current_device())
         dist.all_gather(
@@ -1001,6 +1020,7 @@ def split_batch_2p5d(input_: Tensor, dim: int = 0) -> Tensor:
     Returns:
         :class:`torch.tensor`: The tensor has been split.
     """
+    gd.debuginfo(prj="mt", info=f'')
     dim_size = input_.size(dim)
     world_size = gpc.get_world_size(ParallelMode.PARALLEL_2P5D_COL)
 
@@ -1019,10 +1039,12 @@ def split_batch_2p5d(input_: Tensor, dim: int = 0) -> Tensor:
 class _ReduceTensor2p5D(torch.autograd.Function):
     @staticmethod
     def forward(ctx, input_, parallel_mode):
+        gd.debuginfo(prj="mt", info=f'')
         return all_reduce(input_, parallel_mode)
 
     @staticmethod
     def backward(ctx, output_grad):
+        gd.debuginfo(prj="mt", info=f'')
         return output_grad, None
 
 
@@ -1037,18 +1059,21 @@ def reduce_tensor_2p5d(input_: Tensor, parallel_mode: ParallelMode) -> Tensor:
         The parallel_mode should be concluded in ``ParallelMode``. More details about ``ParallelMode`` could be found
         in `parallel_mode <https://github.com/hpcaitech/ColossalAI/blob/main/colossalai/context/parallel_mode.py>`_
     """
+    gd.debuginfo(prj="mt", info=f'')
     return _ReduceTensor2p5D.apply(input_, parallel_mode)
 
 
 class _ReduceScatterTensor2p5D(torch.autograd.Function):
     @staticmethod
     def forward(ctx, input_, dim, parallel_mode):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.dim = dim
         ctx.parallel_mode = parallel_mode
         return reduce_scatter(input_, dim, parallel_mode)
 
     @staticmethod
     def backward(ctx, output_grad):
+        gd.debuginfo(prj="mt", info=f'')
         return all_gather(output_grad, ctx.dim, ctx.parallel_mode), None, None
 
 
@@ -1064,6 +1089,7 @@ def reduce_scatter_tensor_2p5d(input_: Tensor, dim: int, parallel_mode: Parallel
         The parallel_mode should be concluded in ``ParallelMode``. More details about ``ParallelMode`` could be found
         in `parallel_mode <https://github.com/hpcaitech/ColossalAI/blob/main/colossalai/context/parallel_mode.py>`_
     """
+    gd.debuginfo(prj="mt", info=f'')
     dim_size = input_.size(dim)
     world_size = gpc.get_world_size(parallel_mode)
     assert (
@@ -1076,6 +1102,7 @@ def reduce_scatter_tensor_2p5d(input_: Tensor, dim: int, parallel_mode: Parallel
 class _RreduceByBatch2p5D(torch.autograd.Function):
     @staticmethod
     def symbolic(graph, input_, reduce_mean: bool = False):
+        gd.debuginfo(prj="mt", info=f'')
         output = all_reduce(input_, ParallelMode.PARALLEL_2P5D_COL)
         if reduce_mean:
             reduce_size = gpc.get_world_size(ParallelMode.PARALLEL_2P5D_COL)
@@ -1085,6 +1112,7 @@ class _RreduceByBatch2p5D(torch.autograd.Function):
     @staticmethod
     @custom_fwd(cast_inputs=torch.float32)
     def forward(ctx, input_, reduce_mean: bool = False):
+        gd.debuginfo(prj="mt", info=f'')
         output = all_reduce(input_, ParallelMode.PARALLEL_2P5D_COL)
         ctx.reduce_mean = reduce_mean
         if reduce_mean:
@@ -1096,6 +1124,7 @@ class _RreduceByBatch2p5D(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx, output_grad):
+        gd.debuginfo(prj="mt", info=f'')
         if ctx.reduce_mean:
             return output_grad / ctx.reduce_size, None
         else:
@@ -1110,4 +1139,5 @@ def reduce_by_batch_2p5d(input_, reduce_mean: bool = False) -> Tensor:
         reduce_mean (bool, optional):
             If set to ``True``, it will divide the output by column parallel size, default to False.
     """
+    gd.debuginfo(prj="mt", info=f'')
     return _RreduceByBatch2p5D.apply(input_, reduce_mean)

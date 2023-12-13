@@ -64,15 +64,19 @@ def linear_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem, L
     output_tensor = args[2].data
     if len(args) == 4:
         weight_tensors = [args[1].data, args[3].data]
+        gd.debuginfo(prj="mt", info=f'')
     else:
         weight_tensors = [args[1].data]
+        gd.debuginfo(prj="mt", info=f'')
 
     # process the dimension of input and output
     if len(input_tensor.shape) > 2:
+        gd.debuginfo(prj="mt", info=f'')
         input_tensor: torch.Tensor
         input_tensor = input_tensor.view(-1, input_tensor.shape[-1])
 
     if len(output_tensor.shape) > 2:
+        gd.debuginfo(prj="mt", info=f'')
         output_tensor: torch.Tensor
         output_tensor = output_tensor.view(-1, output_tensor.shape[-1])
 
@@ -80,12 +84,16 @@ def linear_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem, L
         has_bias = True
         if len(weight_tensors[0].shape) == 2:
             weight_tensor, bias_tensor = weight_tensors
+            gd.debuginfo(prj="mt", info=f'')
         else:
             bias_tensor, weight_tensor = weight_tensors
+            gd.debuginfo(prj="mt", info=f'')
     else:
         weight_tensor = weight_tensors[0]
+        gd.debuginfo(prj="mt", info=f'')
 
     if has_bias:
+        gd.debuginfo(prj="mt", info=f'')
         # calculate cost with bias
         # the fwd op with compute cost is addmm
         # the bwd op with compute cost is mm * 2 and sum.dim_IntList
@@ -133,6 +141,7 @@ def linear_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem, L
         memory_cost = TrainCycleItem(fwd=fwd_memory_cost, bwd=bwd_memory_cost, total=total_cost)
 
     else:
+        gd.debuginfo(prj="mt", info=f'')
         # calculate cost without bias
         # the fwd op with compute cost is mm
         # the bwd op with compute cost is mm * 2
@@ -216,12 +225,15 @@ def matmul_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem, L
         Tuple[TrainCycleItem, TrainCycleItem, bool]: compute cost, memory cost and forward inputs
 
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     # Get input and output tensors
     input_tensors = [args[0].data, args[1].data]
     output_tensors = [args[-1].data]
 
     # Check dimension
     if all(len(tensor.shape) == 1 for tensor in input_tensors):
+        gd.debuginfo(prj="mt", info=f'')
         # Dot
         fwd_compute_cost = flop_mapping[torch.ops.aten.matmul.default](input_tensors, output_tensors)
         bwd_compute_cost = flop_mapping[torch.ops.aten.mul.Tensor](input_tensors[0], output_tensors) * 2
@@ -230,6 +242,7 @@ def matmul_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem, L
         bwd_mem_cost = MemoryCost(activation=compute_size_in_bytes(input_tensors), parameter=0, temp=0, buffer=0)
 
     elif len(input_tensors[0].shape) >= 2 and len(input_tensors[1].shape) == 1:
+        gd.debuginfo(prj="mt", info=f'')
         # gemv case 1: matrix-vector multiplication
         # &
         # batched gemv case 1: batched matrix-vector multiplication
@@ -250,6 +263,7 @@ def matmul_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem, L
         bwd_mem_cost = MemoryCost(activation=compute_size_in_bytes(input_tensors), parameter=0, temp=0, buffer=0)
 
     elif len(input_tensors[0].shape) == 1 and len(input_tensors[1].shape) == 2:
+        gd.debuginfo(prj="mt", info=f'')
         # gemv case 2: vector-matrix multiplication
         fwd_compute_cost = flop_mapping[torch.ops.aten.matmul.default](input_tensors, output_tensors)
 
@@ -266,6 +280,7 @@ def matmul_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem, L
         )
 
     elif len(input_tensors[0].shape) == 1 and len(input_tensors[1].shape) >= 3:
+        gd.debuginfo(prj="mt", info=f'')
         # batched gemv case 2: vector-batched matrix multiplication
 
         fwd_compute_cost = flop_mapping[torch.ops.aten.matmul.default](
@@ -293,6 +308,7 @@ def matmul_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem, L
         )
 
     elif len(input_tensors[0].shape) >= 2 and len(input_tensors[1].shape) == 2:
+        gd.debuginfo(prj="mt", info=f'')
         # gemm & batched gemm case 1: batched matrix-matrix multiplication
 
         fwd_compute_cost = flop_mapping[torch.ops.aten.mm.default](
@@ -315,6 +331,7 @@ def matmul_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem, L
         bwd_mem_cost = MemoryCost(activation=compute_size_in_bytes(input_tensors), parameter=0, temp=0, buffer=0)
 
     elif len(input_tensors[0].shape) == 2 and len(input_tensors[1].shape) >= 3:
+        gd.debuginfo(prj="mt", info=f'')
         # batched gemm case 2: matrix-batched matrix multiplication
         fwd_compute_cost = flop_mapping[torch.ops.aten.mm.default](
             [
@@ -346,15 +363,18 @@ def matmul_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem, L
         )
 
     elif all(len(tensor.shape) >= 3 for tensor in input_tensors):
+
         # Batched matrix-batched matrix multiplication
         # Fetch shape of the two inputs and see if the batch dimensions are the same
         _is_batch_dims_same = True
         if len(input_tensors[0].shape) == len(input_tensors[1].shape):
+            gd.debuginfo(prj="mt", info=f'')
             for shape_0, shape_1 in zip(input_tensors[0].shape[:-2], input_tensors[1].shape[:-2]):
                 if shape_0 != shape_1:
                     _is_batch_dims_same = False
                     break
         else:
+            gd.debuginfo(prj="mt", info=f'')
             _is_batch_dims_same = False
 
         # retrieve dimensions
@@ -366,6 +386,7 @@ def matmul_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem, L
         output_dim_1 = output_tensors[0].shape[-1]
 
         if _is_batch_dims_same:
+            gd.debuginfo(prj="mt", info=f'')
             # Case 1: batch dimensions are the same
 
             # Forward compute cost: C = A * B
@@ -396,6 +417,7 @@ def matmul_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem, L
             bwd_mem_cost = MemoryCost(activation=compute_size_in_bytes(input_tensors))
 
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # Case 2: batch dimensions are different
             batch_dims = output_tensors[0].shape[:-2]
             extended_input_0 = torch.rand(

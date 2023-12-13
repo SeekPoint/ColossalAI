@@ -19,6 +19,7 @@ __all__ = ["save_checkpoint", "load_checkpoint"]
 
 
 def broadcast_state_dict(state_dict, parallel_mode):
+    gd.debuginfo(prj="mt", info=f'')
     state_dict = [state_dict.copy() if isinstance(state_dict, dict) else state_dict]
     src_rank = gpc.get_ranks_in_group(parallel_mode)[0]
     dist.broadcast_object_list(state_dict, src=src_rank, group=gpc.get_cpu_group(parallel_mode))
@@ -28,6 +29,7 @@ def broadcast_state_dict(state_dict, parallel_mode):
 def partition_tensor_parallel_state_dict(
     state_dict: OrderedDict, parallel_mode: ParallelMode, dims: dict = dict(), partition_states: dict = dict()
 ):
+    gd.debuginfo(prj="mt", info=f'')
     src_rank = gpc.get_ranks_in_group(parallel_mode)[0]
     depth = gpc.get_world_size(parallel_mode)
     group = gpc.get_cpu_group(parallel_mode)
@@ -70,6 +72,7 @@ def gather_tensor_parallel_state_dict(
     partition_states: dict = dict(),
     keep_vars: bool = False,
 ):
+    gd.debuginfo(prj="mt", info=f'')
     dst_rank = gpc.get_ranks_in_group(parallel_mode)[0]
     depth = gpc.get_world_size(parallel_mode)
 
@@ -97,12 +100,14 @@ def gather_tensor_parallel_state_dict(
 
 
 def _send_state_dict(state_dict, dst, parallel_mode):
+    gd.debuginfo(prj="mt", info=f'')
     state_tensor, state_size = dist.distributed_c10d._object_to_tensor(state_dict)
     dist.send(state_size, dst, group=gpc.get_cpu_group(parallel_mode))
     dist.send(state_tensor, dst, group=gpc.get_cpu_group(parallel_mode))
 
 
 def _recv_state_dict(src, parallel_mode):
+    gd.debuginfo(prj="mt", info=f'')
     state_size = torch.tensor([0], dtype=torch.long)
     dist.recv(state_size, src, group=gpc.get_cpu_group(parallel_mode))
     state_tensor = torch.empty(state_size.item(), dtype=torch.uint8)
@@ -112,6 +117,7 @@ def _recv_state_dict(src, parallel_mode):
 
 
 def partition_pipeline_parallel_state_dict(model, state_dict):
+    gd.debuginfo(prj="mt", info=f'')
     pipeline_state = OrderedDict()
 
     if gpc.get_local_rank(ParallelMode.TENSOR) == 0:
@@ -137,6 +143,7 @@ def partition_pipeline_parallel_state_dict(model, state_dict):
 
 
 def gather_pipeline_parallel_state_dict(state_dict):
+    gd.debuginfo(prj="mt", info=f'')
     gathered_states = (
         [None for _ in range(gpc.get_world_size(ParallelMode.PIPELINE))]
         if gpc.get_local_rank(ParallelMode.PIPELINE) == 0
@@ -180,6 +187,7 @@ def save_checkpoint(
         pickle_module: module used for pickling metadata and objects
         pickle_protocol: can be specified to override the default protocol
     """
+    gd.debuginfo(prj="mt", info=f'')
     # ckpt container
     checkpoint = {"epoch": epoch}
 
@@ -200,6 +208,7 @@ def save_checkpoint(
 
 
 def broadcast_model(model: torch.nn.Module):
+    gd.debuginfo(prj="mt", info=f'')
     src_rank = gpc.get_ranks_in_group(ParallelMode.TENSOR)[0]
     for p in model.parameters():
         if not getattr(p, IS_TENSOR_PARALLEL, False) and p.storage().size() > 0:
@@ -236,6 +245,7 @@ def load_checkpoint(
     Raises:
         RuntimeError: Raise error if the model/optimizer cannot successfully be recuperated
     """
+    gd.debuginfo(prj="mt", info=f'')
     state_dict = (
         torch.load(file, map_location=torch.device("cpu")) if gpc.get_local_rank(ParallelMode.MODEL) == 0 else None
     )

@@ -12,6 +12,8 @@ __all__ = ["BMMFunctionHandler", "AddBMMFunctionHandler"]
 
 
 def _get_data_mapping_for_bmm_op(node, input_idx, other_idx, bias_idx=None):
+    gd.debuginfo(prj="mt", info=f'')
+
     """
     This function is a helper function which extracts the common logic for both `bmm` and `addbmm`
     node handler to reduce code redundancy.
@@ -31,6 +33,7 @@ def _get_data_mapping_for_bmm_op(node, input_idx, other_idx, bias_idx=None):
     mapping = {"input": physical_input_operand, "other": physical_other_operand, "output": physical_output}
 
     if bias_idx is not None:
+        gd.debuginfo(prj="mt", info=f'')
         # bias physical shape
         bias_logical_shape = node._meta_data.shape
         physical_bias_operand = OperationData(
@@ -53,10 +56,12 @@ class BMMFunctionHandler(NodeHandler):
     """
 
     def get_operation_data_mapping(self) -> Dict[str, OperationData]:
+        gd.debuginfo(prj="mt", info=f'')
         mapping = _get_data_mapping_for_bmm_op(node=self.node, input_idx=0, other_idx=1)
         return mapping
 
     def get_strategy_generator(self) -> List[StrategyGenerator]:
+        gd.debuginfo(prj="mt", info=f'')
         op_data_mapping = self.get_operation_data_mapping()
         generators = []
         generators.append(BatchedMatMulStrategyGenerator(op_data_mapping, self.device_mesh))
@@ -75,10 +80,12 @@ class AddBMMFunctionHandler(NodeHandler):
     """
 
     def get_operation_data_mapping(self) -> Dict[str, OperationData]:
+        gd.debuginfo(prj="mt", info=f'')
         mapping = _get_data_mapping_for_bmm_op(node=self.node, input_idx=1, other_idx=2, bias_idx=0)
         return mapping
 
     def get_strategy_generator(self) -> List[StrategyGenerator]:
+        gd.debuginfo(prj="mt", info=f'')
         op_data_mapping = self.get_operation_data_mapping()
         generators = []
         generator = BatchedMatMulStrategyGenerator(op_data_mapping, self.device_mesh)
@@ -90,8 +97,10 @@ class AddBMMFunctionHandler(NodeHandler):
     def post_process(self, strategy: ShardingStrategy) -> Union[ShardingStrategy, List[ShardingStrategy]]:
         # convert bias from its logical sharding spec to its physical sharding spec
         op_data_mapping = self.get_operation_data_mapping()
+        gd.debuginfo(prj="mt", info=f'')
 
         if "bias" in op_data_mapping:
+            gd.debuginfo(prj="mt", info=f'')
             bias_op_data = op_data_mapping["bias"]
             bias_physical_shape = bias_op_data.data.shape
             bias_logical_shape = bias_op_data.logical_shape
@@ -102,6 +111,7 @@ class AddBMMFunctionHandler(NodeHandler):
             strategy.sharding_specs[bias_op_data] = bias_sharding_spec
 
             if len(removed_dims) > 0:
+                gd.debuginfo(prj="mt", info=f'')
                 comm_action = comm_actions_for_oprands(
                     node=self.node, removed_dims=removed_dims, op_data=bias_op_data, sharding_spec=bias_sharding_spec
                 )

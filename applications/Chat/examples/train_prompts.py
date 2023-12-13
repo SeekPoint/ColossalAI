@@ -23,10 +23,13 @@ from pydebug import gd, infoTensor
 def main(args):
     # configure strategy
     if args.strategy == "ddp":
+        gd.debuginfo(prj="mt", info=f'')
         strategy = DDPStrategy()
     elif args.strategy == "colossalai_gemini":
+        gd.debuginfo(prj="mt", info=f'')
         strategy = GeminiStrategy(placement_policy="static", initial_scale=2**5)
     elif args.strategy == "colossalai_zero2":
+        gd.debuginfo(prj="mt", info=f'')
         strategy = LowLevelZeroStrategy(stage=2, placement_policy="cuda")
     else:
         raise ValueError(f'Unsupported strategy "{args.strategy}"')
@@ -42,12 +45,16 @@ def main(args):
     with strategy.model_init_context():
         # configure model
         if args.model == "gpt2":
+            gd.debuginfo(prj="mt", info=f'')
             initial_model = GPTActor(pretrained=args.pretrain)
         elif args.model == "bloom":
+            gd.debuginfo(prj="mt", info=f'')
             initial_model = BLOOMActor(pretrained=args.pretrain)
         elif args.model == "opt":
+            gd.debuginfo(prj="mt", info=f'')
             initial_model = OPTActor(pretrained=args.pretrain)
         elif args.model == "llama":
+            gd.debuginfo(prj="mt", info=f'')
             initial_model = LlamaActor(pretrained=args.pretrain)
         else:
             raise ValueError(f'Unsupported actor model "{args.model}"')
@@ -58,40 +65,53 @@ def main(args):
             rm_model_name = args.rm_model
 
         if rm_model_name == "gpt2":
+            gd.debuginfo(prj="mt", info=f'')
             reward_model = GPTRM(pretrained=args.rm_pretrain, lora_rank=args.lora_rank)
         elif rm_model_name == "bloom":
+            gd.debuginfo(prj="mt", info=f'')
             reward_model = BLOOMRM(pretrained=args.rm_pretrain, lora_rank=args.lora_rank)
         elif rm_model_name == "opt":
+            gd.debuginfo(prj="mt", info=f'')
             reward_model = OPTRM(pretrained=args.rm_pretrain, lora_rank=args.lora_rank)
         elif rm_model_name == "llama":
+            gd.debuginfo(prj="mt", info=f'')
             reward_model = LlamaRM(pretrained=args.rm_pretrain, lora_rank=args.lora_rank)
         else:
             raise ValueError(f'Unsupported reward model "{rm_model_name}"')
 
         if args.rm_path is not None:
+            gd.debuginfo(prj="mt", info=f'')
             reward_model.load_state_dict(state_dict, strict=False)
 
         initial_model.to(torch.bfloat16).to(torch.cuda.current_device())
         reward_model.to(torch.bfloat16).to(torch.cuda.current_device())
 
         if args.model == "gpt2":
+            gd.debuginfo(prj="mt", info=f'')
             actor = GPTActor(pretrained=args.pretrain, lora_rank=args.lora_rank)
         elif args.model == "bloom":
+            gd.debuginfo(prj="mt", info=f'')
             actor = BLOOMActor(pretrained=args.pretrain, lora_rank=args.lora_rank)
         elif args.model == "opt":
+            gd.debuginfo(prj="mt", info=f'')
             actor = OPTActor(pretrained=args.pretrain, lora_rank=args.lora_rank)
         elif args.model == "llama":
+            gd.debuginfo(prj="mt", info=f'')
             actor = LlamaActor(pretrained=args.pretrain, lora_rank=args.lora_rank)
         else:
             raise ValueError(f'Unsupported actor model "{args.model}"')
 
         if rm_model_name == "gpt2":
+            gd.debuginfo(prj="mt", info=f'')
             critic = GPTCritic(pretrained=args.rm_pretrain, lora_rank=args.lora_rank)
         elif rm_model_name == "bloom":
+            gd.debuginfo(prj="mt", info=f'')
             critic = BLOOMCritic(pretrained=args.rm_pretrain, lora_rank=args.lora_rank)
         elif rm_model_name == "opt":
+            gd.debuginfo(prj="mt", info=f'')
             critic = OPTCritic(pretrained=args.rm_pretrain, lora_rank=args.lora_rank)
         elif rm_model_name == "llama":
+            gd.debuginfo(prj="mt", info=f'')
             critic = LlamaCritic(pretrained=args.rm_pretrain, lora_rank=args.lora_rank)
         else:
             raise ValueError(f'Unsupported reward model "{rm_model_name}"')
@@ -105,25 +125,31 @@ def main(args):
 
     # configure optimizer
     if args.strategy.startswith("colossalai"):
+        gd.debuginfo(prj="mt", info=f'')
         actor_optim = HybridAdam(actor.parameters(), lr=args.lr)
         critic_optim = HybridAdam(critic.parameters(), lr=args.lr)
     else:
+        gd.debuginfo(prj="mt", info=f'')
         actor_optim = Adam(actor.parameters(), lr=args.lr)
         critic_optim = Adam(critic.parameters(), lr=args.lr)
 
     # configure tokenizer
     if args.model == "gpt2":
+        gd.debuginfo(prj="mt", info=f'')
         tokenizer = GPT2Tokenizer.from_pretrained("gpt2" if args.tokenizer is None else args.tokenizer)
         tokenizer.pad_token = tokenizer.eos_token
     elif args.model == "bloom":
+        gd.debuginfo(prj="mt", info=f'')
         tokenizer = BloomTokenizerFast.from_pretrained(
             "/share/hf_model/bloom-560m" if args.tokenizer is None else args.tokenizer
         )
         tokenizer.pad_token = tokenizer.eos_token
     elif args.model == "opt":
+        gd.debuginfo(prj="mt", info=f'')
         tokenizer = AutoTokenizer.from_pretrained("/share/hf_model/opt-350m" if args.tokenizer is None else args.tokenizer)
         tokenizer.pad_token = tokenizer.eos_token
     elif args.model == "llama":
+        gd.debuginfo(prj="mt", info=f'')
         tokenizer = LlamaTokenizer.from_pretrained(
             "/share/hf_model/llama-tokenizer" if args.tokenizer is None else args.tokenizer
         )
@@ -141,9 +167,12 @@ def main(args):
         max_length=args.max_input_len,
     )
     if dist.is_initialized() and dist.get_world_size() > 1:
+        gd.debuginfo(prj="mt", info=f'')
         prompt_sampler = DistributedSampler(prompt_dataset, shuffle=True, seed=42, drop_last=True)
     else:
+        gd.debuginfo(prj="mt", info=f'')
         prompt_sampler = None
+
     prompt_dataloader = DataLoader(
         prompt_dataset, shuffle=(prompt_sampler is None), sampler=prompt_sampler, batch_size=args.experience_batch_size
     )
@@ -155,9 +184,12 @@ def main(args):
         max_length=args.max_input_len,
     )
     if dist.is_initialized() and dist.get_world_size() > 1:
+        gd.debuginfo(prj="mt", info=f'')
         pretrain_sampler = DistributedSampler(pretrain_dataset, shuffle=True, seed=42, drop_last=True)
     else:
         pretrain_sampler = None
+        gd.debuginfo(prj="mt", info=f'')
+
     pretrain_dataloader = DataLoader(
         pretrain_dataset, shuffle=(pretrain_sampler is None), sampler=pretrain_sampler, batch_size=args.ptx_batch_size
     )

@@ -37,6 +37,7 @@ class ProcessGroupMesh:
     """
 
     def __init__(self, *size: int) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         assert dist.is_initialized(), "Please initialize torch.distributed first."
         assert prod(size) == dist.get_world_size(), "The product of the size must be equal to the world size."
         self._shape = size
@@ -57,6 +58,7 @@ class ProcessGroupMesh:
             when the ProcessGroupMesh's lifetime ends. This method manually destroys the process groups to release
             system resources.
         """
+        gd.debuginfo(prj="mt", info=f'')
         for group in self._ranks_to_group.values():
             dist.destroy_process_group(group)
 
@@ -81,8 +83,10 @@ class ProcessGroupMesh:
             Union[int, Tuple[int, ...]]: Size of the target dimension or the whole process group mesh.
         """
         if dim is None:
+            gd.debuginfo(prj="mt", info=f'')
             return self._shape
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return self._shape[dim]
 
     def coordinate(self, dim: Optional[int] = None) -> Union[int, Tuple[int, ...]]:
@@ -95,8 +99,10 @@ class ProcessGroupMesh:
             Union[int, Tuple[int, ...]]: Coordinate of the target dimension or the whole process group mesh.
         """
         if dim is None:
+            gd.debuginfo(prj="mt", info=f'')
             return self._coord
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return self._coord[dim]
 
     @staticmethod
@@ -110,6 +116,7 @@ class ProcessGroupMesh:
         Returns:
             Tuple[int, ...]: Coordinate of the rank.
         """
+        gd.debuginfo(prj="mt", info=f'')
         return np.unravel_index(rank, shape)
 
     @staticmethod
@@ -127,7 +134,7 @@ class ProcessGroupMesh:
         Returns:
             int: Rank of the coordinate.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         assert mode in ["raise", "wrap", "clip"]
         return np.ravel_multi_index(coord, shape, mode)
 
@@ -141,8 +148,10 @@ class ProcessGroupMesh:
         Returns:
             ProcessGroup: The process group with the given ranks.
         """
+        gd.debuginfo(prj="mt", info=f'')
         ranks_in_group = sorted(ranks_in_group)
         if tuple(ranks_in_group) not in self._group_to_ranks:
+            gd.debuginfo(prj="mt", info=f'')
             group = dist.new_group(ranks_in_group, backend=backend)
             self._ranks_to_group[tuple(ranks_in_group)] = group
             self._group_to_ranks[group] = tuple(ranks_in_group)
@@ -157,6 +166,7 @@ class ProcessGroupMesh:
         Returns:
             List[int]: Ranks in the process group.
         """
+        gd.debuginfo(prj="mt", info=f'')
         return list(self._group_to_ranks[group])
 
     @staticmethod
@@ -173,6 +183,7 @@ class ProcessGroupMesh:
         Returns:
             List[Tuple[int, ...]]: Coordinates along the axis.
         """
+        gd.debuginfo(prj="mt", info=f'')
         coords_in_group = []
         for idx in indices_at_axis:
             coords_in_group.append(base_coord[:axis] + (idx,) + base_coord[axis + 1 :])
@@ -191,6 +202,7 @@ class ProcessGroupMesh:
         Returns:
             ProcessGroup: The process group along the given axis which the current process belongs to.
         """
+        gd.debuginfo(prj="mt", info=f'')
         indices_at_axis = indices_at_axis or list(range(self._shape[axis]))
         reduced_shape = list(self._shape)
         # the choices on the axis are reduced to 1, since it's determined by `indices_at_axis`
@@ -218,10 +230,12 @@ class ProcessGroupMesh:
         Returns:
             ProcessGroup: The process group along the given axis which the current process belongs to.
         """
+        gd.debuginfo(prj="mt", info=f'')
         indices_at_axis = indices_at_axis or list(range(self._shape[axis]))
         coords_in_group = ProcessGroupMesh.get_coords_along_axis(self._coord, axis, indices_at_axis)
         ranks_in_group = tuple([ProcessGroupMesh.ravel(coord, self._shape) for coord in coords_in_group])
         if ranks_in_group not in self._ranks_to_group:
+            gd.debuginfo(prj="mt", info=f'')
             # no need to cache it explicitly, since it will be cached in `create_group_along_axis`
             return self.create_group_along_axis(axis, indices_at_axis, backend=backend)
         return self._ranks_to_group[ranks_in_group]

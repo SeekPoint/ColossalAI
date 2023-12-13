@@ -40,7 +40,7 @@ if CODEGEN_AVAILABLE:
     __all__ = ["ActivationCheckpointCodeGen"]
 else:
     __all__ = ["python_code_with_activation_checkpoint"]
-
+gd.debuginfo(prj="mt", info=f'')
 
 def _gen_saved_tensors_hooks():
     """
@@ -67,7 +67,7 @@ def pack_hook_no_input(self, x):
     else:
         return packed
 """
-
+    gd.debuginfo(prj="mt", info=f'')
     return pack_hook, unpack_hook
 
 
@@ -82,8 +82,10 @@ def _gen_save_tensors_hooks_context(offload_input=True) -> str:
 
     if offload_input:
         context = "with torch.autograd.graph.saved_tensors_hooks(self.pack_hook_input, self.unpack_hook):\n"
+        gd.debuginfo(prj="mt", info=f'')
     else:
         context = "with torch.autograd.graph.saved_tensors_hooks(self.pack_hook_no_input, self.unpack_hook):\n"
+        gd.debuginfo(prj="mt", info=f'')
     return context
 
 
@@ -93,6 +95,7 @@ def _gen_save_on_cpu_context():
     """
 
     context = "with torch.autograd.graph.save_on_cpu(pin_memory=True):\n"
+    gd.debuginfo(prj="mt", info=f'')
     return context
 
 
@@ -102,7 +105,7 @@ def _find_input_and_output_nodes(nodes: List[Node]):
     """
     input_nodes = []
     output_nodes = []
-
+    gd.debuginfo(prj="mt", info=f'')
     # if a node has an input node which is not in the node list
     # we treat that input node as the input of the checkpoint function
     for node in nodes:
@@ -127,6 +130,7 @@ def _find_ckpt_regions(nodes: List[Node]):
     Find the checkpoint regions given a list of consecutive nodes. The outputs will be list
     of tuples, each tuple is in the form of (start_index, end_index).
     """
+    gd.debuginfo(prj="mt", info=f'')
     ckpt_regions = []
     start = -1
     end = -1
@@ -177,7 +181,7 @@ def _find_offload_regions(nodes: List[Node]):
     start = -1
     end = -1
     current_region = None
-
+    gd.debuginfo(prj="mt", info=f'')
     for idx, node in enumerate(nodes):
         if "activation_offload" in node.meta and isinstance(node.meta["activation_offload"], Iterable):
             act_offload_label = node.meta["activation_offload"]
@@ -213,6 +217,7 @@ def _gen_ckpt_fn_def(label, free_vars: List[str]) -> str:
     """
     Generate the checkpoint function definition
     """
+    gd.debuginfo(prj="mt", info=f'')
     return f"def checkpoint_{label}({', '.join(['self'] + free_vars)}):"
 
 
@@ -220,6 +225,7 @@ def _gen_ckpt_output(output_vars: List[str]) -> str:
     """
     Generate the return statement for checkpoint region
     """
+    gd.debuginfo(prj="mt", info=f'')
     return f"return {', '.join(output_vars)}"
 
 
@@ -229,6 +235,8 @@ def _gen_ckpt_usage(label, activation_offload, input_vars, output_vars, use_reen
     """
     outputs = ", ".join(output_vars)
     inputs = ", ".join(input_vars)
+    gd.debuginfo(prj="mt", info=f'')
+
     return f"{outputs} = colossalai.utils.activation_checkpoint.checkpoint(self.checkpoint_{label}, {activation_offload}, {inputs}, use_reentrant={use_reentrant})"
 
 
@@ -243,10 +251,13 @@ def _end_of_ckpt(node: Node, check_idx: int) -> bool:
     """
     if "activation_checkpoint" in node.meta:
         if isinstance(node.meta["activation_checkpoint"], list):
+            gd.debuginfo(prj="mt", info=f'')
             return node.meta["activation_checkpoint"][check_idx] == None
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return False
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return True
 
 
@@ -259,7 +270,7 @@ def _find_nested_ckpt_regions(nodes, check_idx=0):
     start = -1
     end = -1
     current_region = None
-
+    gd.debuginfo(prj="mt", info=f'')
     for idx, node in enumerate(nodes):
         if "activation_checkpoint" in node.meta:
             if isinstance(node.meta["activation_checkpoint"], int):
@@ -294,6 +305,7 @@ def _find_nested_ckpt_regions(nodes, check_idx=0):
             pass
 
     if current_region is not None:
+        gd.debuginfo(prj="mt", info=f'')
         end = len(nodes) - 1
         ckpt_regions.append((start, end))
     return ckpt_regions
@@ -316,9 +328,10 @@ def emit_ckpt_func(
         call. Defaults to False.
     """
     inputs, outputs = _find_input_and_output_nodes(node_list)
-
+    gd.debuginfo(prj="mt", info=f'')
     # if the current checkpoint function use int as label, using old generation method
     if isinstance(node_list[0].meta["activation_checkpoint"], int):
+        gd.debuginfo(prj="mt", info=f'')
         label = node_list[0].meta["activation_checkpoint"]
         ckpt_fn_def = _gen_ckpt_fn_def(label, inputs)
         ckpt_func.append(f"{ckpt_fn_def}\n")
@@ -335,6 +348,7 @@ def emit_ckpt_func(
 
     # use nested ckpt function codegen
     else:
+        gd.debuginfo(prj="mt", info=f'')
         # label given by each layer, e.g. if you are currently at level [0, 1, 1]
         # the label will be '0_1_1'
         label = "_".join([str(idx) for idx in node_list[0].meta["activation_checkpoint"][: level + 1]])
@@ -343,6 +357,7 @@ def emit_ckpt_func(
 
         # if there is more level to fetch
         if level + 1 < len(node_list[0].meta["activation_checkpoint"]):
+            gd.debuginfo(prj="mt", info=f'')
             ckpt_regions = _find_nested_ckpt_regions(node_list, level + 1)
             start_idx = [item[0] for item in ckpt_regions]
             end_idx = [item[1] for item in ckpt_regions]
@@ -384,6 +399,7 @@ def emit_ckpt_func(
 
         # last level
         else:
+            gd.debuginfo(prj="mt", info=f'')
             for node in node_list:
                 emit_node_func(node, ckpt_func)
                 ckpt_func[-1] = "    " + ckpt_func[-1]
@@ -408,6 +424,7 @@ def emit_code_with_nested_activation_checkpoint(body, ckpt_func, nodes, emit_nod
         emit_node_func: function to emit node
         delete_unused_value_func: function to remove the unused value
     """
+    gd.debuginfo(prj="mt", info=f'')
     ckpt_regions = _find_nested_ckpt_regions(nodes, 0)
     start_idx = [item[0] for item in ckpt_regions]
     end_idx = [item[1] for item in ckpt_regions]
@@ -488,6 +505,7 @@ def emit_code_with_nested_activation_checkpoint(body, ckpt_func, nodes, emit_nod
 
 
 def emit_code_with_activation_checkpoint(body, ckpt_func, nodes, emit_node_func, delete_unused_value_func):
+    gd.debuginfo(prj="mt", info=f'')
     # find the activation checkpoint regions
     ckpt_regions = _find_ckpt_regions(nodes)
     start_idx = [item[0] for item in ckpt_regions]
@@ -623,9 +641,10 @@ def emit_code_with_activation_checkpoint(body, ckpt_func, nodes, emit_node_func,
 
 
 if CODEGEN_AVAILABLE:
-
+    gd.debuginfo(prj="mt", info=f'')
     class ActivationCheckpointCodeGen(CodeGen):
         def _gen_python_code(self, nodes, root_module: str, namespace: _Namespace) -> PythonCode:
+            gd.debuginfo(prj="mt", info=f'')
             free_vars: List[str] = []
             body: List[str] = []
             globals_: Dict[str, Any] = {}
@@ -635,12 +654,14 @@ if CODEGEN_AVAILABLE:
             maybe_return_annotation: List[str] = [""]
 
             def add_global(name_hint: str, obj: Any):
+                gd.debuginfo(prj="mt", info=f'')
                 """Add an obj to be tracked as a global.
                 We call this for names that reference objects external to the
                 Graph, like functions or types.
                 Returns: the global name that should be used to reference 'obj' in generated source.
                 """
                 if _is_from_torch(obj) and obj != torch.device:  # to support registering torch.device
+                    gd.debuginfo(prj="mt", info=f'')
                     # HACK: workaround for how torch custom ops are registered. We
                     # can't import them like normal modules so they must retain their
                     # fully qualified name.
@@ -663,6 +684,7 @@ if CODEGEN_AVAILABLE:
                 add_global(name, obj)
 
             def type_repr(o: Any):
+                gd.debuginfo(prj="mt", info=f'')
                 if o == ():
                     # Empty tuple is used for empty tuple type annotation Tuple[()]
                     return "()"
@@ -693,7 +715,9 @@ if CODEGEN_AVAILABLE:
                 return add_global(typename, o)
 
             def _format_args(args: Tuple[Argument, ...], kwargs: Dict[str, Argument]) -> str:
+                gd.debuginfo(prj="mt", info=f'')
                 def _get_repr(arg):
+                    gd.debuginfo(prj="mt", info=f'')
                     # Handle NamedTuples (if it has `_fields`) via add_global.
                     if isinstance(arg, tuple) and hasattr(arg, "_fields"):
                         qualified_name = _get_qualified_name(type(arg))
@@ -725,6 +749,7 @@ if CODEGEN_AVAILABLE:
 
             # NOTE: we add a variable to distinguish body and ckpt_func
             def delete_unused_values(user: Node, body):
+                gd.debuginfo(prj="mt", info=f'')
                 """
                 Delete values after their last use. This ensures that values that are
                 not used in the remainder of the code are freed and the memory usage
@@ -746,6 +771,7 @@ if CODEGEN_AVAILABLE:
             def emit_node(node: Node, body):
                 maybe_type_annotation = "" if node.type is None else f" : {type_repr(node.type)}"
                 if node.op == "placeholder":
+                    gd.debuginfo(prj="mt", info=f'')
                     assert isinstance(node.target, str)
                     maybe_default_arg = "" if not node.args else f" = {repr(node.args[0])}"
                     free_vars.append(f"{node.target}{maybe_type_annotation}{maybe_default_arg}")
@@ -754,6 +780,7 @@ if CODEGEN_AVAILABLE:
                         body.append(f"{repr(node)} = {raw_name}\n")
                     return
                 elif node.op == "call_method":
+                    gd.debuginfo(prj="mt", info=f'')
                     assert isinstance(node.target, str)
                     body.append(
                         f"{repr(node)}{maybe_type_annotation} = {_format_target(repr(node.args[0]), node.target)}"
@@ -761,9 +788,11 @@ if CODEGEN_AVAILABLE:
                     )
                     return
                 elif node.op == "call_function":
+                    gd.debuginfo(prj="mt", info=f'')
                     assert callable(node.target)
                     # pretty print operators
                     if node.target.__module__ == "_operator" and node.target.__name__ in magic_methods:
+                        gd.debuginfo(prj="mt", info=f'')
                         assert isinstance(node.args, tuple)
                         body.append(
                             f"{repr(node)}{maybe_type_annotation} = "
@@ -774,6 +803,7 @@ if CODEGEN_AVAILABLE:
                     # pretty print inplace operators; required for jit.script to work properly
                     # not currently supported in normal FX graphs, but generated by torchdynamo
                     if node.target.__module__ == "_operator" and node.target.__name__ in inplace_methods:
+                        gd.debuginfo(prj="mt", info=f'')
                         body.append(
                             f"{inplace_methods[node.target.__name__].format(*(repr(a) for a in node.args))};  "
                             f"{repr(node)}{maybe_type_annotation} = {repr(node.args[0])}"
@@ -791,6 +821,7 @@ if CODEGEN_AVAILABLE:
                         and node.args[1].isidentifier()
                         and len(node.args) == 2
                     ):
+                        gd.debuginfo(prj="mt", info=f'')
                         body.append(
                             f"{repr(node)}{maybe_type_annotation} = {_format_target(repr(node.args[0]), node.args[1])}"
                         )
@@ -799,9 +830,11 @@ if CODEGEN_AVAILABLE:
                         f"{repr(node)}{maybe_type_annotation} = {global_name}({_format_args(node.args, node.kwargs)})"
                     )
                     if node.meta.get("is_wrapped", False):
+                        gd.debuginfo(prj="mt", info=f'')
                         wrapped_fns.setdefault(global_name)
                     return
                 elif node.op == "call_module":
+                    gd.debuginfo(prj="mt", info=f'')
                     assert isinstance(node.target, str)
                     body.append(
                         f"{repr(node)}{maybe_type_annotation} = "
@@ -809,12 +842,15 @@ if CODEGEN_AVAILABLE:
                     )
                     return
                 elif node.op == "get_attr":
+                    gd.debuginfo(prj="mt", info=f'')
                     assert isinstance(node.target, str)
                     body.append(f"{repr(node)}{maybe_type_annotation} = {_format_target(root_module, node.target)}")
                     return
                 elif node.op == "output":
+                    gd.debuginfo(prj="mt", info=f'')
                     if node.type is not None:
                         maybe_return_annotation[0] = f" -> {type_repr(node.type)}"
+                        gd.debuginfo(prj="mt", info=f'')
                     body.append(self.generate_output(node.args[0]))
                     return
                 raise NotImplementedError(f"node: {node.op} {node.target}")
@@ -826,8 +862,10 @@ if CODEGEN_AVAILABLE:
             # will use nested type of activation checkpoint codegen
             if any(isinstance(node.meta.get("activation_checkpoint", None), Iterable) for node in nodes):
                 emit_code_with_nested_activation_checkpoint(body, ckpt_func, nodes, emit_node, delete_unused_values)
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 emit_code_with_activation_checkpoint(body, ckpt_func, nodes, emit_node, delete_unused_values)
+                gd.debuginfo(prj="mt", info=f'')
 
             if len(body) == 0:
                 # If the Graph has no non-placeholder nodes, no lines for the body
@@ -838,11 +876,14 @@ if CODEGEN_AVAILABLE:
             if len(wrapped_fns) > 0:
                 wrap_name = add_global("wrap", torch.fx.wrap)
                 wrap_stmts = "\n".join([f'{wrap_name}("{name}")' for name in wrapped_fns])
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 wrap_stmts = ""
+                gd.debuginfo(prj="mt", info=f'')
 
             if self._body_transformer:
                 body = self._body_transformer(body)
+                gd.debuginfo(prj="mt", info=f'')
 
             for name, value in self.additional_globals():
                 add_global(name, value)
@@ -862,7 +903,7 @@ if CODEGEN_AVAILABLE:
             return PythonCode(fn_code, globals_)
 
 else:
-
+    gd.debuginfo(prj="mt", info=f'')
     def python_code_with_activation_checkpoint(self, root_module: str, namespace: _Namespace) -> PythonCode:
         """
         This method is copied from the _python_code of torch.fx.graph.Graph. Modifications are made so that it can generate
@@ -872,7 +913,7 @@ else:
         body: List[str] = []
         globals_: Dict[str, Any] = {}
         wrapped_fns: Dict[str, None] = {}
-
+        gd.debuginfo(prj="mt", info=f'')
         # Wrap string in list to pass by reference
         maybe_return_annotation: List[str] = [""]
 
@@ -882,10 +923,12 @@ else:
             Graph, like functions or types.
             Returns: the global name that should be used to reference 'obj' in generated source.
             """
+            gd.debuginfo(prj="mt", info=f'')
             if _is_from_torch(obj) and obj != torch.device:  # to support registering torch.device
                 # HACK: workaround for how torch custom ops are registered. We
                 # can't import them like normal modules so they must retain their
                 # fully qualified name.
+                gd.debuginfo(prj="mt", info=f'')
                 return _get_qualified_name(obj)
 
             # normalize the name hint to get a proper identifier
@@ -905,6 +948,7 @@ else:
             add_global(name, obj)
 
         def type_repr(o: Any):
+            gd.debuginfo(prj="mt", info=f'')
             if o == ():
                 # Empty tuple is used for empty tuple type annotation Tuple[()]
                 return "()"
@@ -932,6 +976,7 @@ else:
         user_to_last_uses: Dict[Node, List[Node]] = {}
 
         def register_last_uses(n: Node, user: Node):
+            gd.debuginfo(prj="mt", info=f'')
             if n not in node_to_last_use:
                 node_to_last_use[n] = user
                 user_to_last_uses.setdefault(user, []).append(n)
@@ -948,21 +993,26 @@ else:
             of the code is optimal.
             """
             if user.op == "placeholder":
+                gd.debuginfo(prj="mt", info=f'')
                 return
             if user.op == "output":
+                gd.debuginfo(prj="mt", info=f'')
                 body.append("\n")
                 return
             nodes_to_delete = user_to_last_uses.get(user, [])
             if len(nodes_to_delete):
                 to_delete_str = " = ".join([repr(n) for n in nodes_to_delete] + ["None"])
                 body.append(f";  {to_delete_str}\n")
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 body.append("\n")
+                gd.debuginfo(prj="mt", info=f'')
 
         # NOTE: we add a variable to distinguish body and ckpt_func
         def emit_node(node: Node, body):
             maybe_type_annotation = "" if node.type is None else f" : {type_repr(node.type)}"
             if node.op == "placeholder":
+                gd.debuginfo(prj="mt", info=f'')
                 assert isinstance(node.target, str)
                 maybe_default_arg = "" if not node.args else f" = {repr(node.args[0])}"
                 free_vars.append(f"{node.target}{maybe_type_annotation}{maybe_default_arg}")
@@ -971,6 +1021,7 @@ else:
                     body.append(f"{repr(node)} = {raw_name}\n")
                 return
             elif node.op == "call_method":
+                gd.debuginfo(prj="mt", info=f'')
                 assert isinstance(node.target, str)
                 body.append(
                     f"{repr(node)}{maybe_type_annotation} = {_format_target(repr(node.args[0]), node.target)}"
@@ -978,6 +1029,7 @@ else:
                 )
                 return
             elif node.op == "call_function":
+                gd.debuginfo(prj="mt", info=f'')
                 assert callable(node.target)
                 # pretty print operators
                 if node.target.__module__ == "_operator" and node.target.__name__ in magic_methods:
@@ -1001,12 +1053,14 @@ else:
                     body.append(
                         f"{repr(node)}{maybe_type_annotation} = {_format_target(repr(node.args[0]), node.args[1])}"
                     )
+                    gd.debuginfo(prj="mt", info=f'')
                     return
                 body.append(
                     f"{repr(node)}{maybe_type_annotation} = {global_name}({_format_args(node.args, node.kwargs)})"
                 )
                 if node.meta.get("is_wrapped", False):
                     wrapped_fns.setdefault(global_name)
+                    gd.debuginfo(prj="mt", info=f'')
                 return
             elif node.op == "call_module":
                 assert isinstance(node.target, str)
@@ -1014,18 +1068,23 @@ else:
                     f"{repr(node)}{maybe_type_annotation} = "
                     f"{_format_target(root_module, node.target)}({_format_args(node.args, node.kwargs)})"
                 )
+                gd.debuginfo(prj="mt", info=f'')
                 return
             elif node.op == "get_attr":
+                gd.debuginfo(prj="mt", info=f'')
                 assert isinstance(node.target, str)
                 body.append(f"{repr(node)}{maybe_type_annotation} = {_format_target(root_module, node.target)}")
                 return
             elif node.op == "output":
                 if node.type is not None:
+                    gd.debuginfo(prj="mt", info=f'')
                     maybe_return_annotation[0] = f" -> {type_repr(node.type)}"
                 if self._pytree_info is None:
                     body.append(f"return {repr(node.args[0])}")
+                    gd.debuginfo(prj="mt", info=f'')
                 else:
                     body.append(f"return pytree.tree_unflatten({repr(node.args[0])}, self._out_spec)")
+                    gd.debuginfo(prj="mt", info=f'')
                 return
             raise NotImplementedError(f"node: {node.op} {node.target}")
 
@@ -1036,32 +1095,40 @@ else:
         # will use nested type of activation checkpoint codegen
         if any(isinstance(node.meta.get("activation_checkpoint", None), Iterable) for node in self.nodes):
             emit_code_with_nested_activation_checkpoint(body, ckpt_func, self.nodes, emit_node, delete_unused_values)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             emit_code_with_activation_checkpoint(body, ckpt_func, self.nodes, emit_node, delete_unused_values)
+            gd.debuginfo(prj="mt", info=f'')
 
         if len(body) == 0:
             # If the Graph has no non-placeholder nodes, no lines for the body
             # have been emitted. To continue to have valid Python code, emit a
             # single pass statement
             body.append("pass\n")
+            gd.debuginfo(prj="mt", info=f'')
         if self._pytree_info is not None:
             orig_args = self._pytree_info.orig_args
             has_orig_self = orig_args[0] == "self"
             if has_orig_self:
                 free_vars.insert(0, "self")
+                gd.debuginfo(prj="mt", info=f'')
             if len(free_vars) > 0:  # pytree has placeholders in it
                 body.insert(
                     0,
                     f"{', '.join(free_vars)}, = fx_pytree.tree_flatten_spec([{', '.join(orig_args)}], self._in_spec)\n",
                 )
+                gd.debuginfo(prj="mt", info=f'')
         else:
             orig_args = free_vars
+            gd.debuginfo(prj="mt", info=f'')
 
         if len(wrapped_fns) > 0:
             wrap_name = add_global("wrap", torch.fx.wrap)
             wrap_stmts = "\n".join([f'{wrap_name}("{name}")' for name in wrapped_fns])
+            gd.debuginfo(prj="mt", info=f'')
         else:
             wrap_stmts = ""
+            gd.debuginfo(prj="mt", info=f'')
 
         ckpt_func = "".join(ckpt_func)
 

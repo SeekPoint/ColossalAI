@@ -26,21 +26,26 @@ do_not_cache = False
 
 
 def normalize_tuple(x):
+    gd.debuginfo(prj="mt", info=f'')
     if not isinstance(x, tuple):
+        gd.debuginfo(prj="mt", info=f'')
         return (x,)
     return x
 
 
 def is_autogradable(x):
+    gd.debuginfo(prj="mt", info=f'')
     return isinstance(x, torch.Tensor) and x.is_floating_point()
 
 
 def detach_variables(x):
     if isinstance(x, torch.Tensor):
+        gd.debuginfo(prj="mt", info=f'')
         requires_grad = x.requires_grad
         x = x.detach()
         x.requires_grad = requires_grad
 
+    gd.debuginfo(prj="mt", info=f'')
     return x
 
 
@@ -64,13 +69,14 @@ def _profile_concrete(target: Callable, *args, **kwargs) -> Tuple[Tuple[Any, ...
         Tuple[Tuple[Any, ...], GraphInfo]: Output for next node & memory cost and real forward and backward
         time.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     graphinfo = GraphInfo()
 
     # detach input from the graph
     args = tree_map(detach_variables, args)
     kwargs = tree_map(detach_variables, kwargs)
     if isinstance(target, str):
+        gd.debuginfo(prj="mt", info=f'')
         # args[0] is the `self` object for this method call
         self_obj, *args_tail = args
 
@@ -108,6 +114,7 @@ def _profile_concrete(target: Callable, *args, **kwargs) -> Tuple[Tuple[Any, ...
         graphinfo.bwd_mem_tmp = mem_stamp1 - mem_stamp0 - graphinfo.bwd_mem_out
 
     else:
+        gd.debuginfo(prj="mt", info=f'')
         # calculate fwd_mem_out
         mem_stamp0 = torch.cuda.memory_allocated()
         with torch.no_grad():
@@ -158,6 +165,8 @@ def _profile_meta(target: Callable, *args, **kwargs) -> Tuple[Tuple[Any, ...], G
         out (Tuple[Any, ...]): The argument value that was retrieved.
         meta_info (GraphInfo): The memory cost and FLOPs estimated with `MetaTensor`.
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     # This subgraph traces aten level ops inside one node.
     subgraph = Graph()
 
@@ -183,6 +192,7 @@ def _profile_meta(target: Callable, *args, **kwargs) -> Tuple[Tuple[Any, ...], G
 
         @classmethod
         def __torch_dispatch__(cls, func, types, args=(), kwargs=None):
+            gd.debuginfo(prj="mt", info=f'')
             args_node = tree_map(lambda x: x._node if isinstance(x, FlopTensor) else None, args)
             kwargs_node = tree_map(lambda x: x._node if isinstance(x, FlopTensor) else None, kwargs)
             node = subgraph.create_node("call_function", func, args_node, kwargs_node)
@@ -203,21 +213,29 @@ def _profile_meta(target: Callable, *args, **kwargs) -> Tuple[Tuple[Any, ...], G
             node.meta["saved_tensor"] = []
             if phase == Phase.BACKWARD:
                 node.meta["saved_tensor"] = normalize_tuple(out)
+                gd.debuginfo(prj="mt", info=f'')
 
             def wrap(x):
+                gd.debuginfo(prj="mt", info=f'')
                 if isinstance(x, MetaTensor):
                     x = FlopTensor(x)
                     x._node = node
                 return x
 
+            gd.debuginfo(prj="mt", info=f'')
+
             out = tree_map(wrap, out)
             return out
 
     def wrap(x):
+        gd.debuginfo(prj="mt", info=f'')
         if isinstance(x, torch.Tensor):
+            gd.debuginfo(prj="mt", info=f'')
             x = FlopTensor(x)
             if is_autogradable(x):
                 x.requires_grad_(True)
+                gd.debuginfo(prj="mt", info=f'')
+
             x._node = subgraph.create_node(
                 "placeholder",
                 "placeholder",
@@ -226,6 +244,7 @@ def _profile_meta(target: Callable, *args, **kwargs) -> Tuple[Tuple[Any, ...], G
             )
             x._node.meta["phase"] = Phase.PLACEHOLDER
             x._node.meta["saved_tensor"] = []
+
         return x
 
     # Basically, we need to detach the args and kwargs from the outer graph.
@@ -233,12 +252,15 @@ def _profile_meta(target: Callable, *args, **kwargs) -> Tuple[Tuple[Any, ...], G
     kwargs = tree_map(wrap, kwargs)
 
     def pack(x):
+        gd.debuginfo(prj="mt", info=f'')
         global cache, do_not_cache
         if isinstance(x, FlopTensor) and not x._tensor.data_ptr() in cache:
+            gd.debuginfo(prj="mt", info=f'')
             tensor = x._tensor.detach()
             tensor.data_ptr = x._tensor.data_ptr
             x._node.meta["saved_tensor"] += [tensor]
             if not do_not_cache:
+                gd.debuginfo(prj="mt", info=f'')
                 cache.add(x._tensor.data_ptr())
         return x
 
@@ -253,12 +275,15 @@ def _profile_meta(target: Callable, *args, **kwargs) -> Tuple[Tuple[Any, ...], G
             # args[0] is the `self` object for this method call
             self_obj, *args_tail = args
             out = getattr(self_obj, target)(*args_tail, **kwargs)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             out = target(*args, **kwargs)
+            gd.debuginfo(prj="mt", info=f'')
 
         # If the output is not a floating point `torch.Tensor` or it does not
         # requires grad, then we should not run backward for this node.
         if all(map(lambda x: is_autogradable(x) and x.requires_grad, normalize_tuple(out))):
+            gd.debuginfo(prj="mt", info=f'')
             grad_out = [torch.zeros_like(t) for t in normalize_tuple(out)]
             phase = Phase.BACKWARD
             torch.autograd.backward(
@@ -271,15 +296,18 @@ def _profile_meta(target: Callable, *args, **kwargs) -> Tuple[Tuple[Any, ...], G
 
     def extract_tensor(x: Any):
         if isinstance(x, MetaTensor):
+            gd.debuginfo(prj="mt", info=f'')
             tensor = x._tensor.detach()
             tensor.data_ptr = x._tensor.data_ptr
             return tensor
         if not isinstance(x, torch.finfo):
+            gd.debuginfo(prj="mt", info=f'')
             return x
 
     graph_info.fwd_out = list(map(extract_tensor, normalize_tuple(out)))
 
     def unwrap(x):
+        gd.debuginfo(prj="mt", info=f'')
         return MetaTensor(x) if isinstance(x, torch.Tensor) else x
 
     return tree_map(unwrap, out), graph_info
@@ -302,12 +330,15 @@ def profile_function(target: "Target", device: str = "meta") -> Callable:
     """
 
     def f(*args: Tuple[Argument, ...], **kwargs: Dict[str, Any]) -> Any:
+        gd.debuginfo(prj="mt", info=f'')
         # find the grad for parameter in args and kwargs
         param_size = 0
 
         def get_param_size(x):
+            gd.debuginfo(prj="mt", info=f'')
             nonlocal param_size
             if isinstance(x, Parameter):
+                gd.debuginfo(prj="mt", info=f'')
                 param_size += activation_size(x)
 
         tree_map(get_param_size, args)
@@ -336,6 +367,8 @@ def profile_function(target: "Target", device: str = "meta") -> Callable:
         meta.bwd_mem_out -= param_size
         return out, meta
 
+    gd.debuginfo(prj="mt", info=f'')
+
     f.__name__ = target.__name__
     func = target
     return f
@@ -353,9 +386,13 @@ def profile_method(target: "Target", device: str = "meta") -> Callable:
         assert isinstance(target, str), f"{target} instance is not str."
         if device == "meta":
             out, meta = _profile_meta(target, *args, **kwargs)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             out, meta = _profile_concrete(target, *args, **kwargs)
+            gd.debuginfo(prj="mt", info=f'')
         return out, meta
+
+    gd.debuginfo(prj="mt", info=f'')
 
     return f
 
@@ -377,6 +414,8 @@ def profile_module(module: torch.nn.Module, device: str = "meta") -> Callable:
     """
 
     def f(*args: Tuple[Argument, ...], **kwargs: Dict[str, Any]) -> Any:
+        gd.debuginfo(prj="mt", info=f'')
+
         # calculate parameter size
         param_size = parameter_size(module)
 
@@ -387,22 +426,29 @@ def profile_module(module: torch.nn.Module, device: str = "meta") -> Callable:
         inplace = getattr(module, "inplace", False)
         if type(module) in OUTPUT_SAVED_MOD:
             do_not_cache = True
+            gd.debuginfo(prj="mt", info=f'')
         if inplace:
             do_not_cache = True
             module.inplace = False
+            gd.debuginfo(prj="mt", info=f'')
         if device == "meta":
             out, meta = _profile_meta(func, *args, **kwargs)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             out, meta = _profile_concrete(func, *args, **kwargs)
+            gd.debuginfo(prj="mt", info=f'')
         if inplace:
             module.inplace = True
             meta.bwd_mem_tmp = 0
             meta.bwd_mem_out = 0
+            gd.debuginfo(prj="mt", info=f'')
         do_not_cache = False
 
         # grad for param will not be counted
         meta.bwd_mem_out -= param_size
         return out, meta
+
+    gd.debuginfo(prj="mt", info=f'')
 
     f.__name__ = module.__class__.__name__
     func = module.forward

@@ -16,8 +16,10 @@ def get_tokenizer(
     use_fast: bool = True,
 ):
     if tokenizer is not None:
+        gd.debuginfo(prj="mt", info=f'')
         tokenizer = tokenizer
     else:
+        gd.debuginfo(prj="mt", info=f'')
         if "llama" in tokenizer_name.lower() and use_fast == True:
             print(
                 "For some LLaMA-based models, initializing the fast tokenizer may "

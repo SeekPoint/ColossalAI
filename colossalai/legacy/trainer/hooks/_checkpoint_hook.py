@@ -35,6 +35,7 @@ class SaveCheckpointHook(BaseHook):
         save_by_iter: bool = False,
         priority: int = 10,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(priority=priority)
         self.interval = interval
         self.checkpoint_dir = checkpoint_dir

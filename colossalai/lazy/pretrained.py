@@ -12,6 +12,7 @@ class PretrainedManager:
 
     @staticmethod
     def inject() -> None:
+        gd.debuginfo(prj="mt", info=f'')
         try:
             from transformers.modeling_utils import PreTrainedModel
         except ImportError:
@@ -22,6 +23,7 @@ class PretrainedManager:
 
     @staticmethod
     def recover() -> None:
+        gd.debuginfo(prj="mt", info=f'')
         try:
             from transformers.modeling_utils import PreTrainedModel
         except ImportError:
@@ -35,6 +37,7 @@ class PretrainedManager:
 def new_from_pretrained(
     cls, pretrained_model_name_or_path: Optional[Union[str, os.PathLike]], *model_args, **kwargs
 ) -> Module:
+    gd.debuginfo(prj="mt", info=f'')
     from transformers import GenerationConfig
     from transformers.configuration_utils import PretrainedConfig
     from transformers.modeling_utils import (
@@ -84,10 +87,12 @@ def new_from_pretrained(
     user_agent = {"file_type": "model", "framework": "pytorch", "from_auto_class": from_auto_class}
     if from_pipeline is not None:
         user_agent["using_pipeline"] = from_pipeline
+        gd.debuginfo(prj="mt", info=f'')
 
     if is_offline_mode() and not local_files_only:
         logger.info("Offline mode: forcing local_files_only=True")
         local_files_only = True
+        gd.debuginfo(prj="mt", info=f'')
 
     # Load config if we don't provide a configuration
     if not isinstance(config, PretrainedConfig):
@@ -107,16 +112,20 @@ def new_from_pretrained(
             _from_pipeline=from_pipeline,
             **kwargs,
         )
+        gd.debuginfo(prj="mt", info=f'')
     else:
         model_kwargs = kwargs
+        gd.debuginfo(prj="mt", info=f'')
 
     if commit_hash is None:
         commit_hash = getattr(config, "_commit_hash", None)
+        gd.debuginfo(prj="mt", info=f'')
 
     # This variable will flag if we're loading a sharded checkpoint. In this case the archive file is just the
     # index of the files.
 
     if pretrained_model_name_or_path is not None:
+        gd.debuginfo(prj="mt", info=f'')
         pretrained_model_name_or_path = str(pretrained_model_name_or_path)
         is_local = os.path.isdir(pretrained_model_name_or_path)
         if is_local:
@@ -156,15 +165,19 @@ def new_from_pretrained(
         elif os.path.isfile(os.path.join(subfolder, pretrained_model_name_or_path)):
             archive_file = pretrained_model_name_or_path
             is_local = True
+            gd.debuginfo(prj="mt", info=f'')
         elif is_remote_url(pretrained_model_name_or_path):
             filename = pretrained_model_name_or_path
             resolved_archive_file = download_url(pretrained_model_name_or_path)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             # set correct filename
             if use_safetensors is not False:
                 filename = _add_variant(SAFE_WEIGHTS_NAME, variant)
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 filename = _add_variant(WEIGHTS_NAME, variant)
+                gd.debuginfo(prj="mt", info=f'')
 
             try:
                 # Load from URL or cache if already cached
@@ -254,6 +267,7 @@ def new_from_pretrained(
         resolved_archive_file = None
 
     if from_pt:
+        gd.debuginfo(prj="mt", info=f'')
         # set dtype to instantiate the model under:
         # 1. If torch_dtype is not None, we use that dtype
         dtype_orig = None
@@ -305,5 +319,6 @@ def new_from_pretrained(
     # set pretrained path
     if resolved_archive_file:
         pretrained_interface.set_pretrained_path(model, resolved_archive_file)
+        gd.debuginfo(prj="mt", info=f'')
 
     return model

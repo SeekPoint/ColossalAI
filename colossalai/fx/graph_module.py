@@ -21,7 +21,7 @@ except:
     COLOGM = False
 
 if COLOGM:
-
+    gd.debuginfo(prj="mt", info=f'')
     class ColoGraphModule(GraphModule):
         def __init__(
             self,
@@ -30,7 +30,9 @@ if COLOGM:
             class_name: str = "GraphModule",
             ckpt_codegen: bool = True,
         ):
+            gd.debuginfo(prj="mt", info=f'')
             if ckpt_codegen:
+                gd.debuginfo(prj="mt", info=f'')
                 graph.set_codegen(ActivationCheckpointCodeGen())
             super().__init__(root, graph, class_name)
 
@@ -44,7 +46,7 @@ if COLOGM:
                 ckpt_def (_type_): definition before the forward function
                 globals (_type_): global variables
             """
-
+            gd.debuginfo(prj="mt", info=f'')
             ckpt_code = "\n".join(ckpt_def)
             globals_copy = globals.copy()
             _exec_with_source(ckpt_code, globals_copy)
@@ -60,7 +62,9 @@ if COLOGM:
             called after editing the contained ``graph``, otherwise the generated
             code of this ``GraphModule`` will be out of date.
             """
+            gd.debuginfo(prj="mt", info=f'')
             if isinstance(self._graph._codegen, _PyTreeCodeGen):
+                gd.debuginfo(prj="mt", info=f'')
                 self._in_spec = self._graph._codegen.pytree_info.in_spec
                 self._out_spec = self._graph._codegen.pytree_info.out_spec
             python_code = self._graph.python_code(root_module="self")
@@ -87,9 +91,11 @@ if COLOGM:
             cls_call = cls.__call__ if "__call__" in vars(cls) else None
 
             if "_wrapped_call" not in vars(cls):
+                gd.debuginfo(prj="mt", info=f'')
                 cls._wrapped_call = _WrappedCall(cls, cls_call)  # type: ignore[attr-defined]
 
             def call_wrapped(self, *args, **kwargs):
+                gd.debuginfo(prj="mt", info=f'')
                 return self._wrapped_call(self, *args, **kwargs)
 
             cls.__call__ = call_wrapped
@@ -109,6 +115,7 @@ if COLOGM:
                 module_name (str): Top-level name to use for the ``Module`` while
                     writing out the code
             """
+            gd.debuginfo(prj="mt", info=f'')
             folder = Path(folder)
             Path(folder).mkdir(exist_ok=True)
             torch.save(self.state_dict(), folder / "state_dict.pt")
@@ -128,6 +135,7 @@ class {module_name}(torch.nn.Module):
 """
 
             def _gen_model_repr(module_name: str, module: torch.nn.Module) -> Optional[str]:
+                gd.debuginfo(prj="mt", info=f'')
                 safe_reprs = [
                     nn.Linear,
                     nn.Conv1d,
@@ -173,13 +181,15 @@ class {module_name}(torch.nn.Module):
             init_file.write_text("from .module import *")
 
             if len(blobified_modules) > 0:
+                gd.debuginfo(prj="mt", info=f'')
                 warnings.warn(
                     "Was not able to save the following children modules as reprs -"
                     f"saved as pickled files instead: {blobified_modules}"
                 )
 
 else:
-
+    gd.debuginfo(prj="mt", info=f'')
     class ColoGraphModule(GraphModule):
         def __init__(self, root: Union[torch.nn.Module, Dict[str, Any]], graph: Graph, class_name: str = "GraphModule"):
+            gd.debuginfo(prj="mt", info=f'')
             super().__init__(root, graph, class_name)

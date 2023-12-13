@@ -30,6 +30,7 @@ class TorchAMPOptimizer(OptimizerWrapper):
     """
 
     def __init__(self, optim: Optimizer, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(optim)
         self.scaler = GradScaler(*args, **kwargs)
 

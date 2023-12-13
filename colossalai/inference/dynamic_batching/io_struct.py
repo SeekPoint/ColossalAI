@@ -6,7 +6,12 @@ from .sampling_params import SamplingParams
 from pydebug import gd, infoTensor
 
 class Req:
-    def __init__(self, request_id, prompt_ids, sample_params: SamplingParams, prompts: str = ""):
+    def __init__(self,
+                 request_id,
+                 prompt_ids,
+                 sample_params: SamplingParams,
+                 prompts: str = ""):
+        gd.debuginfo(prj="mt", info=f'')
         self.request_id = request_id
         self.prompt_ids = prompt_ids
         self.input_len = len(prompt_ids)
@@ -27,8 +32,10 @@ class Req:
         }
 
     def stop_sequences_matched(self):
+        gd.debuginfo(prj="mt", info=f'')
         # should we add stpp sequences to the sample params?
         if self.sample_params.stop_sequences is not None:
+            gd.debuginfo(prj="mt", info=f'')
             for stop_token_ids in self.sample_params.stop_sequences:
                 stop_len = len(stop_token_ids)
                 if (
@@ -45,29 +52,34 @@ class Req:
 
 class Batch:
     def __init__(self, batch_id, reqs: List[Req]):
+        gd.debuginfo(prj="mt", info=f'')
         self.batch_id = batch_id
         self.reqs = reqs
         self.id_to_reqs = {req.request_id: req for req in reqs}
 
     def input_tokens(self):
+        gd.debuginfo(prj="mt", info=f'')
         batch_input_tokens = 0
         for req in self.reqs:
             batch_input_tokens += req.input_len
         return batch_input_tokens
 
     def calcu_max_tokens(self):
+        gd.debuginfo(prj="mt", info=f'')
         tokens = 0
         for req in self.reqs:
             tokens += req.input_len + req.max_output_len
         return tokens
 
     def calcu_used_tokens(self):
+        gd.debuginfo(prj="mt", info=f'')
         tokens = 0
         for req in self.reqs:
             tokens += req.input_len + len(req.output_ids)
         return tokens
 
     def mark_finished_req(self, eos_id, engine_max_output_len):
+        gd.debuginfo(prj="mt", info=f'')
         has_new_finish = False
         for req in self.reqs:
             if req.stop_sequences_matched():
@@ -88,6 +100,7 @@ class Batch:
         """
         Filter finished requests from the batch, the finished ones will be removed from 'reqs'.
         """
+        gd.debuginfo(prj="mt", info=f'')
         # TODO: the logic of return should be defined here.
         unfinished_req = []
         finished_req = []
@@ -104,6 +117,7 @@ class Batch:
         return len(self.reqs) == 0
 
     def merge(self, mini_batch):
+        gd.debuginfo(prj="mt", info=f'')
         for _req in mini_batch.reqs:
             self.reqs.append(_req)
         self.id_to_reqs = {req.request_id: req for req in self.reqs}
@@ -134,6 +148,7 @@ class BatchStrOut:
 
 class AbortReq:
     def __init__(self, req_id):
+        gd.debuginfo(prj="mt", info=f'')
         self.req_id = req_id
 
 
@@ -154,6 +169,7 @@ class RequestOutput:
         prompt_token_ids: List[int],
         outputs,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.request_id = request_id
         self.prompt = prompt
         self.prompt_token_ids = prompt_token_ids

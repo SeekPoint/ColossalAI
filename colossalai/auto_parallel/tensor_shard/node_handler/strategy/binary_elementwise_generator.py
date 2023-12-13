@@ -26,6 +26,7 @@ class BinaryElementwiseStrategyGenerator(StrategyGenerator):
     """
 
     def validate(self) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         assert (
             len(self.op_data) == 3
         ), f"BinaryElementwiseStrategyGenerator only accepts three operation data (input, other and output), but got {len(self.op_data)}"
@@ -34,6 +35,7 @@ class BinaryElementwiseStrategyGenerator(StrategyGenerator):
                 raise TypeError(f"The operation data {name} is not a torch.Tensor/int/float.")
 
     def update_compute_cost(self, strategy: ShardingStrategy) -> ShardingStrategy:
+        gd.debuginfo(prj="mt", info=f'')
         shape = strategy.sharding_specs[self.op_data["input"]].get_sharded_shape_per_device()
 
         # since elementwise ops are not compute-intensive,
@@ -47,6 +49,7 @@ class BinaryElementwiseStrategyGenerator(StrategyGenerator):
         strategy.compute_cost = compute_cost
 
     def update_memory_cost(self, strategy: ShardingStrategy) -> ShardingStrategy:
+        gd.debuginfo(prj="mt", info=f'')
         # all input, output and outputs have the same shape
         strategy.sharding_specs[self.op_data["input"]].get_sharded_shape_per_device()
 
@@ -65,6 +68,7 @@ class BinaryElementwiseStrategyGenerator(StrategyGenerator):
 
     @ignore_sharding_exception
     def enumerate_all_possible_output(self, mesh_dim_0, mesh_dim_1):
+        gd.debuginfo(prj="mt", info=f'')
         # we check for the output logical shape to get the number of dimensions
         dim_partition_list = []
         dim_size = len(self.op_data["output"].logical_shape)
@@ -98,6 +102,7 @@ class BinaryElementwiseStrategyGenerator(StrategyGenerator):
                 # get name
                 sharding_seq = sharding_spec_mapping["input"].sharding_sequence
                 name = f"{sharding_seq} = {sharding_seq} <binary-elementwise-op> {sharding_seq}"
+                gd.debuginfo(prj="mt", info=f'name={name}')
                 sharding_strategy = self.get_sharding_strategy(
                     name=name,
                     sharding_spec_mapping=sharding_spec_mapping,
@@ -109,5 +114,6 @@ class BinaryElementwiseStrategyGenerator(StrategyGenerator):
         return strategy_list
 
     def collate_strategies(self) -> List[ShardingStrategy]:
+        gd.debuginfo(prj="mt", info=f'')
         strategy_list = self.enumerate_all_possible_output(0, 1)
         return strategy_list

@@ -31,6 +31,7 @@ def convert_to_naive_amp(model: nn.Module, optimizer: Optimizer, amp_config):
         dynamic_grad_scale (bool): whether to use dynamic grad scaler.
     """
     if isinstance(model, nn.ModuleList):
+        gd.debuginfo(prj="mt", info=f'')
         # interleaved pipeline
         module_list = []
         for chunk, m in enumerate(model):
@@ -38,6 +39,7 @@ def convert_to_naive_amp(model: nn.Module, optimizer: Optimizer, amp_config):
             module_list.append(NaiveAMPModel(m, output_to_fp32=output_to_fp32))
         model = nn.ModuleList(module_list)
     else:
+        gd.debuginfo(prj="mt", info=f'')
         output_to_fp32 = is_no_pp_or_last_stage()
         model = NaiveAMPModel(model, output_to_fp32=output_to_fp32)
 

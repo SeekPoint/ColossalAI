@@ -14,6 +14,7 @@ class ColoProxy(Proxy):
     _func_dispatch: Dict[Target, Callable[..., Any]] = {}
 
     def __init__(self, *args, data=None, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(*args, **kwargs)
         self._meta_data = data
 
@@ -30,11 +31,13 @@ class ColoProxy(Proxy):
     def __torch_function__(cls, orig_method, types, args=(), kwargs=None):
         kwargs = {} if kwargs is None else kwargs
         if orig_method in cls._func_dispatch:
+            gd.debuginfo(prj="mt", info=f'')
             impl = cls._func_dispatch.pop(orig_method)  # avoid recursion
             proxy = impl(*args, **kwargs)
             cls._func_dispatch[orig_method] = impl
             return proxy
         else:
+            gd.debuginfo(prj="mt", info=f'')
             proxy = cls.from_torch_proxy(super().__torch_function__(orig_method, types, args, kwargs))
             unwrap_fn = lambda p: p.meta_data if isinstance(p, ColoProxy) else p
             if proxy.meta_data is None:
@@ -88,6 +91,7 @@ class ColoProxy(Proxy):
 
 class ColoAttribute(ColoProxy):
     def __init__(self, root, attr: str, data=None):
+        gd.debuginfo(prj="mt", info=f'')
         self.root = root
         self.attr = attr
         self.tracer = root.tracer

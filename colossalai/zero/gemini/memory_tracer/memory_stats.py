@@ -7,6 +7,7 @@ from pydebug import gd, infoTensor
 
 class MemStats(object):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         """
         Store the non model data statistics used for Gemini and GeminiOptimizer.
         """

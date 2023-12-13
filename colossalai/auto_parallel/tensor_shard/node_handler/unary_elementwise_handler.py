@@ -25,12 +25,14 @@ class UnaryElementwiseHandler(MetaInfoNodeHandler):
     """
 
     def get_strategy_generator(self) -> List[StrategyGenerator]:
+        gd.debuginfo(prj="mt", info=f'')
         op_data_mapping = self.get_operation_data_mapping()
         generators = []
         generators.append(UnaryElementwiseGenerator(op_data_mapping, self.device_mesh, self.node.args[0]))
         return generators
 
     def get_operation_data_mapping(self) -> Dict[str, OperationData]:
+        gd.debuginfo(prj="mt", info=f'')
         # use transposed shape for strategies
         # the strategies will be transformed back to its original shape in self.post_process
         physical_input_operand = OperationData(

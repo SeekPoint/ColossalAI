@@ -10,25 +10,32 @@ from .bias_addition_module import BiasAdditionModule
 @bias_addition_module.register(torch.nn.Conv3d)
 class BiasAdditionConv(BiasAdditionModule):
     def extract_kwargs_from_mod(self):
+        gd.debuginfo(prj="mt", info=f'')
         root = self.tracer.root
         conv_module = root.get_submodule(self.target)
         kwarg_attributes = ["groups", "dilation", "stride"]
         non_bias_kwargs = {}
         for attr_name in kwarg_attributes:
+            gd.debuginfo(prj="mt", info=f'')
             if hasattr(conv_module, attr_name):
                 non_bias_kwargs[attr_name] = getattr(conv_module, attr_name)
+                gd.debuginfo(prj="mt", info=f'')
         if conv_module.padding_mode != "zeros":
             # TODO: non zeros mode requires some extra processing for input
             conv_type = type(conv_module)
             if conv_type == "torch.nn.Conv1d":
                 padding_element = _single(0)
+                gd.debuginfo(prj="mt", info=f'')
             elif conv_type == "torch.nn.Conv2d":
                 padding_element = _pair(0)
+                gd.debuginfo(prj="mt", info=f'')
             elif conv_type == "torch.nn.Conv3d":
                 padding_element = _triple(0)
+                gd.debuginfo(prj="mt", info=f'')
             non_bias_kwargs["padding"] = padding_element
         else:
             non_bias_kwargs["padding"] = getattr(conv_module, "padding")
+            gd.debuginfo(prj="mt", info=f'')
 
         return non_bias_kwargs
 
@@ -37,6 +44,7 @@ class BiasAdditionConv(BiasAdditionModule):
         This method is used to reshape the bias node in order to make bias and
         output of non-bias convolution broadcastable.
         """
+        gd.debuginfo(prj="mt", info=f'')
         bias_shape = [1] * (dimensions - 1)
         bias_shape[0] = -1
         bias_reshape_node_kind = "call_method"
@@ -48,6 +56,7 @@ class BiasAdditionConv(BiasAdditionModule):
         return bias_reshape_proxy
 
     def generate(self):
+        gd.debuginfo(prj="mt", info=f'')
         non_bias_conv_func_proxy = self.create_non_bias_func_proxy()
         output_dims = non_bias_conv_func_proxy.meta_data.dim()
         bias_reshape_proxy = self.create_bias_reshape_proxy(output_dims)

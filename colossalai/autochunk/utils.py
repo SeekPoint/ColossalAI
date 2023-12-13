@@ -11,6 +11,7 @@ logger = get_dist_logger()
 
 class NodeMgr(object):
     def __init__(self, nodes_list: List[Node]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self._node_list = nodes_list
         self._node_dict = {}
         self._set_node_dict()
@@ -19,6 +20,7 @@ class NodeMgr(object):
         """
         create a dict {node_name: node_idx}
         """
+        gd.debuginfo(prj="mt", info=f'')
         self._node_dict.clear()
         for idx, node in enumerate(self._node_list):
             self._node_dict[node.name] = idx
@@ -69,6 +71,7 @@ def flat_list(inputs: Any) -> List:
     """
     flat a list by recursion
     """
+    gd.debuginfo(prj="mt", info=f'')
     if not (isinstance(inputs, list) or isinstance(inputs, set) or isinstance(inputs, tuple)):
         return [inputs]
     res = []
@@ -86,6 +89,7 @@ def find_first_tensor_arg(node: Node) -> Node:
     """
     Find the first input tensor arg for a node
     """
+    gd.debuginfo(prj="mt", info=f'')
     for arg in node.args:
         if type(arg) == type(node):
             return arg
@@ -94,9 +98,12 @@ def find_first_tensor_arg(node: Node) -> Node:
 
 def is_non_compute_node(node: Node) -> bool:
     if any(i == node.op for i in NON_COMPUTE_OP) or any(i == get_node_name(node) for i in NON_COMPUTE_NAME):
+        gd.debuginfo(prj="mt", info=f'')
         return True
     if "getitem" in node.name:
+        gd.debuginfo(prj="mt", info=f'')
         if get_node_shape(node) is not None:
+            gd.debuginfo(prj="mt", info=f'')
             return False
         node_args = flat_list(node.args[1:])
         for node_arg in node_args:
@@ -112,34 +119,45 @@ def get_node_shape(node: Node) -> Any:
     """
     return node data shape
     """
+    gd.debuginfo(prj="mt", info=f'')
     if get_node_name(node) in ["split", "unbind"]:
+        gd.debuginfo(prj="mt", info=f'')
         return node.meta["tensor_meta"][0].shape
     if hasattr(node.meta["tensor_meta"], "shape"):
+        gd.debuginfo(prj="mt", info=f'')
         return node.meta["tensor_meta"].shape
     return None
 
 
 def is_non_memory_node(node: Node) -> bool:
+    gd.debuginfo(prj="mt", info=f'')
     if "getitem" in node.name:
+        gd.debuginfo(prj="mt", info=f'')
         return True
     if "output" in node.op:
+        gd.debuginfo(prj="mt", info=f'')
         return True
     return is_non_compute_node(node)
 
 
 def is_non_compute_node_except_placeholder(node: Node) -> bool:
+    gd.debuginfo(prj="mt", info=f'')
     if "placeholder" in node.op:
+        gd.debuginfo(prj="mt", info=f'')
         return False
     return is_non_compute_node(node)
 
 
 def is_non_compute_node_except_placeholder_output(node: Node) -> bool:
+    gd.debuginfo(prj="mt", info=f'')
     if "output" in node.op:
+        gd.debuginfo(prj="mt", info=f'')
         return False
     return is_non_compute_node_except_placeholder(node)
 
 
 def delete_free_var_from_last_use(user_to_last_uses: Dict) -> None:
+    gd.debuginfo(prj="mt", info=f'')
     for key, value in user_to_last_uses.items():
         for n in value:
             if n.op == "placeholder":
@@ -152,6 +170,7 @@ def find_chunk_all_input_nodes(nodes: List[Node]) -> List:
     input nodes are nodes used in the list
     output nodes are nodes will use nodes in the list
     """
+    gd.debuginfo(prj="mt", info=f'')
     input_nodes = []
     for node in nodes:
         for input_node in node._input_nodes.keys():
@@ -166,6 +185,7 @@ def find_chunk_compute_input_and_output_nodes(nodes: List[Node]) -> Union[List, 
     input nodes are nodes used in the list
     output nodes are nodes will use nodes in the list
     """
+    gd.debuginfo(prj="mt", info=f'')
     input_nodes = []
     output_nodes = []
 
@@ -198,6 +218,7 @@ def get_module_node_name(node: Node) -> str:
     """
     get module class name
     """
+    gd.debuginfo(prj="mt", info=f'')
     node_targets = node.target.split(".")
     module = node.graph.owning_module
     for i in node_targets:
@@ -211,8 +232,10 @@ def get_node_name(node: Node) -> str:
     """
     get node name
     """
+    gd.debuginfo(prj="mt", info=f'')
     node_name = node.name
     if "_" in node_name:
+        gd.debuginfo(prj="mt", info=f'')
         for i in range(len(node_name) - 1, -1, -1):
             if node_name[i] == "_":
                 node_name = node_name[:i]
@@ -228,6 +251,7 @@ def find_tensor_node(node_list: List[Node]) -> List[Node]:
     """
     find tensor nodes from a node list
     """
+    gd.debuginfo(prj="mt", info=f'')
     out = []
     for node in node_list:
         if get_node_shape(node) is not None:
@@ -239,6 +263,7 @@ def find_tensor_shape_node(node_list: List[Node]) -> List[Node]:
     """
     find tensor and shape nodes from a node list
     """
+    gd.debuginfo(prj="mt", info=f'')
     out = []
     for node in node_list:
         if get_node_shape(node) is not None:

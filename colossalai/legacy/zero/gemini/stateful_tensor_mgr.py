@@ -19,6 +19,7 @@ class StatefulTensorMgr(object):
     """
 
     def __init__(self, tensor_placement_policy: TensorPlacementPolicy) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self._tensor_placement_policy: TensorPlacementPolicy = tensor_placement_policy
         self._stateful_tensor_list: List[StatefulTensor] = []
 
@@ -31,6 +32,7 @@ class StatefulTensorMgr(object):
         self._warmup = True
 
     def register_stateful_tensor_list(self, tensor_list: List[StatefulTensor]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         assert self._stateful_tensor_list == [], "Can't register stateful tensors for manager twice"
         self._stateful_tensor_list = tensor_list
         for t in self._stateful_tensor_list:
@@ -41,6 +43,7 @@ class StatefulTensorMgr(object):
         pass
 
     def finish_iter(self):
+        gd.debuginfo(prj="mt", info=f'')
         """This function must be called when each iteration finishes"""
         self._warmup = False
         self._compute_idx = -1
@@ -52,6 +55,7 @@ class StatefulTensorMgr(object):
         """Adjust the layout of stateful tensor according to the information provided
         by mem_stats_collector, which should belongs to a Sharded Model.
         """
+        gd.debuginfo(prj="mt", info=f'')
         # find stateful tensor in state COMPUTE
         cuda_demand = StatefulTensor.GST_MGR.state_mem["cpu"][TensorState.COMPUTE]
         start = time()
@@ -76,6 +80,7 @@ class StatefulTensorMgr(object):
         return self._cpu_gpu_move_volume
 
     def _trans_state(self, trans_state_func, stateful_tensor, state):
+        gd.debuginfo(prj="mt", info=f'')
         trans_state_func(state)
         if state == TensorState.COMPUTE:
             self._compute_idx += 1
@@ -84,6 +89,7 @@ class StatefulTensorMgr(object):
 
     @functools.lru_cache(maxsize=None)
     def _get_layout_info(self, compute_idx: int, warmup: bool):
+        gd.debuginfo(prj="mt", info=f'')
         move_to_cuda_tensor_list = []
         hold_cuda_tensor_list = []
         for tensor in self._stateful_tensor_list:

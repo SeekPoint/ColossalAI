@@ -59,6 +59,7 @@ class LayerNorm3D(ParallelLayer):
     """
 
     def __init__(self, normalized_shape: int, eps: float = 1e-12, bias=True, dtype=None):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.input_parallel_mode = get_parallel_mode_from_env(INPUT_GROUP_3D)
         self.weight_parallel_mode = get_parallel_mode_from_env(WEIGHT_GROUP_3D)
@@ -185,6 +186,7 @@ class Linear3D(ParallelLayer):
         weight_initializer: Callable = init.kaiming_uniform_(a=math.sqrt(5)),
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -366,6 +368,7 @@ class Classifier3D(ParallelLayer):
         weight_initializer: Callable = init.kaiming_uniform_(a=math.sqrt(5)),
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.in_features = in_features
         self.num_classes = num_classes
@@ -503,6 +506,7 @@ class VocabParallelClassifier3D(ParallelLayer):
         weight_initializer: Callable = init.kaiming_uniform_(a=math.sqrt(5)),
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.in_features = in_features
         self.num_classes = num_classes
@@ -687,6 +691,7 @@ class PatchEmbedding3D(ParallelLayer):
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
         position_embed_initializer: Callable = init.zeros_(),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.depth = get_depth_from_env()
         self.input_parallel_mode = get_parallel_mode_from_env(INPUT_GROUP_3D)
@@ -865,6 +870,7 @@ class Embedding3D(ParallelLayer):
         *args,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.depth = get_depth_from_env()
         self.input_parallel_mode = get_parallel_mode_from_env(INPUT_GROUP_3D)
@@ -999,6 +1005,7 @@ class VocabParallelEmbedding3D(ParallelLayer):
         *args,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.num_embeddings = num_embeddings
         self.embed_dim = embedding_dim

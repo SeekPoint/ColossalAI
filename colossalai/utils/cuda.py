@@ -13,13 +13,16 @@ def set_to_cuda(models):
     :param models: nn.module or a list of module
     """
     if isinstance(models, list) and len(models) > 1:
+        gd.debuginfo(prj="mt", info=f'')
         ret = []
         for model in models:
             ret.append(model.to(get_current_device()))
         return ret
     elif isinstance(models, list):
+        gd.debuginfo(prj="mt", info=f'')
         return models[0].to(get_current_device())
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return models.to(get_current_device())
 
 
@@ -29,8 +32,10 @@ def get_current_device() -> torch.device:
     If cuda available, return gpu, otherwise return cpu.
     """
     if torch.cuda.is_available():
+        gd.debuginfo(prj="mt", info=f'')
         return torch.device(f"cuda:{torch.cuda.current_device()}")
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return torch.device("cpu")
 
 

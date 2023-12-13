@@ -7,6 +7,7 @@ from ...registry import meta_patched_module
 
 @meta_patched_module.register(torch.nn.Conv1d)
 def torch_nn_conv1d(self, input):
+    gd.debuginfo(prj="mt", info=f'')
     # the output shape is calculated using the formula stated
     # at https://pytorch.org/docs/stable/generated/torch.nn.Conv1d.html#torch.nn.Conv1d
     l_in = input.shape[-1]
@@ -23,6 +24,7 @@ def torch_nn_conv1d(self, input):
 
 @meta_patched_module.register(torch.nn.Conv2d)
 def torch_nn_conv2d(self, input):
+    gd.debuginfo(prj="mt", info=f'')
     # the output shape is calculated using the formula stated
     # at https://pytorch.org/docs/stable/generated/torch.nn.Conv1d.html#torch.nn.Conv2d
     h_in, w_in = input.shape[-2:]
@@ -43,6 +45,7 @@ def torch_nn_conv2d(self, input):
 
 @meta_patched_module.register(torch.nn.Conv3d)
 def torch_nn_conv3d(self, input):
+    gd.debuginfo(prj="mt", info=f'')
     # the output shape is calculated using the formula stated
     # at https://pytorch.org/docs/stable/generated/torch.nn.Conv1d.html#torch.nn.Conv3d
     d_in, h_in, w_in = input.shape[-3:]
@@ -67,6 +70,8 @@ def torch_nn_conv3d(self, input):
 
 @meta_patched_module.register(torch.nn.ConvTranspose1d)
 def torch_nn_convtranspose1d(self, input):
+    gd.debuginfo(prj="mt", info=f'')
+
     # the output shape is calculated using the formula stated
     # at https://pytorch.org/docs/stable/generated/torch.nn.ConvTranspose1d.html
     l_in = input.shape[-1]
@@ -87,6 +92,7 @@ def torch_nn_convtranspose1d(self, input):
 
 @meta_patched_module.register(torch.nn.ConvTranspose2d)
 def torch_nn_convtranspose2d(self, input):
+    gd.debuginfo(prj="mt", info=f'')
     # the output shape is calculated using the formula stated
     # at https://pytorch.org/docs/stable/generated/torch.nn.ConvTranspose2d.html
     h_in, w_in = input.shape[-2:]
@@ -115,6 +121,7 @@ def torch_nn_convtranspose2d(self, input):
 
 @meta_patched_module.register(torch.nn.ConvTranspose3d)
 def torch_nn_convtranspose3d(self, input):
+    gd.debuginfo(prj="mt", info=f'')
     # the output shape is calculated using the formula stated
     # at https://pytorch.org/docs/stable/generated/torch.nn.ConvTranspose3d.html
     d_in, h_in, w_in = input.shape[-3:]

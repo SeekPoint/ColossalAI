@@ -13,6 +13,7 @@ from .process_group_initializer import ProcessGroupInitializer
 from pydebug import gd, infoTensor
 
 def _check_depth_env_var(depth):
+    gd.debuginfo(prj="mt", info=f'')
     # check global variable
     env_depth = env.depth_3d
 
@@ -40,6 +41,7 @@ class Initializer_3D_Input(ProcessGroupInitializer):
     """
 
     def __init__(self, num_group: int, depth: int, *args):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(*args)
         self.num_group = num_group
         self.depth = depth
@@ -51,6 +53,7 @@ class Initializer_3D_Input(ProcessGroupInitializer):
             Tuple (local_rank, group_world_size, process_group, ranks_in_group, mode):
                 3D tensor parallelism's information among input in a tuple.
         """
+        gd.debuginfo(prj="mt", info=f'')
         local_rank = None
         ranks_in_group = None
         process_group = None
@@ -91,6 +94,7 @@ class Initializer_3D_Weight(ProcessGroupInitializer):
     """
 
     def __init__(self, num_group: int, depth: int, *args):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(*args)
         self.num_group = num_group
         self.depth = depth
@@ -102,6 +106,7 @@ class Initializer_3D_Weight(ProcessGroupInitializer):
             Tuple (local_rank, group_world_size, process_group, ranks_in_group, mode):
                 3D tensor parallelism's information among weight in a tuple.
         """
+        gd.debuginfo(prj="mt", info=f'')
         local_rank = None
         ranks_in_group = None
         process_group = None
@@ -142,6 +147,7 @@ class Initializer_3D_Output(ProcessGroupInitializer):
     """
 
     def __init__(self, num_group: int, depth: int, *args):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(*args)
         self.num_group = num_group
         self.depth = depth
@@ -153,6 +159,7 @@ class Initializer_3D_Output(ProcessGroupInitializer):
             Tuple (local_rank, group_world_size, process_group, ranks_in_group, mode):
                 3D tensor parallelism's information among output in a tuple.
         """
+        gd.debuginfo(prj="mt", info=f'')
         local_rank = None
         ranks_in_group = None
         process_group = None
@@ -193,6 +200,7 @@ class Initializer_3D_InputxWeight(ProcessGroupInitializer):
     """
 
     def __init__(self, num_group: int, depth: int, *args):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(*args)
         self.num_group = num_group
         self.depth = depth
@@ -204,6 +212,7 @@ class Initializer_3D_InputxWeight(ProcessGroupInitializer):
             Tuple (local_rank, group_world_size, process_group, ranks_in_group, mode):
                 3D tensor parallelism's information among input in a tuple.
         """
+        gd.debuginfo(prj="mt", info=f'')
         local_rank = None
         ranks_in_group = None
         process_group = None
@@ -247,6 +256,7 @@ class Initializer_3D_OutputxWeight(ProcessGroupInitializer):
     """
 
     def __init__(self, num_group: int, depth: int, *args):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(*args)
         self.num_group = num_group
         self.depth = depth
@@ -258,6 +268,7 @@ class Initializer_3D_OutputxWeight(ProcessGroupInitializer):
             Tuple (local_rank, group_world_size, process_group, ranks_in_group, mode):
                 3D tensor parallelism's information among input in a tuple.
         """
+        gd.debuginfo(prj="mt", info=f'')
         local_rank = None
         ranks_in_group = None
         process_group = None
@@ -300,6 +311,7 @@ class Initializer_3D(ProcessGroupInitializer):
     """
 
     def __init__(self, *args):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(*args)
         self.num_group = self.world_size // self.tensor_parallel_size
         self.depth = round(math.pow(self.tensor_parallel_size, 1 / 3))
@@ -321,6 +333,7 @@ class Initializer_3D(ProcessGroupInitializer):
             List[Tuple (local_rank, group_world_size, process_group, ranks_in_group, mode)]:
                 Whole 3D tensor parallelism's information in a list of tuples.
         """
+        gd.debuginfo(prj="mt", info=f'')
         parallel_setting = [
             self.input_initializer.init_dist_group(),
             self.weight_initializer.init_dist_group(),

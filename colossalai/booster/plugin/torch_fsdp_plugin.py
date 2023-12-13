@@ -36,16 +36,19 @@ __all__ = ["TorchFSDPPlugin"]
 
 class TorchFSDPCheckpointIO(GeneralCheckpointIO):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.coordinator = DistCoordinator()
 
     def load_unsharded_model(self, model: ModelWrapper, checkpoint: str, strict: bool):
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(model, TorchFSDPModel), "Please boost the model before loading!"
         model = model.unwrap()
         checkpoint = utils.load_state_dict(checkpoint)
         model.load_state_dict(checkpoint)
 
     def load_unsharded_optimizer(self, optimizer: OptimizerWrapper, checkpoint: Path):
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(optimizer, FSDPOptimizerWrapper), "Please boost the optimizer before loading!"
         checkpoint = utils.load_state_dict(checkpoint)
         fsdp_model = optimizer.unwrap_model()
@@ -56,6 +59,7 @@ class TorchFSDPCheckpointIO(GeneralCheckpointIO):
         """
         Save model to checkpoint but only on master process.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(model, TorchFSDPModel), "Please boost the model before saving!"
         model = model.unwrap()
         cfg = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
@@ -67,6 +71,7 @@ class TorchFSDPCheckpointIO(GeneralCheckpointIO):
         """
         Save optimizer to checkpoint but only on master process.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(optimizer, FSDPOptimizerWrapper), "Please boost the optimizer before saving!"
         fsdp_model = optimizer.unwrap_model()
         full_optimizer_state = FSDP.full_optim_state_dict(fsdp_model, optim=optimizer, rank0_only=True)
@@ -117,25 +122,31 @@ class TorchFSDPCheckpointIO(GeneralCheckpointIO):
         """
         Save model to checkpoint but only on master process.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if self.coordinator.is_master():
+            gd.debuginfo(prj="mt", info=f'')
             super().save_lr_scheduler(lr_scheduler, checkpoint)
 
 
 class TorchFSDPModel(ModelWrapper):
     def __init__(self, module: nn.Module, *args, **kwargs) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(module)
         self.module = FSDP(module, *args, **kwargs)
 
     def unwrap(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self.module
 
 
 class FSDPOptimizerWrapper(OptimizerWrapper):
     def __init__(self, optimizer: Optimizer, model: nn.Module):
+        gd.debuginfo(prj="mt", info=f'')
         self.model = model
         super().__init__(optimizer)
 
     def unwrap_model(self) -> nn.Module:
+        gd.debuginfo(prj="mt", info=f'')
         return self.model
 
 
@@ -160,7 +171,7 @@ class TorchFSDPPlugin(DPPluginBase):
     """
 
     if version.parse(torch.__version__) >= version.parse("1.12.0"):
-
+        gd.debuginfo(prj="mt", info=f'')
         def __init__(
             self,
             process_group: Optional[ProcessGroup] = None,
@@ -173,6 +184,7 @@ class TorchFSDPPlugin(DPPluginBase):
             param_init_fn: Optional[Callable[[nn.Module], None]] = None,
             sync_module_states: bool = False,
         ):
+            gd.debuginfo(prj="mt", info=f'')
             super().__init__()
             self.fsdp_kwargs = dict(
                 process_group=process_group,
@@ -215,10 +227,12 @@ class TorchFSDPPlugin(DPPluginBase):
         dataloader: Optional[DataLoader] = None,
         lr_scheduler: Optional[LRScheduler] = None,
     ) -> Tuple[nn.Module, OptimizerWrapper, Callable, DataLoader, LRScheduler]:
+        gd.debuginfo(prj="mt", info=f'')
         # wrap the model with PyTorch FSDP
         fsdp_model = TorchFSDPModel(model, device_id=torch.cuda.current_device(), **self.fsdp_kwargs)
 
         if optimizer is not None:
+            gd.debuginfo(prj="mt", info=f'')
             if len(optimizer.param_groups) > 1:
                 warnings.warn(
                     "TorchFSDPPlugin does not support optimizer that use multi param groups. The results may not be as expected if used."
@@ -226,6 +240,7 @@ class TorchFSDPPlugin(DPPluginBase):
             optimizer.__init__(fsdp_model.parameters(), **optimizer.defaults)
 
             if not isinstance(optimizer, FSDPOptimizerWrapper):
+                gd.debuginfo(prj="mt", info=f'')
                 optimizer = FSDPOptimizerWrapper(optimizer, fsdp_model)
 
         return fsdp_model, optimizer, criterion, dataloader, lr_scheduler

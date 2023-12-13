@@ -5,6 +5,7 @@ from datasets import load_dataset
 from pydebug import gd, infoTensor
 
 def generate_alpaca():
+    gd.debuginfo(prj="mt", info=f'')
     # We can convert dataset with the same format("instruction", "input", "output") as Alpaca into a one-round conversation.
     conversation_dataset = []
     dataset = load_dataset("tatsu-lab/alpaca", split="train")
@@ -29,6 +30,7 @@ def generate_alpaca():
 
 
 def generate_sharegpt():
+    gd.debuginfo(prj="mt", info=f'')
     # ShareGPT data requires less processing.
     conversation_dataset = []
     dataset = load_dataset(
@@ -54,6 +56,7 @@ def generate_sharegpt():
 
 
 if __name__ == "__main__":
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--dataset",
@@ -68,10 +71,13 @@ if __name__ == "__main__":
     conversation_dataset = []
 
     if args.dataset == "Alpaca":
+        gd.debuginfo(prj="mt", info=f'')
         conversation_dataset.extend(generate_alpaca())
     elif args.dataset == "ShareGPT":
+        gd.debuginfo(prj="mt", info=f'')
         conversation_dataset.extend(generate_sharegpt())
     else:
+        gd.debuginfo(prj="mt", info=f'')
         conversation_dataset.extend(generate_alpaca())
         conversation_dataset.extend(generate_sharegpt())
 

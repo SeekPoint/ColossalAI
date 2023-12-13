@@ -28,6 +28,7 @@ class Chain:
             btmp (List[int]): The temporary backward memory of each node, can be used to control memory budget.
             check_consistency (bool, optional): Check the lengths consistency for the `Chain`. Defaults to True.
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.ftime = ftime
         self.btime = btime
         self.x = x
@@ -38,6 +39,7 @@ class Chain:
             raise AttributeError("In Chain, input lists do not have consistent lengths")
 
     def check_lengths(self):
+        gd.debuginfo(prj="mt", info=f'')
         return (
             (len(self.ftime) == len(self))
             and (len(self.btime) == len(self) + 1)
@@ -59,6 +61,7 @@ class Chain:
         return len(self.ftime)
 
     def discretize_all(self, unit: int):
+        gd.debuginfo(prj="mt", info=f'')
         """Discretize the chain into a list of chains according to unit size."""
         discretizer = lambda val: math.ceil(val / unit)
         self.x = tree_map(discretizer, self.x)
@@ -75,8 +78,10 @@ class Operation(ABC):
 
     def shift(self, value):
         if type(self.index) is tuple:
+            gd.debuginfo(prj="mt", info=f'')
             self.index = tuple(x + value for x in self.index)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.index += value
 
 
@@ -84,12 +89,15 @@ class Forward(Operation):
     name = "F"
 
     def __init__(self, index):
+        gd.debuginfo(prj="mt", info=f'')
         self.index = index
 
     def cost(self, chain: Chain):
         if chain is not None:
+            gd.debuginfo(prj="mt", info=f'')
             return chain.ftime[self.index]
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return 1
 
 
@@ -114,8 +122,10 @@ class Forwards(Operation):
 
     def cost(self, chain: Chain):
         if chain is not None:
+            gd.debuginfo(prj="mt", info=f'')
             return sum(chain.ftime[self.index[0] : self.index[1] + 1])
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return self.index[1] - self.index[0] + 1
 
 
@@ -131,8 +141,10 @@ class Backward(Operation):
 
     def cost(self, chain: Chain):
         if chain is not None:
+            gd.debuginfo(prj="mt", info=f'')
             return chain.btime[self.index]
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return 1
 
 
@@ -182,8 +194,10 @@ class Sequence(list):
         op_list = []
         for x in self:
             if isinstance(x, Operation):
+                gd.debuginfo(prj="mt", info=f'')
                 op_list.append(x)
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 assert isinstance(x, Sequence)
                 op_list += x.list_operations()
         return op_list

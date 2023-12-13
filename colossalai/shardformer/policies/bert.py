@@ -41,6 +41,7 @@ class BertPolicy(Policy):
         Reshape the Embedding layer to make the embedding dimension divisible by world_size
         """
         # TODO:
+        gd.debuginfo(prj="mt", info=f'')
         if self.shard_config.enable_tensor_parallelism:
             vocab_size = self.model.config.vocab_size
             world_size = self.shard_config.tensor_parallel_size
@@ -50,6 +51,7 @@ class BertPolicy(Policy):
         return self.model
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         from transformers.models.bert.modeling_bert import (
             BertEmbeddings,
             BertLayer,
@@ -132,6 +134,7 @@ class BertPolicy(Policy):
                     ),
                 ]
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         if use_sequence_parallel:
             self.append_or_create_method_replacement(
@@ -139,6 +142,7 @@ class BertPolicy(Policy):
                 policy=policy,
                 target_key=BertModel,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         # optimization configuration
         if self.shard_config.enable_fused_normalization:
@@ -168,6 +172,7 @@ class BertPolicy(Policy):
                 policy=policy,
                 target_key=BertEmbeddings,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         # use flash attention
         if self.shard_config.enable_flash_attention:
@@ -178,6 +183,7 @@ class BertPolicy(Policy):
                 policy=policy,
                 target_key=BertSelfAttention,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         # use jit operator
         if self.shard_config.enable_jit_fused:
@@ -197,12 +203,13 @@ class BertPolicy(Policy):
                 policy=policy,
                 target_key=BertOutput,
             )
-
+            gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'')
         return policy
 
     def add_lm_head_policy(self, base_policy):
         from transformers.models.bert.modeling_bert import BertLMPredictionHead
-
+        gd.debuginfo(prj="mt", info=f'')
         # optimize for tensor parallelism
         if self.shard_config.enable_tensor_parallelism:
             self.append_or_create_submodule_replacement(
@@ -212,6 +219,7 @@ class BertPolicy(Policy):
                 policy=base_policy,
                 target_key=BertLMPredictionHead,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         # optimize with fused normalization
         if self.shard_config.enable_fused_normalization:
@@ -224,6 +232,7 @@ class BertPolicy(Policy):
                 policy=base_policy,
                 target_key=BertLMPredictionHead,
             )
+            gd.debuginfo(prj="mt", info=f'')
         return base_policy
 
     def add_lm_prediction_policy(self, base_policy):
@@ -236,20 +245,24 @@ class BertPolicy(Policy):
         self.append_or_create_method_replacement(
             description=method_replacement, policy=base_policy, target_key=BertLMPredictionHead
         )
+        gd.debuginfo(prj="mt", info=f'')
         return base_policy
 
     def postprocess(self):
         return self.model
 
     def set_pipeline_forward(self, model_cls: nn.Module, new_forward: Callable, policy: Dict) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         """If under pipeline parallel setting, replacing the original forward method of huggingface
         to customized forward method, and add this changing to policy."""
         if self.pipeline_stage_manager:
             stage_manager = self.pipeline_stage_manager
             if self.model.__class__.__name__ == "BertModel":
                 module = self.model
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 module = self.model.bert
+                gd.debuginfo(prj="mt", info=f'')
 
             layers_per_stage = Policy.distribute_layers(len(module.encoder.layer), stage_manager.num_stages)
             stage_index = Policy.get_stage_index(layers_per_stage, stage_manager.stage)
@@ -261,6 +274,7 @@ class BertPolicy(Policy):
             self.append_or_create_method_replacement(
                 description=method_replacement, policy=policy, target_key=model_cls
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         return
 
@@ -270,17 +284,23 @@ class BertPolicy(Policy):
 
         if self.model.__class__.__name__ == "BertModel":
             module = self.model
+            gd.debuginfo(prj="mt", info=f'')
         else:
             module = self.model.bert
+            gd.debuginfo(prj="mt", info=f'')
+
         stage_manager = self.pipeline_stage_manager
 
         held_layers = []
         layers_per_stage = self.distribute_layers(len(module.encoder.layer), stage_manager.num_stages)
         if stage_manager.is_first_stage():
             held_layers.append(module.embeddings)
+            gd.debuginfo(prj="mt", info=f'')
         start_idx, end_idx = self.get_stage_index(layers_per_stage, stage_manager.stage)
         held_layers.extend(module.encoder.layer[start_idx:end_idx])
+
         if stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             held_layers.append(module.pooler)
 
         return held_layers
@@ -290,20 +310,24 @@ class BertPolicy(Policy):
 class BertModelPolicy(BertPolicy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'')
         from transformers.models.bert.modeling_bert import BertModel
 
         if self.pipeline_stage_manager:
             self.set_pipeline_forward(
                 model_cls=BertModel, new_forward=BertPipelineForwards.bert_model_forward, policy=policy
             )
+            gd.debuginfo(prj="mt", info=f'')
         return policy
 
     def get_held_layers(self) -> List[Module]:
         """Get pipeline layers for current stage."""
         held_layers = super().get_held_layers()
+        gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
@@ -315,11 +339,14 @@ class BertModelPolicy(BertPolicy):
 class BertForPreTrainingPolicy(BertPolicy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
         policy = super().module_policy()
         policy = self.add_lm_head_policy(policy)
         policy = self.add_lm_prediction_policy(policy)
+        gd.debuginfo(prj="mt", info=f'')
+
         from transformers.models.bert.modeling_bert import BertForPreTraining
 
         if self.pipeline_stage_manager:
@@ -328,20 +355,26 @@ class BertForPreTrainingPolicy(BertPolicy):
                 new_forward=BertPipelineForwards.bert_for_pretraining_forward,
                 policy=policy,
             )
+            gd.debuginfo(prj="mt", info=f'')
         return policy
 
     def get_held_layers(self) -> List[Module]:
         """Get pipeline layers for current stage"""
         held_layers = super().get_held_layers()
         stage_manager = self.pipeline_stage_manager
+        gd.debuginfo(prj="mt", info=f'')
+
         if stage_manager.is_last_stage():
             held_layers.append(self.model.cls)
+            gd.debuginfo(prj="mt", info=f'')
 
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
+        gd.debuginfo(prj="mt", info=f'')
         model = self.model
         if self.pipeline_stage_manager and self.pipeline_stage_manager.num_stages > 1:
+            gd.debuginfo(prj="mt", info=f'')
             if id(model.bert.embeddings.word_embeddings.weight) == id(model.cls.predictions.decoder.weight):
                 # tie weights
                 return [
@@ -357,8 +390,10 @@ class BertForPreTrainingPolicy(BertPolicy):
 class BertLMHeadModelPolicy(BertPolicy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
         policy = self.add_lm_head_policy(policy)
         policy = self.add_lm_prediction_policy(policy)
@@ -368,6 +403,7 @@ class BertLMHeadModelPolicy(BertPolicy):
             self.set_pipeline_forward(
                 model_cls=BertLMHeadModel, new_forward=BertPipelineForwards.bert_lm_head_model_forward, policy=policy
             )
+            gd.debuginfo(prj="mt", info=f'')
         return policy
 
     def get_held_layers(self) -> List[Module]:
@@ -376,13 +412,17 @@ class BertLMHeadModelPolicy(BertPolicy):
         """
         held_layers = super().get_held_layers()
         stage_manager = self.pipeline_stage_manager
+        gd.debuginfo(prj="mt", info=f'')
         if stage_manager.is_last_stage():
             held_layers.append(self.model.cls)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
         bert_model = self.model.bert
+        gd.debuginfo(prj="mt", info=f'')
         if self.pipeline_stage_manager and self.pipeline_stage_manager.num_stages > 1:
+            gd.debuginfo(prj="mt", info=f'')
             if id(bert_model.embeddings.word_embeddings.weight) == id(self.model.cls.predictions.decoder.weight):
                 # tie weights
                 return [
@@ -398,8 +438,10 @@ class BertLMHeadModelPolicy(BertPolicy):
 class BertForMaskedLMPolicy(BertPolicy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
         policy = self.add_lm_head_policy(policy)
         policy = self.add_lm_prediction_policy(policy)
@@ -409,6 +451,7 @@ class BertForMaskedLMPolicy(BertPolicy):
             self.set_pipeline_forward(
                 model_cls=BertForMaskedLM, new_forward=BertPipelineForwards.bert_for_masked_lm_forward, policy=policy
             )
+            gd.debuginfo(prj="mt", info=f'')
         return policy
 
     def get_held_layers(self) -> List[Module]:
@@ -417,14 +460,20 @@ class BertForMaskedLMPolicy(BertPolicy):
         """
         held_layers = super().get_held_layers()
         stage_manager = self.pipeline_stage_manager
+        gd.debuginfo(prj="mt", info=f'')
+
         if stage_manager.is_last_stage():
             held_layers.append(self.model.cls)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
+        gd.debuginfo(prj="mt", info=f'')
         bert_model = self.model.bert
         if self.pipeline_stage_manager and self.pipeline_stage_manager.num_stages > 1:
+            gd.debuginfo(prj="mt", info=f'')
             if id(bert_model.embeddings.word_embeddings.weight) == id(self.model.cls.predictions.decoder.weight):
+                gd.debuginfo(prj="mt", info=f'')
                 # tie weights
                 return [
                     {
@@ -438,12 +487,14 @@ class BertForMaskedLMPolicy(BertPolicy):
 # BertForSequenceClassification
 class BertForSequenceClassificationPolicy(BertPolicy):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
     def module_policy(self):
         from transformers.models.bert.modeling_bert import BertForSequenceClassification
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'')
 
         if self.shard_config.enable_tensor_parallelism:
             addon_module = {
@@ -457,12 +508,15 @@ class BertForSequenceClassificationPolicy(BertPolicy):
                 )
             }
             policy.update(addon_module)
+            gd.debuginfo(prj="mt", info=f'')
+
         if self.pipeline_stage_manager:
             self.set_pipeline_forward(
                 model_cls=BertForSequenceClassification,
                 new_forward=BertPipelineForwards.bert_for_sequence_classification_forward,
                 policy=policy,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         return policy
 
@@ -472,9 +526,12 @@ class BertForSequenceClassificationPolicy(BertPolicy):
         """
         held_layers = super().get_held_layers()
         stage_manager = self.pipeline_stage_manager
+        gd.debuginfo(prj="mt", info=f'')
+
         if stage_manager.is_last_stage():
             held_layers.append(self.model.dropout)
             held_layers.append(self.model.classifier)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
@@ -485,12 +542,14 @@ class BertForSequenceClassificationPolicy(BertPolicy):
 # BertForTokenClassification
 class BertForTokenClassificationPolicy(BertPolicy):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
     def module_policy(self):
         from transformers.models.bert.modeling_bert import BertForTokenClassification
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'')
 
         if self.shard_config.enable_tensor_parallelism:
             addon_module = {
@@ -504,7 +563,10 @@ class BertForTokenClassificationPolicy(BertPolicy):
                 )
             }
             policy.update(addon_module)
+            gd.debuginfo(prj="mt", info=f'')
+
         if self.pipeline_stage_manager:
+            gd.debuginfo(prj="mt", info=f'')
             self.set_pipeline_forward(
                 model_cls=BertForTokenClassification,
                 new_forward=BertPipelineForwards.bert_for_token_classification_forward,
@@ -519,9 +581,11 @@ class BertForTokenClassificationPolicy(BertPolicy):
         """
         held_layers = super().get_held_layers()
         stage_manager = self.pipeline_stage_manager
+        gd.debuginfo(prj="mt", info=f'')
         if stage_manager.is_last_stage():
             held_layers.append(self.model.dropout)
             held_layers.append(self.model.classifier)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
@@ -533,12 +597,15 @@ class BertForTokenClassificationPolicy(BertPolicy):
 class BertForNextSentencePredictionPolicy(BertPolicy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
         from transformers.models.bert.modeling_bert import BertForNextSentencePrediction
 
         if self.pipeline_stage_manager:
+            gd.debuginfo(prj="mt", info=f'')
             self.set_pipeline_forward(
                 model_cls=BertForNextSentencePrediction,
                 new_forward=BertPipelineForwards.bert_for_next_sentence_prediction_forward,
@@ -553,8 +620,11 @@ class BertForNextSentencePredictionPolicy(BertPolicy):
         """
         held_layers = super().get_held_layers()
         stage_manager = self.pipeline_stage_manager
+        gd.debuginfo(prj="mt", info=f'')
+
         if stage_manager.is_last_stage():
             held_layers.append(self.model.cls)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
@@ -566,13 +636,16 @@ class BertForNextSentencePredictionPolicy(BertPolicy):
 class BertForMultipleChoicePolicy(BertPolicy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         from transformers.models.bert.modeling_bert import BertForMultipleChoice
 
         policy = super().module_policy()
 
         if self.shard_config.enable_tensor_parallelism:
+            gd.debuginfo(prj="mt", info=f'')
             addon_module = {
                 BertForMultipleChoice: ModulePolicyDescription(
                     sub_module_replacement=[
@@ -585,6 +658,7 @@ class BertForMultipleChoicePolicy(BertPolicy):
             }
             policy.update(addon_module)
         if self.pipeline_stage_manager:
+            gd.debuginfo(prj="mt", info=f'')
             self.set_pipeline_forward(
                 model_cls=BertForMultipleChoice,
                 new_forward=BertPipelineForwards.bert_for_multiple_choice_forward,
@@ -599,7 +673,10 @@ class BertForMultipleChoicePolicy(BertPolicy):
         """
         held_layers = super().get_held_layers()
         stage_manager = self.pipeline_stage_manager
+        gd.debuginfo(prj="mt", info=f'')
+
         if stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             held_layers.append(self.model.dropout)
             held_layers.append(self.model.classifier)
         return held_layers
@@ -611,9 +688,11 @@ class BertForMultipleChoicePolicy(BertPolicy):
 
 class BertForQuestionAnsweringPolicy(BertPolicy):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         from transformers.models.bert.modeling_bert import BertForQuestionAnswering
 
         policy = super().module_policy()
@@ -630,10 +709,12 @@ class BertForQuestionAnsweringPolicy(BertPolicy):
         """
         get pipeline layers for current stage
         """
+        gd.debuginfo(prj="mt", info=f'')
         held_layers = super().get_held_layers()
         stage_manager = self.pipeline_stage_manager
         if stage_manager.is_last_stage():
             held_layers.append(self.model.qa_outputs)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:

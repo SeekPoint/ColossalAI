@@ -66,6 +66,7 @@ class Linear2p5D(ParallelLayer):
         weight_initializer: Callable = init.kaiming_uniform_(a=math.sqrt(5)),
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
         self.in_features = in_features
@@ -256,6 +257,7 @@ class LayerNorm2p5D(ParallelLayer):
 
     def __init__(self, normalized_shape: int, eps: float = 1e-05, bias=True, dtype=None):
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
         # layer norm config
         self.normalized_shape = normalized_shape
@@ -433,6 +435,7 @@ class PatchEmbedding2p5D(ParallelLayer):
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
         position_embed_initializer: Callable = init.zeros_(),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         img_size = to_2tuple(img_size)
         patch_size = to_2tuple(patch_size)
@@ -619,6 +622,7 @@ class Embedding2p5D(ParallelLayer):
         *args,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
         assert_tesseract_initialization()
@@ -754,6 +758,7 @@ class VocabParallelEmbedding2p5D(ParallelLayer):
         *args,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.num_embeddings = num_embeddings
         self.embed_dim = embedding_dim
@@ -893,6 +898,7 @@ class Classifier2p5D(ParallelLayer):
         weight_initializer: Callable = init.kaiming_uniform_(a=math.sqrt(5)),
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.in_features = in_features
         self.num_classes = num_classes
@@ -1051,6 +1057,7 @@ class VocabParallelClassifier2p5D(ParallelLayer):
         weight_initializer: Callable = init.kaiming_uniform_(a=math.sqrt(5)),
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
         self.in_features = in_features

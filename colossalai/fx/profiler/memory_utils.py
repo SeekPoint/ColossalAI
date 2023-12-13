@@ -22,12 +22,16 @@ def activation_size(out: Union[torch.Tensor, Dict, List, Tuple, int]) -> int:
     if isinstance(out, torch.Tensor):
         if out.is_quantized:
             act_size += out.numel() * torch._empty_affine_quantized([], dtype=out.dtype).element_size()
+            gd.debuginfo(prj="mt", info=f'')
         else:
             act_size += out.numel() * torch.tensor([], dtype=out.dtype).element_size()
+            gd.debuginfo(prj="mt", info=f'')
     elif isinstance(out, dict):
         value_list = [v for _, v in out.items()]
         act_size += activation_size(value_list)
+        gd.debuginfo(prj="mt", info=f'')
     elif isinstance(out, tuple) or isinstance(out, list) or isinstance(out, set):
+        gd.debuginfo(prj="mt", info=f'')
         for element in out:
             act_size += activation_size(element)
     return act_size
@@ -43,6 +47,7 @@ def parameter_size(mod: torch.nn.Module) -> int:
     Returns:
         int: The parameter size, unit is byte.
     """
+    gd.debuginfo(prj="mt", info=f'')
     param_size = 0
     for param in mod.parameters():
         param_size += param.numel() * torch.tensor([], dtype=param.dtype).element_size()
@@ -60,13 +65,17 @@ def is_inplace(n: Node):
     """
     inplace = False
     if n.op == "call_function":
+        gd.debuginfo(prj="mt", info=f'')
         inplace = n.kwargs.get("inplace", False)
         if is_compatible_with_meta():
+            gd.debuginfo(prj="mt", info=f'')
             from .constants import ALIAS_ATEN
 
             if n.target in ALIAS_ATEN:
+                gd.debuginfo(prj="mt", info=f'')
                 inplace = True
     elif n.op == "call_module":
         inplace = getattr(n.graph.owning_module.get_submodule(n.target), "inplace", False)
+        gd.debuginfo(prj="mt", info=f'')
 
     return inplace

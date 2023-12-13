@@ -26,9 +26,12 @@ if HAS_MEM_EFF_ATTN:
 
     from .utils import SeqLenInfo
 
+    gd.debuginfo(prj="mt", info=f'')
+
     allow_alibi = True
     for op in MemoryEfficientAttentionCutlassOp:
         allow_alibi = allow_alibi & (LowerTriangularMaskWithTensorBias in op.SUPPORTED_ATTN_BIAS_TYPES)
+        gd.debuginfo(prj="mt", info=f'')
 
     def mem_eff_attention(
         q: torch.Tensor,
@@ -42,21 +45,27 @@ if HAS_MEM_EFF_ATTN:
         causal: bool = False,
         padded: bool = False,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         attn_bias = None
         if padded:  # bert style
             if not causal:
                 attn_bias = BlockDiagonalMask.from_seqlens(seq_len_info_q.seqlens, seq_len_info_kv.seqlens)
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 attn_bias = BlockDiagonalCausalMask.from_seqlens(seq_len_info_q.seqlens, seq_len_info_kv.seqlens)
+                gd.debuginfo(prj="mt", info=f'')
         elif causal:  # gpt style
             attn_bias = LowerTriangularMask()
+            gd.debuginfo(prj="mt", info=f'')
 
         if bias is not None:  # alibi / relative position embedding
             assert allow_alibi, "flash attention with bias is not supported in this system."
             assert causal, "attention with bias is only supported for causal attention so far."
             attn_bias = attn_bias.add_bias(bias)
+            gd.debuginfo(prj="mt", info=f'')
 
         if padded:
+            gd.debuginfo(prj="mt", info=f'')
             q = q.unsqueeze(0)
             k = k.unsqueeze(0)
             v = v.unsqueeze(0)
@@ -66,5 +75,6 @@ if HAS_MEM_EFF_ATTN:
         # shape: (b*s, n, d)
         if padded:
             out = out.squeeze(0)
+            gd.debuginfo(prj="mt", info=f'')
 
         return out

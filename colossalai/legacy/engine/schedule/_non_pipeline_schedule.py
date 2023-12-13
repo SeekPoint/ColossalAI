@@ -32,6 +32,7 @@ class NonPipelineSchedule(BaseSchedule):
     """
 
     def __init__(self, data_process_func: Callable = None):
+        gd.debuginfo(prj="mt", info=f'')
         # check that non-pipeline schedule data process func only takes in one parameter
         # which is the batch data
 

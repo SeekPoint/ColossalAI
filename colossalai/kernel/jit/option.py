@@ -10,6 +10,7 @@ JIT_OPTIONS_SET = False
 from pydebug import gd, infoTensor
 
 def set_jit_fusion_options():
+    gd.debuginfo(prj="mt", info=f'')
     """Set PyTorch JIT layer fusion options."""
     # LSG: the latest pytorch and CUDA versions may not support
     # the following jit settings
@@ -19,6 +20,7 @@ def set_jit_fusion_options():
         TORCH_MAJOR = int(torch.__version__.split(".")[0])
         TORCH_MINOR = int(torch.__version__.split(".")[1])
         if (TORCH_MAJOR > 1) or (TORCH_MAJOR == 1 and TORCH_MINOR >= 10):
+            gd.debuginfo(prj="mt", info=f'')
             # nvfuser
             torch._C._jit_set_profiling_executor(True)
             torch._C._jit_set_profiling_mode(True)
@@ -28,6 +30,7 @@ def set_jit_fusion_options():
             torch._C._jit_set_nvfuser_enabled(True)
             torch._C._debug_set_autodiff_subgraph_inlining(False)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # legacy pytorch fuser
             torch._C._jit_set_profiling_mode(False)
             torch._C._jit_set_profiling_executor(False)

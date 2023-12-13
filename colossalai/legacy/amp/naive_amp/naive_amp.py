@@ -33,16 +33,20 @@ class NaiveAMPOptimizer(OptimizerWrapper):
     """
 
     def __init__(self, optim: Optimizer, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         optim = FP16Optimizer(optim, *args, **kwargs)
         super().__init__(optim)
 
     def backward(self, loss: Tensor):
+        gd.debuginfo(prj="mt", info=f'')
         self.optim.backward(loss)
 
     def step(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self.optim.step()
 
     def clip_grad_norm(self, model: nn.Module, max_norm: float):
+        gd.debuginfo(prj="mt", info=f'')
         if self.optim.max_norm == max_norm:
             return
         raise RuntimeError(
@@ -83,10 +87,12 @@ class NaiveAMPModel(nn.Module):
         if gpc.is_initialized(parallel_mode) and gpc.get_world_size(parallel_mode) > 1:
             self._process_group = gpc.get_group(parallel_mode)
             self._world_size = gpc.get_world_size(parallel_mode)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             self._process_group = None
             self._world_size = 1
             self._sync_buf = False
+            gd.debuginfo(prj="mt", info=f'')
         self._first_eval_run = False
 
     @property
@@ -98,11 +104,13 @@ class NaiveAMPModel(nn.Module):
         self._sync_buf = state
 
     def _convert_to_fp16(self, input_: Any):
+        gd.debuginfo(prj="mt", info=f'')
         if isinstance(input_, Tensor) and input_.dtype == torch.float32:
             input_ = input_.half()
         return input_
 
     def _convert_to_fp32(self, input_: Any):
+        gd.debuginfo(prj="mt", info=f'')
         if isinstance(input_, Tensor) and input_.dtype == torch.float16:
             input_ = input_.float()
         return input_
@@ -113,6 +121,7 @@ class NaiveAMPModel(nn.Module):
         data parallel ranks so that all the ranks will produce consistent results
         when given the same input
         """
+        gd.debuginfo(prj="mt", info=f'')
         buf_list = []
 
         # find valid buffers
@@ -130,6 +139,7 @@ class NaiveAMPModel(nn.Module):
                 old.copy_(new)
 
     def eval(self):
+        gd.debuginfo(prj="mt", info=f'')
         self.model.eval()
 
         # we only sync buffer in the first eval iteration
@@ -137,6 +147,7 @@ class NaiveAMPModel(nn.Module):
         self._first_eval_run = True
 
     def forward(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         # reduce buffers after forward will lead to error
         # as we cannot change the variables needed for gradient computation after forward
         # so we sync buffer before forward

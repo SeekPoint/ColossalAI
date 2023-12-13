@@ -44,6 +44,7 @@ class StaticPlacementPolicy(PlacementPolicy):
         offload_param_frac: float = 0.0,
         **kwargs,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(chunk_manager, mem_stats_collector=mem_stats_collector)
         if offload_param_frac > 0.0 and (shard_param_frac != 1.0 or offload_optim_frac != 1.0):
             warnings.warn("offload_param_frac is ignored when shard_param_frac != 1.0 or offload_optim_frac != 1.0")
@@ -56,6 +57,7 @@ class StaticPlacementPolicy(PlacementPolicy):
         self.keep_cuda_chunk_mem = 0.0
 
     def evict_tensors(self, can_evict_chunks: List[Chunk], **kwargs) -> Tuple[int, float]:
+        gd.debuginfo(prj="mt", info=f'')
         can_shard_chunk_mem = sum(chunk.chunk_mem for chunk in can_evict_chunks)
         can_offload_chunk_mem = can_shard_chunk_mem
         for chunk in can_evict_chunks:
@@ -75,6 +77,8 @@ class StaticPlacementPolicy(PlacementPolicy):
     def setup_grads_device(
         self, params: List[torch.Tensor], grads_device_map: Dict[torch.Tensor, torch.device]
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
+
         total_chunk_mem = sum(self.chunk_manager.get_chunk(p).chunk_mem for p in params)
 
         offload_optim_chunk_mem = total_chunk_mem * self.offload_optim_frac
@@ -86,7 +90,9 @@ class StaticPlacementPolicy(PlacementPolicy):
             # keep gathered chunks are in CUDA
             if chunk.keep_gathered or offloaded_optim_chunk_mem >= offload_optim_chunk_mem:
                 device = get_current_device()
+                gd.debuginfo(prj="mt", info=f'')
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 device = torch.device("cpu")
                 # real offloaded mem is chunk.shard_mem, for simplicity we use chunk mem here
                 offloaded_optim_chunk_mem += chunk.chunk_mem
@@ -107,6 +113,7 @@ class AutoPlacementPolicy(PlacementPolicy):
         steady_cuda_cap_ratio: float = 0.9,
         **kwargs,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(chunk_manager, mem_stats_collector=mem_stats_collector)
         # model data will use 1-_warmup_non_model_data_ratio CUDA memory in warmup phase
         # you can set them by AutoPlacementPolicy.set_warmup_non_model_data_ratio()
@@ -145,15 +152,19 @@ class AutoPlacementPolicy(PlacementPolicy):
         if warmup:
             # We designate a part of CUDA memory for model data in warmup iterations.
             max_cuda_non_model_data_per_period = cuda_capacity * self._warmup_non_model_data_ratio
+            gd.debuginfo(prj="mt", info=f'')
         else:
             # max non-model-data cuda memory consumption of this sampling moment and the next sampling moment.
             max_cuda_non_model_data_per_period = self.mem_stats_collector.next_period_non_model_data_usage("cuda")
             cuda_capacity *= self._steady_cuda_cap_ratio
+            gd.debuginfo(prj="mt", info=f'')
+
         total_cuda_model_data = cuda_capacity - max_cuda_non_model_data_per_period
         avail_cuda_model_data = total_cuda_model_data - used_cuda_model_data
         freed_cuda_model_data = 0
 
         if avail_cuda_model_data < cuda_demand:
+            gd.debuginfo(prj="mt", info=f'')
             # Move cuda_demand - avail_cuda_model_data volume of tensors
             # to_free_cuda_model_data = cuda_demand - avail_cuda_model_data
             to_free_cuda_model_data = cuda_demand - avail_cuda_model_data
@@ -178,6 +189,7 @@ class AutoPlacementPolicy(PlacementPolicy):
     @staticmethod
     @functools.lru_cache(maxsize=None)
     def _sort_can_evict_chunks(can_evict_chunks: tuple, compute_idx: int, compute_list: tuple) -> list:
+        gd.debuginfo(prj="mt", info=f'')
         next_compute_idx = {chunk: len(compute_list) for chunk in can_evict_chunks}
         for i in range(len(compute_list) - 1, compute_idx, -1):
             for chunk in compute_list[i]:
@@ -189,6 +201,7 @@ class AutoPlacementPolicy(PlacementPolicy):
     def setup_grads_device(
         self, params: List[torch.Tensor], grads_device_map: Dict[torch.Tensor, torch.device]
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         for p in params:
             chunk = self.chunk_manager.get_chunk(p)
             # init offload optim settings
@@ -207,10 +220,12 @@ class PlacementPolicyFactory:
 
     @staticmethod
     def create(policy_name: str) -> Type[PlacementPolicy]:
+        gd.debuginfo(prj="mt", info=f'')
         if policy_name not in PlacementPolicyFactory.policies:
             raise TypeError(f"Unknown tensor placement policy {policy_name}")
         return PlacementPolicyFactory.policies[policy_name]
 
     @staticmethod
     def get_policy_names():
+        gd.debuginfo(prj="mt", info=f'')
         return tuple(PlacementPolicyFactory.policies.keys())

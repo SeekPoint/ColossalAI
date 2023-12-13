@@ -29,6 +29,7 @@ class TraceIndice(object):
     """
 
     def __init__(self, node_mgr: NodeMgr) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.node_mgr = node_mgr
         self.indice_trace_list = self._init_indice_trace_list()
         self.indice_view_list = {}
@@ -36,6 +37,7 @@ class TraceIndice(object):
         self.active_node_list = []
 
     def _init_indice_trace_list(self) -> List:
+        gd.debuginfo(prj="mt", info=f'')
         indice_trace_list = []
         for n in self.node_mgr.get_node_list():
             if get_node_shape(n) != None:
@@ -50,6 +52,7 @@ class TraceIndice(object):
         return indice_trace_list
 
     def set_active_nodes(self, active_node_list: List) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.active_node_list = active_node_list
 
     def _add_indice(self) -> int:
@@ -59,6 +62,7 @@ class TraceIndice(object):
         Returns:
             indice_count: int
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.indice_count += 1
         return self.indice_count
 
@@ -66,6 +70,7 @@ class TraceIndice(object):
         """
         delete a dim for indice, compute and source
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.indice_trace_list[idx]["indice"].pop(dim_idx)
         self.indice_trace_list[idx]["compute"].pop(dim_idx)
         self.indice_trace_list[idx]["source"].pop(dim_idx)
@@ -74,8 +79,11 @@ class TraceIndice(object):
         """
         add a dim for indice, compute and source
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         # need to remap if dim_idx < 0, e.g. -1
         if dim_idx < 0:
+            gd.debuginfo(prj="mt", info=f'')
             dim_idx = list(range(len(self.indice_trace_list[node_idx]["indice"]) + 1))[dim_idx]
         self.indice_trace_list[node_idx]["indice"].insert(dim_idx, self._add_indice())
         self.indice_trace_list[node_idx]["compute"].insert(dim_idx, [])
@@ -89,19 +97,26 @@ class TraceIndice(object):
         node_to_dim: int,
         init=False,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         node_from_dim = self._transform_indice(node_from, node_from_dim)
         node_from_trace_source = self._find_source_trace_from_node(node_from)
         node_to_dim = self._transform_indice(node_to, node_to_dim)
         node_to_trace_source = self._find_source_trace_from_node(node_to)
         node_from_idx = self.node_mgr.find_node_idx(node_from)
         if init:
+            gd.debuginfo(prj="mt", info=f'')
             node_to_trace_source[node_to_dim] = {}
+
         # add dim to cur new source
         if node_from_idx not in node_to_trace_source[node_to_dim]:
+            gd.debuginfo(prj="mt", info=f'')
             node_to_trace_source[node_to_dim][node_from_idx] = [node_from_dim]
         else:
+            gd.debuginfo(prj="mt", info=f'')
             if node_from_dim not in node_to_trace_source[node_to_dim][node_from_idx]:
+                gd.debuginfo(prj="mt", info=f'')
                 node_to_trace_source[node_to_dim][node_from_idx].append(node_from_dim)
+
         # update inputs source
         for node_idx, node_dim in node_from_trace_source[node_from_dim].items():
             if node_idx not in node_to_trace_source[node_to_dim]:
@@ -112,6 +127,7 @@ class TraceIndice(object):
                         node_to_trace_source[node_to_dim][node_idx].append(d)
 
     def _transform_indice(self, node: Node, node_dim: int) -> int:
+        gd.debuginfo(prj="mt", info=f'')
         node_idx = self._find_indice_trace_from_node(node)
         dims = list(range(len(node_idx)))
         return dims[node_dim]
@@ -132,9 +148,11 @@ class TraceIndice(object):
         node_from_trace = self._find_trace_from_node(node_from)
         node_to_trace = self._find_trace_from_node(node_to)
         if init:
+            gd.debuginfo(prj="mt", info=f'')
             node_to_trace["indice"][node_to_dim] = node_from_trace["indice"][node_from_dim]
             node_to_trace["compute"][node_to_dim] = copy.deepcopy(node_from_trace["compute"][node_from_dim])
         else:
+            gd.debuginfo(prj="mt", info=f'')
             for j in node_from_trace["compute"][node_from_dim]:
                 if j not in node_to_trace["compute"][node_to_dim]:
                     node_to_trace["compute"][node_to_dim].append(j)
@@ -144,6 +162,7 @@ class TraceIndice(object):
         """
         inherit all dims with init
         """
+        gd.debuginfo(prj="mt", info=f'')
         # find indice just for assert length
         node_from_indice = self._find_indice_trace_from_node(node_from)
         node_to_indice = self._find_indice_trace_from_node(node_to)
@@ -156,8 +175,10 @@ class TraceIndice(object):
         inherit indice from node without init
         """
         if exclude == None:
+            gd.debuginfo(prj="mt", info=f'')
             exclude = []
         else:
+            gd.debuginfo(prj="mt", info=f'')
             exclude = [self._transform_indice(node_to, i) for i in exclude]
         node_from_compute = self._find_compute_trace_from_node(node_from)
         node_to_compute = self._find_compute_trace_from_node(node_to)
@@ -177,7 +198,9 @@ class TraceIndice(object):
             dim (list or int): dims to be marked as computed
         """
         if isinstance(dim, int):
+            gd.debuginfo(prj="mt", info=f'')
             dim = [dim]
+
         dims = list(range(len(get_node_shape(node))))
         for d in dim:
             cur_dim = dims[d]
@@ -194,6 +217,7 @@ class TraceIndice(object):
             idx (list): idx of the node
             compute (list): computed idx of the node.
         """
+        gd.debuginfo(prj="mt", info=f'')
         node_idx = self.node_mgr.find_node_idx(node)
         node_dict = self.indice_trace_list[node_idx]
         return node_dict
@@ -208,6 +232,7 @@ class TraceIndice(object):
             idx (list): idx of the node
             compute (list): computed idx of the node.
         """
+        gd.debuginfo(prj="mt", info=f'')
         node_idx = self.node_mgr.find_node_idx(node)
         node_dict = self.indice_trace_list[node_idx]
         return node_dict["source"]
@@ -221,6 +246,7 @@ class TraceIndice(object):
         Returns:
             idx (list): idx of the node
         """
+        gd.debuginfo(prj="mt", info=f'')
         node_idx = self.node_mgr.find_node_idx(node)
         return self.indice_trace_list[node_idx]["indice"]
 
@@ -233,6 +259,7 @@ class TraceIndice(object):
         Returns:
             compute (list): computed idx of the node.
         """
+        gd.debuginfo(prj="mt", info=f'')
         node_idx = self.node_mgr.find_node_idx(node)
         return self.indice_trace_list[node_idx]["compute"]
 
@@ -245,8 +272,10 @@ class TraceIndice(object):
             node_idx (int)
         """
         if input_node == None:
+            gd.debuginfo(prj="mt", info=f'')
             input_node = find_first_tensor_arg(node)
         self._inherit_all_indice(input_node, node)
+        gd.debuginfo(prj="mt", info=f'')
 
     def _assign_all_indice(self, node: Node, node_idx: int) -> None:
         """
@@ -256,8 +285,10 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         shape = node.meta["tensor_meta"].shape
         if shape is None:
+            gd.debuginfo(prj="mt", info=f'')
             return
         new_trace = []
         for _ in shape:
@@ -274,6 +305,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         input_node = node.args[0]
         tranpose_dim = node.args[1:]
 
@@ -291,6 +323,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         permute_dim = flat_list(node.args[1:])
         input_node = node.args[0]
 
@@ -312,9 +345,11 @@ class TraceIndice(object):
         self._assign_indice_as_input(node, node_idx)
 
         if len(node.args) >= 2:
+            gd.debuginfo(prj="mt", info=f'')
             weight = node.args[1]
             self._inherit_indice(weight, 1, node, -1)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self._del_dim(node_idx, -1)
             self._add_dim(node_idx, -1)
         self._mark_computation(node, node_idx, [-1])
@@ -327,6 +362,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         bias, input_node, weight = node.args
         assert len(get_node_shape(bias)) == 1 and len(get_node_shape(weight)) == 2
         self._assign_indice_as_input(node, node_idx, input_node)
@@ -345,6 +381,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         add, matmul_left, matmul_right = node.args
 
         assert get_node_shape(add) == get_node_shape(node)
@@ -368,6 +405,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         matmul_left, matmul_right = node.args
 
         assert len(get_node_shape(matmul_left)) == len(get_node_shape(matmul_right))
@@ -385,6 +423,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         # get conv module
         node_targets = node.target.split(".")
         conv_module = node.graph.owning_module
@@ -411,6 +450,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         # get conv input
         assert node.kwargs["size"] is None
         assert len(get_node_shape(node)) == 4
@@ -429,6 +469,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         self._assign_indice_as_input(node, idx)
         self._mark_computation(node, idx, [-1])
 
@@ -440,6 +481,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert len(get_node_shape(node)) == 4
         self._assign_indice_as_input(node, idx)
         self._mark_computation(node, idx, [-1, -2, -3])
@@ -454,6 +496,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         self._assign_indice_as_input(node, idx)
         nodes_in = []
         for node_in in node.args:
@@ -462,6 +505,7 @@ class TraceIndice(object):
                 self._inherit_more_indice_from_node_with_exclude(node_in, node)
 
     def _assign_no_change_indice(self, node, idx):
+        gd.debuginfo(prj="mt", info=f'')
         self._assign_indice_as_input(node, idx)
         for node_in in node.args:
             if type(node_in) == type(node):
@@ -475,6 +519,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         patterns = node.args[0]
         input_nodes = node.args[1:]
 
@@ -513,6 +558,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         self._assign_indice_as_input(node, idx)
         self._mark_computation(node, idx, [node.kwargs["dim"]])
 
@@ -524,6 +570,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         self._assign_indice_as_input(node, node_idx)
         dim_idx = node.kwargs["dim"]
         self._del_dim(node_idx, dim_idx)
@@ -538,11 +585,13 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         self._del_dim(node_idx, -1)
         self._assign_indice_as_input(node, node_idx)
         dim_idx = node.args[1]
         # unsqueeze(-1) = unsqueeze(shape_num + 1)
         if dim_idx < 0:
+            gd.debuginfo(prj="mt", info=f'')
             dim_idx = list(range(len(get_node_shape(node))))[dim_idx]
         self._add_dim(node_idx, dim_idx)
 
@@ -554,6 +603,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         nodes_in = flat_list(node.args[0])
         self._assign_indice_as_input(node, node_idx, input_node=nodes_in[0])
         for n in nodes_in[1:]:
@@ -570,6 +620,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         nodes_in = flat_list(node.args[0])
         self._add_dim(node_idx, 0)
         self._assign_indice_as_input(node, node_idx, input_node=nodes_in[0])
@@ -586,6 +637,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         nodes_in = node.args[0]
         nodes_in_shape = get_node_shape(nodes_in)
         flatten_start_dim = node.args[1]
@@ -606,6 +658,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         expand_shape = node.args[1:]
         node_in_shape = get_node_shape(node.args[0])
         assert len(expand_shape) == len(node_in_shape)
@@ -627,6 +680,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         unbind_dim = node.args[1]
         self._add_dim(node_idx, unbind_dim)
         self._assign_indice_as_input(node, node_idx)
@@ -640,6 +694,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         self._del_dim(node_idx, -1)
         self._assign_indice_as_input(node, node_idx)
         self._add_dim(node_idx, -1)
@@ -653,10 +708,12 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         node_args = flat_list(node.args[1:])
 
         # deal with split
         if get_node_name(node.args[0]) == "split":
+            gd.debuginfo(prj="mt", info=f'')
             self._assign_indice_as_input(node, node_idx)
             self._del_dim(node_idx, node.args[0].kwargs["dim"])
             self._add_dim(node_idx, node.args[0].kwargs["dim"])
@@ -664,6 +721,7 @@ class TraceIndice(object):
 
         # skip non tensor
         if get_node_shape(node) is None:
+            gd.debuginfo(prj="mt", info=f'')
             return
 
         # find if slice
@@ -730,6 +788,7 @@ class TraceIndice(object):
             node (node)
             node_idx (int)
         """
+        gd.debuginfo(prj="mt", info=f'')
         # get data, turn into number
         origin_node = node.args[0]
         origin_shape = origin_node.meta["tensor_meta"].shape
@@ -818,6 +877,7 @@ class TraceIndice(object):
         """
         clear too far trace to speed up computation
         """
+        gd.debuginfo(prj="mt", info=f'')
         trace_barrier = max(node_idx - 100, 0)
         active_nodes = self.active_node_list[trace_barrier]
         active_nodes = [self.node_mgr.find_node_idx(i) for i in active_nodes.keys()]
@@ -836,6 +896,7 @@ class TraceIndice(object):
                     dim_source.pop(k)
 
     def trace_indice(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         for idx, node in enumerate(self.node_mgr.get_node_list()):
             node_name = get_node_name(node)
             if node.op == "placeholder":

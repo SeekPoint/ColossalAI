@@ -32,6 +32,7 @@ def convert_to_torch_amp(
     Returns:
         A tuple (model, optimizer, criterion)
     """
+    gd.debuginfo(prj="mt", info=f'')
     model = TorchAMPModel(model)
     if amp_config is None:
         amp_config = dict()

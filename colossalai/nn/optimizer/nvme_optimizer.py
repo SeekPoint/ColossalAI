@@ -21,9 +21,11 @@ class NVMeOptimizer(torch.optim.Optimizer):
         ImportError: Raise if ``tensornvme`` is not installed.
     """
 
-    def __init__(
-        self, params, defaults: dict, nvme_offload_fraction: float = 0.0, offload_dir: Optional[str] = None
-    ) -> None:
+    def __init__(self,
+                 params,
+                 defaults: dict,
+                 nvme_offload_fraction: float = 0.0,
+                 offload_dir: Optional[str] = None) -> None:
         assert 0.0 <= nvme_offload_fraction <= 1.0
         super().__init__(params, defaults)
         self.nvme_offload_fraction = float(nvme_offload_fraction)
@@ -36,9 +38,12 @@ class NVMeOptimizer(torch.optim.Optimizer):
             self.offload_dir = offload_dir or tempfile.mkdtemp()
             backend = "uring" if "uring" in get_backends() else "aio"
             self.offloader = DiskOffloader(self.offload_dir, 8, backend=backend)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             self.offload_dir = None
             self.offloader = None
+            gd.debuginfo(prj="mt", info=f'')
+
         self.is_on_nvme: Dict[Parameter, bool] = {}
         self.offloaded_numel: int = 0
         # As param may be not materialized here, these attributes are initialized when the first step
@@ -49,6 +54,7 @@ class NVMeOptimizer(torch.optim.Optimizer):
         self.param_to_prefetch_idx: Dict[Parameter, int] = {}
 
     def _get_numel(self) -> int:
+        gd.debuginfo(prj="mt", info=f'')
         numel = 0
         for group in self.param_groups:
             for p in group["params"]:
@@ -64,11 +70,15 @@ class NVMeOptimizer(torch.optim.Optimizer):
         ):
             self.is_on_nvme[param] = True
             self.offloaded_numel += numel
+            gd.debuginfo(prj="mt", info=f'')
         else:
             self.is_on_nvme[param] = False
+            gd.debuginfo(prj="mt", info=f'')
 
     def _setup_prefetch_params(self) -> List[Parameter]:
+        gd.debuginfo(prj="mt", info=f'')
         if self.offloader is None:
+            gd.debuginfo(prj="mt", info=f'')
             return
         assert len(self.prefetch_params) == 0 and len(self.param_to_prefetch_idx) == 0
         for group in self.param_groups:
@@ -81,18 +91,24 @@ class NVMeOptimizer(torch.optim.Optimizer):
                     self.prefetch_params.append(p)
 
     def _pre_step(self, *state_keys: str) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         if self.total_numel is None:
             self.total_numel = self._get_numel()
             self.can_offload_numel = math.floor(self.total_numel * self.nvme_offload_fraction)
+            gd.debuginfo(prj="mt", info=f'')
+
         self._setup_prefetch_params()
         if self.offloader is None or len(self.prefetch_params) == 0:
+            gd.debuginfo(prj="mt", info=f'')
             return
         state = self.state[self.prefetch_params[0]]
         for key in state_keys:
             self.offloader.async_read(state[key])
 
     def _pre_update(self, param: Parameter, *state_keys: str) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         if self.offloader is None or param not in self.param_to_prefetch_idx:
+            gd.debuginfo(prj="mt", info=f'')
             return
         self.offloader.sync_read_events()
         idx = self.param_to_prefetch_idx[param]
@@ -102,16 +118,21 @@ class NVMeOptimizer(torch.optim.Optimizer):
                 self.offloader.async_read(state[key])
 
     def _post_update(self, param: Parameter, *state_keys: str) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         if self.offloader is None:
+            gd.debuginfo(prj="mt", info=f'')
             return
         self.offloader.sync_write_events()
         if self.is_on_nvme[param]:
+            gd.debuginfo(prj="mt", info=f'')
             state = self.state[param]
             for key in state_keys:
                 self.offloader.async_write(state[key])
 
     def _post_step(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         if self.offloader is not None:
+            gd.debuginfo(prj="mt", info=f'')
             self.offloader.synchronize()
             self.prefetch_params.clear()
             self.param_to_prefetch_idx.clear()
@@ -146,18 +167,21 @@ class NVMeOptimizer(torch.optim.Optimizer):
         raise NotImplementedError
 
     def state_dict(self) -> dict:
+        gd.debuginfo(prj="mt", info=f'')
         # TODO(ver217): design a new method to save state_dict. When using NVMe offload, this method may lead to OOM.
         if self.offloader is not None:
             raise NotImplementedError
         return super().state_dict()
 
     def load_state_dict(self, state_dict: dict) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         # TODO(ver217): design a new method to load state_dict. When using NVMe offload, whole state_dict may not be able to fit in memory.
         if self.offloader is not None:
             raise NotImplementedError
         super().load_state_dict(state_dict)
 
     def __del__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         if getattr(self, "offloader", None) is not None:
             del self.offloader
             if os.path.exists(self.offload_dir):

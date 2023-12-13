@@ -78,13 +78,17 @@ class GeminiDDP(ModelWrapper):
         master_weights: bool = True,
         verbose: bool = False,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
+
         assert mixed_precision in (torch.float16, torch.bfloat16)
         if chunk_config_dict is not None:
             self.chunk_manager = ChunkManager(chunk_config_dict, chunk_init_device)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             # some ugly hotfix for the compatibility with Lightning
             if search_range_m is None:
                 search_range_m = 32
+                gd.debuginfo(prj="mt", info=f'')
             self.chunk_manager = init_chunk_manager(
                 model=module,
                 init_device=chunk_init_device,
@@ -130,10 +134,12 @@ class GeminiDDP(ModelWrapper):
         if self.gemini_manager._premade_memstats_:
             # build chunk in param runtime visited order.
             param_order = self.gemini_manager.memstats()._param_runtime_order
+            gd.debuginfo(prj="mt", info=f'')
         else:
             # build chunk in param initialized order.
             # Note: in this way, it can not get filter unused params during runtime.
             param_order = OrderedParamGenerator()
+            gd.debuginfo(prj="mt", info=f'')
             for p in module.parameters():
                 param_order.append(p)
 
@@ -161,20 +167,25 @@ class GeminiDDP(ModelWrapper):
                 p.register_hook(partial(self.grad_handle, p))
 
     def parameters(self, recurse: bool = True):
+        gd.debuginfo(prj="mt", info=f'')
         return self.module.parameters(recurse)
 
     def named_parameters(self, prefix: str = "", recurse: bool = True):
+        gd.debuginfo(prj="mt", info=f'')
         return self.module.named_parameters(prefix, recurse)
 
     def named_buffers(self, prefix: str = "", recurse: bool = True):
+        gd.debuginfo(prj="mt", info=f'')
         return self.module.named_buffers(prefix, recurse)
 
     def named_children(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self.module.named_children()
 
     def named_modules(
         self, memo: Optional[Set[torch.nn.Module]] = None, prefix: str = "", remove_duplicate: bool = True
     ):
+        gd.debuginfo(prj="mt", info=f'')
         return self.module.named_modules(memo, prefix, remove_duplicate)
 
     @staticmethod
@@ -206,9 +217,10 @@ class GeminiDDP(ModelWrapper):
             remove_duplicate: whether to remove the duplicated module instances in the result
                 or not
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         if memo is None:
             memo = set()
+
         self_non_persistent_set = set()
         if module not in memo:
             if remove_duplicate:
@@ -229,6 +241,8 @@ class GeminiDDP(ModelWrapper):
     def _post_forward(self):
         """This function is only triggered for inference."""
         access_list = list(self.chunk_manager.accessed_chunks)
+        gd.debuginfo(prj="mt", info=f'')
+
         # we need to scatter all accessed chunks and move them to their original places
         for chunk in access_list:
             if chunk.keep_gathered:
@@ -243,6 +257,8 @@ class GeminiDDP(ModelWrapper):
     def forward(self, *args, **kwargs):
         # check whether we are in a inference mode
         grad_flag = torch.is_grad_enabled()
+        gd.debuginfo(prj="mt", info=f'')
+
         if not grad_flag:
             assert (
                 not self.gemini_manager.need_warmup or not self.gemini_manager.is_warmup()
@@ -252,39 +268,50 @@ class GeminiDDP(ModelWrapper):
         self.module.zero_grad(set_to_none=True)
         if not grad_flag:
             outputs = self._inference_forward(*args, **kwargs)
+            gd.debuginfo(prj="mt", info=f'')
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.gemini_manager.pre_iter(*args)
             with ColoParamOpHookManager.use_hooks(self.param_op_hook):
                 outputs = self.module(*args, **kwargs)
 
         if self.force_outputs_fp32:
+            gd.debuginfo(prj="mt", info=f'')
             return _cast_float(outputs, torch.float)
         return outputs
 
     def _inference_forward(self, *args, **kwargs):
         """This function is only triggered for inference."""
         fwd_ctx = ColoParamOpHookManager.use_hooks(self.param_op_hook)
+        gd.debuginfo(prj="mt", info=f'')
+
         if not self.scatter_after_inference:
             # gather all chunks
             for chunk in self.chunk_manager.get_chunks(self.fp16_params):
                 self.chunk_manager.access_chunk(chunk)
             fwd_ctx = nullcontext()
+
         with fwd_ctx:
             outputs = self.module(*args, **kwargs)
+
         if self.scatter_after_inference:
             # scatter chunks
             self._post_forward()
+            gd.debuginfo(prj="mt", info=f'')
+
         # reset all recorded attributes
         self.gemini_manager.reset_attributes()
         return outputs
 
     def _setup_grads_ptr(self):
+        gd.debuginfo(prj="mt", info=f'')
         for p in self.module.parameters():
             if is_ddp_ignored(p):
                 continue
             p.grad = None
 
     def _pre_backward(self):
+        gd.debuginfo(prj="mt", info=f'')
         # set a visit label for all parameters
         # the label is used to check whether the parameter is correctly reduced
         for param in self.param2name:
@@ -292,7 +319,9 @@ class GeminiDDP(ModelWrapper):
                 setattr(param, "_gemini_reduced", False)
 
     def _post_backward(self):
+        gd.debuginfo(prj="mt", info=f'')
         if self.chunk_manager.accessed_mem != 0:
+            gd.debuginfo(prj="mt", info=f'')
             error_params = ["Reduction failed at followed parameters:"]
             for param in self.param2name:
                 if not is_ddp_ignored(param) and not getattr(param, "_gemini_reduced"):
@@ -306,23 +335,28 @@ class GeminiDDP(ModelWrapper):
         self._setup_grads_ptr()
         if self.enable_gradient_accumulation and not self.accumulating_grads:
             self.accumulating_grads = True  # Turn on the state of gradient accumulation.
+            gd.debuginfo(prj="mt", info=f'')
+
         self._logger.debug(
             f"comp cuda demand time: {self.gemini_manager._comp_cuda_demand_time}, layout time: {self.gemini_manager._layout_time}, evict time: {self.gemini_manager._evict_time}, CPU->CUDA vol: {self.gemini_manager._h2d_volume}B, CUDA->CPU vol: {self.gemini_manager._d2h_volume}"
         )
         self.gemini_manager.post_iter()
 
     def backward(self, loss: torch.Tensor):
+        gd.debuginfo(prj="mt", info=f'')
         self._pre_backward()
         with self.param_op_hook.switch_to_backward(), ColoParamOpHookManager.use_hooks(self.param_op_hook):
             loss.backward()
         self._post_backward()
 
     def backward_by_grad(self, tensor, grad):
+        gd.debuginfo(prj="mt", info=f'')
         with self.param_op_hook.switch_to_backward(), ColoParamOpHookManager.use_hooks(self.param_op_hook):
             torch.autograd.backward(tensor, grad)
         self._post_backward()
 
     def grad_handle(self, p, grad):
+        gd.debuginfo(prj="mt", info=f'')
         setattr(p, "_gemini_reduced", True)
         empty_grad = torch.empty_like(grad)
         free_storage(empty_grad)
@@ -378,9 +412,11 @@ class GeminiDDP(ModelWrapper):
         return empty_grad
 
     def zero_grad(self, set_to_none: bool = False) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.module.zero_grad(set_to_none=True)
 
     def set_chunk_grad_device(self, chunk: Chunk, device: torch.device) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         for tensor in chunk.get_tensors():
             self.grads_device[tensor] = device
 
@@ -399,9 +435,13 @@ class GeminiDDP(ModelWrapper):
             dict:
                 a dictionary containing a whole state of the module
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         if destination is None:
             destination = OrderedDict()
             destination._metadata = OrderedDict()
+            gd.debuginfo(prj="mt", info=f'')
+
         destination._metadata[prefix[:-1]] = local_metadata = dict(version=self._version)
         self._save_to_state_dict(destination, prefix, keep_vars, only_rank_0)
 
@@ -425,6 +465,8 @@ class GeminiDDP(ModelWrapper):
         # save parameters
         chunk_to_save_data = dict()
         temp_chunk = get_temp_total_chunk_on_cuda(chunk, self.mixed_precision)
+
+        gd.debuginfo(prj="mt", info=f'')
 
         for tensor, tensor_info in chunk.tensors_info.items():
             record_tensor = torch.empty([0])
@@ -452,6 +494,9 @@ class GeminiDDP(ModelWrapper):
         # save parameters
         param_to_save_data = dict()
         chunk_list = self.chunk_manager.get_chunks(param_list)
+
+        gd.debuginfo(prj="mt", info=f'')
+
         for chunk in chunk_list:
             param_to_save_data.update(self._get_chunk_to_save_data(chunk, only_rank_0))
         return param_to_save_data
@@ -469,6 +514,8 @@ class GeminiDDP(ModelWrapper):
             prefix (str): the prefix for parameters and buffers used in this
                 module
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         assert keep_vars is False, "`state_dict` with parameter, `keep_vars=True`, is not supported now."
 
         # get copies of fp32 parameters in CPU
@@ -478,6 +525,7 @@ class GeminiDDP(ModelWrapper):
         # get the mapping between copies and fp16 parameters
         p_mapping = dict()
         if self.reuse_fp16_chunk:
+            gd.debuginfo(prj="mt", info=f'')
             for p, fp32_p in zip(self.fp16_params, self.fp32_params):
                 name = self.param2name[p]
                 assert fp32_p in param_to_save_data, "Parameter '{}' is neglected in the chunk list".format(name)
@@ -485,6 +533,8 @@ class GeminiDDP(ModelWrapper):
                 p_mapping[p] = record_parameter
         else:
             p_mapping = param_to_save_data
+            gd.debuginfo(prj="mt", info=f'')
+
         for name, param in self.name2param.items():
             if param is not None:
                 if is_ddp_ignored(param):
@@ -506,6 +556,7 @@ class GeminiDDP(ModelWrapper):
             is not torch.nn.Module.get_extra_state
         ):
             destination[extra_state_key] = self.get_extra_state()
+            gd.debuginfo(prj="mt", info=f'')
 
     def load_state_dict(self, state_dict: "OrderedDict[str, torch.Tensor]", strict: bool = True):
         r"""Copies parameters and buffers from :attr:`state_dict` into
@@ -530,6 +581,7 @@ class GeminiDDP(ModelWrapper):
             exists in :attr:`state_dict`, :meth:`load_state_dict` will raise a
             ``RuntimeError``.
         """
+        gd.debuginfo(prj="mt", info=f'')
         missing_keys: List[str] = []
         unexpected_keys: List[str] = []
         error_msgs: List[str] = []
@@ -540,6 +592,7 @@ class GeminiDDP(ModelWrapper):
         if metadata is not None:
             # mypy isn't aware that "_metadata" exists in state_dict
             state_dict._metadata = metadata  # type: ignore[attr-defined]
+            gd.debuginfo(prj="mt", info=f'')
 
         prefix = ""
         local_metadata = {} if metadata is None else metadata.get(prefix[:-1], {})
@@ -557,6 +610,7 @@ class GeminiDDP(ModelWrapper):
                 error_msgs.insert(
                     0, "Missing key(s) in state_dict: {}. ".format(", ".join('"{}"'.format(k) for k in missing_keys))
                 )
+            gd.debuginfo(prj="mt", info=f'')
 
         if len(error_msgs) > 0:
             raise RuntimeError(
@@ -598,6 +652,8 @@ class GeminiDDP(ModelWrapper):
                 list, and will be reported together in
                 :meth:`~torch.nn.Module.load_state_dict`
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         for hook in self._load_state_dict_pre_hooks.values():
             hook(state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs)
 
@@ -606,8 +662,10 @@ class GeminiDDP(ModelWrapper):
         local_state = {k: v for k, v in local_name_params if v is not None}
 
         def load(param_name, dest_tensor, copy_func):
+            gd.debuginfo(prj="mt", info=f'')
             state_key = prefix + param_name
             if state_key in state_dict:
+                gd.debuginfo(prj="mt", info=f'')
                 input_param = state_dict[state_key]
                 # Backward compatibility: loading 1-dim tensor from 0.3.* to version 0.4+
                 if len(dest_tensor.shape) == 0 and len(input_param.shape) == 1:
@@ -630,9 +688,11 @@ class GeminiDDP(ModelWrapper):
                         "an exception occurred : {}.".format(state_key, dest_tensor.size(), input_param.size(), ex.args)
                     )
             elif strict:
+                gd.debuginfo(prj="mt", info=f'')
                 missing_keys.append(state_key)
 
         def load_parameter(chunk_slice, data):
+            gd.debuginfo(prj="mt", info=f'')
             chunk_slice.copy_(data.flatten())
 
         for name, param in self.named_parameters():
@@ -665,6 +725,7 @@ class GeminiDDP(ModelWrapper):
 
             del temp_chunk
         if self.reuse_fp16_chunk:
+            gd.debuginfo(prj="mt", info=f'')
             for chunk_32 in chunk_list:
                 chunk_16 = chunk_32.paired_chunk
                 assert chunk_16 is not None
@@ -695,6 +756,8 @@ class GeminiDDP(ModelWrapper):
 
     def _init_chunks(self, param_order, strict_ddp_mode: bool, cpu_offload: bool, pin_memory: bool):
         dp_world_size = dist.get_world_size(self.dp_process_group)
+        gd.debuginfo(prj="mt", info=f'')
+
         for p in param_order.generate():
             self._preprocess_param(p)
             assert type(p) is ColoParameter
@@ -748,6 +811,7 @@ class GeminiDDP(ModelWrapper):
                 self.chunk_manager.move_chunk(chunk_32, self.grads_device[p])
 
     def _cast_buffers(self):
+        gd.debuginfo(prj="mt", info=f'')
         for buffer in self.module.buffers():
             if isinstance(buffer, LazyTensor):
                 buffer.materialize()
@@ -760,6 +824,8 @@ class GeminiDDP(ModelWrapper):
         Args:
             p (Union[nn.Parameter, ColoParameter, LazyTensor]): parameter to be converted
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         if type(p) is ColoParameter:
             # model is initialized with ColoInitContext
             return
@@ -795,6 +861,8 @@ class GeminiDDP(ModelWrapper):
             Iterator[OrderedDict]: A generator of state dict shard
         """
         sharder = StateDictSharder(max_shard_size)
+
+        gd.debuginfo(prj="mt", info=f'')
 
         # get the mapping between copies and fp16 parameters
         fp16_to_fp32 = dict()

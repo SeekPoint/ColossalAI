@@ -14,6 +14,7 @@ from colossalai.legacy.pipeline.pipeline_process_group import ppg
 
 
 def pyobj_map(obj: Any, fn: Callable, process_types: Union[Type, Tuple[Type]] = ()) -> Any:
+    gd.debuginfo(prj="mt", info=f'')
     if isinstance(obj, process_types):
         return fn(obj)
     elif type(obj) is dict:
@@ -38,6 +39,7 @@ def pytree_map(obj: Any, fn: Callable, process_types: Union[Type, Tuple[Type]] =
     Returns:
         :class:`Any`: returns have the same structure of `obj` and type in process_types after map of `fn`
     """
+    gd.debuginfo(prj="mt", info=f'')
     if isinstance(obj, dict):
         return {k: pytree_map(obj[k], fn, process_types, map_all) for k in obj}
     elif isinstance(obj, tuple):

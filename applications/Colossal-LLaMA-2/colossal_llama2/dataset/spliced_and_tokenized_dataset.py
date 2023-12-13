@@ -26,6 +26,7 @@ def supervised_tokenize(
     A tokenization function to tokenize an original pretraining data point as following:
         {"source": "", "target": "Beijing, the capital of the People's Republic of China, ...", "category": "geography"}
     """
+    gd.debuginfo(prj="mt", info=f'')
     assert tokenizer.add_bos_token is False and tokenizer.add_eos_token is False, (
         "Initially set `tokenizer.add_bos_token` and `tokenizer.add_eos_token` to False, "
         "add <bos> and <eos> manually later"
@@ -51,6 +52,7 @@ def supervised_tokenize(
 
     # sequence truncation.
     if len(sequence_input_ids) > max_length:
+        gd.debuginfo(prj="mt", info=f'')
         sequence_input_ids = sequence_input_ids[:max_length]
         sequence_labels = sequence_labels[:max_length]
 
@@ -81,6 +83,7 @@ class ClosedToConstantLengthSplicedDataset(IterableDataset):
         shuffle: bool = True,
         error_strict: bool = False,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.tokenizer = tokenizer
         self.dataset = dataset
         self.max_length = max_length
@@ -104,6 +107,7 @@ class ClosedToConstantLengthSplicedDataset(IterableDataset):
         return len(self.dataset)
 
     def __iter__(self) -> Iterable[Dict[str, List[int]]]:
+        gd.debuginfo(prj="mt", info=f'')
         iterator = iter(self.dataset)
         more_data_points = True
         while more_data_points is True:

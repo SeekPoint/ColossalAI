@@ -24,19 +24,23 @@ class ChatGLMPolicy(Policy):
         pass
 
     def preprocess(self):
+        gd.debuginfo(prj="mt", info=f'')
         # Resize embedding
         if self.shard_config.enable_tensor_parallelism:
+            gd.debuginfo(prj="mt", info=f'')
             vocab_size = self.model.config.padded_vocab_size
             world_size = self.shard_config.tensor_parallel_size
 
             if vocab_size % world_size != 0:
                 new_vocab_size = vocab_size + world_size - vocab_size % world_size
                 self.model.resize_token_embeddings(new_vocab_size)
+                gd.debuginfo(prj="mt", info=f'')
 
         if self.pipeline_stage_manager is not None:
             # the batch_size_dim is bounded to Model
             bsz_dim = 1
             setattr(self.model, "batch_size_dim", bsz_dim)
+            gd.debuginfo(prj="mt", info=f'')
 
         return self.model
 
@@ -47,6 +51,8 @@ class ChatGLMPolicy(Policy):
 
         use_sequence_parallel = self.shard_config.enable_sequence_parallelism
         overlap = self.shard_config.enable_sequence_overlap
+        gd.debuginfo(prj="mt", info=f'')
+
         if self.shard_config.enable_tensor_parallelism:
             policy[ChatGLMModel] = ModulePolicyDescription(
                 attribute_replacement={},
@@ -57,6 +63,7 @@ class ChatGLMPolicy(Policy):
                     )
                 ],
             )
+            gd.debuginfo(prj="mt", info=f'')
 
             policy[GLMBlock] = ModulePolicyDescription(
                 attribute_replacement={
@@ -97,7 +104,9 @@ class ChatGLMPolicy(Policy):
 
         # optimization configuration
         if self.shard_config.enable_fused_normalization:
+            gd.debuginfo(prj="mt", info=f'')
             if not self.model.config.rmsnorm:
+                gd.debuginfo(prj="mt", info=f'')
                 self.append_or_create_submodule_replacement(
                     description=[
                         SubModuleReplacementDescription(suffix="input_layernorm", target_module=col_nn.FusedLayerNorm),
@@ -119,8 +128,10 @@ class ChatGLMPolicy(Policy):
                         policy=policy,
                         target_key=ChatGLMModel,
                     )
+                    gd.debuginfo(prj="mt", info=f'')
 
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 self.append_or_create_submodule_replacement(
                     description=[
                         SubModuleReplacementDescription(suffix="input_layernorm", target_module=col_nn.FusedRMSNorm),
@@ -142,6 +153,7 @@ class ChatGLMPolicy(Policy):
                         policy=policy,
                         target_key=ChatGLMModel,
                     )
+                    gd.debuginfo(prj="mt", info=f'')
 
         # use flash attention
         if self.shard_config.enable_flash_attention:
@@ -152,6 +164,7 @@ class ChatGLMPolicy(Policy):
                 policy=policy,
                 target_key=CoreAttention,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         # use sequence parallel
         if use_sequence_parallel:
@@ -160,6 +173,7 @@ class ChatGLMPolicy(Policy):
                 policy=policy,
                 target_key=ChatGLMModel,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         # use jit fused operator
         if self.shard_config.enable_jit_fused:
@@ -171,6 +185,7 @@ class ChatGLMPolicy(Policy):
                 policy=policy,
                 target_key=GLMBlock,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         return policy
 
@@ -181,10 +196,14 @@ class ChatGLMPolicy(Policy):
         """Get pipeline layers for current stage."""
         assert self.pipeline_stage_manager is not None
 
+        gd.debuginfo(prj="mt", info=f'')
+
         if self.model.__class__.__name__ == "ChatGLMModel":
             module = self.model
+            gd.debuginfo(prj="mt", info=f'')
         else:
             module = self.model.transformer
+            gd.debuginfo(prj="mt", info=f'')
         stage_manager = self.pipeline_stage_manager
 
         held_layers = []
@@ -203,6 +222,7 @@ class ChatGLMPolicy(Policy):
         return held_layers
 
     def set_pipeline_forward(self, model_cls: nn.Module, new_forward: Callable, policy: Dict) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         """If under pipeline parallel setting, replacing the original forward method of huggingface
         to customized forward method, and add this changing to policy."""
         if not self.pipeline_stage_manager:
@@ -210,8 +230,10 @@ class ChatGLMPolicy(Policy):
         stage_manager = self.pipeline_stage_manager
         if self.model.__class__.__name__ == "ChatGLMModel":
             module = self.model
+            gd.debuginfo(prj="mt", info=f'')
         else:
             module = self.model.transformer
+            gd.debuginfo(prj="mt", info=f'')
 
         layers_per_stage = Policy.distribute_layers(module.num_layers, stage_manager.num_stages)
         stage_index = Policy.get_stage_index(layers_per_stage, stage_manager.stage)
@@ -225,14 +247,17 @@ class ChatGLMPolicy(Policy):
 
 class ChatGLMModelPolicy(ChatGLMPolicy):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         pass
 
         policy = super().module_policy()
 
         if self.pipeline_stage_manager is not None:
+            gd.debuginfo(prj="mt", info=f'')
             self.set_pipeline_forward(
                 model_cls=ChatGLMModel, new_forward=ChatGLMPipelineForwards.chatglm_model_forward, policy=policy
             )
@@ -248,9 +273,11 @@ class ChatGLMModelPolicy(ChatGLMPolicy):
 
 class ChatGLMForConditionalGenerationPolicy(ChatGLMModelPolicy):
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
 
         if self.pipeline_stage_manager is not None:
+            gd.debuginfo(prj="mt", info=f'')
             self.set_pipeline_forward(
                 model_cls=ChatGLMForConditionalGeneration,
                 new_forward=ChatGLMPipelineForwards.chatglm_for_conditional_generation_forward,
@@ -259,9 +286,11 @@ class ChatGLMForConditionalGenerationPolicy(ChatGLMModelPolicy):
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
+        gd.debuginfo(prj="mt", info=f'')
         held_layers = super().get_held_layers()
         if self.pipeline_stage_manager.is_last_stage():
             held_layers.append(self.model.transformer.output_layer)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:

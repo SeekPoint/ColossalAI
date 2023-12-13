@@ -10,6 +10,7 @@ from colossalai.logging import get_dist_logger
 
 
 def _binary_partition(weights: List, start: int, end: int):
+    gd.debuginfo(prj="mt", info=f'')
     """Returns the binary partition position of `weights`, given the start
     position `st` and the end position `ed`.
 
@@ -39,7 +40,7 @@ def _binary_partition(weights: List, start: int, end: int):
 
 def _heap_addition(weights: List, intervals: int, add_cnt: int):
     """ """
-
+    gd.debuginfo(prj="mt", info=f'')
     def _heap_push(heap, st, ed):
         value = weights[ed - 1]
         if st > 0:
@@ -71,6 +72,7 @@ def _heap_addition(weights: List, intervals: int, add_cnt: int):
 
 
 def _calc_partitions(weights, value):
+    gd.debuginfo(prj="mt", info=f'')
     prev = 0
     prefix = 0
     num_block = 0
@@ -88,6 +90,7 @@ def _calc_partitions(weights, value):
 
 
 def _binary_search(weights, num):
+    gd.debuginfo(prj="mt", info=f'')
     length = len(weights)
     prefix = [1 if w == 0 else w for w in weights]
     for i in range(1, length):
@@ -112,6 +115,7 @@ def _binary_search(weights, num):
 
 
 def partition_uniform(num_items, pipeline_parallel_size, num_chunks):
+    gd.debuginfo(prj="mt", info=f'')
     assert (
         num_items % num_chunks == 0
     ), "Layer length should be divided by the number of chunks, otherwise parameter method is recommended"
@@ -135,6 +139,7 @@ def partition_uniform(num_items, pipeline_parallel_size, num_chunks):
 
 
 def partition_balanced(weights, pipeline_parallel_size, num_chunks):
+    gd.debuginfo(prj="mt", info=f'')
     num_total = pipeline_parallel_size * num_chunks
     num_items = len(weights)
     if num_items <= num_total:
@@ -152,6 +157,7 @@ def partition_balanced(weights, pipeline_parallel_size, num_chunks):
 
 
 def build_kwargs_for_module(function, input_tensor, kw_dict):
+    gd.debuginfo(prj="mt", info=f'')
     """
     Generally, the first argument of module.forward is an input tensor come from the previous layer.
     Therefore, we just filter the kwargs from second element of the dictionary.
@@ -174,6 +180,7 @@ def build_kwargs_for_module(function, input_tensor, kw_dict):
 
 
 def build_kwargs_for_function(function, kw_dict):
+    gd.debuginfo(prj="mt", info=f'')
     sig = inspect.signature(function)
     kw_dict = {k: v for k, v in kw_dict.items() if k in sig.parameters}
     if len(kw_dict) == 0:
@@ -193,7 +200,7 @@ def exec_func_with_kwargs(func, kw_dict, input_tensor, kwargs):
                     attention_mask = attention_mask.view(batch_size, -1)
                 return attention_mask
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     if kw_dict is not None:
         rst = func(**kw_dict)
         if isinstance(rst, tuple):
@@ -219,6 +226,7 @@ def exec_func_with_kwargs(func, kw_dict, input_tensor, kwargs):
 
 
 def exec_funcs_with_kwargs(func_dict, func_key, input_tensor, kwargs):
+    gd.debuginfo(prj="mt", info=f'')
     assert func_key in func_dict, f"{func_key} is not in the function_dict."
     funcs_to_exec = func_dict[func_key]
     if isinstance(funcs_to_exec, list):
@@ -233,6 +241,7 @@ def exec_funcs_with_kwargs(func_dict, func_key, input_tensor, kwargs):
 
 
 def call_module(module, args=None, kwargs=None):
+    gd.debuginfo(prj="mt", info=f'')
     if args is None:
         args = ()
     if kwargs is None:
@@ -260,6 +269,7 @@ def customized_partition(exec_seq):
     This function will analyze the exec_seq. In the exec_seq, users will use 'SPLIT_NODE' as an
     annotation to note the partition point.
     """
+    gd.debuginfo(prj="mt", info=f'')
     customized_parts = {}
     start = 0
     stop = 0

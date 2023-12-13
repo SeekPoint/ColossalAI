@@ -23,6 +23,7 @@ class _MultiDeviceReplicator(object):
     """
 
     def __init__(self, master_tensor: torch.Tensor) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         assert master_tensor.is_cuda or master_tensor.device.type == "xla"
         self.master = master_tensor
         self._per_device_tensors: Dict[torch.device, torch.Tensor] = {}

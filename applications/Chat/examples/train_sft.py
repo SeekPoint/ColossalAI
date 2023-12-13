@@ -32,12 +32,16 @@ def train(args):
     # configure strategy
     if args.strategy == "ddp":
         strategy = DDPStrategy()
+        gd.debuginfo(prj="mt", info=f'')
     elif args.strategy == "colossalai_gemini":
         strategy = GeminiStrategy(placement_policy="auto")
+        gd.debuginfo(prj="mt", info=f'')
     elif args.strategy == "colossalai_zero2":
         strategy = LowLevelZeroStrategy(stage=2, placement_policy="cuda")
+        gd.debuginfo(prj="mt", info=f'')
     elif args.strategy == "colossalai_zero2_cpu":
         strategy = LowLevelZeroStrategy(stage=2, placement_policy="cpu")
+        gd.debuginfo(prj="mt", info=f'')
     else:
         raise ValueError(f'Unsupported strategy "{args.strategy}"')
 
@@ -49,14 +53,19 @@ def train(args):
     with strategy.model_init_context():
         if args.model == "bloom":
             model = BLOOMActor(pretrained=args.pretrain, lora_rank=args.lora_rank, checkpoint=args.grad_checkpoint)
+            gd.debuginfo(prj="mt", info=f'')
         elif args.model == "opt":
             model = OPTActor(pretrained=args.pretrain, lora_rank=args.lora_rank, checkpoint=args.grad_checkpoint)
+            gd.debuginfo(prj="mt", info=f'')
         elif args.model == "gpt2":
             model = GPTActor(pretrained=args.pretrain, lora_rank=args.lora_rank, checkpoint=args.grad_checkpoint)
+            gd.debuginfo(prj="mt", info=f'')
         elif args.model == "llama":
             model = LlamaActor(pretrained=args.pretrain, lora_rank=args.lora_rank, checkpoint=args.grad_checkpoint)
+            gd.debuginfo(prj="mt", info=f'')
         elif args.model == "chatglm":
             model = ChatGLMActor(pretrained=args.pretrain)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             raise ValueError(f'Unsupported model "{args.model}"')
 
@@ -66,24 +75,29 @@ def train(args):
     if args.model == "gpt2":
         tokenizer = GPT2Tokenizer.from_pretrained("gpt2" if args.tokenizer is None else args.tokenizer)
         tokenizer.pad_token = tokenizer.eos_token
+        gd.debuginfo(prj="mt", info=f'')
     elif args.model == "bloom":
         tokenizer = BloomTokenizerFast.from_pretrained(
             "/share/hf_model/bloom-560m" if args.tokenizer is None else args.tokenizer
         )
         tokenizer.pad_token = tokenizer.eos_token
+        gd.debuginfo(prj="mt", info=f'')
     elif args.model == "opt":
         tokenizer = AutoTokenizer.from_pretrained("/share/hf_model/opt-350m" if args.tokenizer is None else args.tokenizer)
         tokenizer.pad_token = tokenizer.eos_token
+        gd.debuginfo(prj="mt", info=f'')
     elif args.model == "llama":
         tokenizer = LlamaTokenizer.from_pretrained(
             "/share/hf_model/llama-tokenizer" if args.tokenizer is None else args.tokenizer
         )
         tokenizer.eos_token = "<\s>"
         tokenizer.pad_token = tokenizer.unk_token
+        gd.debuginfo(prj="mt", info=f'')
     elif args.model == "chatglm":
         tokenizer = ChatGLMTokenizer.from_pretrained(
             "THUDM/chatglm-6b" if args.tokenizer is None else args.tokenizer, trust_remote_code=True
         )
+        gd.debuginfo(prj="mt", info=f'')
     else:
         raise ValueError(f'Unsupported model "{args.model}"')
 
@@ -105,6 +119,8 @@ def train(args):
         train_dataset = SFTDataset(train_data, tokenizer, args.max_len)
         eval_dataset = SFTDataset(eval_data, tokenizer, args.max_len)
 
+        gd.debuginfo(prj="mt", info=f'')
+
     else:
         train_dataset = SupervisedDataset(
             tokenizer=tokenizer,
@@ -113,6 +129,8 @@ def train(args):
             max_length=args.max_len,
         )
         eval_dataset = None
+
+        gd.debuginfo(prj="mt", info=f'')
 
     if dist.is_initialized() and dist.get_world_size() > 1:
         train_sampler = DistributedSampler(
@@ -132,9 +150,11 @@ def train(args):
                 rank=dist.get_rank(),
                 num_replicas=dist.get_world_size(),
             )
+        gd.debuginfo(prj="mt", info=f'')
     else:
         train_sampler = None
         eval_sampler = None
+        gd.debuginfo(prj="mt", info=f'')
 
     train_dataloader = DataLoader(
         train_dataset,

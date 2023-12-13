@@ -18,6 +18,7 @@ def copy_kv_to_mem_cache(layer_id, key_buffer, value_buffer, context_mem_index, 
         context_mem_index : index of memory cache in kv cache manager
         mem_manager : cache manager
     """
+    gd.debuginfo(prj="mt", info=f'')
     copy_kv_cache_to_dest(key_buffer, context_mem_index, mem_manager.key_buffer[layer_id])
     copy_kv_cache_to_dest(value_buffer, context_mem_index, mem_manager.value_buffer[layer_id])
 
@@ -30,24 +31,31 @@ def init_to_get_rotary(self, base=10000, use_elem=False):
         base : calculation arg
         use_elem : activated when using chatglm-based models
     """
+    gd.debuginfo(prj="mt", info=f'')
     self.config.head_dim_ = self.config.hidden_size // self.config.num_attention_heads
     if not hasattr(self.config, "rope_scaling"):
         rope_scaling_factor = 1.0
+        gd.debuginfo(prj="mt", info=f'')
     else:
         rope_scaling_factor = self.config.rope_scaling.factor if self.config.rope_scaling is not None else 1.0
+        gd.debuginfo(prj="mt", info=f'')
 
     if hasattr(self.config, "max_sequence_length"):
         max_seq_len = self.config.max_sequence_length
+        gd.debuginfo(prj="mt", info=f'')
     elif hasattr(self.config, "max_position_embeddings"):
         max_seq_len = self.config.max_position_embeddings * rope_scaling_factor
+        gd.debuginfo(prj="mt", info=f'')
     else:
         max_seq_len = 2048 * rope_scaling_factor
+        gd.debuginfo(prj="mt", info=f'')
     base = float(base)
 
     # NTK  ref: https://www.reddit.com/r/LocalLLaMA/comments/14lz7j5/ntkaware_scaled_rope_allows_llama_models_to_have/
     ntk_alpha = os.environ.get("INFER_NTK_ALPHA", None)
 
     if ntk_alpha is not None:
+        gd.debuginfo(prj="mt", info=f'')
         ntk_alpha = float(ntk_alpha)
         assert ntk_alpha >= 1, "NTK alpha must be greater than or equal to 1"
         if ntk_alpha > 1:
@@ -58,6 +66,7 @@ def init_to_get_rotary(self, base=10000, use_elem=False):
     n_elem = self.config.head_dim_
     if use_elem:
         n_elem //= 2
+        gd.debuginfo(prj="mt", info=f'')
 
     inv_freq = 1.0 / (base ** (torch.arange(0, n_elem, 2, device="cpu", dtype=torch.float32) / n_elem))
     t = torch.arange(max_seq_len + 1024 * 64, device="cpu", dtype=torch.float32) / rope_scaling_factor

@@ -11,8 +11,11 @@ __all__ = ["MetaTensor"]
 
 
 def set_data_ptr(x):
+    gd.debuginfo(prj="mt", info=f'')
     if isinstance(x, torch.Tensor):
+        gd.debuginfo(prj="mt", info=f'')
         if not x.data_ptr():
+            gd.debuginfo(prj="mt", info=f'')
             data_ptr = uuid.uuid4()
             x.data_ptr = lambda: data_ptr
 
@@ -23,7 +26,7 @@ class MetaTensor(torch.Tensor):
     A wrapping tensor that hacks `torch.autograd` without patching more `torch.ops.aten` ops.
     `fake_device` is the device that `MetaTensor` is supposed to run on.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     _tensor: torch.Tensor
 
     @staticmethod
@@ -32,6 +35,7 @@ class MetaTensor(torch.Tensor):
         if isinstance(elem, MetaTensor):
             fake_device = elem.device if fake_device is None else fake_device
             elem = elem._tensor
+            gd.debuginfo(prj="mt", info=f'')
 
         # The wrapping tensor (MetaTensor) shouldn't hold any
         # memory for the class in question, but it should still
@@ -50,6 +54,7 @@ class MetaTensor(torch.Tensor):
         # ...the real tensor is held as an element on the tensor.
         if not r._tensor.is_meta:
             r._tensor = r._tensor.to(torch.device("meta"))
+            gd.debuginfo(prj="mt", info=f'')
         # only tensor not on `meta` should be copied to `meta`
         set_data_ptr(r._tensor)
         return r
@@ -62,7 +67,7 @@ class MetaTensor(torch.Tensor):
     @classmethod
     def __torch_dispatch__(cls, func, types, args=(), kwargs=None):
         fake_device = None
-
+        gd.debuginfo(prj="mt", info=f'')
         def unwrap(x):
             nonlocal fake_device
             if isinstance(x, MetaTensor):
@@ -79,6 +84,7 @@ class MetaTensor(torch.Tensor):
         if "device" in kwargs:
             fake_device = kwargs["device"]
             kwargs["device"] = torch.device("meta")
+            gd.debuginfo(prj="mt", info=f'')
 
         # run aten for backend=CPU but actually on backend=Meta
         out = func(*args, **kwargs)
@@ -87,6 +93,7 @@ class MetaTensor(torch.Tensor):
         # of the input
         if func in ALIAS_ATEN:
             out.data_ptr = args[0].data_ptr
+            gd.debuginfo(prj="mt", info=f'')
 
         # Now, we want to continue propagating this tensor, so we rewrap Tensors in
         # our custom tensor subclass
@@ -116,8 +123,10 @@ class MetaTensor(torch.Tensor):
         """
         # this imitates c++ function in the way of @overload
         fake_device = None
+        gd.debuginfo(prj="mt", info=f'')
 
         def replace(x):
+            gd.debuginfo(prj="mt", info=f'')
             nonlocal fake_device
             if isinstance(x, str) or isinstance(x, _device):
                 fake_device = x
@@ -128,11 +137,15 @@ class MetaTensor(torch.Tensor):
         return MetaTensor(elem, fake_device=fake_device)
 
     def cpu(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         if self.device.type == "cpu":
+            gd.debuginfo(prj="mt", info=f'')
             return self.to(*args, **kwargs)
         return self.to(*args, device="cpu", **kwargs)
 
     def cuda(self, device=None, non_blocking=False):
+        gd.debuginfo(prj="mt", info=f'')
         if device is not None:
+            gd.debuginfo(prj="mt", info=f'')
             return self.to(device=device, non_blocking=non_blocking)
         return self.to(device="cuda:0", non_blocking=non_blocking)

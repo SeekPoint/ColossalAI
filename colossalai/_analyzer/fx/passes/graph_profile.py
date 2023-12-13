@@ -42,7 +42,7 @@ class GraphProfiler(torch.fx.Interpreter):
     Fetch shape argument from ``ShapeProp`` without re-executing
     the ``GraphModule`` from scratch.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     _profileable = [
         "call_function",
         "call_module",
@@ -50,6 +50,7 @@ class GraphProfiler(torch.fx.Interpreter):
     ]
 
     def __init__(self, module: GraphModule, garbage_collect_values: bool = True):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(module, garbage_collect_values)
 
     def run(self, *args, initial_env: Optional[Dict[Node, Any]] = None, enable_io_processing: bool = True) -> Any:
@@ -68,6 +69,7 @@ class GraphProfiler(torch.fx.Interpreter):
         Returns:
             Any: The value returned from executing the Module
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.env = initial_env if initial_env else {}
 
         # Positional function args are consumed left-to-right by
@@ -99,6 +101,7 @@ class GraphProfiler(torch.fx.Interpreter):
         Returns:
             Dict[Node, Any]: The initial environment for execution
         """
+        gd.debuginfo(prj="mt", info=f'')
         initial_env = {}
         for n in self.module.graph.nodes:
             initial_env[n] = _denormalize_tuple(MetaInfo(n).outputs)
@@ -116,6 +119,7 @@ class GraphProfiler(torch.fx.Interpreter):
         Returns:
             Any: The value returned from executing the Module
         """
+        gd.debuginfo(prj="mt", info=f'')
         initial_env = self.fetch_initial_env(device)
 
         return self.run(initial_env=initial_env)
@@ -129,6 +133,8 @@ class GraphProfiler(torch.fx.Interpreter):
         Returns:
             str: The summary of the profiled statistics
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         # https://github.com/pytorch/pytorch/blob/master/torch/fx/graph.py
         try:
             from tabulate import tabulate
@@ -243,6 +249,7 @@ class FlopProfiler(GraphProfiler):
         Raises:
             RuntimeError: If the node is not profileable.
         """
+        gd.debuginfo(prj="mt", info=f'')
         args, kwargs = self.fetch_args_kwargs_from_env(n)
         n_info = MetaInfo(n)
 
@@ -282,12 +289,15 @@ class FlopProfiler(GraphProfiler):
         Return
             flop_count (Tuple[int]): (fwd_flop, bwd_flop)
         """
+
         assert not isinstance(target, str)
 
         # Dispatch the impl for profiling, default will be ``flop_count``
         if target in self._custom_flop_count_impl:
+            gd.debuginfo(prj="mt", info=f'')
             return self._custom_flop_count_impl[target](*args, **kwargs)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return flop_count(target, *args, **kwargs)
 
     def call_method(self, target: "Target", args: Tuple[Argument, ...], kwargs: Dict[str, Any]) -> Any:
@@ -304,6 +314,7 @@ class FlopProfiler(GraphProfiler):
         Return
             flop_count (Tuple[int]): (fwd_flop, bwd_flop)
         """
+        gd.debuginfo(prj="mt", info=f'')
         # Execute the method and return the result
         assert isinstance(target, str)
         return flop_count(getattr(torch.Tensor, target), *args, **kwargs)
@@ -322,6 +333,7 @@ class FlopProfiler(GraphProfiler):
         Return
             flop_count (Tuple[int]): (fwd_flop, bwd_flop)
         """
+        gd.debuginfo(prj="mt", info=f'')
         # Retrieve executed args and kwargs values from the environment
 
         # Execute the method and return the result
@@ -343,6 +355,7 @@ def graph_profile_pass(module: GraphModule, *args, verbose=False) -> GraphModule
     Returns:
         GraphModule: The same GraphModule with profiling information
     """
+    gd.debuginfo(prj="mt", info=f'')
     for profiler_cls in (
         FlopProfiler,
         # CommunicationProfiler,    # TODO: add communication profiling

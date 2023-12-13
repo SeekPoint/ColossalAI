@@ -28,6 +28,7 @@ def get_states(copy=False):
     Returns:
         dict: The seed states of the seed manager.
     """
+    gd.debuginfo(prj="mt", info=f'')
     states = _SEED_MANAGER.seed_states
 
     if copy:
@@ -93,6 +94,7 @@ def set_seed_states(parallel_mode: ParallelMode, state: Tensor):
 
 
 def sync_states():
+    gd.debuginfo(prj="mt", info=f'')
     current_mode = get_current_mode()
     current_states = torch.cuda.get_rng_state()
     set_seed_states(current_mode, current_states)
@@ -111,6 +113,7 @@ def seed(parallel_mode: ParallelMode):
         The parallel_mode should be concluded in ``ParallelMode``. More details about ``ParallelMode`` could be found
         in `parallel_mode <https://github.com/hpcaitech/ColossalAI/blob/main/colossalai/context/parallel_mode.py>`_.
     """
+    gd.debuginfo(prj="mt", info=f'')
     try:
         # set to new mode
         current_mode = _SEED_MANAGER.current_mode

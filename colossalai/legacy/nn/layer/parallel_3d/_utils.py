@@ -16,6 +16,7 @@ from colossalai.legacy.global_variables import tensor_parallel_env as env
 
 
 def get_depth_from_env() -> int:
+    gd.debuginfo(prj="mt", info=f'')
     try:
         depth = env.depth_3d
         assert depth > 0, "DEPTH must be greater than zero"
@@ -29,6 +30,7 @@ def get_depth_from_env() -> int:
 
 
 def get_parallel_mode_from_env(group):
+    gd.debuginfo(prj="mt", info=f'')
     assert group in [
         INPUT_GROUP_3D,
         WEIGHT_GROUP_3D,
@@ -40,6 +42,7 @@ def get_parallel_mode_from_env(group):
 
 
 def swap_in_out_group():
+    gd.debuginfo(prj="mt", info=f'')
     env.input_group_3d, env.output_group_3d = env.output_group_3d, env.input_group_3d
     env.input_x_weight_group_3d, env.output_x_weight_group_3d = (
         env.output_x_weight_group_3d,
@@ -96,15 +99,18 @@ def pop_async_grad(param_id):
 
 
 def _async_grad_hook(grad, param_id):
+    gd.debuginfo(prj="mt", info=f'')
     grad.add_(pop_async_grad(param_id))
     return grad
 
 
 def register_async_grad_hook(param):
+    gd.debuginfo(prj="mt", info=f'')
     param.register_hook(partial(_async_grad_hook, param_id=id(param)))
 
 
 def synchronize(params=list()):
+    gd.debuginfo(prj="mt", info=f'')
     _async_grad_bucket.synchronize(params)
     torch.cuda.default_stream().synchronize()
     if len(_async_grad_bucket) > 0:

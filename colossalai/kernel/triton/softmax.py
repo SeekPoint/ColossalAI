@@ -14,7 +14,7 @@ if HAS_TRITON:
     softmax kernel is modified based on
     https://github.com/openai/triton/blob/34817ecc954a6f4ca7b4dfb352fdde1f8bd49ca5/python/tutorials/02-fused-softmax.py
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     @triton.jit
     def softmax_kernel(output_ptr, input_ptr, row_stride, n_cols, mask_ptr, BLOCK_SIZE: tl.constexpr):
         r"""the kernel function for implementing softmax operator
@@ -48,6 +48,7 @@ if HAS_TRITON:
         tl.store(output_ptrs, softmax_output, mask=col_offsets < n_cols)
 
     def softmax(input: torch.Tensor, mask: torch.Tensor = None, dim=-1) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         if mask is not None:
             assert input[-1] == mask[-1], "the last dimentions should be the same for input and mask"
         assert dim == -1 or dim == len(input.shape) - 1, "currently softmax layer only support last dimention"

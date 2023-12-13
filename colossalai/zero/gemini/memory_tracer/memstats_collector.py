@@ -18,6 +18,7 @@ class MemStatsCollector:
     """
 
     def __init__(self, memstats: Optional[MemStats] = None) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self._mem_monitor = SyncCudaMemoryMonitor()
         self._sampling_time = []
 
@@ -27,9 +28,11 @@ class MemStatsCollector:
         if memstats is not None:
             self.use_outside_memstats = True
             self._memstats = memstats
+            gd.debuginfo(prj="mt", info=f'')
         else:
             self.use_outside_memstats = False
             self._memstats = MemStats()
+            gd.debuginfo(prj="mt", info=f'')
 
     def next_period_non_model_data_usage(self, device_type: str) -> int:
         """Maximum non model data memory usage during the next Op run

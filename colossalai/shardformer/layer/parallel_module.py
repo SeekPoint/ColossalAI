@@ -26,9 +26,9 @@ from pydebug import gd, infoTensor
 
 class ParallelModule(nn.Module, ABC):
     @abstractmethod
-    def from_native_module(
-        module: nn.Module, process_group: Union[ProcessGroup, List[ProcessGroup]] = None
-    ) -> "ParallelModule":
+    def from_native_module(module: nn.Module,
+                           process_group: Union[ProcessGroup,
+                           List[ProcessGroup]] = None) -> "ParallelModule":
         """
         Convert a native PyTorch module to a parallelized module.
 
@@ -52,6 +52,7 @@ class ParallelModule(nn.Module, ABC):
             prefix (str): the prefix for parameters and buffers used in this
                 module
         """
+        gd.debuginfo(prj="mt", info=f'')
         for name, param in self._parameters.items():
             if param is not None:
                 destination[prefix + name] = gather_distributed_param(param, keep_vars=keep_vars)
@@ -60,6 +61,7 @@ class ParallelModule(nn.Module, ABC):
             if buf is not None and name not in self._non_persistent_buffers_set:
                 destination[prefix + name] = buf if keep_vars else buf.detach()
         extra_state_key = prefix + _EXTRA_STATE_KEY_SUFFIX
+
         if getattr(self.__class__, "get_extra_state", Module.get_extra_state) is not Module.get_extra_state:
             destination[extra_state_key] = self.get_extra_state()
 
@@ -97,6 +99,7 @@ class ParallelModule(nn.Module, ABC):
                 list, and will be reported together in
                 :meth:`~torch.nn.Module.load_state_dict`
         """
+        gd.debuginfo(prj="mt", info=f'')
         for hook in self._load_state_dict_pre_hooks.values():
             hook(state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs)
 
@@ -108,6 +111,7 @@ class ParallelModule(nn.Module, ABC):
             key = prefix + name
 
             if key in state_dict:
+                gd.debuginfo(prj="mt", info=f'')
                 input_param = state_dict[key]
                 if not torch.overrides.is_tensor_like(input_param):
                     error_msgs.append(
@@ -154,17 +158,21 @@ class ParallelModule(nn.Module, ABC):
                     )
             elif strict:
                 missing_keys.append(key)
+                gd.debuginfo(prj="mt", info=f'')
 
         extra_state_key = prefix + _EXTRA_STATE_KEY_SUFFIX
         if getattr(self.__class__, "set_extra_state", Module.set_extra_state) is not Module.set_extra_state:
             if extra_state_key in state_dict:
                 self.set_extra_state(state_dict[extra_state_key])
+                gd.debuginfo(prj="mt", info=f'')
             elif strict:
                 missing_keys.append(extra_state_key)
+                gd.debuginfo(prj="mt", info=f'')
         elif strict and (extra_state_key in state_dict):
             unexpected_keys.append(extra_state_key)
 
         if strict:
+            gd.debuginfo(prj="mt", info=f'')
             for key in state_dict.keys():
                 if key.startswith(prefix) and key != extra_state_key:
                     input_name = key[len(prefix) :]

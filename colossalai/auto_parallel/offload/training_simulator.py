@@ -26,7 +26,11 @@ class TrainingSimulator(ABC):
         link_to_bw (Dict[str, Dict[float, float]]): communication links and the corresponding bandwidth.
     """
 
-    def __init__(self, region_list: List[Region], comp_power: float, link_to_bw: Dict[str, Dict[float, float]]) -> None:
+    def __init__(self,
+                 region_list: List[Region],
+                 comp_power: float,
+                 link_to_bw: Dict[str, Dict[float, float]]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.region_list = region_list
         self.region_num = len(region_list)
 
@@ -66,7 +70,7 @@ class TrainingSimulator(ABC):
         Returns:
             float: the data transfer bandwidth.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         assert len(self.link_to_bandwidth)
         if link not in self.link_to_bandwidth:
             raise TypeError(f"Unknown data transfer link {link}")
@@ -77,21 +81,27 @@ class TrainingSimulator(ABC):
         return self.link_to_bandwidth[link][size_list[d_idx]]
 
     def _get_communication_overhead(self, link: str, comm_volumn: float) -> float:
+        gd.debuginfo(prj="mt", info=f'')
         return comm_volumn / self._get_bandwidth(link, comm_volumn)
 
     def _get_computing_overhead(self, flop: float) -> float:
+        gd.debuginfo(prj="mt", info=f'')
         return flop / self.comp_power
 
 
 class SynTrainingSimulator(TrainingSimulator):
-    def __init__(self, region_list: List[Region], comp_power: float, link_to_bw: Dict[str, Dict[float, float]]) -> None:
+    def __init__(self,
+                 region_list: List[Region],
+                 comp_power: float,
+                 link_to_bw: Dict[str, Dict[float, float]]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(region_list, comp_power, link_to_bw)
 
     def execute(self):
         """
         Simulate synchronous training process.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         for reg in self.region_list:
             self._eval_fwd_mem_per_region(reg)
 
@@ -102,9 +112,10 @@ class SynTrainingSimulator(TrainingSimulator):
         """
         Evaluate the runtime and peak memory when the forward execution reaches the current region.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         # upload parameters of the current region
         if requires_upload_p_in_fwd(self.region_list[region.shared_rid]):
+            gd.debuginfo(prj="mt", info=f'')
             self.runtime_mem += region.param_size
 
         for node in region.nodes:
@@ -114,22 +125,26 @@ class SynTrainingSimulator(TrainingSimulator):
             self.total_mem_saving += node.node_info.runtime_fwd_mem - self.runtime_mem
 
         if region.need_offload:
+            gd.debuginfo(prj="mt", info=f'')
             self.runtime_mem -= region.param_size
 
     def _eval_bwd_mem_per_region(self, region: Region):
         """
         Evaluate the runtime and peak memory when the backward execution reaches the current region.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         # upload parameters of the current region
         if region.need_offload:
+            gd.debuginfo(prj="mt", info=f'')
             self.runtime_mem += region.param_size
 
         # add the gradient of the parameter
         if region.r_id < region.shared_rid:
+            gd.debuginfo(prj="mt", info=f'')
             # gradient accumulation is required for shared parameters
             self.runtime_mem += 2.0 * region.param_size
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.runtime_mem += region.param_size
 
         for node in region.nodes.__reversed__():
@@ -161,14 +176,21 @@ class SynTrainingSimulator(TrainingSimulator):
         # release parameter and offload gradient in region
         if region.r_id == region.shared_rid:
             self.runtime_mem -= 2.0 * region.param_size
+            gd.debuginfo(prj="mt", info=f'')
         elif region.r_id < region.shared_rid:
             self.runtime_mem -= 3.0 * region.param_size
+            gd.debuginfo(prj="mt", info=f'')
         elif self.region_list[region.shared_rid].need_offload:
             self.runtime_mem -= region.param_size
+            gd.debuginfo(prj="mt", info=f'')
 
 
 class AsynTrainingSimulator(TrainingSimulator):
-    def __init__(self, region_list: List[Region], comp_power: float, link_to_bw: Dict[str, Dict[float, float]]) -> None:
+    def __init__(self,
+                 region_list: List[Region],
+                 comp_power: float,
+                 link_to_bw: Dict[str, Dict[float, float]]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(region_list, comp_power, link_to_bw)
 
         self.iter_end_time: int = 0
@@ -209,7 +231,7 @@ class AsynTrainingSimulator(TrainingSimulator):
         In backward pass, parameter prefetching is executed at the specified location,
             and gradient offloading is urgent.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         for reg in self.region_list:
             if reg.param_size and reg.r_id < self.region_num - 1:
                 for nr in self.region_list[reg.r_id + 1 :]:
@@ -235,14 +257,16 @@ class AsynTrainingSimulator(TrainingSimulator):
         """
         Insert parameter prefetch execution period of the current region to the end of the h2d stream
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         pref_start_time = max(self.last_h2d.end_time, self.last_comp.end_time)
         pref_end_time = pref_start_time + 2.0 * self._get_communication_overhead("h2d", region.param_size)
         pref_ep = ExecutionPeriod(start_time=pref_start_time, end_time=pref_end_time)
         if is_fwd:
             self.fwd_reg_to_pref[region.r_id] = pref_ep
+            gd.debuginfo(prj="mt", info=f'')
         else:
             self.bwd_reg_to_pref[region.r_id] = pref_ep
+            gd.debuginfo(prj="mt", info=f'')
         self.last_h2d = pref_ep
 
     def _insert_comp_exec(self, region: Region, is_fwd: bool = True):
@@ -254,10 +278,12 @@ class AsynTrainingSimulator(TrainingSimulator):
             reg_to_comp = self.fwd_reg_to_comp
             reg_to_pref = self.fwd_reg_to_pref
             flop_key = "fwd_flop"
+            gd.debuginfo(prj="mt", info=f'')
         else:
             reg_to_comp = self.bwd_reg_to_comp
             reg_to_pref = self.bwd_reg_to_pref
             flop_key = "bwd_flop"
+            gd.debuginfo(prj="mt", info=f'')
         comp_start_time = max(self.last_comp.end_time, reg_to_pref.get(region.r_id, ExecutionPeriod(0, 0)).end_time)
         comp_end_time = comp_start_time + sum(
             [self._get_computing_overhead(node.meta.get(flop_key, 0)) for node in region.nodes]
@@ -270,7 +296,7 @@ class AsynTrainingSimulator(TrainingSimulator):
         """
         Insert gradient offload execution period of the current region to the end of the d2h stream
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         offl_start_time = max(self.last_d2h.end_time, self.last_comp.end_time)
         offl_end_time = offl_start_time + self._get_communication_overhead("d2h", region.param_size)
         offl_ep = ExecutionPeriod(start_time=offl_start_time, end_time=offl_end_time)
@@ -281,14 +307,16 @@ class AsynTrainingSimulator(TrainingSimulator):
         """
         Evaluate computation and communication execution period of the region in forward pass.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         # upload parameters of the first region
         if region.r_id == 0:
+            gd.debuginfo(prj="mt", info=f'')
             self._insert_h2d_exec(region)
 
         # prefetch parameters of the next region
         fwd_prefetch_region = region.fwd_prefetch_region
         if fwd_prefetch_region and requires_upload_p_in_fwd(self.region_list[fwd_prefetch_region.shared_rid]):
+            gd.debuginfo(prj="mt", info=f'')
             self._insert_h2d_exec(fwd_prefetch_region)
 
         # execute computation
@@ -301,9 +329,11 @@ class AsynTrainingSimulator(TrainingSimulator):
 
         # upload parameters of the current region
         if region.r_id <= 0:
+            gd.debuginfo(prj="mt", info=f'')
             self.runtime_mem += region.param_size
             self.fwd_reg_flow[region.r_id, region.r_id] = True
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.fwd_reg_flow[region.r_id] = self.fwd_reg_flow[region.r_id - 1]
             self.fwd_reg_flow[region.r_id, self.reg_buffer_to_free] = False
             self.reg_buffer_to_free.clear()
@@ -311,6 +341,7 @@ class AsynTrainingSimulator(TrainingSimulator):
         # prefetch parameters of the next region
         fwd_prefetch_region = region.fwd_prefetch_region
         if fwd_prefetch_region and requires_upload_p_in_fwd(self.region_list[fwd_prefetch_region.shared_rid]):
+            gd.debuginfo(prj="mt", info=f'')
             self.runtime_mem += fwd_prefetch_region.param_size
             self.fwd_reg_flow[region.r_id, fwd_prefetch_region.r_id] = True
 
@@ -326,19 +357,22 @@ class AsynTrainingSimulator(TrainingSimulator):
 
             assert len(self.reg_buffer_to_free) <= 1, f"{len(self.reg_buffer_to_free)}"
             self.reg_buffer_to_free.append(region.r_id)
+            gd.debuginfo(prj="mt", info=f'')
 
     def _eval_bwd_cost_per_region(self, region: Region):
         """
         Evaluate computation and communication execution period of the region in backward pass.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         # upload parameters of the current region
         if region.is_syn:
+            gd.debuginfo(prj="mt", info=f'')
             assert region.need_offload
             self._insert_h2d_exec(region, is_fwd=False)
 
         # prefetch parameters of the region choiced, which is parallel to computation
         if region.bwd_prefetch_region is not None:
+            gd.debuginfo(prj="mt", info=f'')
             self._insert_h2d_exec(region.bwd_prefetch_region, is_fwd=False)
 
         # execute computation
@@ -346,6 +380,7 @@ class AsynTrainingSimulator(TrainingSimulator):
 
         # offload gradient
         if requires_offload_g_in_bwd(region):
+            gd.debuginfo(prj="mt", info=f'')
             self._insert_d2h_exec(region)
 
         assert len(self.reg_buffer_to_free) == 0
@@ -362,10 +397,12 @@ class AsynTrainingSimulator(TrainingSimulator):
         """
         Evaluate the runtime and peak memory when the backward execution reaches the current region.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         if region.r_id + 1 < self.region_num:
             self.bwd_reg_flow[region.r_id] = self.bwd_reg_flow[region.r_id + 1]
+            gd.debuginfo(prj="mt", info=f'')
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.bwd_reg_flow[region.r_id] = self.fwd_reg_flow[-1]
         self.bwd_reg_flow[region.r_id, self.reg_buffer_to_free] = False
 
@@ -376,12 +413,14 @@ class AsynTrainingSimulator(TrainingSimulator):
 
         # upload parameters of the current region
         if region.is_syn:
+            gd.debuginfo(prj="mt", info=f'')
             self.runtime_mem += region.param_size
             self.bwd_reg_flow[region.r_id, region.r_id] = True
 
         # prefetch parameters of the region choiced
         bwd_prefetch_region = region.bwd_prefetch_region
         if bwd_prefetch_region:
+            gd.debuginfo(prj="mt", info=f'')
             self.runtime_mem += bwd_prefetch_region.param_size
             self.bwd_reg_flow[region.r_id, bwd_prefetch_region.r_id] = True
 
@@ -389,8 +428,10 @@ class AsynTrainingSimulator(TrainingSimulator):
         if region.r_id < region.shared_rid:
             # gradient accumulation is required for shared parameters
             self.runtime_mem += 2.0 * region.param_size
+            gd.debuginfo(prj="mt", info=f'')
         else:
             self.runtime_mem += region.param_size
+            gd.debuginfo(prj="mt", info=f'')
 
         for node in region.nodes.__reversed__():
             self.runtime_mem -= calculate_fwd_out(node)
@@ -421,4 +462,5 @@ class AsynTrainingSimulator(TrainingSimulator):
 
         # release parameters of the region
         if requires_release_p_in_bwd(self.region_list[region.shared_rid]):
+            gd.debuginfo(prj="mt", info=f'')
             self.runtime_mem -= region.param_size

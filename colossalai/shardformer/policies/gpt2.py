@@ -27,12 +27,15 @@ class GPT2Policy(Policy):
         r"""
         Reshape the Embedding layer to make the embedding dimension divisible by world_size
         """
+        gd.debuginfo(prj="mt", info=f'')
         if self.shard_config.enable_tensor_parallelism:
             vocab_size = self.model.config.vocab_size
             world_size = self.shard_config.tensor_parallel_size
+            gd.debuginfo(prj="mt", info=f'')
             if vocab_size % world_size != 0:
                 new_vocab_size = vocab_size + world_size - vocab_size % world_size
                 self.model.resize_token_embeddings(new_vocab_size)
+                gd.debuginfo(prj="mt", info=f'')
         return self.model
 
     def module_policy(self):
@@ -41,6 +44,8 @@ class GPT2Policy(Policy):
         policy = {}
         use_sequence_parallel = self.shard_config.enable_sequence_parallelism
         overlap = self.shard_config.enable_sequence_overlap
+        gd.debuginfo(prj="mt", info=f'')
+
         if self.shard_config.enable_tensor_parallelism:
             policy[GPT2Model] = ModulePolicyDescription(
                 sub_module_replacement=[
@@ -54,6 +59,7 @@ class GPT2Policy(Policy):
                     ),
                 ]
             )
+            gd.debuginfo(prj="mt", info=f'')
 
             policy[GPT2Block] = ModulePolicyDescription(
                 attribute_replacement={
@@ -111,6 +117,7 @@ class GPT2Policy(Policy):
                 policy=policy,
                 target_key=GPT2Model,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
             self.append_or_create_submodule_replacement(
                 description=[
@@ -138,9 +145,11 @@ class GPT2Policy(Policy):
                 policy=policy,
                 target_key=GPT2Attention,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.shard_config.enable_sequence_parallelism:
             policy[GPT2Model].method_replacement = {"forward": gpt2_sequence_parallel_forward_fn(self.shard_config)}
+            gd.debuginfo(prj="mt", info=f'')
 
         return policy
 
@@ -153,8 +162,10 @@ class GPT2Policy(Policy):
 
         if self.model.__class__.__name__ == "GPT2Model":
             module = self.model
+            gd.debuginfo(prj="mt", info=f'')
         else:
             module = self.model.transformer
+            gd.debuginfo(prj="mt", info=f'')
         stage_manager = self.pipeline_stage_manager
 
         held_layers = []
@@ -163,10 +174,12 @@ class GPT2Policy(Policy):
             held_layers.append(module.wte)
             held_layers.append(module.wpe)
             held_layers.append(module.drop)
+            gd.debuginfo(prj="mt", info=f'')
         start_idx, end_idx = self.get_stage_index(layers_per_stage, stage_manager.stage)
         held_layers.extend(module.h[start_idx:end_idx])
         if stage_manager.is_last_stage():
             held_layers.append(module.ln_f)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def set_pipeline_forward(self, model_cls: nn.Module, new_forward: Callable, policy: Dict) -> None:
@@ -177,8 +190,10 @@ class GPT2Policy(Policy):
         stage_manager = self.pipeline_stage_manager
         if self.model.__class__.__name__ == "GPT2Model":
             module = self.model
+            gd.debuginfo(prj="mt", info=f'')
         else:
             module = self.model.transformer
+            gd.debuginfo(prj="mt", info=f'')
 
         layers_per_stage = Policy.distribute_layers(len(module.h), stage_manager.num_stages)
         stage_index = Policy.get_stage_index(layers_per_stage, stage_manager.stage)
@@ -194,8 +209,10 @@ class GPT2Policy(Policy):
 class GPT2ModelPolicy(GPT2Policy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         from transformers.models.gpt2.modeling_gpt2 import GPT2Model
 
         policy = super().module_policy()
@@ -204,6 +221,7 @@ class GPT2ModelPolicy(GPT2Policy):
             self.set_pipeline_forward(
                 model_cls=GPT2Model, new_forward=GPT2PipelineForwards.gpt2_model_forward, policy=policy
             )
+            gd.debuginfo(prj="mt", info=f'')
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
@@ -217,9 +235,11 @@ class GPT2ModelPolicy(GPT2Policy):
 # GPT2LMHeadModel
 class GPT2LMHeadModelPolicy(GPT2Policy):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         from transformers.models.gpt2.modeling_gpt2 import GPT2LMHeadModel
 
         module_policy = super().module_policy()
@@ -235,6 +255,7 @@ class GPT2LMHeadModelPolicy(GPT2Policy):
                 )
             }
             module_policy.update(addon_module)
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.pipeline_stage_manager is not None:
             self.set_pipeline_forward(
@@ -242,20 +263,26 @@ class GPT2LMHeadModelPolicy(GPT2Policy):
                 new_forward=GPT2PipelineForwards.gpt2_lmhead_model_forward,
                 policy=module_policy,
             )
+            gd.debuginfo(prj="mt", info=f'')
         return module_policy
 
     def get_held_layers(self) -> List[nn.Module]:
+        gd.debuginfo(prj="mt", info=f'')
         held_layers = super().get_held_layers()
         if self.pipeline_stage_manager.is_last_stage():
             held_layers.append(self.model.lm_head)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
+        gd.debuginfo(prj="mt", info=f'')
         """The weights of wte and lm_head are shared."""
         module = self.model
         stage_manager = self.pipeline_stage_manager
         if stage_manager is not None:
+            gd.debuginfo(prj="mt", info=f'')
             if stage_manager.num_stages > 1 and id(module.transformer.wte.weight) == id(module.lm_head.weight):
+                gd.debuginfo(prj="mt", info=f'')
                 first_stage, last_stage = 0, stage_manager.num_stages - 1
                 return [{first_stage: module.transformer.wte.weight, last_stage: module.lm_head.weight}]
         return []
@@ -265,13 +292,16 @@ class GPT2LMHeadModelPolicy(GPT2Policy):
 class GPT2DoubleHeadsModelPolicy(GPT2Policy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         from transformers.models.gpt2.modeling_gpt2 import GPT2DoubleHeadsModel
 
         module_policy = super().module_policy()
 
         if self.shard_config.enable_tensor_parallelism:
+            gd.debuginfo(prj="mt", info=f'')
             addon_module = {
                 GPT2DoubleHeadsModel: ModulePolicyDescription(
                     sub_module_replacement=[
@@ -284,6 +314,7 @@ class GPT2DoubleHeadsModelPolicy(GPT2Policy):
             module_policy.update(addon_module)
 
         if self.pipeline_stage_manager is not None:
+            gd.debuginfo(prj="mt", info=f'')
             self.set_pipeline_forward(
                 model_cls=GPT2DoubleHeadsModel,
                 new_forward=GPT2PipelineForwards.gpt2_double_heads_model_forward,
@@ -293,6 +324,7 @@ class GPT2DoubleHeadsModelPolicy(GPT2Policy):
         return module_policy
 
     def get_held_layers(self) -> List[nn.Module]:
+        gd.debuginfo(prj="mt", info=f'')
         held_layers = super().get_held_layers()
         if self.pipeline_stage_manager.is_last_stage():
             multiple_choice_head = self.model.multiple_choice_head
@@ -301,6 +333,7 @@ class GPT2DoubleHeadsModelPolicy(GPT2Policy):
             held_layers.append(multiple_choice_head.activation)
             held_layers.append(multiple_choice_head.first_dropout)
             held_layers.append(multiple_choice_head.last_dropout)
+            gd.debuginfo(prj="mt", info=f'')
 
         return held_layers
 
@@ -308,10 +341,14 @@ class GPT2DoubleHeadsModelPolicy(GPT2Policy):
         """The weights of wte and lm_head are shared."""
         module = self.model
         stage_manager = self.pipeline_stage_manager
+        gd.debuginfo(prj="mt", info=f'')
         if stage_manager is not None:
+            gd.debuginfo(prj="mt", info=f'')
             if stage_manager.num_stages > 1 and id(module.transformer.wte.weight) == id(module.lm_head.weight):
                 first_stage, last_stage = 0, stage_manager.num_stages - 1
+                gd.debuginfo(prj="mt", info=f'')
                 return [{first_stage: module.transformer.wte.weight, last_stage: module.lm_head.weight}]
+
         return []
 
 
@@ -319,8 +356,10 @@ class GPT2DoubleHeadsModelPolicy(GPT2Policy):
 class GPT2ForQuestionAnsweringPolicy(GPT2Policy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         from transformers.models.gpt2.modeling_gpt2 import GPT2ForQuestionAnswering
 
         module_policy = super().module_policy()
@@ -331,13 +370,16 @@ class GPT2ForQuestionAnsweringPolicy(GPT2Policy):
                 new_forward=GPT2PipelineForwards.gpt2_for_question_answering_forward,
                 policy=module_policy,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         return module_policy
 
     def get_held_layers(self) -> List[nn.Module]:
+        gd.debuginfo(prj="mt", info=f'')
         held_layers = super().get_held_layers()
         if self.pipeline_stage_manager.is_last_stage():
             held_layers.append(self.model.qa_outputs)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
@@ -349,8 +391,10 @@ class GPT2ForQuestionAnsweringPolicy(GPT2Policy):
 class GPT2ForTokenClassificationPolicy(GPT2Policy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         from transformers.models.gpt2.modeling_gpt2 import GPT2ForTokenClassification
 
         module_policy = super().module_policy()
@@ -364,6 +408,7 @@ class GPT2ForTokenClassificationPolicy(GPT2Policy):
                 )
             }
             module_policy.update(addon_module)
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.pipeline_stage_manager is not None:
             self.set_pipeline_forward(
@@ -371,13 +416,16 @@ class GPT2ForTokenClassificationPolicy(GPT2Policy):
                 new_forward=GPT2PipelineForwards.gpt2_for_token_classification_forward,
                 policy=module_policy,
             )
+            gd.debuginfo(prj="mt", info=f'')
         return module_policy
 
     def get_held_layers(self) -> List[nn.Module]:
+        gd.debuginfo(prj="mt", info=f'')
         held_layers = super().get_held_layers()
         if self.pipeline_stage_manager.is_last_stage():
             held_layers.append(self.model.dropout)
             held_layers.append(self.model.classifier)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
@@ -389,8 +437,10 @@ class GPT2ForTokenClassificationPolicy(GPT2Policy):
 class GPT2ForSequenceClassificationPolicy(GPT2Policy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         from transformers.models.gpt2.modeling_gpt2 import GPT2ForSequenceClassification
 
         module_policy = super().module_policy()
@@ -401,12 +451,15 @@ class GPT2ForSequenceClassificationPolicy(GPT2Policy):
                 new_forward=GPT2PipelineForwards.gpt2_for_sequence_classification_forward,
                 policy=module_policy,
             )
+            gd.debuginfo(prj="mt", info=f'')
         return module_policy
 
     def get_held_layers(self) -> List[nn.Module]:
+        gd.debuginfo(prj="mt", info=f'')
         held_layers = super().get_held_layers()
         if self.pipeline_stage_manager.is_last_stage():
             held_layers.append(self.model.score)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:

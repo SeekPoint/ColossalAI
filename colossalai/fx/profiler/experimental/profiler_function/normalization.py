@@ -16,6 +16,7 @@ def torch_nn_func_instancenorm(
     momentum: float = 0.1,
     eps: float = 1e-5,
 ):
+    gd.debuginfo(prj="mt", info=f'')
     has_affine = weight is not None
     flops = input.numel() * (5 if has_affine else 4)
     macs = 0
@@ -30,6 +31,7 @@ def torch_nn_func_groupnorm(
     bias: Optional[torch.Tensor] = None,
     eps: float = 1e-5,
 ) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
     has_affine = weight is not None
     flops = input.numel() * (5 if has_affine else 4)
     macs = 0
@@ -44,6 +46,7 @@ def torch_nn_func_layernorm(
     bias: Optional[torch.Tensor] = None,
     eps: float = 1e-5,
 ) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
     has_affine = weight is not None
     flops = input.numel() * (5 if has_affine else 4)
     macs = 0
@@ -64,7 +67,9 @@ def torch_nn_func_batchnorm(
     has_affine = weight is not None
     if training:
         flops = input.numel() * (2 if has_affine else 1)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         flops = input.numel() * (5 if has_affine else 4)
+        gd.debuginfo(prj="mt", info=f'')
     macs = 0
     return flops, macs

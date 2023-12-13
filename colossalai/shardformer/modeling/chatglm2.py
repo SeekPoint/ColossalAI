@@ -14,28 +14,35 @@ from colossalai.shardformer.modeling.chatglm2_6b.modeling_chatglm import ChatGLM
 from pydebug import gd, infoTensor
 
 def get_flash_core_attention_forward():
+    gd.debuginfo(prj="mt", info=f'')
     from colossalai.kernel.cuda_native import AttnMaskType, ColoAttention
 
     from .chatglm2_6b.modeling_chatglm import CoreAttention
 
     def forward(self: CoreAttention, query_layer, key_layer, value_layer, attention_mask):
         pytorch_major_version = int(torch.__version__.split(".")[0])
+        gd.debuginfo(prj="mt", info=f'')
         if pytorch_major_version >= 2:
             query_layer, key_layer, value_layer = [k.permute(1, 2, 0, 3) for k in [query_layer, key_layer, value_layer]]
             if attention_mask is None and query_layer.shape[2] == key_layer.shape[2]:
                 context_layer = torch.nn.functional.scaled_dot_product_attention(
                     query_layer, key_layer, value_layer, is_causal=True
                 )
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 if attention_mask is not None:
                     attention_mask = ~attention_mask
+                    gd.debuginfo(prj="mt", info=f'')
+
                 context_layer = torch.nn.functional.scaled_dot_product_attention(
                     query_layer, key_layer, value_layer, attention_mask
                 )
+                gd.debuginfo(prj="mt", info=f'')
             context_layer = context_layer.permute(2, 0, 1, 3)
             new_context_layer_shape = context_layer.size()[:-2] + (self.hidden_size_per_partition,)
             context_layer = context_layer.reshape(*new_context_layer_shape)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # Raw attention scores
             query_layer = query_layer.permute(1, 0, 2, 3).contiguous()
             key_layer = key_layer.permute(1, 0, 2, 3).contiguous()
@@ -44,14 +51,17 @@ def get_flash_core_attention_forward():
             scale = 1.0 / self.norm_factor
             if self.coeff is not None:
                 scale = scale * self.coeff
+                gd.debuginfo(prj="mt", info=f'')
 
             flash_attention_mask = None
             attn_mask_type = None
             if attention_mask is None:
                 attn_mask_type = AttnMaskType.causal
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 flash_attention_mask = ~(attention_mask[:, :, -1].squeeze(1).to(torch.bool)).contiguous()
                 attn_mask_type = AttnMaskType.paddedcausal
+                gd.debuginfo(prj="mt", info=f'')
 
             attention = ColoAttention(
                 embed_dim=self.hidden_size_per_partition,
@@ -71,6 +81,7 @@ def get_flash_core_attention_forward():
 
 
 def get_jit_fused_glm_block_forward():
+    gd.debuginfo(prj="mt", info=f'')
     from .chatglm2_6b.modeling_chatglm import GLMBlock
 
     def forward(
@@ -92,12 +103,15 @@ def get_jit_fused_glm_block_forward():
             kv_cache=kv_cache,
             use_cache=use_cache,
         )
+        gd.debuginfo(prj="mt", info=f'')
 
         # Residual connection.
         if self.apply_residual_connection_post_layernorm:
             residual = layernorm_output
+            gd.debuginfo(prj="mt", info=f'')
         else:
             residual = hidden_states
+            gd.debuginfo(prj="mt", info=f'')
 
         layernorm_input = self.dropout_add(attention_output, residual, self.hidden_dropout, self.training)
 
@@ -110,8 +124,10 @@ def get_jit_fused_glm_block_forward():
         # Second residual connection.
         if self.apply_residual_connection_post_layernorm:
             residual = layernorm_output
+            gd.debuginfo(prj="mt", info=f'')
         else:
             residual = layernorm_input
+            gd.debuginfo(prj="mt", info=f'')
 
         output = self.dropout_add(mlp_output, residual, self.hidden_dropout, self.training)
 
@@ -142,6 +158,7 @@ class ChatGLMPipelineForwards:
         stage_index: Optional[List[int]] = None,
         shard_config: ShardConfig = None,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         logger = logging.get_logger(__name__)
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
@@ -159,33 +176,51 @@ class ChatGLMPipelineForwards:
             logger.warning_once("use_cache=True is not supported for pipeline models at the moment.")
             use_cache = False
         if stage_manager.is_first_stage():
+
             batch_size, seq_length = input_ids.shape
+            gd.debuginfo(prj="mt", info=f'')
+
             if inputs_embeds is None:
                 inputs_embeds = self.embedding(input_ids)
+                gd.debuginfo(prj="mt", info=f'')
             hidden_states = inputs_embeds
         else:
             seq_length, batch_size = hidden_states.shape[:2]
+            gd.debuginfo(prj="mt", info=f'')
+
         if self.pre_seq_len is not None:
+            gd.debuginfo(prj="mt", info=f'')
             if past_key_values is None:
                 past_key_values = self.get_prompt(
                     batch_size=batch_size, device=input_ids.device, dtype=inputs_embeds.dtype
                 )
+                gd.debuginfo(prj="mt", info=f'')
             if attention_mask is not None:
                 attention_mask = torch.cat(
                     [attention_mask.new_ones((batch_size, self.pre_seq_len)), attention_mask], dim=-1
                 )
+                gd.debuginfo(prj="mt", info=f'')
+
         if full_attention_mask is None:
+            gd.debuginfo(prj="mt", info=f'')
             if (attention_mask is not None and not attention_mask.all()) or (past_key_values and seq_length != 1):
                 full_attention_mask = self.get_masks(input_ids, past_key_values, padding_mask=attention_mask)
+                gd.debuginfo(prj="mt", info=f'')
+
         # Rotary positional embeddings
         rotary_pos_emb = self.rotary_pos_emb(self.seq_length)
         if position_ids is not None:
             rotary_pos_emb = rotary_pos_emb[position_ids]
+            gd.debuginfo(prj="mt", info=f'')
         else:
             rotary_pos_emb = rotary_pos_emb[None, :seq_length]
+            gd.debuginfo(prj="mt", info=f'')
+
         rotary_pos_emb = rotary_pos_emb.transpose(0, 1).contiguous()
         if not past_key_values:
             past_key_values = [None for _ in range(self.num_layers)]
+            gd.debuginfo(prj="mt", info=f'')
+
         presents = () if use_cache else None
         if self.encoder.gradient_checkpointing and self.encoder.training:
             if use_cache:
@@ -193,6 +228,8 @@ class ChatGLMPipelineForwards:
                     "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
                 )
                 use_cache = False
+                gd.debuginfo(prj="mt", info=f'')
+
         all_self_attentions = None
         all_hidden_states = () if output_hidden_states else None
         start_idx, end_idx = stage_index[0], stage_index[1]
@@ -201,14 +238,24 @@ class ChatGLMPipelineForwards:
             hidden_states = split_forward_gather_backward(
                 hidden_states, dim=0, process_group=shard_config.tensor_parallel_process_group
             )
+
+            gd.debuginfo(prj="mt", info=f'')
+
+
         for idx in range(start_idx, end_idx):
             layer = self.encoder._get_layer(idx)
             if output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states,)
+                gd.debuginfo(prj="mt", info=f'')
             if self.encoder.gradient_checkpointing and self.encoder.training:
-                layer_ret = torch.utils.checkpoint.checkpoint(
-                    layer, hidden_states, attention_mask, rotary_pos_emb, past_key_values[idx], use_cache
-                )
+                layer_ret = torch.utils.checkpoint.checkpoint(layer,
+                                                              hidden_states,
+                                                              attention_mask,
+                                                              rotary_pos_emb,
+                                                              past_key_values[idx],
+                                                              use_cache)
+                gd.debuginfo(prj="mt", info=f'')
+
             else:
                 layer_ret = layer(
                     hidden_states,
@@ -217,24 +264,36 @@ class ChatGLMPipelineForwards:
                     kv_cache=past_key_values[idx],
                     use_cache=use_cache,
                 )
+                gd.debuginfo(prj="mt", info=f'')
+
             hidden_states, kv_cache = layer_ret
+
             if use_cache:
                 presents = presents + (kv_cache,)
+                gd.debuginfo(prj="mt", info=f'')
 
         if shard_config.enable_sequence_parallelism:
             hidden_states = gather_forward_split_backward(
                 hidden_states, dim=0, process_group=shard_config.tensor_parallel_process_group
             )
+            gd.debuginfo(prj="mt", info=f'')
+
         if output_hidden_states:
             all_hidden_states = all_hidden_states + (hidden_states,)
+            gd.debuginfo(prj="mt", info=f'')
+
         if stage_manager.is_last_stage():
             # final layer_norm
             if self.encoder.post_layer_norm:
                 hidden_states = self.encoder.final_layernorm(hidden_states)
+                gd.debuginfo(prj="mt", info=f'')
+
             if not return_dict:
+                gd.debuginfo(prj="mt", info=f'')
                 return tuple(
                     v for v in [hidden_states, presents, all_hidden_states, all_self_attentions] if v is not None
                 )
+
             return BaseModelOutputWithPast(
                 last_hidden_state=hidden_states,
                 past_key_values=presents,
@@ -242,6 +301,7 @@ class ChatGLMPipelineForwards:
                 attentions=all_self_attentions,
             )
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": hidden_states}
 
     @staticmethod
@@ -266,6 +326,8 @@ class ChatGLMPipelineForwards:
         logging.get_logger(__name__)
         use_cache = use_cache if use_cache is not None else self.config.use_cache
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        gd.debuginfo(prj="mt", info=f'')
+
         transformer_outputs = ChatGLMPipelineForwards.chatglm_model_forward(
             self.transformer,
             input_ids=input_ids,
@@ -281,13 +343,19 @@ class ChatGLMPipelineForwards:
             stage_index=stage_index,
             shard_config=shard_config,
         )
+
         if stage_manager.is_last_stage():
             hidden_states = transformer_outputs[0]
+            gd.debuginfo(prj="mt", info=f'')
+
             if return_last_logit:
                 hidden_states = hidden_states[-1:]
+                gd.debuginfo(prj="mt", info=f'')
+
             lm_logits = self.transformer.output_layer(hidden_states)
             lm_logits = lm_logits.transpose(0, 1).contiguous()
             loss = None
+
             if labels is not None:
                 lm_logits = lm_logits.to(torch.float32)
                 # Shift so that tokens < n predict n
@@ -298,9 +366,13 @@ class ChatGLMPipelineForwards:
                 loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
                 lm_logits = lm_logits.to(hidden_states.dtype)
                 loss = loss.to(hidden_states.dtype)
+                gd.debuginfo(prj="mt", info=f'')
+
             if not return_dict:
                 output = (lm_logits,) + transformer_outputs[1:]
+                gd.debuginfo(prj="mt", info=f'')
                 return ((loss,) + output) if loss is not None else output
+
             return CausalLMOutputWithPast(
                 loss=loss,
                 logits=lm_logits,
@@ -309,6 +381,7 @@ class ChatGLMPipelineForwards:
                 attentions=transformer_outputs.attentions,
             )
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return transformer_outputs
 
 
@@ -323,11 +396,13 @@ def get_chatglm_sequence_parallel_forward_fn(shard_config: ShardConfig):
         inputs_embeds: Optional[torch.Tensor] = None,
         use_cache: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
-        return_dict: Optional[bool] = None,
-    ):
+        return_dict: Optional[bool] = None):
+
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
+        gd.debuginfo(prj="mt", info=f'')
+
         use_cache = use_cache if use_cache is not None else self.config.use_cache
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -335,6 +410,7 @@ def get_chatglm_sequence_parallel_forward_fn(shard_config: ShardConfig):
 
         if inputs_embeds is None:
             inputs_embeds = self.embedding(input_ids)
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.pre_seq_len is not None:
             if past_key_values is None:
@@ -343,6 +419,7 @@ def get_chatglm_sequence_parallel_forward_fn(shard_config: ShardConfig):
                     device=input_ids.device,
                     dtype=inputs_embeds.dtype,
                 )
+                gd.debuginfo(prj="mt", info=f'')
             if attention_mask is not None:
                 attention_mask = torch.cat(
                     [
@@ -351,17 +428,23 @@ def get_chatglm_sequence_parallel_forward_fn(shard_config: ShardConfig):
                     ],
                     dim=-1,
                 )
+                gd.debuginfo(prj="mt", info=f'')
 
         if full_attention_mask is None:
+            gd.debuginfo(prj="mt", info=f'')
             if (attention_mask is not None and not attention_mask.all()) or (past_key_values and seq_length != 1):
                 full_attention_mask = self.get_masks(input_ids, past_key_values, padding_mask=attention_mask)
+                gd.debuginfo(prj="mt", info=f'')
 
         # Rotary positional embeddings
         rotary_pos_emb = self.rotary_pos_emb(self.seq_length)
         if position_ids is not None:
             rotary_pos_emb = rotary_pos_emb[position_ids]
+            gd.debuginfo(prj="mt", info=f'')
         else:
             rotary_pos_emb = rotary_pos_emb[None, :seq_length]
+            gd.debuginfo(prj="mt", info=f'')
+
         rotary_pos_emb = rotary_pos_emb.transpose(0, 1).contiguous()
 
         # Run encoder.
@@ -369,6 +452,9 @@ def get_chatglm_sequence_parallel_forward_fn(shard_config: ShardConfig):
         inputs_embeds = split_forward_gather_backward(
             inputs_embeds, dim=0, process_group=shard_config.tensor_parallel_process_group
         )
+
+        gd.debuginfo(prj="mt", info=f'')
+
         hidden_states, presents, all_hidden_states, all_self_attentions = self.encoder(
             inputs_embeds,
             full_attention_mask,
@@ -382,7 +468,10 @@ def get_chatglm_sequence_parallel_forward_fn(shard_config: ShardConfig):
             hidden_states, dim=0, process_group=shard_config.tensor_parallel_process_group
         )
 
+        gd.debuginfo(prj="mt", info=f'')
+
         if not return_dict:
+            gd.debuginfo(prj="mt", info=f'')
             return tuple(
                 v
                 for v in [

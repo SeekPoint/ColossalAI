@@ -24,7 +24,7 @@ def run_on_host(
         send_conn (multiprocessing.connection.Connection): send messages to the master receiver
         env (dict): a dictionary for environment variables
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     fab_conn = fabric.Connection(hostinfo.hostname, port=hostinfo.port)
     finish = False
     env_msg = " ".join([f'{k}="{v}"' for k, v in env.items()])
@@ -84,6 +84,7 @@ class MultiNodeRunner:
             workdir (str): the directory where command is executed
             env (dict): environment variables to propagate to hosts
         """
+        gd.debuginfo(prj="mt", info=f'')
         for hostinfo in host_info_list:
             master_send_conn, worker_recv_conn = Pipe()
             master_recv_conn, worker_send_conn = Pipe()
@@ -101,7 +102,7 @@ class MultiNodeRunner:
             hostinfo (HostInfo): host information
             cmd (str): the command to execute
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         assert hostinfo.hostname in self.master_send_conns, f"{hostinfo} is not found in the current connections"
         conn = self.master_send_conns[hostinfo.hostname]
         conn.send(cmd)
@@ -110,7 +111,7 @@ class MultiNodeRunner:
         """
         Stop connections to all hosts.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         for hostname, conn in self.master_send_conns.items():
             conn.send("exit")
 
@@ -121,7 +122,7 @@ class MultiNodeRunner:
         Returns:
             msg_from_node (dict): a dictionary which contains messages from each node
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         msg_from_node = dict()
         for hostname, conn in self.master_recv_conns.items():
             msg_from_node[hostname] = conn.recv()

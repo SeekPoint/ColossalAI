@@ -19,9 +19,11 @@ class WhereGenerator(StrategyGenerator):
     """
 
     def validate(self) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         return super().validate()
 
     def update_compute_cost(self, strategy: ShardingStrategy):
+        gd.debuginfo(prj="mt", info=f'')
         compute_cost = TrainCycleItem(fwd=10, bwd=10, total=20)
         strategy.compute_cost = compute_cost
 
@@ -29,6 +31,7 @@ class WhereGenerator(StrategyGenerator):
         """
         Compute the memory cost per device with this specific strategy.
         """
+        gd.debuginfo(prj="mt", info=f'')
         forward_size_mapping = {
             "condition": self._compute_size_in_bytes(strategy, "condition"),
             "x": self._compute_size_in_bytes(strategy, "x"),
@@ -55,6 +58,7 @@ class WhereGenerator(StrategyGenerator):
 
     @ignore_sharding_exception
     def _generate_strategy_with_dim_partition(self, dim_partition):
+
         dim_partition_dict_mapping = {
             "condition": dim_partition,
             "x": dim_partition,
@@ -65,6 +69,8 @@ class WhereGenerator(StrategyGenerator):
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict_mapping)
 
         name = f'{sharding_spec_mapping["output"].sharding_sequence} = {sharding_spec_mapping["condition"].sharding_sequence} x {sharding_spec_mapping["x"].sharding_sequence} x {sharding_spec_mapping["y"].sharding_sequence}'
+        gd.debuginfo(prj="mt", info=f'name={name}')
+
         communication_action_mapping = {}
 
         strategy = self.get_sharding_strategy(
@@ -76,6 +82,7 @@ class WhereGenerator(StrategyGenerator):
         return strategy
 
     def enumerate_all_possible_output_spec(self, mesh_dim_0, mesh_dim_1, dimension_length):
+        gd.debuginfo(prj="mt", info=f'')
         dim_partition_list = []
         dim_partition_list.extend(enumerate_all_possible_1d_sharding(mesh_dim_0, dimension_length))
         dim_partition_list.extend(enumerate_all_possible_1d_sharding(mesh_dim_1, dimension_length))
@@ -89,6 +96,7 @@ class WhereGenerator(StrategyGenerator):
         """
         Generate every possible strategies for a where node, and record all strategies into the strategies_vector.
         """
+        gd.debuginfo(prj="mt", info=f'')
         strategy_list = []
 
         dimension_length = len(self.op_data["output"].logical_shape)

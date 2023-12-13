@@ -17,6 +17,7 @@ class TrainingPhase(Enum):
 
 class GradMemStats:
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.unreleased_grad_flag = {}
         self.unreleased_grad_volume = 0
 

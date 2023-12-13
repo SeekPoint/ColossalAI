@@ -6,6 +6,7 @@ from torch._utils import _flatten_dense_tensors, _unflatten_dense_tensors
 
 
 def bucket_allreduce(param_list: Iterable[nn.Parameter], group=None):
+    gd.debuginfo(prj="mt", info=f'')
     # get communication world size
     comm_size = dist.get_world_size(group)
     # bucketize and all-reduce

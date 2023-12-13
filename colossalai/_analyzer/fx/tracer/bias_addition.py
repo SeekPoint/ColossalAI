@@ -15,16 +15,20 @@ __all__ = []
 @register_tracer_impl(F.linear, name="_bias_addition_impl")
 def linear_impl(input, weight, bias=None):
     if bias is None:
+        gd.debuginfo(prj="mt", info=f'')
         return F.linear(input, weight)
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return F.linear(input, weight) + bias
 
 
 @register_tracer_impl(F.conv1d, name="_bias_addition_impl")
 def conv1d_impl(input, weight, bias=None, stride=_single(1), padding=_single(0), dilation=_single(1), groups=1):
     if bias is None:
+        gd.debuginfo(prj="mt", info=f'')
         return F.conv1d(input, weight, stride=stride, padding=padding, dilation=dilation, groups=groups)
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return F.conv1d(input, weight, stride=stride, padding=padding, dilation=dilation, groups=groups) + bias.reshape(
             (-1, 1)
         )
@@ -33,8 +37,10 @@ def conv1d_impl(input, weight, bias=None, stride=_single(1), padding=_single(0),
 @register_tracer_impl(F.conv2d, name="_bias_addition_impl")
 def conv2d_impl(input, weight, bias=None, stride=_pair(1), padding=_pair(0), dilation=_pair(1), groups=1):
     if bias is None:
+        gd.debuginfo(prj="mt", info=f'')
         return F.conv2d(input, weight, stride=stride, padding=padding, dilation=dilation, groups=groups)
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return F.conv2d(input, weight, stride=stride, padding=padding, dilation=dilation, groups=groups) + bias.reshape(
             (-1, 1, 1)
         )
@@ -43,8 +49,10 @@ def conv2d_impl(input, weight, bias=None, stride=_pair(1), padding=_pair(0), dil
 @register_tracer_impl(F.conv3d, name="_bias_addition_impl")
 def conv3d_impl(input, weight, bias=None, stride=_triple(1), padding=_triple(0), dilation=_triple(1), groups=1):
     if bias is None:
+        gd.debuginfo(prj="mt", info=f'')
         return F.conv3d(input, weight, stride=stride, padding=padding, dilation=dilation, groups=groups)
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return F.conv3d(input, weight, stride=stride, padding=padding, dilation=dilation, groups=groups) + bias.reshape(
             (-1, 1, 1, 1)
         )
@@ -62,6 +70,7 @@ def conv_transpose1d_impl(
     dilation=_single(1),
 ):
     if bias is None:
+        gd.debuginfo(prj="mt", info=f'')
         return F.conv_transpose1d(
             input,
             weight,
@@ -72,6 +81,7 @@ def conv_transpose1d_impl(
             dilation=dilation,
         )
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return F.conv_transpose1d(
             input,
             weight,
@@ -88,6 +98,7 @@ def conv_transpose2d_impl(
     input, weight, bias=None, stride=_pair(1), padding=_pair(0), output_padding=_pair(0), groups=1, dilation=_pair(1)
 ):
     if bias is None:
+        gd.debuginfo(prj="mt", info=f'')
         return F.conv_transpose2d(
             input,
             weight,
@@ -98,6 +109,7 @@ def conv_transpose2d_impl(
             dilation=dilation,
         )
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return F.conv_transpose2d(
             input,
             weight,
@@ -121,6 +133,7 @@ def conv_transpose3d_impl(
     dilation=_triple(1),
 ):
     if bias is None:
+        gd.debuginfo(prj="mt", info=f'')
         return F.conv_transpose3d(
             input,
             weight,
@@ -131,6 +144,7 @@ def conv_transpose3d_impl(
             dilation=dilation,
         )
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return F.conv_transpose3d(
             input,
             weight,
@@ -146,12 +160,16 @@ def conv_transpose3d_impl(
 @register_tracer_impl(torch.Tensor.addmm, name="_bias_addition_impl")
 def addmm_impl(input, mat1, mat2, beta=1, alpha=1):
     if alpha != 1 and beta != 1:
+        gd.debuginfo(prj="mt", info=f'')
         return F.linear(mat1, mat2.transpose(0, 1)) * alpha + input * beta
     elif alpha != 1:
+        gd.debuginfo(prj="mt", info=f'')
         return F.linear(mat1, mat2.transpose(0, 1)) * alpha + input
     elif beta != 1:
+        gd.debuginfo(prj="mt", info=f'')
         return F.linear(mat1, mat2.transpose(0, 1)) + input * beta
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return F.linear(mat1, mat2.transpose(0, 1)) + input
 
 
@@ -159,10 +177,14 @@ def addmm_impl(input, mat1, mat2, beta=1, alpha=1):
 @register_tracer_impl(torch.Tensor.addbmm, name="_bias_addition_impl")
 def addbmm_impl(input, batch1, batch2, beta=1, alpha=1):
     if alpha != 1 and beta != 1:
+        gd.debuginfo(prj="mt", info=f'')
         return torch.bmm(batch1, batch2.transpose(1, 2)) * alpha + input * beta
     elif alpha != 1:
+        gd.debuginfo(prj="mt", info=f'')
         return torch.bmm(batch1, batch2.transpose(1, 2)) * alpha + input
     elif beta != 1:
+        gd.debuginfo(prj="mt", info=f'')
         return torch.bmm(batch1, batch2.transpose(1, 2)) + input * beta
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return torch.bmm(batch1, batch2.transpose(1, 2)) + input

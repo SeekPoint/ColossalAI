@@ -11,12 +11,14 @@ from colossalai.shardformer import ShardConfig, ShardFormer
 from pydebug import gd, infoTensor
 
 def data_gen(batch_size, seq_length):
+    gd.debuginfo(prj="mt", info=f'')
     input_ids = torch.randint(0, seq_length, (batch_size, seq_length), dtype=torch.long)
     attention_mask = torch.ones((batch_size, seq_length), dtype=torch.long)
     return dict(input_ids=input_ids, attention_mask=attention_mask)
 
 
 def data_gen_for_sequence_classification(batch_size, seq_length):
+    gd.debuginfo(prj="mt", info=f'')
     # LM data gen
     # the `labels` of LM is the token of the output, cause no padding, use `input_ids` as `labels`
     data = data_gen(batch_size, seq_length)
@@ -53,6 +55,7 @@ configs = [
 
 
 def train(model, data):
+    gd.debuginfo(prj="mt", info=f'')
     output = model(**data)
     loss = output.logits.mean()
     loss.backward()
@@ -68,10 +71,12 @@ def bench_shardformer(BATCH, N_CTX, provider, model_func, dtype=torch.float32, d
     model = model_func().to(device)
     model.train()
     if provider == "org_model":
+        gd.debuginfo(prj="mt", info=f'')
         fn = lambda: train(model, data)
         ms = triton.testing.do_bench(fn, warmup=warmup, rep=rep)
         return ms
     if provider == "shard_model":
+        gd.debuginfo(prj="mt", info=f'')
         shard_config = ShardConfig(enable_fused_normalization=True, enable_tensor_parallelism=True)
         shard_former = ShardFormer(shard_config=shard_config)
         sharded_model, _ = shard_former.optimize(model)
@@ -84,5 +89,6 @@ def bench_shardformer(BATCH, N_CTX, provider, model_func, dtype=torch.float32, d
 # start benchmark, command:
 # torchrun --standalone --nproc_per_node=2 performance_benchmark.py
 if __name__ == "__main__":
+    gd.debuginfo(prj="mt", info=f'')
     colossalai.launch_from_torch({})
     bench_shardformer.run(save_path=".", print_data=dist.get_rank() == 0)

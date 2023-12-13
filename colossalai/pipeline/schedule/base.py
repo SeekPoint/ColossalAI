@@ -10,6 +10,7 @@ from colossalai.pipeline.stage_manager import PipelineStageManager
 class PipelineSchedule:
     def __init__(self, stage_manager: PipelineStageManager) -> None:
         self.stage_manager = stage_manager
+        gd.debuginfo(prj="mt", info=f'')
 
     def forward_backward_step(
         self,

@@ -8,6 +8,7 @@ class BaseSampler(ABC):
     def __init__(self, dataset, batch_size):
         self.dataset = dataset
         self.batch_size = batch_size
+        gd.debuginfo(prj="mt", info=f'')
 
     @abstractmethod
     def __len__(self):

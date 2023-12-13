@@ -4,6 +4,7 @@ from colossalai.legacy.global_variables import tensor_parallel_env as env
 from pydebug import gd, infoTensor
 
 def get_tesseract_dim_dep_from_env():
+    gd.debuginfo(prj="mt", info=f'')
     try:
         tesseract_dim = env.tesseract_dim
         tesseract_dep = env.tesseract_dep
@@ -19,6 +20,7 @@ def get_tesseract_dim_dep_from_env():
 
 
 def assert_tesseract_initialization():
+    gd.debuginfo(prj="mt", info=f'')
     assert (
         gpc.is_initialized(ParallelMode.PARALLEL_2P5D_COL)
         and gpc.is_initialized(ParallelMode.PARALLEL_2P5D_ROW)

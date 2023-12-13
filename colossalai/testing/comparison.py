@@ -9,14 +9,17 @@ from torch.utils._pytree import tree_flatten
 from pydebug import gd, infoTensor
 
 def assert_equal(a: Tensor, b: Tensor):
+    gd.debuginfo(prj="mt", info=f'')
     assert torch.all(a == b), f"expected a and b to be equal but they are not, {a} vs {b}"
 
 
 def assert_not_equal(a: Tensor, b: Tensor):
+    gd.debuginfo(prj="mt", info=f'')
     assert not torch.all(a == b), f"expected a and b to be not equal but they are, {a} vs {b}"
 
 
 def assert_close_loose(a: Tensor, b: Tensor, rtol: float = 1e-3, atol: float = 1e-3):
+    gd.debuginfo(prj="mt", info=f'')
     assert_close(
         a,
         b,
@@ -28,6 +31,7 @@ def assert_close_loose(a: Tensor, b: Tensor, rtol: float = 1e-3, atol: float = 1
 
 
 def assert_equal_in_group(tensor: Tensor, process_group: ProcessGroup = None):
+    gd.debuginfo(prj="mt", info=f'')
     # all gather tensors from different ranks
     world_size = dist.get_world_size(process_group)
     tensor_list = [torch.empty_like(tensor) for _ in range(world_size)]
@@ -41,6 +45,7 @@ def assert_equal_in_group(tensor: Tensor, process_group: ProcessGroup = None):
 
 
 def check_state_dict_equal(d1: OrderedDict, d2: OrderedDict, ignore_device: bool = True, ignore_dtype: bool = False):
+    gd.debuginfo(prj="mt", info=f'')
     assert len(list(d1.keys())) == len(
         list(d2.keys())
     ), f"Number of keys unequal: {len(list(d1.keys()))} vs {len(list(d2.keys()))}"
@@ -79,6 +84,7 @@ def check_state_dict_equal(d1: OrderedDict, d2: OrderedDict, ignore_device: bool
 
 
 def check_state_dict_equal_pytree(d1: OrderedDict, d2: OrderedDict, ignore_device: bool = True):
+    gd.debuginfo(prj="mt", info=f'')
     flat_d1, _ = tree_flatten(d1)
     flat_d2, _ = tree_flatten(d2)
     assert len(flat_d1) == len(flat_d2)
@@ -106,6 +112,7 @@ def assert_hf_output_close(
         track_name (str): the name of the value compared, used to track the path
     """
     if isinstance(out1, dict) and isinstance(out2, dict):
+        gd.debuginfo(prj="mt", info=f'')
         # if two values are dict
         # we recursively check the keys
         assert set(out1.keys()) == set(out2.keys())
@@ -116,6 +123,7 @@ def assert_hf_output_close(
                 out1[k], out2[k], track_name=f"{track_name}.{k}", ignore_keys=ignore_keys, atol=atol, rtol=rtol
             )
     elif isinstance(out1, (list, tuple)) and isinstance(out2, (list, tuple)):
+        gd.debuginfo(prj="mt", info=f'')
         # if two values are list
         # we recursively check the elements
         assert len(out1) == len(out2)
@@ -124,10 +132,12 @@ def assert_hf_output_close(
                 out1[i], out2[i], track_name=f"{track_name}.{i}", ignore_keys=ignore_keys, atol=atol, rtol=rtol
             )
     elif isinstance(out1, Tensor) and isinstance(out2, Tensor):
+        gd.debuginfo(prj="mt", info=f'')
         if out1.shape != out2.shape:
             raise AssertionError(f"{track_name}: shape mismatch: {out1.shape} vs {out2.shape}")
         assert torch.allclose(
             out1, out2, atol=atol, rtol=rtol
         ), f"{track_name}: tensor value mismatch\nvalue 1: {out1}\nvalue 2: {out2}, \nmean error: {torch.abs(out1 - out2).mean()}"
     else:
+        gd.debuginfo(prj="mt", info=f'')
         assert out1 == out2, f"{track_name}: value mismatch.\nout1: {out1}\nout2: {out2}"

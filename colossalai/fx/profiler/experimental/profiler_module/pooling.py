@@ -18,6 +18,7 @@ from ..registry import meta_profiler_module
 @meta_profiler_module.register(torch.nn.AdaptiveAvgPool3d)
 @meta_profiler_module.register(torch.nn.AdaptiveMaxPool3d)
 def torch_nn_pooling(self: torch.nn.Module, input: torch.Tensor) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
     # all pooling could be considered as going over each input element only once (https://stackoverflow.com/a/67301217)
     flops = input.numel()
     macs = 0

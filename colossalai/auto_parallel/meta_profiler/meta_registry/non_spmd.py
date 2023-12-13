@@ -21,6 +21,8 @@ def non_spmd_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, TrainCycleItem,
     Returns:
         Tuple[TrainCycleItem, TrainCycleItem, List[torch.Tensor]]: compute cost, memory cost and forward inputs
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     compute_cost = TrainCycleItem(fwd=0, bwd=0, total=0)
     memory_cost = TrainCycleItem(fwd=MemoryCost(), bwd=MemoryCost(), total=MemoryCost())
     fwd_in, fwd_buffer, fwd_out = [], [], []

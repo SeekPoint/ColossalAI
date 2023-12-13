@@ -64,6 +64,7 @@ class FusedLAMB(torch.optim.Optimizer):
         max_grad_norm=1.0,
         use_nvlamb=False,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         if amsgrad:
             raise RuntimeError("FusedLAMB does not support the AMSGrad variant.")
         defaults = dict(
@@ -77,6 +78,7 @@ class FusedLAMB(torch.optim.Optimizer):
         )
         super(FusedLAMB, self).__init__(params, defaults)
         if multi_tensor_applier.available:
+            gd.debuginfo(prj="mt", info=f'')
             from colossalai.kernel.op_builder import FusedOptimBuilder
 
             fused_optim = FusedOptimBuilder().load()
@@ -96,10 +98,12 @@ class FusedLAMB(torch.optim.Optimizer):
 
     def zero_grad(self):
         if self.set_grad_none:
+            gd.debuginfo(prj="mt", info=f'')
             for group in self.param_groups:
                 for p in group["params"]:
                     p.grad = None
         else:
+            gd.debuginfo(prj="mt", info=f'')
             super(FusedLAMB, self).zero_grad()
 
     def step(self, closure=None):
@@ -109,9 +113,11 @@ class FusedLAMB(torch.optim.Optimizer):
             closure (callable, optional): A closure that reevaluates the model
                 and returns the loss.
         """
+        gd.debuginfo(prj="mt", info=f'')
         loss = None
         if closure is not None:
             loss = closure()
+            gd.debuginfo(prj="mt", info=f'')
 
         # create separate grad lists for fp32 and fp16 params
         g_all_32, g_all_16 = [], []
@@ -131,8 +137,11 @@ class FusedLAMB(torch.optim.Optimizer):
         # compute grad norm for two lists
         if len(g_all_32) > 0:
             g_norm_32 = multi_tensor_applier(self.multi_tensor_l2norm, self._dummy_overflow_buf, [g_all_32], False)[0]
+            gd.debuginfo(prj="mt", info=f'')
+
         if len(g_all_16) > 0:
             g_norm_16 = multi_tensor_applier(self.multi_tensor_l2norm, self._dummy_overflow_buf, [g_all_16], False)[0]
+            gd.debuginfo(prj="mt", info=f'')
 
         # blend two grad norms to get global grad norm
         global_grad_norm = multi_tensor_applier(
@@ -203,6 +212,7 @@ class FusedLAMB(torch.optim.Optimizer):
                     max_grad_norm,
                     self.use_nvlamb,
                 )
+                gd.debuginfo(prj="mt", info=f'')
             if len(g_32) > 0:
                 multi_tensor_applier(
                     self.multi_tensor_lamb,
@@ -221,5 +231,6 @@ class FusedLAMB(torch.optim.Optimizer):
                     max_grad_norm,
                     self.use_nvlamb,
                 )
+                gd.debuginfo(prj="mt", info=f'')
 
         return loss

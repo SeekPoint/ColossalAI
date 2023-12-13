@@ -52,6 +52,7 @@ class GPT2PipelineForwards:
         stage_index: Optional[List[int]] = None,
         shard_config: ShardConfig = None,
     ) -> Union[Dict, Tuple, BaseModelOutputWithPastAndCrossAttentions]:
+        gd.debuginfo(prj="mt", info=f'')
         # This function is modified on the basis of transformers.models.gpt2.modeling_gpt2.GPT2Model.forward.
         # Please refer to original code of transformers for more details.
 
@@ -75,21 +76,25 @@ class GPT2PipelineForwards:
             use_cache = False
 
         if stage_manager.is_first_stage():
+            gd.debuginfo(prj="mt", info=f'')
             if input_ids is not None and inputs_embeds is not None:
                 raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
             elif input_ids is not None:
                 input_shape = input_ids.size()
                 input_ids = input_ids.view(-1, input_shape[-1])
                 batch_size = input_ids.shape[0]
+                gd.debuginfo(prj="mt", info=f'')
             elif inputs_embeds is not None:
                 input_shape = inputs_embeds.size()[:-1]
                 batch_size = inputs_embeds.shape[0]
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 raise ValueError("You have to specify either input_ids or inputs_embeds")
 
             device = input_ids.device if input_ids is not None else inputs_embeds.device
             if token_type_ids is not None:
                 token_type_ids = token_type_ids.view(-1, input_shape[-1])
+                gd.debuginfo(prj="mt", info=f'')
         else:
             if hidden_states is None:
                 raise ValueError("hidden_states shouldn't be None for stages other than the first stage.")
@@ -97,9 +102,11 @@ class GPT2PipelineForwards:
             device = hidden_states.device
             hidden_states = hidden_states.view((-1,) + hidden_states.shape[-2:])
             batch_size = hidden_states.shape[0]
+            gd.debuginfo(prj="mt", info=f'')
 
         # GPT2Attention mask.
         if attention_mask is not None:
+            gd.debuginfo(prj="mt", info=f'')
             if batch_size <= 0:
                 raise ValueError("batch_size has to be defined and > 0")
             attention_mask = attention_mask.view(batch_size, -1)
@@ -125,9 +132,12 @@ class GPT2PipelineForwards:
             encoder_hidden_shape = (encoder_batch_size, encoder_sequence_length)
             if encoder_attention_mask is None:
                 encoder_attention_mask = torch.ones(encoder_hidden_shape, device=device)
+                gd.debuginfo(prj="mt", info=f'')
             encoder_attention_mask = self.invert_attention_mask(encoder_attention_mask)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             encoder_attention_mask = None
+            gd.debuginfo(prj="mt", info=f'')
 
         # Prepare head mask if needed
         # 1.0 in head_mask indicate we keep the head
@@ -138,22 +148,29 @@ class GPT2PipelineForwards:
         if stage_manager.is_first_stage():
             if position_ids is not None:
                 position_ids = position_ids.view(-1, input_shape[-1])
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 position_ids = torch.arange(0, input_shape[-1], dtype=torch.long, device=device)
                 position_ids = position_ids.unsqueeze(0).view(-1, input_shape[-1])
+                gd.debuginfo(prj="mt", info=f'')
 
             if inputs_embeds is None:
                 inputs_embeds = self.wte(input_ids)
+                gd.debuginfo(prj="mt", info=f'')
+
             position_embeds = self.wpe(position_ids)
             hidden_states = inputs_embeds + position_embeds
             if token_type_ids is not None:
                 token_type_embeds = self.wte(token_type_ids)
                 hidden_states = hidden_states + token_type_embeds
+                gd.debuginfo(prj="mt", info=f'')
+
             hidden_states = self.drop(hidden_states)
 
         output_shape = input_shape + (hidden_states.size(-1),)
 
         if self.gradient_checkpointing and self.training:
+            gd.debuginfo(prj="mt", info=f'')
             if use_cache:
                 logger.warning_once(
                     "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
@@ -170,6 +187,7 @@ class GPT2PipelineForwards:
             hidden_states = split_forward_gather_backward(
                 hidden_states, dim=1, process_group=shard_config.tensor_parallel_process_group
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         # Going through held blocks.
         start_idx, end_idx = stage_index[0], stage_index[1]
@@ -179,15 +197,19 @@ class GPT2PipelineForwards:
             # Ensure that attention_mask is always on the same device as hidden_states
             if attention_mask is not None:
                 attention_mask = attention_mask.to(hidden_states.device)
+                gd.debuginfo(prj="mt", info=f'')
             if isinstance(head_mask, torch.Tensor):
                 head_mask = head_mask.to(hidden_states.device)
+                gd.debuginfo(prj="mt", info=f'')
             if output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states,)
+                gd.debuginfo(prj="mt", info=f'')
 
             if self.gradient_checkpointing and self.training:
-
+                gd.debuginfo(prj="mt", info=f'')
                 def create_custom_forward(module):
                     def custom_forward(*inputs):
+                        gd.debuginfo(prj="mt", info=f'')
                         # None for past_key_value
                         return module(*inputs, use_cache, output_attentions)
 
@@ -202,6 +224,7 @@ class GPT2PipelineForwards:
                     encoder_hidden_states,
                     encoder_attention_mask,
                 )
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 outputs = block(
                     hidden_states,
@@ -213,33 +236,42 @@ class GPT2PipelineForwards:
                     use_cache=use_cache,
                     output_attentions=output_attentions,
                 )
+                gd.debuginfo(prj="mt", info=f'')
 
             hidden_states = outputs[0]
             if use_cache is True:
                 presents = presents + (outputs[1],)
+                gd.debuginfo(prj="mt", info=f'')
 
             if output_attentions:
                 all_self_attentions = all_self_attentions + (outputs[2 if use_cache else 1],)
+                gd.debuginfo(prj="mt", info=f'')
                 if self.config.add_cross_attention:
                     all_cross_attentions = all_cross_attentions + (outputs[3 if use_cache else 2],)
+                    gd.debuginfo(prj="mt", info=f'')
 
         # When sequence parallelism done, gather the output tensor in forward and split it in backward
         if shard_config.enable_sequence_parallelism:
             hidden_states = gather_forward_split_backward(
                 hidden_states, dim=1, process_group=shard_config.tensor_parallel_process_group
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         if stage_manager.is_last_stage():
             hidden_states = self.ln_f(hidden_states)
+            gd.debuginfo(prj="mt", info=f'')
 
         hidden_states = hidden_states.view(output_shape)
 
         # Add last hidden state
         if output_hidden_states:
             all_hidden_states = all_hidden_states + (hidden_states,)
+            gd.debuginfo(prj="mt", info=f'')
 
         if stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             if not return_dict:
+                gd.debuginfo(prj="mt", info=f'')
                 return tuple(
                     v
                     for v in [hidden_states, presents, all_hidden_states, all_self_attentions, all_cross_attentions]
@@ -254,6 +286,7 @@ class GPT2PipelineForwards:
                 cross_attentions=all_cross_attentions,
             )
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # always return dict for intermediate stage
             return {"hidden_states": hidden_states}
 
@@ -288,6 +321,8 @@ class GPT2PipelineForwards:
         This function is modified on the basis of transformers.models.gpt2.modeling_gpt2.GPT2LMHeadModel.forward.
         Please refer to original code of transformers for more details.
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         outputs = GPT2PipelineForwards.gpt2_model_forward(
@@ -310,9 +345,11 @@ class GPT2PipelineForwards:
             stage_index=stage_index,
             shard_config=shard_config,
         )
+        gd.debuginfo(prj="mt", info=f'')
 
         # If not at the last stage, return hidden_states as in GPT2Model
         if not stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": outputs["hidden_states"]}
 
         hidden_states = outputs[0]
@@ -327,8 +364,11 @@ class GPT2PipelineForwards:
             # Flatten the tokens
             loss_fct = CrossEntropyLoss()
             loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+            gd.debuginfo(prj="mt", info=f'')
+
         if not return_dict:
             output = (lm_logits,) + outputs[1:]
+            gd.debuginfo(prj="mt", info=f'')
             return ((loss,) + output) if loss is not None else output
 
         return CausalLMOutputWithCrossAttentions(
@@ -397,9 +437,11 @@ class GPT2PipelineForwards:
             stage_index=stage_index,
             shard_config=shard_config,
         )
+        gd.debuginfo(prj="mt", info=f'')
 
         # If not at the last stage, return hidden_states as in GPT2Model
         if not stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": outputs["hidden_states"]}
 
         hidden_states = outputs[0]
@@ -410,18 +452,24 @@ class GPT2PipelineForwards:
         if mc_labels is not None:
             loss_fct = CrossEntropyLoss()
             mc_loss = loss_fct(mc_logits.view(-1, mc_logits.size(-1)), mc_labels.view(-1))
+            gd.debuginfo(prj="mt", info=f'')
+
         lm_loss = None
+
         if labels is not None:
             labels = labels.to(lm_logits.device)
             shift_logits = lm_logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
             loss_fct = CrossEntropyLoss()
             lm_loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+            gd.debuginfo(prj="mt", info=f'')
 
         if not return_dict:
             output = (lm_logits, mc_logits) + outputs[1:]
+            gd.debuginfo(prj="mt", info=f'')
             if mc_loss is not None:
                 output = (mc_loss,) + output
+                gd.debuginfo(prj="mt", info=f'')
             return ((lm_loss,) + output) if lm_loss is not None else output
 
         return GPT2DoubleHeadsModelOutput(
@@ -485,8 +533,11 @@ class GPT2PipelineForwards:
             shard_config=shard_config,
         )
 
+        gd.debuginfo(prj="mt", info=f'')
+
         # If not at the last stage, return hidden_states as in GPT2Model
         if not stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": outputs["hidden_states"]}
 
         sequence_output = outputs[0]
@@ -498,11 +549,14 @@ class GPT2PipelineForwards:
 
         total_loss = None
         if start_positions is not None and end_positions is not None:
+            gd.debuginfo(prj="mt", info=f'')
             # If we are on multi-GPU, split add a dimension
             if len(start_positions.size()) > 1:
                 start_positions = start_positions.squeeze(-1).to(start_logits.device)
+                gd.debuginfo(prj="mt", info=f'')
             if len(end_positions.size()) > 1:
                 end_positions = end_positions.squeeze(-1).to(end_logits.device)
+                gd.debuginfo(prj="mt", info=f'')
             # sometimes the start/end positions are outside our model inputs, we ignore these terms
             ignored_index = start_logits.size(1)
             start_positions = start_positions.clamp(0, ignored_index)
@@ -515,6 +569,7 @@ class GPT2PipelineForwards:
 
         if not return_dict:
             output = (start_logits, end_logits) + outputs[2:]
+            gd.debuginfo(prj="mt", info=f'')
             return ((total_loss,) + output) if total_loss is not None else output
 
         return QuestionAnsweringModelOutput(
@@ -575,8 +630,11 @@ class GPT2PipelineForwards:
             shard_config=shard_config,
         )
 
+        gd.debuginfo(prj="mt", info=f'')
+
         # If not at the last stage, return hidden_states as in GPT2Model
         if not stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": outputs["hidden_states"]}
 
         hidden_states = outputs[0]
@@ -588,9 +646,11 @@ class GPT2PipelineForwards:
             labels = labels.to(logits.device)
             loss_fct = CrossEntropyLoss()
             loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+            gd.debuginfo(prj="mt", info=f'')
 
         if not return_dict:
             output = (logits,) + outputs[2:]
+            gd.debuginfo(prj="mt", info=f'')
             return ((loss,) + output) if loss is not None else output
 
         return TokenClassifierOutput(
@@ -629,12 +689,16 @@ class GPT2PipelineForwards:
         # This function is modified on the basis of transformers.models.gpt2.modeling_gpt2.GPT2ForSequenceClassification.forward.
         # Please refer to original code of transformers for more details.
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         logger = logging.get_logger(__name__)
 
         if input_ids is not None:
             batch_size, _ = input_ids.shape[:2]
+            gd.debuginfo(prj="mt", info=f'')
         else:
             batch_size, _ = hidden_states.shape[:2]
+            gd.debuginfo(prj="mt", info=f'')
         assert (
             self.config.pad_token_id is not None or batch_size == 1
         ), "Cannot handle batch sizes > 1 if no padding token is defined."
@@ -660,8 +724,11 @@ class GPT2PipelineForwards:
             shard_config=shard_config,
         )
 
+        gd.debuginfo(prj="mt", info=f'')
+
         # If not at the last stage, return hidden_states as in GPT2Model
         if not stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": outputs["hidden_states"]}
 
         hidden_states = outputs[0]
@@ -669,9 +736,11 @@ class GPT2PipelineForwards:
 
         if self.config.pad_token_id is None:
             sequence_lengths = -1
+            gd.debuginfo(prj="mt", info=f'')
         else:
             if input_ids is not None:
                 sequence_lengths = (torch.ne(input_ids, self.config.pad_token_id).sum(-1) - 1).to(logits.device)
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 sequence_lengths = -1
                 logger.warning_once(
@@ -683,29 +752,40 @@ class GPT2PipelineForwards:
 
         loss = None
         if labels is not None:
+            gd.debuginfo(prj="mt", info=f'')
             if self.config.problem_type is None:
                 if self.num_labels == 1:
                     self.config.problem_type = "regression"
+                    gd.debuginfo(prj="mt", info=f'')
                 elif self.num_labels > 1 and (labels.dtype == torch.long or labels.dtype == torch.int):
                     self.config.problem_type = "single_label_classification"
+                    gd.debuginfo(prj="mt", info=f'')
                 else:
                     self.config.problem_type = "multi_label_classification"
+                    gd.debuginfo(prj="mt", info=f'')
 
             if self.config.problem_type == "regression":
                 loss_fct = MSELoss()
+                gd.debuginfo(prj="mt", info=f'')
                 if self.num_labels == 1:
                     loss = loss_fct(pooled_logits.squeeze(), labels.squeeze())
+                    gd.debuginfo(prj="mt", info=f'')
                 else:
                     loss = loss_fct(pooled_logits, labels)
+                    gd.debuginfo(prj="mt", info=f'')
             elif self.config.problem_type == "single_label_classification":
                 loss_fct = CrossEntropyLoss()
                 loss = loss_fct(pooled_logits.view(-1, self.num_labels), labels.view(-1))
+                gd.debuginfo(prj="mt", info=f'')
             elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()
                 loss = loss_fct(pooled_logits, labels)
+                gd.debuginfo(prj="mt", info=f'')
         if not return_dict:
             output = (pooled_logits,) + outputs[1:]
+            gd.debuginfo(prj="mt", info=f'')
             return ((loss,) + output) if loss is not None else output
+
 
         return SequenceClassifierOutputWithPast(
             loss=loss,
@@ -717,6 +797,7 @@ class GPT2PipelineForwards:
 
 
 def get_gpt2_flash_attention_forward():
+    gd.debuginfo(prj="mt", info=f'')
     from transformers.models.gpt2.modeling_gpt2 import GPT2Attention
 
     from colossalai.kernel.cuda_native import AttnMaskType, ColoAttention
@@ -727,6 +808,7 @@ def get_gpt2_flash_attention_forward():
         """
         new_shape = tensor.size()[:-1] + (num_heads, attn_head_size)
         tensor = tensor.view(new_shape)
+        gd.debuginfo(prj="mt", info=f'')
         return tensor
 
     def forward(
@@ -740,6 +822,7 @@ def get_gpt2_flash_attention_forward():
         use_cache: Optional[bool] = False,
         output_attentions: Optional[bool] = False,
     ) -> Tuple[Union[torch.Tensor, Tuple[torch.Tensor]], ...]:
+        gd.debuginfo(prj="mt", info=f'')
         if encoder_hidden_states is not None:
             if not hasattr(self, "q_attn"):
                 raise ValueError(
@@ -752,6 +835,7 @@ def get_gpt2_flash_attention_forward():
             attention_mask = encoder_attention_mask
         else:
             query, key, value = self.c_attn(hidden_states).split(self.split_size, dim=2)
+            gd.debuginfo(prj="mt", info=f'')
 
         query = split_heads(query, self.num_heads, self.head_dim)
         key = split_heads(key, self.num_heads, self.head_dim)
@@ -761,25 +845,33 @@ def get_gpt2_flash_attention_forward():
             past_key, past_value = layer_past
             key = torch.cat((past_key, key), dim=1)
             value = torch.cat((past_value, value), dim=1)
+            gd.debuginfo(prj="mt", info=f'')
 
         if use_cache is True:
             present = (key, value)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             present = None
+            gd.debuginfo(prj="mt", info=f'')
 
         if not self.is_cross_attention:
             attn_mask_type = AttnMaskType.causal
             flash_attention_mask = None
+            gd.debuginfo(prj="mt", info=f'')
         if attention_mask != None:
             if attn_mask_type == AttnMaskType.causal:
                 attn_mask_type == AttnMaskType.paddedcausal
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 attn_mask_type = AttnMaskType.padding
+                gd.debuginfo(prj="mt", info=f'')
+
             flash_attention_mask = ~(attention_mask[:, :, -1].squeeze(1).to(torch.bool)).contiguous()
 
         scale = value.size(-1) ** -0.5
         if self.scale_attn_by_inverse_layer_idx:
             scale = scale * (1 / float(self.layer_idx + 1))
+            gd.debuginfo(prj="mt", info=f'')
 
         # use coloattention
         attention = ColoAttention(
@@ -798,6 +890,7 @@ def get_gpt2_flash_attention_forward():
 
 
 def gpt2_sequence_parallel_forward_fn(shard_config: ShardConfig):
+    gd.debuginfo(prj="mt", info=f'')
     def forward(
         self,
         input_ids: Optional[torch.LongTensor] = None,
@@ -821,15 +914,19 @@ def gpt2_sequence_parallel_forward_fn(shard_config: ShardConfig):
         use_cache = use_cache if use_cache is not None else self.config.use_cache
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
+        gd.debuginfo(prj="mt", info=f'')
+
         if input_ids is not None and inputs_embeds is not None:
             raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
         elif input_ids is not None:
             input_shape = input_ids.size()
             input_ids = input_ids.view(-1, input_shape[-1])
             batch_size = input_ids.shape[0]
+            gd.debuginfo(prj="mt", info=f'')
         elif inputs_embeds is not None:
             input_shape = inputs_embeds.size()[:-1]
             batch_size = inputs_embeds.shape[0]
+            gd.debuginfo(prj="mt", info=f'')
         else:
             raise ValueError("You have to specify either input_ids or inputs_embeds")
 
@@ -837,20 +934,26 @@ def gpt2_sequence_parallel_forward_fn(shard_config: ShardConfig):
 
         if token_type_ids is not None:
             token_type_ids = token_type_ids.view(-1, input_shape[-1])
+            gd.debuginfo(prj="mt", info=f'')
         if position_ids is not None:
             position_ids = position_ids.view(-1, input_shape[-1])
+            gd.debuginfo(prj="mt", info=f'')
 
         if past_key_values is None:
             past_length = 0
             past_key_values = tuple([None] * len(self.h))
+            gd.debuginfo(prj="mt", info=f'')
         else:
             past_length = past_key_values[0][0].size(-2)
+            gd.debuginfo(prj="mt", info=f'')
         if position_ids is None:
             position_ids = torch.arange(past_length, input_shape[-1] + past_length, dtype=torch.long, device=device)
             position_ids = position_ids.unsqueeze(0).view(-1, input_shape[-1])
+            gd.debuginfo(prj="mt", info=f'')
 
         # GPT2Attention mask.
         if attention_mask is not None:
+            gd.debuginfo(prj="mt", info=f'')
             if batch_size <= 0:
                 raise ValueError("batch_size has to be defined and > 0")
             attention_mask = attention_mask.view(batch_size, -1)
@@ -872,13 +975,16 @@ def gpt2_sequence_parallel_forward_fn(shard_config: ShardConfig):
         # If a 2D or 3D attention mask is provided for the cross-attention
         # we need to make broadcastable to [batch_size, num_heads, seq_length, seq_length]
         if self.config.add_cross_attention and encoder_hidden_states is not None:
+            gd.debuginfo(prj="mt", info=f'')
             encoder_batch_size, encoder_sequence_length, _ = encoder_hidden_states.size()
             encoder_hidden_shape = (encoder_batch_size, encoder_sequence_length)
             if encoder_attention_mask is None:
                 encoder_attention_mask = torch.ones(encoder_hidden_shape, device=device)
+                gd.debuginfo(prj="mt", info=f'')
             encoder_attention_mask = self.invert_attention_mask(encoder_attention_mask)
         else:
             encoder_attention_mask = None
+            gd.debuginfo(prj="mt", info=f'')
 
         # Prepare head mask if needed
         # 1.0 in head_mask indicate we keep the head
@@ -888,12 +994,15 @@ def gpt2_sequence_parallel_forward_fn(shard_config: ShardConfig):
 
         if inputs_embeds is None:
             inputs_embeds = self.wte(input_ids)
+            gd.debuginfo(prj="mt", info=f'')
+
         position_embeds = self.wpe(position_ids)
         hidden_states = inputs_embeds + position_embeds
 
         if token_type_ids is not None:
             token_type_embeds = self.wte(token_type_ids)
             hidden_states = hidden_states + token_type_embeds
+            gd.debuginfo(prj="mt", info=f'')
 
         hidden_states = self.drop(hidden_states)
 
@@ -925,17 +1034,22 @@ def gpt2_sequence_parallel_forward_fn(shard_config: ShardConfig):
                 # Ensure layer_past is on same device as hidden_states (might not be correct)
                 if layer_past is not None:
                     layer_past = tuple(past_state.to(hidden_states.device) for past_state in layer_past)
+                    gd.debuginfo(prj="mt", info=f'')
                 # Ensure that attention_mask is always on the same device as hidden_states
                 if attention_mask is not None:
                     attention_mask = attention_mask.to(hidden_states.device)
+                    gd.debuginfo(prj="mt", info=f'')
                 if isinstance(head_mask, torch.Tensor):
                     head_mask = head_mask.to(hidden_states.device)
+                    gd.debuginfo(prj="mt", info=f'')
             if output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states,)
+                gd.debuginfo(prj="mt", info=f'')
 
             if self.gradient_checkpointing and self.training:
 
                 def create_custom_forward(module):
+                    gd.debuginfo(prj="mt", info=f'')
                     def custom_forward(*inputs):
                         # None for past_key_value
                         return module(*inputs, use_cache, output_attentions)
@@ -951,6 +1065,7 @@ def gpt2_sequence_parallel_forward_fn(shard_config: ShardConfig):
                     encoder_hidden_states,
                     encoder_attention_mask,
                 )
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 outputs = block(
                     hidden_states,
@@ -962,15 +1077,19 @@ def gpt2_sequence_parallel_forward_fn(shard_config: ShardConfig):
                     use_cache=use_cache,
                     output_attentions=output_attentions,
                 )
+                gd.debuginfo(prj="mt", info=f'')
 
             hidden_states = outputs[0]
             if use_cache is True:
                 presents = presents + (outputs[1],)
+                gd.debuginfo(prj="mt", info=f'')
 
             if output_attentions:
                 all_self_attentions = all_self_attentions + (outputs[2 if use_cache else 1],)
+                gd.debuginfo(prj="mt", info=f'')
                 if self.config.add_cross_attention:
                     all_cross_attentions = all_cross_attentions + (outputs[3 if use_cache else 2],)
+                    gd.debuginfo(prj="mt", info=f'')
 
             # Model Parallel: If it's the last layer for that device, put things on the next device
             if self.model_parallel:
@@ -982,14 +1101,17 @@ def gpt2_sequence_parallel_forward_fn(shard_config: ShardConfig):
         hidden_states = gather_forward_split_backward(
             hidden_states, dim=1, process_group=shard_config.tensor_parallel_process_group
         )
+        gd.debuginfo(prj="mt", info=f'')
 
         hidden_states = self.ln_f(hidden_states)
         hidden_states = hidden_states.view(output_shape)
         # Add last hidden state
         if output_hidden_states:
             all_hidden_states = all_hidden_states + (hidden_states,)
+            gd.debuginfo(prj="mt", info=f'')
 
         if not return_dict:
+            gd.debuginfo(prj="mt", info=f'')
             return tuple(
                 v
                 for v in [hidden_states, presents, all_hidden_states, all_self_attentions, all_cross_attentions]

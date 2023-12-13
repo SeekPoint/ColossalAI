@@ -22,15 +22,18 @@ class ColoProxy(Proxy):
     """
 
     def __init__(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(*args, **kwargs)
         self.node._meta_data = None
 
     @property
     def meta_data(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self.node._meta_data
 
     @meta_data.setter
     def meta_data(self, data: Any):
+        gd.debuginfo(prj="mt", info=f'')
         self.node._meta_data = data
 
     @property
@@ -79,9 +82,12 @@ def extract_meta(*args, **kwargs):
     """
 
     def _convert(val):
+        gd.debuginfo(prj="mt", info=f'')
         if isinstance(val, ColoProxy):
+            gd.debuginfo(prj="mt", info=f'')
             return val.meta_data
         elif isinstance(val, (list, tuple)):
+            gd.debuginfo(prj="mt", info=f'')
             return type(val)([_convert(ele) for ele in val])
         return val
 
@@ -92,6 +98,7 @@ def extract_meta(*args, **kwargs):
 
 class ColoAttribute(ColoProxy):
     def __init__(self, root, attr: str):
+        gd.debuginfo(prj="mt", info=f'')
         self.root = root
         self.attr = attr
         self.tracer = root.tracer
@@ -99,9 +106,12 @@ class ColoAttribute(ColoProxy):
 
     @property
     def node(self):
+        gd.debuginfo(prj="mt", info=f'')
         if self._node is None:
+            gd.debuginfo(prj="mt", info=f'')
             proxy = self.tracer.create_proxy("call_function", getattr, (self.root, self.attr), {})
             if not isinstance(proxy, ColoProxy):
+                gd.debuginfo(prj="mt", info=f'')
                 meta_args, meta_kwargs = extract_meta(*(self.root, self.attr))
                 meta_out = getattr(*meta_args, **meta_kwargs)
                 proxy = ColoProxy(proxy.node)
@@ -111,16 +121,21 @@ class ColoAttribute(ColoProxy):
         return self._node
 
     def __call__(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         proxy = self.tracer.create_proxy("call_method", self.attr, (self.root,) + args, kwargs)
         if not isinstance(proxy, ColoProxy):
+            gd.debuginfo(prj="mt", info=f'')
             meta_args, meta_kwargs = extract_meta(*((self.root,) + args), **kwargs)
             method = getattr(meta_args[0].__class__, self.attr)
             if meta_patched_function.has(method):
                 meta_target = meta_patched_function.get(method)
+                gd.debuginfo(prj="mt", info=f'')
             elif meta_patched_function.has(method.__name__):
                 meta_target = meta_patched_function.get(method.__name__)
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 meta_target = method
+                gd.debuginfo(prj="mt", info=f'')
             meta_out = meta_target(*meta_args, **meta_kwargs)
             proxy = ColoProxy(proxy.node)
             proxy.meta_data = meta_out

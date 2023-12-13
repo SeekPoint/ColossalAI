@@ -51,6 +51,7 @@ class CheckpointSolverRotor(CheckpointSolverBase):
             optim_multiplier (float, optional): The multiplier of extra weight storage for the
             ``torch.optim.Optimizer``. Default to 1.0.
         """
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(graph, free_memory, True, cnode, optim_multiplier)
         self.memory_slots = memory_slots
 
@@ -73,12 +74,15 @@ class CheckpointSolverRotor(CheckpointSolverBase):
         Returns:
             graph (Graph): The optimized graph, should be a copy of the original graph.
         """
+
         chain = self.chain
 
         # compute cost table
         if force_python:
+            gd.debuginfo(prj="mt", info=f'')
             self.cost_table, self.back_ptr = self._compute_table(chain, self.memory_slots)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.cost_table, self.back_ptr = self._compute_table_c(chain, self.memory_slots)
 
         if verbose:
@@ -102,6 +106,7 @@ class CheckpointSolverRotor(CheckpointSolverBase):
         return deepcopy(self.graph)
 
     def print_chain(self):
+        gd.debuginfo(prj="mt", info=f'')
         print("[input]", self.chain.x[0], self.chain.xbar[0], self.chain.ftmp[0], self.chain.btmp[0])
         for idx in range(len(self.node_list) - 1):
             print(
@@ -118,7 +123,10 @@ class CheckpointSolverRotor(CheckpointSolverBase):
 
     @classmethod
     def _construct_chain(cls, graph: Graph, node_list: List[List[Node]]) -> Chain:
+
         input_tensors = cls._extract_input(graph)
+        gd.debuginfo(prj="mt", info=f'')
+
         ftime, btime, ftmp, btmp = list(), list(), list(), list()
         xbar, x = [activation_size(input_tensors)], [activation_size(input_tensors)]
 
@@ -139,6 +147,7 @@ class CheckpointSolverRotor(CheckpointSolverBase):
 
     @classmethod
     def _extract_node_info(cls, node: List[Node]) -> Tuple[int, ...]:
+        gd.debuginfo(prj="mt", info=f'')
         """Extract node info from a list of nodes"""
         xbar = 0
         ftime = 0
@@ -166,6 +175,7 @@ class CheckpointSolverRotor(CheckpointSolverBase):
 
     @staticmethod
     def _extract_input(graph: Graph) -> Tuple[Tensor, ...]:
+        gd.debuginfo(prj="mt", info=f'')
         """Extract input tensors from a Graph"""
         input_tensors = []
         for node in graph.nodes:
@@ -175,11 +185,13 @@ class CheckpointSolverRotor(CheckpointSolverBase):
 
     @staticmethod
     def _extract_unused_output(node: Node) -> int:
+        gd.debuginfo(prj="mt", info=f'')
         """Extract unused output from `torch.fx.Node`"""
         return activation_size(node.meta["fwd_out"]) - calculate_fwd_out(node)
 
     @staticmethod
     def _extract_btmp(node: List[Node]) -> int:
+        gd.debuginfo(prj="mt", info=f'')
         """Extract btmp from a list of nodes"""
 
         def _extract_deps_size():
@@ -219,7 +231,7 @@ class CheckpointSolverRotor(CheckpointSolverBase):
             back_ptr (List): back_ptr[m][lhs][rhs] indicates the best operation at this point. It is (True,) if the optimal choice
             is a chain checkpoint, it is (False, j) if the optimal choice is a leaf checkpoint of length j
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         ftime = chain.ftime + [0.0]
         btime = chain.btime
         x = chain.x + [0]
@@ -274,6 +286,8 @@ class CheckpointSolverRotor(CheckpointSolverBase):
 
     @staticmethod
     def _compute_table_c(chain: Chain, mmax: int) -> Tuple:
+        gd.debuginfo(prj="mt", info=f'')
+
         try:
             from .rotorc import compute_table
 
@@ -324,6 +338,7 @@ class CheckpointSolverRotor(CheckpointSolverBase):
         Returns:
             sequence (Sequence): The sequence of executing nodes with checkpoints.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if budget <= 0:
             raise ValueError(f"Can not process a chain with negative memory {budget}")
         elif cost_table[budget][lhs][rhs] == float("inf"):
@@ -332,12 +347,15 @@ class CheckpointSolverRotor(CheckpointSolverBase):
         sequence = Sequence()
         if rhs == lhs:
             if lhs == len(chain):
+                gd.debuginfo(prj="mt", info=f'')
                 sequence += [Loss()]
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 sequence += [ForwardEnable(lhs), Backward(lhs)]
             return sequence
 
         if back_ptr[budget][lhs][rhs][0]:
+            gd.debuginfo(prj="mt", info=f'')
             sequence += [
                 ForwardEnable(lhs),
                 CheckpointSolverRotor._backtrack(
@@ -346,6 +364,7 @@ class CheckpointSolverRotor(CheckpointSolverBase):
                 Backward(lhs),
             ]
         else:
+            gd.debuginfo(prj="mt", info=f'')
             best_leaf = back_ptr[budget][lhs][rhs][1]
             sequence += [ForwardCheck(lhs)]
             sequence += [ForwardNograd(k) for k in range(lhs + 1, best_leaf)]
@@ -365,6 +384,8 @@ class CheckpointSolverRotor(CheckpointSolverBase):
             sequence (Sequence): The sequence of executing nodes with activation checkpoint annotations.
             node_list (List[List[Node]]): The list of nodes to annotate.
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         op_list = sequence.list_operations()
         loss_op = next(op for op in op_list if isinstance(op, Loss))
         fwd_list = op_list[: op_list.index(loss_op)]

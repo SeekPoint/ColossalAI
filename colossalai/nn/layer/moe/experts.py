@@ -19,6 +19,7 @@ class MoeExperts(nn.Module):
     """
 
     def __init__(self, comm_name: str, num_experts: int):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         assert comm_name in {
             "all_to_all",
@@ -43,6 +44,7 @@ class Experts(MoeExperts):
     """
 
     def __init__(self, expert_cls: Type[nn.Module], num_experts: int, **expert_args):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__("all_to_all", num_experts)
 
         # Use seed to make every expert different from others
@@ -55,6 +57,7 @@ class Experts(MoeExperts):
                 param.__setattr__("moe_info", self.dist_info)
 
     def forward(self, inputs: torch.Tensor):
+        gd.debuginfo(prj="mt", info=f'')
         # Split inputs for each expert
         expert_input = torch.chunk(inputs, self.num_local_experts, dim=1)
         expert_output = []
@@ -68,6 +71,7 @@ class Experts(MoeExperts):
         return output
 
     def state_dict(self, destination=None, prefix="", keep_vars=False):
+        gd.debuginfo(prj="mt", info=f'')
         assert keep_vars == False, "Only support keep_vars=False now"
         dp_rank = dist.get_rank(self.dist_info.dp_group)
         ep_rank = dist.get_rank(self.dist_info.ep_group)
@@ -81,6 +85,7 @@ class Experts(MoeExperts):
             example_submodule = subm
 
         if dp_rank == 0:
+            gd.debuginfo(prj="mt", info=f'')
             local_prefix = prefix + "experts."
             buffer_module = deepcopy(example_submodule)
             for i in range(self.num_total_experts):
@@ -110,6 +115,8 @@ class FFNExperts(MoeExperts):
         s1 = math.sqrt(0.1 / d_model)
         s2 = math.sqrt(0.1 / d_ff)
 
+        gd.debuginfo(prj="mt", info=f'')
+
         with seed(ParallelMode.TENSOR):
             nn.init.trunc_normal_(self.w1, std=s1)
             nn.init.trunc_normal_(self.b1, std=s1)
@@ -123,6 +130,8 @@ class FFNExperts(MoeExperts):
             param.__setattr__("moe_info", self.dist_info)
 
     def forward(self, inputs):  # inputs [g, el, c, h]
+        gd.debuginfo(prj="mt", info=f'')
+
         el = inputs.size(1)
         h = inputs.size(-1)
 
@@ -151,6 +160,7 @@ class TPExperts(MoeExperts):
     """
 
     def __init__(self, num_experts: int, d_model: int, d_ff: int, activation=None, drop_rate: float = 0):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__("all_gather", MOE_CONTEXT.max_ep_size)
 
         assert d_ff % MOE_CONTEXT.max_ep_size == 0, "d_ff should be divide by maximum expert parallel size"
@@ -181,6 +191,7 @@ class TPExperts(MoeExperts):
         self.b1.__setattr__("moe_info", self.dist_info)
 
     def forward(self, inputs):  # inputs [g, e, c, h]
+        gd.debuginfo(prj="mt", info=f'')
         e = inputs.size(1)
         h = inputs.size(-1)
 

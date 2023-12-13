@@ -17,6 +17,7 @@ logger = get_dist_logger()
 
 
 def main():
+    gd.debuginfo(prj="mt", info=f'')
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--source_model_and_tokenizer_path",

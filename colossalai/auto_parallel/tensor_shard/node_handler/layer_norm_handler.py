@@ -17,12 +17,14 @@ class LayerNormModuleHandler(MetaInfoModuleHandler):
     """
 
     def get_strategy_generator(self) -> List[StrategyGenerator]:
+        gd.debuginfo(prj="mt", info=f'')
         op_data_mapping = self.get_operation_data_mapping()
         generators = []
         generators.append(LayerNormGenerator(op_data_mapping, self.device_mesh))
         return generators
 
     def get_operation_data_mapping(self) -> Dict[str, OperationData]:
+        gd.debuginfo(prj="mt", info=f'')
         # use transposed shape for strategies
         # the strategies will be transformed back to its original shape in self.post_process
         physical_input_operand = OperationData(
@@ -39,6 +41,7 @@ class LayerNormModuleHandler(MetaInfoModuleHandler):
         mapping = {"input": physical_input_operand, "other": physical_other_operand, "output": physical_output}
 
         if self.named_parameters["bias"] is not None:
+            gd.debuginfo(prj="mt", info=f'')
             physical_bias_operand = OperationData(
                 name="bias", type=OperationDataType.PARAM, data=self.named_parameters["bias"]
             )

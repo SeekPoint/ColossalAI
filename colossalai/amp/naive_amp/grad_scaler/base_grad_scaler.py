@@ -21,6 +21,7 @@ class BaseGradScaler(ABC):
     """
 
     def __init__(self, initial_scale: float, verbose: bool):
+        gd.debuginfo(prj="mt", info=f'')
         assert initial_scale > 0
         self._scale = torch.cuda.FloatTensor([initial_scale])
         self._verbose = verbose

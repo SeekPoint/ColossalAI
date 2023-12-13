@@ -39,6 +39,7 @@ class LowLevelZeroFP16MixedPrecisionMixin(FP16MixedPrecisionMixin):
         hysteresis: int = 2,
         max_scale: float = 2**32,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(
             initial_scale, min_scale, growth_factor, backoff_factor, growth_interval, hysteresis, max_scale
         )

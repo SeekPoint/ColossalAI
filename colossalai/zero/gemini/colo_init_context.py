@@ -15,6 +15,7 @@ def _named_params_with_replica(
     prefix: str = "",
     recurse: bool = True,
 ) -> Iterator[Tuple[str, Union[nn.Parameter, ColoTensor]]]:
+    gd.debuginfo(prj="mt", info=f'')
     modules = module.named_modules(prefix=prefix) if recurse else [(prefix, module)]
 
     for mod_prefix, mod in modules:
@@ -32,7 +33,10 @@ def _convert_to_coloparam(
     default_pg: Optional[ProcessGroup] = None,
     default_dist_spec: Optional[Any] = None,
 ) -> ColoParameter:
+    gd.debuginfo(prj="mt", info=f'')
+
     if type(param) is ColoParameter:
+        gd.debuginfo(prj="mt", info=f'')
         return param
     # detaching tensor is necessary for optimizers.
     requires_grad = param.requires_grad
@@ -40,8 +44,10 @@ def _convert_to_coloparam(
 
     if param.device.type == "meta":
         colo_param = ColoParameter(param, requires_grad=requires_grad)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         colo_param = ColoParameter(param.to(device=device, dtype=dtype), requires_grad=requires_grad)
+        gd.debuginfo(prj="mt", info=f'')
 
     # if default_shard_plan exists, shard the param during initialization.
     # This can reduce the model size after initialization.
@@ -49,6 +55,7 @@ def _convert_to_coloparam(
     # the param that can not be sharded by the default plan
     if default_pg is not None:
         colo_param.set_process_group(default_pg)
+        gd.debuginfo(prj="mt", info=f'')
 
     if default_dist_spec is not None:
         try:
@@ -81,6 +88,7 @@ class ColoInitContext(InsertPostInitMethodToModuleSubClasses):
             default_pg (ProcessGroup): the default process group for all initialized parameters.
             default_dist_spec: the default distributed specifications.
         """
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self._device = device
         self._dtype = dtype
@@ -90,6 +98,7 @@ class ColoInitContext(InsertPostInitMethodToModuleSubClasses):
         self._default_dist_spec = default_dist_spec
 
     def _register_colo_modules(self):
+        gd.debuginfo(prj="mt", info=f'')
         from colossalai.legacy.nn.parallel.layers import ColoEmbedding, ColoLinear, register_colo_module
 
         register_colo_module(torch.nn.Linear, ColoLinear())
@@ -103,6 +112,7 @@ class ColoInitContext(InsertPostInitMethodToModuleSubClasses):
         The function to call at the end of the constructor of each module.
         FIXME(fjr) The module may be passed to this function multiple times?
         """
+        gd.debuginfo(prj="mt", info=f'')
         name_list = []
         for name, param in _named_params_with_replica(module):
             if type(param) is ColoParameter:
@@ -176,6 +186,7 @@ def post_process_colo_init_ctx(
     Raises:
         RuntimeError: raise error if
     """
+    gd.debuginfo(prj="mt", info=f'')
 
     torch_params = []
     for n, p in model.named_parameters():

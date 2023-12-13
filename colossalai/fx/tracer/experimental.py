@@ -63,6 +63,7 @@ def default_device():
 @compatibility(is_backward_compatible=False)
 class ColoProxy(Proxy):
     def __init__(self, *args, data=None, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(*args, **kwargs)
         self._meta_data = data
 
@@ -72,11 +73,13 @@ class ColoProxy(Proxy):
 
     @meta_data.setter
     def meta_data(self, args):
+        gd.debuginfo(prj="mt", info=f'')
         wrap_fn = lambda x: MetaTensor(x) if isinstance(x, torch.Tensor) else x
         self._meta_data = tree_map(wrap_fn, args)
 
     @classmethod
     def __torch_function__(cls, orig_method, types, args=(), kwargs=None):
+        gd.debuginfo(prj="mt", info=f'')
         proxy = cls.from_torch_proxy(super().__torch_function__(orig_method, types, args, kwargs))
         unwrap_fn = lambda p: p.meta_data if isinstance(p, ColoProxy) else p
         kwargs = {} if kwargs is None else kwargs
@@ -161,6 +164,7 @@ class ColoProxy(Proxy):
 @compatibility(is_backward_compatible=False)
 class ColoAttribute(ColoProxy):
     def __init__(self, root, attr: str, data=None):
+        gd.debuginfo(prj="mt", info=f'')
         self.root = root
         self.attr = attr
         self.tracer = root.tracer
@@ -173,6 +177,7 @@ class ColoAttribute(ColoProxy):
         # which do not rely on the getitem call
         if self._node is None:
             self._node = self.tracer.create_proxy("call_function", getattr, (self.root, self.attr), {}).node
+            gd.debuginfo(prj="mt", info=f'')
         return self._node
 
     def __call__(self, *args, **kwargs):
@@ -185,6 +190,7 @@ class ColoAttribute(ColoProxy):
 @compatibility(is_backward_compatible=False)
 class ColoTracer(Tracer):
     def __init__(self, trace_act_ckpt: bool = False, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(*args, **kwargs)
         self._disable_module_getattr = False
         self.proxy_buffer_attributes = True
@@ -211,12 +217,14 @@ class ColoTracer(Tracer):
         proxy: ColoProxy = super().create_proxy(kind, target, args, kwargs, name, type_expr, proxy_factory_fn)
         unwrap_fn = lambda p: p.meta_data if isinstance(p, ColoProxy) else p
         if kind == "placeholder":
+            gd.debuginfo(prj="mt", info=f'')
             proxy.meta_data = (
                 self.meta_args[target]
                 if target in self.meta_args
                 else self.concrete_args.get(_truncate_suffix(target), None)
             )
         elif kind == "get_attr":
+            gd.debuginfo(prj="mt", info=f'')
             self._disable_module_getattr = True
             try:
                 attr_itr = self.root
@@ -227,8 +235,10 @@ class ColoTracer(Tracer):
             finally:
                 self._disable_module_getattr = False
         elif kind == "call_function":
+            gd.debuginfo(prj="mt", info=f'')
             proxy.meta_data = target(*tree_map(unwrap_fn, args), **tree_map(unwrap_fn, kwargs))
         elif kind == "call_method":
+            gd.debuginfo(prj="mt", info=f'')
             self._disable_module_getattr = True
             try:
                 if target == "__call__":
@@ -241,6 +251,7 @@ class ColoTracer(Tracer):
             finally:
                 self._disable_module_getattr = False
         elif kind == "call_module":
+            gd.debuginfo(prj="mt", info=f'')
             mod = self.root.get_submodule(target)
             self._disable_module_getattr = True
             try:
@@ -250,11 +261,13 @@ class ColoTracer(Tracer):
         return proxy
 
     def create_node(self, *args, **kwargs) -> Node:
+        gd.debuginfo(prj="mt", info=f'')
         node = super().create_node(*args, **kwargs)
 
         if self.inside_torch_checkpoint_func:
             # annotate the activation checkpoint module
             node.meta["activation_checkpoint"] = self.act_ckpt_region_count
+            gd.debuginfo(prj="mt", info=f'')
         return node
 
     def trace(
@@ -263,6 +276,8 @@ class ColoTracer(Tracer):
         concrete_args: Optional[Dict[str, torch.Tensor]] = None,
         meta_args: Optional[Dict[str, torch.Tensor]] = None,
     ) -> Graph:
+        gd.debuginfo(prj="mt", info=f'')
+
         if meta_args is None:
             meta_args = {}
 
@@ -285,6 +300,7 @@ class ColoTracer(Tracer):
         sig_names - concrete_arg_names
 
         def _check_arg_name_valid(names):
+            gd.debuginfo(prj="mt", info=f'')
             success, element = is_element_in_list(names, sig_names)
             if not success:
                 raise KeyError(
@@ -304,7 +320,9 @@ class ColoTracer(Tracer):
 
     @contextmanager
     def trace_activation_checkpoint(self, enabled: bool):
+        gd.debuginfo(prj="mt", info=f'')
         if enabled:
+            gd.debuginfo(prj="mt", info=f'')
             orig_ckpt_func = torch.utils.checkpoint.CheckpointFunction
 
             class PatchedCheckpointFunction(torch.autograd.Function):
@@ -328,10 +346,13 @@ class ColoTracer(Tracer):
         yield
 
         if enabled:
+            gd.debuginfo(prj="mt", info=f'')
             # recover the checkpoint function upon exit
             torch.utils.checkpoint.CheckpointFunction = orig_ckpt_func
 
     def _post_check(self, non_concrete_arg_names: Set[str]):
+        gd.debuginfo(prj="mt", info=f'')
+
         # This is necessary because concrete args are added as input to the traced module since
         # https://github.com/pytorch/pytorch/pull/55888.
         for node in self.graph.nodes:
@@ -364,6 +385,7 @@ class ColoTracer(Tracer):
             self.graph.lint()
 
     def _module_getattr(self, attr, attr_val, parameter_proxy_cache):
+        gd.debuginfo(prj="mt", info=f'')
         if getattr(self, "_disable_module_getattr", False):
             return attr_val
 
@@ -384,15 +406,18 @@ class ColoTracer(Tracer):
             return None
 
         if self.proxy_buffer_attributes and isinstance(attr_val, torch.Tensor):
+            gd.debuginfo(prj="mt", info=f'')
             maybe_buffer_proxy = maybe_get_proxy_for_attr(attr_val, self.root.named_buffers(), parameter_proxy_cache)
             if maybe_buffer_proxy is not None:
                 return maybe_buffer_proxy
 
         if isinstance(attr_val, torch.nn.Parameter):
+            gd.debuginfo(prj="mt", info=f'')
             maybe_parameter_proxy = maybe_get_proxy_for_attr(
                 attr_val, self.root.named_parameters(), parameter_proxy_cache
             )
             if maybe_parameter_proxy is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 return maybe_parameter_proxy
 
         return attr_val
@@ -406,7 +431,9 @@ def symbolic_trace(
     trace_act_ckpt=False,
 ) -> ColoGraphModule:
     if is_compatible_with_meta():
+        gd.debuginfo(prj="mt", info=f'')
         if meta_args is not None:
+            gd.debuginfo(prj="mt", info=f'')
             root.to(default_device())
             wrap_fn = lambda x: MetaTensor(x, fake_device=default_device()) if isinstance(x, torch.Tensor) else x
             graph = ColoTracer(trace_act_ckpt=trace_act_ckpt).trace(
@@ -415,7 +442,9 @@ def symbolic_trace(
             root.cpu()
         else:
             graph = Tracer().trace(root, concrete_args=concrete_args)
+            gd.debuginfo(prj="mt", info=f'')
     else:
+        gd.debuginfo(prj="mt", info=f'')
         from .tracer import ColoTracer as OrigColoTracer
 
         graph = OrigColoTracer(trace_act_ckpt=trace_act_ckpt).trace(
@@ -428,10 +457,12 @@ def symbolic_trace(
 @compatibility(is_backward_compatible=False)
 class _TorchTensorOverride(object):
     def __init__(self, tracer: Tracer):
+        gd.debuginfo(prj="mt", info=f'')
         self.overrides = {}
         self.tracer = tracer
 
     def __enter__(self):
+        gd.debuginfo(prj="mt", info=f'')
         def wrap_tensor_method(target):
             @functools.wraps(target)
             def wrapper(*args, **kwargs):
@@ -471,6 +502,7 @@ def meta_prop_pass(
     meta_args: Optional[Dict[str, Any]] = None,
     concrete_args: Optional[Dict[str, torch.Tensor]] = None,
 ):
+    gd.debuginfo(prj="mt", info=f'')
     if meta_args is None:
         meta_args = {}
 
@@ -495,39 +527,50 @@ def meta_prop_pass(
 
 
 def _meta_data_computing(meta_args, concrete_args, root, kind, target, args, kwargs):
+    gd.debuginfo(prj="mt", info=f'')
     unwrap_fn = lambda n: n._meta_data if isinstance(n, Node) else n
     if kind == "placeholder":
         meta_out = meta_args[target] if target in meta_args else concrete_args.get(_truncate_suffix(target), None)
+        gd.debuginfo(prj="mt", info=f'')
     elif kind == "get_attr":
         attr_itr = root
         atoms = target.split(".")
         for atom in atoms:
             attr_itr = getattr(attr_itr, atom)
         meta_out = attr_itr
+        gd.debuginfo(prj="mt", info=f'')
     elif kind == "call_function":
         meta_out = target(*tree_map(unwrap_fn, args), **tree_map(unwrap_fn, kwargs))
+        gd.debuginfo(prj="mt", info=f'')
     elif kind == "call_method":
         if target == "__call__":
             meta_out = unwrap_fn(args[0])(*tree_map(unwrap_fn, args[1:]), **tree_map(unwrap_fn, kwargs))
+            gd.debuginfo(prj="mt", info=f'')
         else:
             if target not in _TensorPropertyMethod:
+                gd.debuginfo(prj="mt", info=f'')
                 meta_out = getattr(unwrap_fn(args[0]), target)(
                     *tree_map(unwrap_fn, args[1:]), **tree_map(unwrap_fn, kwargs)
                 )
     elif kind == "call_module":
         mod = root.get_submodule(target)
         meta_out = mod.forward(*tree_map(unwrap_fn, args), **tree_map(unwrap_fn, kwargs))
+        gd.debuginfo(prj="mt", info=f'')
     else:
         meta_out = None
+        gd.debuginfo(prj="mt", info=f'')
     return meta_out
 
 
 def _meta_data_computing_v0(meta_args, root, kind, target, args, kwargs):
+    gd.debuginfo(prj="mt", info=f'')
     if kind == "placeholder" and target in meta_args and meta_args[target].is_meta:
+        gd.debuginfo(prj="mt", info=f'')
         meta_out = meta_args[target]
         return meta_out
 
     if target in [getattr(torch, torch_func) for torch_func in _TorchNewMethod]:
+        gd.debuginfo(prj="mt", info=f'')
         # NOTE: tensor constructors in PyTorch define the `device` argument as
         # *kwargs-only*. That is why this works. If you add methods to
         # _TORCH_METHODS_TO_PATCH that do not define `device` as kwarg-only,
@@ -535,6 +578,7 @@ def _meta_data_computing_v0(meta_args, root, kind, target, args, kwargs):
         # the size of the output.
         if "device" in kwargs:
             kwargs["device"] = "meta"
+            gd.debuginfo(prj="mt", info=f'')
 
     try:
         unwrap_fn = lambda n: n._meta_data if isinstance(n, Node) else n
@@ -545,11 +589,14 @@ def _meta_data_computing_v0(meta_args, root, kind, target, args, kwargs):
             # fetch patched function
             if meta_patched_function.has(target):
                 meta_target = meta_patched_function.get(target)
+                gd.debuginfo(prj="mt", info=f'')
             elif meta_patched_function.has(target.__name__):
                 # use name for some builtin op like @ (matmul)
                 meta_target = meta_patched_function.get(target.__name__)
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 meta_target = target
+                gd.debuginfo(prj="mt", info=f'')
 
             meta_out = meta_target(*args_metas, **kwargs_metas)
 
@@ -561,8 +608,10 @@ def _meta_data_computing_v0(meta_args, root, kind, target, args, kwargs):
             # fetch patched method
             if meta_patched_function.has(method):
                 meta_target = meta_patched_function.get(method)
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 meta_target = method
+                gd.debuginfo(prj="mt", info=f'')
 
             meta_out = meta_target(*args_metas, **kwargs_metas)
         elif kind == "call_module":
@@ -570,8 +619,10 @@ def _meta_data_computing_v0(meta_args, root, kind, target, args, kwargs):
             mod_type = type(mod)
             if meta_patched_module.has(mod_type):
                 meta_out = meta_patched_module.get(mod_type)(mod, *args_metas, **kwargs_metas)
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 meta_out = mod(*args_metas, **kwargs_metas)
+                gd.debuginfo(prj="mt", info=f'')
         elif kind == "get_attr":
             attr_itr = root
             atoms = target.split(".")
@@ -579,10 +630,13 @@ def _meta_data_computing_v0(meta_args, root, kind, target, args, kwargs):
                 attr_itr = getattr(attr_itr, atom)
             if isinstance(attr_itr, torch.nn.parameter.Parameter):
                 meta_out = torch.nn.Parameter(attr_itr.to(device="meta"))
+                gd.debuginfo(prj="mt", info=f'')
             elif isinstance(attr_itr, torch.Tensor):
                 meta_out = attr_itr.to(device="meta")
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 meta_out = attr_itr
+                gd.debuginfo(prj="mt", info=f'')
         else:
             return None
 
@@ -596,6 +650,7 @@ def bias_addition_pass(gm: ColoGraphModule, root_model: torch.nn.Module, meta_ar
     result_graph = Graph()
     value_remap = {}
     unwrap_fn = lambda n: n._meta_data if isinstance(n, Node) else n
+    gd.debuginfo(prj="mt", info=f'')
 
     for orig_node in gm.graph.nodes:
         assert hasattr(orig_node, "_meta_data")
@@ -621,19 +676,23 @@ def bias_addition_pass(gm: ColoGraphModule, root_model: torch.nn.Module, meta_ar
 
         handle = None
         if kind == "call_function":
+            gd.debuginfo(prj="mt", info=f'')
             if bias_addition_function.has(target):
                 if target == torch.nn.functional.linear:
+                    gd.debuginfo(prj="mt", info=f'')
                     if "bias" in kwargs and kwargs["bias"] is not None:
                         function_to_substitute = func_to_func_dict[target]
                         handle = bias_addition_function.get(target)(
                             tracer, target, args_proxy, kwargs_proxy, function_to_substitute
                         )
                 else:
+                    gd.debuginfo(prj="mt", info=f'')
                     function_to_substitute = func_to_func_dict[target]
                     handle = bias_addition_function.get(target)(
                         tracer, target, args_proxy, kwargs_proxy, function_to_substitute
                     )
             elif bias_addition_function.has(target.__name__):
+                gd.debuginfo(prj="mt", info=f'')
                 # use name for some builtin op like @ (matmul)
                 function_to_substitute = func_to_func_dict[target]
                 handle = bias_addition_function.get(target.__name__)(
@@ -641,6 +700,7 @@ def bias_addition_pass(gm: ColoGraphModule, root_model: torch.nn.Module, meta_ar
                 )
 
         elif kind == "call_method":
+            gd.debuginfo(prj="mt", info=f'')
             method = getattr(args_metas[0].__class__, target)
             if bias_addition_method.has(method):
                 function_to_substitute = method_to_func_dict[method]
@@ -649,23 +709,27 @@ def bias_addition_pass(gm: ColoGraphModule, root_model: torch.nn.Module, meta_ar
                 )
 
         elif kind == "call_module":
+            gd.debuginfo(prj="mt", info=f'')
             # if not hasattr(self, "orig_forward"):
             #     raise AttributeError(f"{self} does not have an attribute called orig_forward")
             mod = gm.get_submodule(target)
             mod_type = type(mod)
             if bias_addition_module.has(mod_type) and mod.bias is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 function_to_substitute = module_to_func_dict[mod_type]
                 handle = bias_addition_module.get(mod_type)(
                     tracer, target, args_proxy, kwargs_proxy, function_to_substitute
                 )
 
         if handle is not None:
+            gd.debuginfo(prj="mt", info=f'')
             handle.generate()
             for node_inserted in tracer.graph.nodes:
                 value_remap[node_inserted] = result_graph.node_copy(node_inserted, lambda n: value_remap[n])
                 last_node = value_remap[node_inserted]
             value_remap[orig_node] = last_node
         else:
+            gd.debuginfo(prj="mt", info=f'')
             value_remap[orig_node] = result_graph.node_copy(orig_node, lambda n: value_remap[n])
 
         del tracer

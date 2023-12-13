@@ -71,6 +71,7 @@ class Embedding1D(ParallelModule):
         *args,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
         self.num_embeddings = num_embeddings
@@ -90,14 +91,18 @@ class Embedding1D(ParallelModule):
         if weight is None:
             factory_kwargs = {"device": device, "dtype": dtype}
             self.weight = nn.Parameter(torch.empty((num_embeddings, self.embedding_dim), **factory_kwargs))
+            gd.debuginfo(prj="mt", info=f'')
         else:
             weight.data = weight.data.to(device=device, dtype=dtype)
             self.weight = weight
+            gd.debuginfo(prj="mt", info=f'')
         if not is_distributed_tensor(self.weight):
             sharded_weight = shard_colwise(self.weight.data, process_group)
             sharded_tensor_to_existing_param(sharded_weight, self.weight)
+            gd.debuginfo(prj="mt", info=f'')
 
         if weight is None:
+            gd.debuginfo(prj="mt", info=f'')
             with self.randomizer.fork_rng(enable_cpu=True):
                 self.reset_parameters(weight_initializer)
 
@@ -108,6 +113,7 @@ class Embedding1D(ParallelModule):
         r"""
         Build a 1D parallelized Embedding from a native nn.Embedding module.
         """
+        gd.debuginfo(prj="mt", info=f'')
         LazyInitContext.materialize(module)
         # get the attributes
         num_embedding = module.num_embeddings
@@ -143,21 +149,27 @@ class Embedding1D(ParallelModule):
         return embedding
 
     def reset_parameters(self, weight_initializer) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         fan_in, fan_out = self.num_embeddings, self.embedding_dim
         weight_initializer(self.weight, fan_in=fan_in, fan_out=fan_out)
         self._fill_padding_idx_with_zero()
 
     def _fill_padding_idx_with_zero(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         if self.padding_idx is not None:
+            gd.debuginfo(prj="mt", info=f'')
             with torch.no_grad():
                 self.weight[self.padding_idx].fill_(0)
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         output_parallel = F.embedding(input_, self.weight, self.padding_idx, *self.embed_args, **self.embed_kwargs)
         if self.gather_output:
+            gd.debuginfo(prj="mt", info=f'')
             output = gather_forward_split_backward(output_parallel, dim=-1, process_group=self.process_group)
             return output
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return output_parallel
 
 
@@ -204,6 +216,7 @@ class VocabParallelEmbedding1D(ParallelModule):
         *args,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.num_embeddings = num_embeddings
         self.embedding_dim = embedding_dim
@@ -230,20 +243,25 @@ class VocabParallelEmbedding1D(ParallelModule):
         if weight is None:
             factory_kwargs = {"device": device, "dtype": dtype}
             self.weight = nn.Parameter(torch.empty((num_embeddings, self.embedding_dim), **factory_kwargs))
+            gd.debuginfo(prj="mt", info=f'')
         else:
             weight.data = weight.data.to(device=device, dtype=dtype)
             self.weight = weight
+            gd.debuginfo(prj="mt", info=f'')
         if not is_distributed_tensor(self.weight):
             sharded_weight = shard_rowwise(self.weight.data, process_group)
             sharded_tensor_to_existing_param(sharded_weight, self.weight)
+            gd.debuginfo(prj="mt", info=f'')
 
         if weight is None:
             self.reset_parameters(weight_initializer)
+            gd.debuginfo(prj="mt", info=f'')
 
     @staticmethod
     def from_native_module(
         module: nn.Embedding, process_group: Union[ProcessGroup, List[ProcessGroup]], *args, **kwargs
     ) -> ParallelModule:
+        gd.debuginfo(prj="mt", info=f'')
         r"""
         Convert a native pytorch embedding module to a parallel module.
         """
@@ -258,6 +276,7 @@ class VocabParallelEmbedding1D(ParallelModule):
         if isinstance(process_group, (list, tuple)):
             assert len(process_group) == 1, f"Expected only one process group, got {len(process_group)}."
             process_group = process_group[0]
+            gd.debuginfo(prj="mt", info=f'')
 
         # create the parallel module
         vocab_embedding_1d = VocabParallelEmbedding1D(
@@ -274,6 +293,7 @@ class VocabParallelEmbedding1D(ParallelModule):
         return vocab_embedding_1d
 
     def reset_parameters(self, weight_initializer) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         with self.randomizer.fork_rng(enable_cpu=True):
             fan_in, fan_out = self.num_embeddings, self.embedding_dim
             weight_initializer(self.weight, fan_in=fan_in, fan_out=fan_out)
@@ -285,19 +305,24 @@ class VocabParallelEmbedding1D(ParallelModule):
             and self.padding_idx >= self.vocab_start_index
             and self.padding_idx < self.vocab_end_index
         ):
+            gd.debuginfo(prj="mt", info=f'')
             with torch.no_grad():
                 self.weight[self.padding_idx - self.vocab_start_index].fill_(0)
 
     def _select_padding_idx(self, padding_idx: int):
         # select padding index according to the rank
         if padding_idx is None:
+            gd.debuginfo(prj="mt", info=f'')
             return None
         elif padding_idx < self.vocab_end_index and padding_idx >= self.vocab_start_index:
+            gd.debuginfo(prj="mt", info=f'')
             return padding_idx - self.vocab_start_index
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return None
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         # Build the mask.
         input_mask = (input_ < self.vocab_start_index) | (input_ >= self.vocab_end_index)
         # Mask the input.

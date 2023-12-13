@@ -19,10 +19,12 @@ class PlaceholderHandler(NodeHandler):
     def __init__(
         self, node: Node, device_mesh: DeviceMesh, strategies_vector: StrategiesVector, placeholder_option: str
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(node, device_mesh, strategies_vector)
         self.placeholder_option = placeholder_option
 
     def get_strategy_generator(self) -> List[StrategyGenerator]:
+        gd.debuginfo(prj="mt", info=f'')
         op_data_mapping = self.get_operation_data_mapping()
         generators = []
         generators.append(
@@ -31,6 +33,7 @@ class PlaceholderHandler(NodeHandler):
         return generators
 
     def get_operation_data_mapping(self) -> Dict[str, OperationData]:
+        gd.debuginfo(prj="mt", info=f'')
         # use transposed shape for strategies
         # the strategies will be transformed back to its original shape in self.post_process
         physical_output = OperationData(name=str(self.node), type=OperationDataType.OUTPUT, data=self.node._meta_data)

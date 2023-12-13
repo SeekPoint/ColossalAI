@@ -63,6 +63,7 @@ class FusedAdam(torch.optim.Optimizer):
         amsgrad=False,
         set_grad_none=True,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         if amsgrad:
             raise RuntimeError("FusedAdam does not support the AMSGrad variant.")
         defaults = dict(lr=lr, bias_correction=bias_correction, betas=betas, eps=eps, weight_decay=weight_decay)
@@ -70,6 +71,7 @@ class FusedAdam(torch.optim.Optimizer):
         self.adamw_mode = 1 if adamw_mode else 0
         self.set_grad_none = set_grad_none
         if multi_tensor_applier.available:
+            gd.debuginfo(prj="mt", info=f'')
             from colossalai.kernel.op_builder import FusedOptimBuilder
 
             fused_optim = FusedOptimBuilder().load()
@@ -82,10 +84,12 @@ class FusedAdam(torch.optim.Optimizer):
 
     def zero_grad(self, set_to_none=False):
         if set_to_none:
+            gd.debuginfo(prj="mt", info=f'')
             for group in self.param_groups:
                 for p in group["params"]:
                     p.grad = None
         else:
+            gd.debuginfo(prj="mt", info=f'')
             super(FusedAdam, self).zero_grad()
 
     def step(self, closure=None, grads=None, output_params=None, scale=None, grad_norms=None, div_scale: float = -1):
@@ -104,6 +108,7 @@ class FusedAdam(torch.optim.Optimizer):
         loss = None
         if closure is not None:
             loss = closure()
+            gd.debuginfo(prj="mt", info=f'')
 
         for group in self.param_groups:
             bias_correction = 1 if group["bias_correction"] else 0

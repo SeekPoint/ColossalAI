@@ -49,6 +49,7 @@ def sync_model_param(model, parallel_mode):
         The parallel_mode should be concluded in ``ParallelMode``. More details about ``ParallelMode`` could be found
         in `parallel_mode <https://github.com/hpcaitech/ColossalAI/blob/main/colossalai/context/parallel_mode.py>`_
     """
+    gd.debuginfo(prj="mt", info=f'')
     if gpc.is_initialized(parallel_mode) and gpc.get_world_size(parallel_mode) > 1:
         for param in model.parameters():
             ranks = gpc.get_ranks_in_group(parallel_mode)
@@ -92,6 +93,7 @@ def is_model_parallel_parameter(p):
 
 
 def _calc_l2_norm(grads):
+    gd.debuginfo(prj="mt", info=f'')
     # we should not
     global fused_optim
 
@@ -118,12 +120,14 @@ def _calc_lp(grads, norm_type):
 
 
 def _move_norm_to_cuda(norm: Union[float, torch.Tensor]) -> Union[float, torch.Tensor]:
+    gd.debuginfo(prj="mt", info=f'')
     if torch.is_tensor(norm) and norm.device.type != "cuda":
         norm = norm.to(torch.cuda.current_device())
     return norm
 
 
 def _get_tensor_norm(norm: Union[float, torch.Tensor], move_to_cuda) -> torch.Tensor:
+    gd.debuginfo(prj="mt", info=f'')
     if isinstance(norm, float):
         norm = torch.Tensor([norm])
     if move_to_cuda:
@@ -135,6 +139,7 @@ def _get_tensor_norm(norm: Union[float, torch.Tensor], move_to_cuda) -> torch.Te
 
 
 def _compute_local_lp(params: List[ColoParameter], norm_type: float) -> float:
+    gd.debuginfo(prj="mt", info=f'')
     if len(params) == 0:
         return 0.0
     grads = [p.grad for p in params]
@@ -151,6 +156,7 @@ def _compute_local_lp(params: List[ColoParameter], norm_type: float) -> float:
 
 
 def _compute_buckets_lp(params: List[ColoParameter], norm_type: float) -> float:
+    gd.debuginfo(prj="mt", info=f'')
     if len(params) == 0:
         return 0.0
     buckets: Dict[Optional[ProcessGroup], List[ColoParameter]] = defaultdict(list)
@@ -177,6 +183,7 @@ def _compute_buckets_lp(params: List[ColoParameter], norm_type: float) -> float:
 
 
 def _compute_pp_grad_lp(total_lp: float, norm_type: float) -> float:
+    gd.debuginfo(prj="mt", info=f'')
     if gpc.is_initialized(ParallelMode.PIPELINE) and gpc.get_world_size(ParallelMode.PIPELINE) > 1:
         total_lp_tensor = torch.tensor([total_lp], device=torch.cuda.current_device())
         if norm_type == inf:
@@ -188,6 +195,7 @@ def _compute_pp_grad_lp(total_lp: float, norm_type: float) -> float:
 
 
 def _compute_grad_lp(parameters, norm_type: float = 2.0) -> float:
+    gd.debuginfo(prj="mt", info=f'')
     if isinstance(parameters, torch.Tensor):
         parameters = [parameters]
     grad_dtype = None
@@ -215,6 +223,7 @@ def _compute_grad_lp(parameters, norm_type: float = 2.0) -> float:
 
 
 def compute_grad_norm(parameters, norm_type: float = 2.0) -> float:
+    gd.debuginfo(prj="mt", info=f'')
     norm_type = float(norm_type)
     total_norm = _compute_grad_lp(parameters, norm_type)
     if norm_type != inf:
@@ -223,6 +232,7 @@ def compute_grad_norm(parameters, norm_type: float = 2.0) -> float:
 
 
 def _clip_grad_norm(parameters, max_norm: float, total_norm: float) -> None:
+    gd.debuginfo(prj="mt", info=f'')
     clip_coef = max_norm / (total_norm + 1e-6)
     if clip_coef < 1.0:
         cuda_grads: List[torch.Tensor] = []
@@ -246,6 +256,7 @@ def _clip_grad_norm(parameters, max_norm: float, total_norm: float) -> None:
 
 
 def clip_grad_norm(parameters, max_norm: float, norm_type: float = 2.0) -> float:
+    gd.debuginfo(prj="mt", info=f'')
     total_norm = compute_grad_norm(parameters, norm_type)
     _clip_grad_norm(parameters, max_norm, total_norm)
     return total_norm
@@ -269,7 +280,7 @@ def clip_grad_norm_fp32(parameters, max_norm, norm_type=2):
     Returns:
         float: Total norm of the parameters.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     if isinstance(parameters, torch.Tensor):
         parameters = [parameters]
 
@@ -373,6 +384,7 @@ def clip_grad_norm_fp32(parameters, max_norm, norm_type=2):
 
 
 def count_zeros_fp32(parameters):
+    gd.debuginfo(prj="mt", info=f'')
     if isinstance(parameters, torch.Tensor):
         parameters = [parameters]
 
@@ -411,6 +423,7 @@ def count_zeros_fp32(parameters):
 
 
 def copy_tensor_parallel_attributes(src_tensor, dst_tensor):
+    gd.debuginfo(prj="mt", info=f'')
     for attr in TENSOR_PARALLEL_ATTRIBUTES:
         if hasattr(src_tensor, attr):
             val = getattr(src_tensor, attr)
@@ -418,6 +431,7 @@ def copy_tensor_parallel_attributes(src_tensor, dst_tensor):
 
 
 def param_is_not_tensor_parallel_duplicate(param):
+    gd.debuginfo(prj="mt", info=f'')
     return (hasattr(param, IS_TENSOR_PARALLEL) and getattr(param, IS_TENSOR_PARALLEL)) or (
         gpc.get_local_rank(ParallelMode.TENSOR) == 0
     )
@@ -425,6 +439,7 @@ def param_is_not_tensor_parallel_duplicate(param):
 
 @contextmanager
 def switch_virtual_pipeline_parallel_rank(rank):
+    gd.debuginfo(prj="mt", info=f'')
     prev_rank = gpc.virtual_pipeline_parallel_rank
     try:
         gpc.set_virtual_pipeline_parallel_rank(rank)

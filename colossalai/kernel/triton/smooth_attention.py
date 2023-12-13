@@ -15,7 +15,7 @@ if HAS_TRITON:
     """
     this functions are modified from https://github.com/ModelTC/lightllm
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     # Adapted from  https://github.com/ModelTC/lightllm/blob/main/lightllm/models/llama/triton_kernel/context_flashattention_nopad.py
     @triton.jit
     def _context_flash_attention_kernel(
@@ -52,6 +52,7 @@ if HAS_TRITON:
         BLOCK_DMODEL: tl.constexpr,
         BLOCK_N: tl.constexpr,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         batch_id = tl.program_id(0)
         cur_head = tl.program_id(1)
         start_m = tl.program_id(2)
@@ -149,6 +150,7 @@ if HAS_TRITON:
     def smooth_llama_context_attn_fwd(
         q, k, v, o, q_input_scale, k_input_scale, v_input_scale, pv_output_scale, b_start_loc, b_seq_len, max_input_len
     ):
+        gd.debuginfo(prj="mt", info=f'')
         BLOCK = 128
         # shape constraints
         Lq, Lk, Lv = q.shape[-1], k.shape[-1], v.shape[-1]
@@ -225,6 +227,7 @@ if HAS_TRITON:
         HEAD_DIM: tl.constexpr,
         BLOCK_N: tl.constexpr,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         current_batch = tl.program_id(0)
         current_head = tl.program_id(1)
         start_n = tl.program_id(2)
@@ -288,6 +291,7 @@ if HAS_TRITON:
         HEAD_DIM: tl.constexpr,
         BLOCK_N: tl.constexpr,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         current_batch = tl.program_id(0)
         current_head = tl.program_id(1)
         start_n = tl.program_id(2)
@@ -340,6 +344,7 @@ if HAS_TRITON:
         max_kv_cache_len,
         alibi=None,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         BLOCK = 32
         # shape constraints
         q_head_dim, k_head_dim = q.shape[-1], k.shape[-1]
@@ -355,6 +360,7 @@ if HAS_TRITON:
         num_warps = 2
 
         if alibi is not None:
+            gd.debuginfo(prj="mt", info=f'')
             _token_attn_1_alibi_kernel[grid](
                 q,
                 k,
@@ -383,6 +389,7 @@ if HAS_TRITON:
                 num_stages=1,
             )
         else:
+            gd.debuginfo(prj="mt", info=f'')
             _token_attn_1_kernel[grid](
                 q,
                 k,
@@ -454,7 +461,14 @@ if HAS_TRITON:
         return
 
     @torch.no_grad()
-    def token_attn_softmax_fwd(softmax_logics, kv_cache_start_loc, kv_cache_seqlen, softmax_prob_out, max_kv_cache_len):
+    def token_attn_softmax_fwd(softmax_logics,
+                               kv_cache_start_loc,
+                               kv_cache_seqlen,
+                               softmax_prob_out,
+                               max_kv_cache_len):
+
+        gd.debuginfo(prj="mt", info=f'')
+
         BLOCK_SIZE = triton.next_power_of_2(max_kv_cache_len)
         batch, head_num = kv_cache_start_loc.shape[0], softmax_logics.shape[0]
 
@@ -503,6 +517,7 @@ if HAS_TRITON:
         HEAD_DIM: tl.constexpr,
         BLOCK_N: tl.constexpr,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         current_batch = tl.program_id(0)
         current_head = tl.program_id(1)
 
@@ -559,6 +574,7 @@ if HAS_TRITON:
         kv_cache_seqlen,
         max_kv_cache_len,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         if triton.__version__ >= "2.1.0":
             BLOCK = 128
         else:
@@ -611,6 +627,7 @@ if HAS_TRITON:
         max_len_in_batch,
         alibi=None,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         head_num = k.shape[1]
         batch_size = kv_cache_seq_len.shape[0]
         calcu_shape1 = (batch_size, head_num, k.shape[2])

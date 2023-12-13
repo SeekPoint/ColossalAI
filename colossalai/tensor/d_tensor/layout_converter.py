@@ -33,6 +33,7 @@ def set_layout_converting_options(options: LayoutConverterOptions):
     """
     manager = LayoutConverter()
     manager.options = options
+    gd.debuginfo(prj="mt", info=f'')
 
 
 class LayoutConverter(metaclass=SingletonMeta):
@@ -45,6 +46,7 @@ class LayoutConverter(metaclass=SingletonMeta):
         self._options = None
         self._forward_only = False
         self.cached_solution = {}
+        gd.debuginfo(prj="mt", info=f'')
 
     @property
     def options(self):
@@ -99,6 +101,7 @@ class LayoutConverter(metaclass=SingletonMeta):
             [R, S1, R]: CommSpec:(comm_pattern:GATHER_FWD_SPLIT_BWD, gather_dim:0, shard_dim:0, logical_process_axis:0)
             [S0, R, R]: CommSpec:(comm_pattern:GATHER_FWD_SPLIT_BWD, gather_dim:1, shard_dim:1, logical_process_axis:1)
         """
+        gd.debuginfo(prj="mt", info=f'')
         valid_spec_dict = {}
         comm_pattern = CollectiveCommPattern.GATHER_FWD_SPLIT_BWD
         source_spec = source_layout.sharding_spec
@@ -182,6 +185,7 @@ class LayoutConverter(metaclass=SingletonMeta):
             [R, S1, S0]: CommSpec:(comm_pattern:ALL2ALL_FWD_ALL2ALL_BWD, gather_dim:0, shard_dim:2, logical_process_axis: 0)
             [S0, R, S1]: CommSpec:(comm_pattern:ALL2ALL_FWD_ALL2ALL_BWD, gather_dim:1, shard_dim:2, logical_process_axis: 1)
         """
+        gd.debuginfo(prj="mt", info=f'')
         valid_spec_dict = {}
         comm_pattern = CollectiveCommPattern.ALL2ALL_FWD_ALL2ALL_BWD
 
@@ -301,6 +305,7 @@ class LayoutConverter(metaclass=SingletonMeta):
             [S0, S1, R]: CommSpec:(comm_pattern:SPLIT_FWD_GATHER_BWD, gather_dim:1, shard_dim:1, logical_process_axis:1)
             [S0, R, S1]: CommSpec:(comm_pattern:SPLIT_FWD_GATHER_BWD, gather_dim:2, shard_dim:2, logical_process_axis:1)
         """
+        gd.debuginfo(prj="mt", info=f'')
         valid_spec_dict = {}
         comm_pattern = CollectiveCommPattern.SPLIT_FWD_GATHER_BWD
         source_spec = source_layout.sharding_spec
@@ -373,6 +378,7 @@ class LayoutConverter(metaclass=SingletonMeta):
         Return:
             valid_spec_dict(Dict[Layout, CommSpec]): all valid layouts from source_layout with one step transform.
         """
+        gd.debuginfo(prj="mt", info=f'')
         valid_spec_dict = {}
         valid_spec_dict.update(self.all_gather_transform_layouts(source_layout))
         valid_spec_dict.update(self.all_to_all_transform_layout(source_layout))
@@ -435,6 +441,8 @@ class LayoutConverter(metaclass=SingletonMeta):
         output:
             [R, S01, R]->[R, S0, R]->[S0, R, R]->[S01, R, R]
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         source_spec = source_layout.sharding_spec
         target_spec = target_layout.sharding_spec
         MAX_TRANSFORM_STEPS = 20
@@ -487,14 +495,17 @@ class LayoutConverter(metaclass=SingletonMeta):
             cached_transform_path, cached_comm_action_sequence = self.cached_solution[spec_pairs]
 
             if _group_alive_check(cached_comm_action_sequence):
+                gd.debuginfo(prj="mt", info=f'')
                 # If all process groups have not been deleted, the cache is valid
                 return cached_transform_path, cached_comm_action_sequence
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 # If at least one process group has been deleted, the cache is invalid, so delete it
                 del self.cached_solution[spec_pairs]
 
         # We do nothing if the sharding spec is all the same.
         if source_spec.spec_diff(target_spec) == 0:
+            gd.debuginfo(prj="mt", info=f'')
             self.cached_solution[spec_pairs] = (transform_path, comm_action_sequence)
             return (
                 transform_path,
@@ -535,6 +546,8 @@ class LayoutConverter(metaclass=SingletonMeta):
         """
         Get the total communication cost of the layout converting process.
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         transform_path, comm_action_sequence = self.layout_converting(source_layout, target_layout)
         total_cost = {"forward": 0.0, "backward": 0.0, "total": 0.0}
         for layout, comm_spec in zip(transform_path, comm_action_sequence):
@@ -605,6 +618,8 @@ class LayoutConverter(metaclass=SingletonMeta):
                     [3.],
                     [3.]])
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         _, comm_action_sequence = self.layout_converting(source_layout, target_layout)
         for comm_spec in comm_action_sequence:
             tensor = comm_spec.covert_spec_to_action(tensor)

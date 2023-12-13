@@ -23,6 +23,7 @@ class TensorDetector:
             module (Optional[:class:`nn.Module`]): when sending an ``nn.Module`` object,
                 the detector can name the tensors detected better.
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.show_info = show_info
         self.log = log
         self.include_cpu = include_cpu
@@ -35,6 +36,7 @@ class TensorDetector:
 
         self.module = module
         if isinstance(module, nn.Module):
+            gd.debuginfo(prj="mt", info=f'')
             # if module is an instance of nn.Module, we can name the parameter with its real name
             for name, param in module.named_parameters():
                 self.tensor_info[id(param)].append(name)
@@ -45,14 +47,18 @@ class TensorDetector:
                 self.tensor_info[id(param)].append(self.get_tensor_mem(param))
 
     def get_tensor_mem(self, tensor):
+        gd.debuginfo(prj="mt", info=f'')
+
         # calculate the memory occupied by a tensor
         memory_size = tensor.element_size() * tensor.storage().size()
         if (tensor.is_leaf or tensor.retains_grad) and tensor.grad is not None:
             grad_memory_size = tensor.grad.element_size() * tensor.grad.storage().size()
             memory_size += grad_memory_size
+            gd.debuginfo(prj="mt", info=f'')
         return self.mem_format(memory_size)
 
     def mem_format(self, real_memory_size):
+        gd.debuginfo(prj="mt", info=f'')
         # format the tensor memory into a reasonable magnitude
         if real_memory_size >= 2**30:
             return str(real_memory_size / (2**30)) + " GB"
@@ -63,6 +69,7 @@ class TensorDetector:
         return str(real_memory_size) + " B"
 
     def collect_tensors_state(self):
+        gd.debuginfo(prj="mt", info=f'')
         for obj in gc.get_objects():
             if torch.is_tensor(obj):
                 # skip cpu tensor when include_cpu is false and the tensor we have collected before
@@ -166,6 +173,7 @@ class TensorDetector:
         if self.log is not None:
             with open(self.log + ".log", "a") as f:
                 f.write(self.info)
+        gd.debuginfo(prj="mt", info=f'')
 
     def detect(self, include_cpu=False):
         self.include_cpu = include_cpu
@@ -176,7 +184,9 @@ class TensorDetector:
         self.order = []
         self.detected = []
         self.info = ""
+        gd.debuginfo(prj="mt", info=f'')
 
     def close(self):
         self.saved_tensor_info.clear()
         self.module = None
+        gd.debuginfo(prj="mt", info=f'')

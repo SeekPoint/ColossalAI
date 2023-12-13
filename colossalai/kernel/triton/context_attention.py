@@ -11,6 +11,7 @@ except ImportError:
     print("please install triton from https://github.com/openai/triton")
 
 if HAS_TRITON:
+    gd.debuginfo(prj="mt", info=f'')
     """
     this function is modified from
     https://github.com/ModelTC/lightllm/blob/f093edc20683ac3ea1bca3fb5d8320a0dd36cf7b/lightllm/models/llama/triton_kernel/context_flashattention_nopad.py#L10
@@ -47,6 +48,7 @@ if HAS_TRITON:
         BLOCK_DMODEL: tl.constexpr,
         BLOCK_N: tl.constexpr,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         batch_id = tl.program_id(0)
         cur_head = tl.program_id(1)
         start_m = tl.program_id(2)
@@ -139,6 +141,7 @@ if HAS_TRITON:
 
     @torch.no_grad()
     def bloom_context_attn_fwd(q, k, v, o, b_start_loc, b_seq_len, max_input_len, alibi=None):
+        gd.debuginfo(prj="mt", info=f'')
         BLOCK = 128
         # shape constraints
         Lq, Lk, Lv = q.shape[-1], k.shape[-1], v.shape[-1]
@@ -156,6 +159,7 @@ if HAS_TRITON:
         tmp = torch.empty((batch, head, max_input_len + 256), device=q.device, dtype=torch.float32)
         
         if triton.__version__ < "2.1.0":
+            gd.debuginfo(prj="mt", info=f'')
             _context_flash_attention_kernel[grid](
                 q,
                 k,
@@ -210,8 +214,9 @@ if HAS_TRITON:
         tmp = torch.empty((batch, head, max_input_len + 256), device=q.device, dtype=torch.float32)
         num_warps = 4 if Lk <= 64 else 8
         # num_warps = 4
-        
+        gd.debuginfo(prj="mt", info=f'')
         if triton.__version__ < "2.1.0":
+            gd.debuginfo(prj="mt", info=f'')
             _context_flash_attention_kernel[grid](
                 q,
                 k,

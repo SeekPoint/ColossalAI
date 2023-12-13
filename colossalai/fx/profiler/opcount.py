@@ -16,6 +16,8 @@ def matmul_flop_jit(inputs: List[Any], outputs: List[Any]) -> Number:
     """
     Count flops for matmul.
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     # Inputs should be a list of length 2.
     # Inputs contains the shapes of two matrices.
     input_shapes = [v.shape for v in inputs]
@@ -25,6 +27,7 @@ def matmul_flop_jit(inputs: List[Any], outputs: List[Any]) -> Number:
     if all(len(shape) == 2 for shape in input_shapes):
         # gemm
         assert input_shapes[0][-1] == input_shapes[1][-2], input_shapes
+        gd.debuginfo(prj="mt", info=f'')
     elif all(len(shape) == 1 for shape in input_shapes):
         # dot
         assert input_shapes[0][0] == input_shapes[1][0], input_shapes
@@ -32,13 +35,16 @@ def matmul_flop_jit(inputs: List[Any], outputs: List[Any]) -> Number:
         # expand shape
         input_shapes[0] = torch.Size([1, input_shapes[0][0]])
         input_shapes[1] = torch.Size([input_shapes[1][0], 1])
+        gd.debuginfo(prj="mt", info=f'')
     else:
         # gemv
         if len(input_shapes[0]) == 1:
             assert input_shapes[0][0] == input_shapes[1][-2], input_shapes
             input_shapes.reverse()
+            gd.debuginfo(prj="mt", info=f'')
         else:
             assert input_shapes[1][0] == input_shapes[0][-1], input_shapes
+            gd.debuginfo(prj="mt", info=f'')
 
         # expand the shape of the vector to [batch size, 1]
         input_shapes[-1] = torch.Size([input_shapes[-1][-1], 1])
@@ -47,6 +53,8 @@ def matmul_flop_jit(inputs: List[Any], outputs: List[Any]) -> Number:
 
 
 def addmm_flop_jit(inputs: List[Any], outputs: List[Any]) -> Number:
+    gd.debuginfo(prj="mt", info=f'')
+
     """
     Count flops for fully connected layers.
     """
@@ -67,6 +75,8 @@ def linear_flop_jit(inputs: List[Any], outputs: List[Any]) -> Number:
     """
     Count flops for the aten::linear operator.
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     # Inputs is a list of length 3; unlike aten::addmm, it is the first
     # two elements that are relevant.
     input_shapes = [v.shape for v in inputs[0:2]]
@@ -81,6 +91,8 @@ def bmm_flop_jit(inputs: List[Any], outputs: List[Any]) -> Number:
     """
     Count flops for the bmm operation.
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     # Inputs should be a list of length 2.
     # Inputs contains the shapes of two tensor.
     assert len(inputs) == 2, len(inputs)
@@ -95,6 +107,8 @@ def baddbmm_flop_jit(inputs: List[Any], outputs: List[Any]) -> Number:
     """
     Count flops for the baddbmm(batch add and batch matmul) operation.
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     # Inputs = [input, batch1, batch2]
     # out = input + batch1 x batch2
     assert len(inputs) == 3, len(inputs)
@@ -123,6 +137,8 @@ def conv_flop_count(
     Returns:
         int: the number of flops
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     batch_size = x_shape[0]
     conv_shape = (x_shape if transposed else out_shape)[2:]
     flops = batch_size * reduce(operator.mul, w_shape) * reduce(operator.mul, conv_shape)
@@ -133,6 +149,7 @@ def conv_flop_jit(inputs: List[Any], outputs: List[Any]):
     """
     Count flops for convolution.
     """
+    gd.debuginfo(prj="mt", info=f'')
     x, w = inputs[:2]
     x_shape, w_shape, out_shape = (x.shape, w.shape, outputs[0].shape)
     transposed = inputs[6]
@@ -145,6 +162,7 @@ def transpose_shape(shape):
 
 
 def conv_backward_flop_jit(inputs: List[Any], outputs: List[Any]):
+    gd.debuginfo(prj="mt", info=f'')
     grad_out_shape, x_shape, w_shape = [i.shape for i in inputs[:3]]
     output_mask = inputs[-1]
     fwd_transposed = inputs[7]
@@ -153,9 +171,11 @@ def conv_backward_flop_jit(inputs: List[Any], outputs: List[Any]):
     if output_mask[0]:
         grad_input_shape = outputs[0].shape
         flop_count += conv_flop_count(grad_out_shape, w_shape, grad_input_shape, not fwd_transposed)
+        gd.debuginfo(prj="mt", info=f'')
     if output_mask[1]:
         grad_weight_shape = outputs[1].shape
         flop_count += conv_flop_count(transpose_shape(x_shape), grad_out_shape, grad_weight_shape, fwd_transposed)
+        gd.debuginfo(prj="mt", info=f'')
 
     return flop_count
 
@@ -170,6 +190,7 @@ def norm_flop_counter(affine_arg_index: int, input_arg_index: int) -> Callable:
         """
         Count flops for norm layers.
         """
+        gd.debuginfo(prj="mt", info=f'')
         # Inputs[0] contains the shape of the input.
         input_shape = inputs[input_arg_index].shape
 
@@ -183,15 +204,22 @@ def norm_flop_counter(affine_arg_index: int, input_arg_index: int) -> Callable:
         flop = reduce(operator.mul, input_shape) * (5 if has_affine else 4)
         return flop
 
+    gd.debuginfo(prj="mt", info=f'')
     return norm_flop_jit
 
 
 def batchnorm_flop_jit(inputs: List[Any], outputs: List[Any], training: bool = None) -> Number:
+    gd.debuginfo(prj="mt", info=f'')
     if training is None:
         training = inputs[-3]
+        gd.debuginfo(prj="mt", info=f'')
+
     assert isinstance(training, bool), "Signature of aten::batch_norm has changed!"
+
     if training:
+        gd.debuginfo(prj="mt", info=f'')
         return norm_flop_counter(1, 0)(inputs, outputs)  # pyre-ignore
+
     has_affine = inputs[1].shape is not None
     input_shape = reduce(operator.mul, inputs[0].shape)
     return input_shape * (2 if has_affine else 1)
@@ -211,10 +239,14 @@ def elementwise_flop_counter(input_scale: float = 1, output_scale: float = 0) ->
         if input_scale != 0:
             shape = inputs[0].shape
             ret += input_scale * reduce(operator.mul, shape) if shape else 0
+            gd.debuginfo(prj="mt", info=f'')
         if output_scale != 0:
             shape = outputs[0].shape
             ret += output_scale * reduce(operator.mul, shape) if shape else 0
+            gd.debuginfo(prj="mt", info=f'')
         return ret
+
+    gd.debuginfo(prj="mt", info=f'')
 
     return elementwise_flop
 
@@ -229,6 +261,7 @@ def zero_flop_jit(*args):
 if version.parse(torch.__version__) >= version.parse("1.12.0") and version.parse(torch.__version__) < version.parse(
     "2.0.0"
 ):
+    gd.debuginfo(prj="mt", info=f'')
     flop_mapping = {
         # gemm, gemv and dot
         aten.mm.default: matmul_flop_jit,
@@ -368,6 +401,7 @@ if version.parse(torch.__version__) >= version.parse("1.12.0") and version.parse
         flop_mapping[op] = zero_flop_jit
 
 else:
+    gd.debuginfo(prj="mt", info=f'')
     flop_mapping = {}
     elementwise_flop_aten = {}
     zero_flop_aten = {}

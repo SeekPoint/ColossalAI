@@ -26,7 +26,11 @@ class StrategiesConstructor:
         solver_options (SolverOptions): a SolverOptions object which specifies the preferences for plan searching.
     """
 
-    def __init__(self, graph: Graph, device_mesh: DeviceMesh, solver_options: SolverOptions):
+    def __init__(self,
+                 graph: Graph,
+                 device_mesh: DeviceMesh,
+                 solver_options: SolverOptions):
+        gd.debuginfo(prj="mt", info=f'')
         self.graph = graph
         assert graph.owning_module is not None, "The given graph is not associated with a owning_module"
         self.root_module = self.graph.owning_module
@@ -44,6 +48,7 @@ class StrategiesConstructor:
         In this method, we will remove the duplicated strategies depending on the strategies name.
         Note that this operation is in-place.
         """
+        gd.debuginfo(prj="mt", info=f'')
         name_checklist = []
         remove_list = []
         for strategy in strategies_vector:
@@ -55,6 +60,7 @@ class StrategiesConstructor:
             strategies_vector.remove(strategy)
 
     def generate_alias_set(self):
+        gd.debuginfo(prj="mt", info=f'')
         node_list = [strategy_vector.node for strategy_vector in self.leaf_strategies]
         common_blocks = find_repeat_blocks(node_list, self.root_module, common_length_threshold=10)
 
@@ -62,6 +68,7 @@ class StrategiesConstructor:
         alias_set = {}
 
         if repeat_block_nums == 0:
+            gd.debuginfo(prj="mt", info=f'')
             return alias_set
 
         for index, common_node in enumerate(common_blocks[0]):
@@ -73,9 +80,11 @@ class StrategiesConstructor:
         """
         This method is to build the strategy vector for each node in the computation graph.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         def _check_no_strategy_for_node(node):
+            gd.debuginfo(prj="mt", info=f'')
             if node.op in ("placeholder", "get_attr", "output"):
+                gd.debuginfo(prj="mt", info=f'')
                 return False
 
             def _check_no_strategy_for_data(data):

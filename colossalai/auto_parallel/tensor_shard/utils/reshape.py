@@ -32,7 +32,7 @@ def detect_reshape_mapping(origin_shape: torch.Size, tgt_shape: torch.Size) -> D
     Output:
         {(2,): (3, 2), (1, 0): (1,), (0,): (0, 1)}
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     # reverse the shape object
     origin_shape = list(origin_shape)
     tgt_shape = list(tgt_shape)
@@ -53,6 +53,7 @@ def detect_reshape_mapping(origin_shape: torch.Size, tgt_shape: torch.Size) -> D
 
     while origin_index != len(origin_shape) or tgt_index != len(tgt_shape):
         if original_dimension_size == tgt_dimension_size:
+            gd.debuginfo(prj="mt", info=f'')
             reshape_mapping_dict[tuple(origin_dims)] = tuple(tgt_dims)
             # if the origin_dims has no element, it means the original tensor has been fully matched.
             # Therefore, we do not have to increase the origin_index for that case.
@@ -92,6 +93,7 @@ def detect_reshape_mapping(origin_shape: torch.Size, tgt_shape: torch.Size) -> D
             tgt_index += 1
 
             if previous_label == PreviousStatus.TGT:
+                gd.debuginfo(prj="mt", info=f'')
                 # if the target dimension size is larger in the previous comparison, which means
                 # the origin dimension size has already accumulated larger than target dimension size, so
                 # we need to offload the origin dims and tgt dims into the reshape_mapping_dict.
@@ -103,6 +105,7 @@ def detect_reshape_mapping(origin_shape: torch.Size, tgt_shape: torch.Size) -> D
                 # reset the previous_label after offloading the origin dims and tgt dims
                 previous_label = PreviousStatus.RESET
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 # accumulate the tgt_dimension_size until tgt_dimension_size larger than original_dimension_size
                 tgt_dimension_size *= tgt_shape[tgt_index]
                 tgt_dims.append(tgt_len - tgt_index - 1)
@@ -112,6 +115,7 @@ def detect_reshape_mapping(origin_shape: torch.Size, tgt_shape: torch.Size) -> D
             origin_index += 1
 
             if previous_label == PreviousStatus.ORIGIN:
+                gd.debuginfo(prj="mt", info=f'')
                 # if the origin element is larger in the previous comparison, which means
                 # the target element has already accumulated larger than origin element, so
                 # we need to offload the origin dims and tgt dims into the reshape_mapping_dict.
@@ -123,6 +127,7 @@ def detect_reshape_mapping(origin_shape: torch.Size, tgt_shape: torch.Size) -> D
                 # reset the previous_label after offloading the origin dims and tgt dims
                 previous_label = PreviousStatus.RESET
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 # accumulate the original_dimension_size until original_dimension_size larger than tgt_dimension_size
                 original_dimension_size *= origin_shape[origin_index]
                 origin_dims.append(origin_len - origin_index - 1)

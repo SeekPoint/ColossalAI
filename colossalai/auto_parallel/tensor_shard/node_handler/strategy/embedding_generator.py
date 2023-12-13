@@ -31,6 +31,8 @@ class EmbeddingStrategyGenerator(StrategyGenerator):
         Note: The computation cost for the embedding handler is estimated as dense computing now.
               It may not be accurate.
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         # TODO: estimate the embedding computation cost as sparse operation
         sharded_input_shape = strategy.sharding_specs[self.op_data["input"]].get_sharded_shape_per_device()
         sharded_other_shape = strategy.sharding_specs[self.op_data["other"]].get_sharded_shape_per_device()
@@ -52,6 +54,7 @@ class EmbeddingStrategyGenerator(StrategyGenerator):
         strategy.compute_cost = compute_cost
 
     def update_memory_cost(self, strategy: ShardingStrategy):
+        gd.debuginfo(prj="mt", info=f'')
         forward_size_mapping = {
             "input": self._compute_size_in_bytes(strategy, "input"),
             "other": self._compute_size_in_bytes(strategy, "other"),
@@ -82,6 +85,7 @@ class EmbeddingStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def non_split(self):
         name = f"RR = R x RR"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         dim_partition_dict_mapping = {
             "input": {},
@@ -98,6 +102,7 @@ class EmbeddingStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def split_input(self, mesh_dim_0):
         name = f"S{mesh_dim_0}R = S{mesh_dim_0} x RR"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         dim_partition_dict_mapping = {
             "input": {0: [mesh_dim_0]},
@@ -117,7 +122,7 @@ class EmbeddingStrategyGenerator(StrategyGenerator):
                 logical_process_axis=mesh_dim_0,
                 comm_type=CommType.HOOK,
             )
-
+            gd.debuginfo(prj="mt", info=f'')
         else:
             other_comm_action = self.get_communication_action(
                 sharding_spec_mapping["other"],
@@ -126,6 +131,7 @@ class EmbeddingStrategyGenerator(StrategyGenerator):
                 comm_type=CommType.BEFORE,
                 arg_index=1,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         communication_action_mapping["other"] = other_comm_action
 
@@ -138,6 +144,7 @@ class EmbeddingStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def split_input_and_embedding_dim(self, mesh_dim_0, mesh_dim_1):
         name = f"S{mesh_dim_0}S{mesh_dim_1} = S{mesh_dim_0} x RS{mesh_dim_1}"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         dim_partition_dict_mapping = {
             "input": {
@@ -171,6 +178,7 @@ class EmbeddingStrategyGenerator(StrategyGenerator):
                 logical_process_axis=mesh_dim_0,
                 comm_type=CommType.HOOK,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         else:
             other_comm_action = self.get_communication_action(
@@ -180,6 +188,7 @@ class EmbeddingStrategyGenerator(StrategyGenerator):
                 comm_type=CommType.BEFORE,
                 arg_index=1,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         communication_action_mapping["other"] = other_comm_action
 
@@ -192,6 +201,7 @@ class EmbeddingStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def split_1d_parallel_on_input(self, mesh_dim_0, mesh_dim_1):
         name = f"S{mesh_dim_0}{mesh_dim_1}R = S{mesh_dim_0}{mesh_dim_1} x RR"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         dim_partition_dict_mapping = {
             "input": {0: [mesh_dim_0, mesh_dim_1]},
@@ -213,6 +223,7 @@ class EmbeddingStrategyGenerator(StrategyGenerator):
                 logical_process_axis=[mesh_dim_0, mesh_dim_1],
                 comm_type=CommType.HOOK,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         else:
             other_comm_action = self.get_communication_action(
@@ -222,6 +233,7 @@ class EmbeddingStrategyGenerator(StrategyGenerator):
                 comm_type=CommType.BEFORE,
                 arg_index=1,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         communication_action_mapping["other"] = other_comm_action
 
@@ -234,6 +246,7 @@ class EmbeddingStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def split_embedding_dim(self, mesh_dim_0):
         name = f"RS{mesh_dim_0} = R x RS{mesh_dim_0}"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         dim_partition_dict_mapping = {
             "input": {},
@@ -267,6 +280,7 @@ class EmbeddingStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def split_1d_parallel_on_embedding_dim(self, mesh_dim_0, mesh_dim_1):
         name = f"RS{mesh_dim_0}{mesh_dim_1} = R x RS{mesh_dim_0}{mesh_dim_1}"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         dim_partition_dict_mapping = {
             "input": {},
@@ -298,6 +312,8 @@ class EmbeddingStrategyGenerator(StrategyGenerator):
         )
 
     def collate_strategies(self) -> List[ShardingStrategy]:
+        gd.debuginfo(prj="mt", info=f'')
+
         strategies = []
 
         # RR= R x RR

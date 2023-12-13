@@ -25,10 +25,12 @@ class ActionIntervalBuffer:
     def __int__(self):
         self.hidden_states = None
         self.new_token = None
+        gd.debuginfo(prj="mt", info=f'')
 
     def clear(self):
         self.hidden_states = None
         self.new_token = None
+        gd.debuginfo(prj="mt", info=f'')
 
 
 class GenerateSchedule(PipelineSchedule):
@@ -56,6 +58,7 @@ class GenerateSchedule(PipelineSchedule):
         self.verbose = verbose
         self.timestamps = None
         self.comm_dtype = None
+        gd.debuginfo(prj="mt", info=f'')
 
     def load_batch(self, data_iter: Iterable, device: Optional[torch.device] = None) -> None:
         """Load a batch from data iterator.
@@ -65,8 +68,11 @@ class GenerateSchedule(PipelineSchedule):
             device (Optional[torch.device], optional): Target device. Defaults to None.
         """
         batch = next(data_iter)
+        gd.debuginfo(prj="mt", info=f'')
+
         if device is not None:
             batch = tree_map(partial(to_device, device=device), batch)
+            gd.debuginfo(prj="mt", info=f'')
         self.batch = batch
         self.batch_size = get_batch_size(batch)
         self.microbatch_offset = 0
@@ -82,6 +88,7 @@ class GenerateSchedule(PipelineSchedule):
         Returns:
             Any: Micro batch.
         """
+        gd.debuginfo(prj="mt", info=f'')
         micro_batch = get_micro_batch(self.batch, self.microbatch_offset, self.microbatch_size)
         self.microbatch_offset += self.microbatch_size
         return tree_map(partial(to_device, device=get_current_device()), micro_batch)
@@ -96,6 +103,8 @@ class GenerateSchedule(PipelineSchedule):
         model_inputs = {
             'infer_state': self.mb_manager.cur_descrption.infer_state
         }
+        gd.debuginfo(prj="mt", info=f'')
+
         return model_inputs
 
     def _prepare_inputs_for_new_token(self, new_token: torch.Tensor):
@@ -108,12 +117,15 @@ class GenerateSchedule(PipelineSchedule):
             dict: inputs for new token, `{'input_ids': torch.Tensor, 'attention_mask': torch.Tensor, 'past_key_values': torch.Tensor}`
         """
         new_mask = self.mb_manager.cur_descrption.attn_mask
+        gd.debuginfo(prj="mt", info=f'')
 
         return dict(input_ids=new_token, attention_mask=new_mask)
 
     def _get_token_id(self, hidden_state: torch.Tensor) -> torch.Tensor:
         last_hidden_state = hidden_state[:, -1]
         input_ids = torch.argmax(last_hidden_state, dim=-1).unsqueeze(1)
+        gd.debuginfo(prj="mt", info=f'')
+
         return input_ids
 
     def _recv_pre_stage(self) -> Any:
@@ -123,7 +135,9 @@ class GenerateSchedule(PipelineSchedule):
         Returns:
             Any: The output from previous stage
         """
+        gd.debuginfo(prj="mt", info=f'')
         if self.stage_manager.num_stages == 2:
+            gd.debuginfo(prj="mt", info=f'')
             return self.comm.p2p_recv()
         return self.comm.recv_forward()
 
@@ -134,15 +148,18 @@ class GenerateSchedule(PipelineSchedule):
         """
         inputs_dict = self.load_micro_batch()
         self.mb_manager.add_descrption(inputs_dict)
+        gd.debuginfo(prj="mt", info=f'')
 
     def _load_stage_action(self, model: Module) -> None:
         """
         This action is only for first stage, load, init and do forward.
         1.load micro_batch 2.do the forward 3.step to update
         """
+        gd.debuginfo(prj="mt", info=f'')
         inputs_dict = self.load_micro_batch()
         self.mb_manager.add_descrption(inputs_dict)
         if self.verbose and self.stage_manager.is_first_stage():
+            gd.debuginfo(prj="mt", info=f'')
             torch.cuda.synchronize()
             self.timestamps[self.mb_manager.idx].append(time.time())
         interval_inputs = {'infer_state': self.mb_manager.cur_infer_state}
@@ -155,11 +172,13 @@ class GenerateSchedule(PipelineSchedule):
         This action is only for first stage 
         1.do the forward with hidden_states to generate new tokens 2.step to update
         """
+        gd.debuginfo(prj="mt", info=f'')
         hidden_states = self.action_interval_buffer.hidden_states
         assert hidden_states is not None, "When first stage in GENERATE phase, the hidden states should not be None"
         interval_inputs = {'hidden_states': hidden_states, 'infer_state': self.mb_manager.cur_infer_state}
         logits = model_forward(model, None, interval_inputs)
         if self.verbose and self.stage_manager.is_first_stage():
+            gd.debuginfo(prj="mt", info=f'')
             torch.cuda.synchronize()
             self.timestamps[self.mb_manager.idx].append(time.time())
         assert (
@@ -175,6 +194,7 @@ class GenerateSchedule(PipelineSchedule):
         """
         In this action, 1.prepare inputs for encoding for first stage. 2.do the forward to get hidden states 3.step to update
         """
+        gd.debuginfo(prj="mt", info=f'')
         new_token = self.action_interval_buffer.new_token
         assert new_token is not None, "When first stage in GENERATE phase, the new token should not be None"
         inputs_dict = self._prepare_inputs_for_new_token(new_token)
@@ -184,6 +204,7 @@ class GenerateSchedule(PipelineSchedule):
         self.action_interval_buffer.hidden_states = output_dict['hidden_states']
 
     def _body_encoding_action(self, model: Module):
+        gd.debuginfo(prj="mt", info=f'')
         hidden_states = self.action_interval_buffer.hidden_states
         assert hidden_states is not None, "When not first stage, the hidden states should not be None"
         interval_inputs = {'hidden_states': hidden_states, 'infer_state': self.mb_manager.cur_infer_state}
@@ -195,6 +216,7 @@ class GenerateSchedule(PipelineSchedule):
         """
         In this action, 1.receive the hidden_states from previous stage 2.send the hidden_states to next stage
         """
+        gd.debuginfo(prj="mt", info=f'')
         hidden_states = self.action_interval_buffer.hidden_states
         ret = self.comm.p2p_communicate(hidden_states, recv_pre, comm_dtype=self.comm_dtype)
 
@@ -212,22 +234,27 @@ class GenerateSchedule(PipelineSchedule):
         Returns:
             List[Callable]: A list of action, each action is a callable function, and it will be called in order.
         """
+        gd.debuginfo(prj="mt", info=f'')
         actions = []
         if self.stage_manager.is_first_stage():
             if self.mb_manager.cur_state is Status.PREFILL:
                 actions.append(partial(self._comm_action, False))
                 actions.append(partial(self._load_stage_action, model))
+                gd.debuginfo(prj="mt", info=f'')
             elif self.stage_manager.is_first_stage() and self.mb_manager.cur_state is Status.GENERATE:
                 actions.append(partial(self._comm_action, True))
                 actions.append(partial(self._gen_token_action, model))
                 actions.append(partial(self._head_encoding_action, model))
+                gd.debuginfo(prj="mt", info=f'')
             elif self.stage_manager.is_first_stage() and self.mb_manager.cur_state is Status.COOLDOWN:
                 actions.append(partial(self._comm_action, True))
                 actions.append(partial(self._gen_token_action, model))
+                gd.debuginfo(prj="mt", info=f'')
         # other stage
         else:
             if self.mb_manager.cur_state is Status.PREFILL:
                 actions.append(partial(self._init_infer_state_action))
+                gd.debuginfo(prj="mt", info=f'')
             actions.append(partial(self._comm_action, True))
             actions.append(partial(self._body_encoding_action, model))
 
@@ -235,8 +262,10 @@ class GenerateSchedule(PipelineSchedule):
 
     def generate_step(self, model: Module, data_iter: Iterable) -> Union[torch.Tensor, dict]:
         if self.stage_manager.num_stages == 2:
+            gd.debuginfo(prj="mt", info=f'')
             return self.generate_step_p2p(model, data_iter)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return self.generate_step_broadcast(model, data_iter)
 
     @torch.no_grad()
@@ -252,6 +281,7 @@ class GenerateSchedule(PipelineSchedule):
         Returns:
             Union[torch.Tensor, dict]: The intermediate output (dict) of the current stage. If it is the last stage, the output is the loss (Tensor).
         """
+        gd.debuginfo(prj="mt", info=f'')
         output_sequence = []
         self.load_batch(data_iter)
         model.eval()
@@ -295,6 +325,7 @@ class GenerateSchedule(PipelineSchedule):
         Returns:
             Union[torch.Tensor, dict]: The intermediate output (dict) of the current stage. If it is the last stage, the output is the loss (Tensor).
         """
+        gd.debuginfo(prj="mt", info=f'')
         output_sequence = []
         self.load_batch(data_iter)
         model.eval()
@@ -314,8 +345,10 @@ class GenerateSchedule(PipelineSchedule):
 
                 # First stage and in PREFILL phase, just load the inputs
                 if self.stage_manager.is_first_stage() and self.mb_manager.cur_state is Status.PREFILL:
+                    gd.debuginfo(prj="mt", info=f'')
                     inputs_dict = self.load_micro_batch()
                     if self.verbose and self.stage_manager.is_first_stage():
+                        gd.debuginfo(prj="mt", info=f'')
                         torch.cuda.synchronize()
                         self.timestamps[self.mb_manager.idx].append(time.time())
                     self.mb_manager.add_descrption(inputs_dict)
@@ -323,9 +356,11 @@ class GenerateSchedule(PipelineSchedule):
                     output_dict = model_forward(model, inputs_dict, interval_inputs)
                 # In GENERATE phase
                 else:
+                    gd.debuginfo(prj="mt", info=f'')
                     # Get hidden_states from previous stage
                     hidden_states = self.comm.recv_forward()
                     if self.stage_manager.is_first_stage():
+                        gd.debuginfo(prj="mt", info=f'')
                         # First just generate a new token
                         assert (
                             hidden_states is not None
@@ -340,6 +375,7 @@ class GenerateSchedule(PipelineSchedule):
                         self.mb_manager.step(new_token)
                         # If the current micro batch is not DONE, go through blocks
                         if self.mb_manager.cur_state in (Status.GENERATE, Status.COOLDOWN):
+                            gd.debuginfo(prj="mt", info=f'')
                             inputs_dict = self._prepare_inputs_for_new_token(new_token)
                             interval_inputs = {'infer_state': self.mb_manager.cur_infer_state}
                             output_dict = model_forward(model, inputs_dict, interval_inputs)
@@ -348,6 +384,7 @@ class GenerateSchedule(PipelineSchedule):
                         # inputs_dict = self._prepare_inputs_for_interval_stage()
                         inputs_dict = None
                         if self.mb_manager.cur_state is Status.PREFILL:
+                            gd.debuginfo(prj="mt", info=f'')
                             inputs_dict = self.load_micro_batch()
                             self.mb_manager.add_descrption(inputs_dict)
                         interval_inputs = {'hidden_states': hidden_states['hidden_states'], 'infer_state': self.mb_manager.cur_infer_state}
@@ -365,8 +402,10 @@ class GenerateSchedule(PipelineSchedule):
             # All microbatch in current round is DONE
             if self.stage_manager.is_first_stage():
                 output_sequence.extend(self.mb_manager.export_new_tokens())
+                gd.debuginfo(prj="mt", info=f'')
             self.mb_manager.clear()
             if self.verbose and self.stage_manager.is_first_stage():
                 whole_timestamp.extend(self.timestamps)
+                gd.debuginfo(prj="mt", info=f'')
 
         return output_sequence, whole_timestamp

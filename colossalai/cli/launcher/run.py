@@ -29,7 +29,7 @@ def fetch_hostfile(hostfile_path: str, ssh_port: int) -> HostInfoList:
         hostfile_path (str): the path to the hostfile
         ssh_port (int): the port to connect to the host
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     if not os.path.isfile(hostfile_path):
         click.echo(f"Error: Unable to find the hostfile, no such file: {hostfile_path}")
         exit()

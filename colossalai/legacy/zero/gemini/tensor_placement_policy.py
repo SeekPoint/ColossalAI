@@ -15,6 +15,7 @@ from .tensor_utils import colo_model_data_tensor_move_inline
 
 class TensorPlacementPolicy(ABC):
     def __init__(self, device: Optional[torch.device], mem_stats_collector: Optional[MemStatsCollector] = None) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.device: Optional[torch.device] = device
         self.mem_stats_collector: Optional[MemStatsCollector] = mem_stats_collector
 
@@ -26,6 +27,7 @@ class TensorPlacementPolicy(ABC):
 class CPUTensorPlacementPolicy(TensorPlacementPolicy):
     def __init__(self, mem_stats_collector: Optional[MemStatsCollector] = None) -> None:
         super().__init__(torch.device("cpu"), mem_stats_collector=mem_stats_collector)
+        gd.debuginfo(prj="mt", info=f'')
 
     def evict_tensors(self, hold_cuda_tensor_list: List[StatefulTensor], **kwargs) -> int:
         volume = 0
@@ -39,6 +41,7 @@ class CUDATensorPlacementPolicy(TensorPlacementPolicy):
     def __init__(self, mem_stats_collector: Optional[MemStatsCollector] = None) -> None:
         assert torch.cuda.is_available(), "Cannot use CUDATensorPlacementPolicy when CUDA is not available"
         super().__init__(get_current_device(), mem_stats_collector=mem_stats_collector)
+        gd.debuginfo(prj="mt", info=f'')
 
     def evict_tensors(self, hold_cuda_tensor_list: List[StatefulTensor], **kwargs) -> int:
         return 0, 0
@@ -51,6 +54,7 @@ class AutoTensorPlacementPolicy(TensorPlacementPolicy):
         # TODO(ver217): make these args configurable
         self._warmup_non_model_data_ratio: float = 0.8
         self._steady_cuda_cap_ratio: float = 0.9
+        gd.debuginfo(prj="mt", info=f'')
 
     def evict_tensors(
         self,
@@ -77,6 +81,7 @@ class AutoTensorPlacementPolicy(TensorPlacementPolicy):
         Returns:
             int: the volume of memory that is evicted
         """
+        gd.debuginfo(prj="mt", info=f'')
         start = time()
         cuda_capacity = colo_device_memory_capacity(get_current_device())
         used_cuda_model_data = StatefulTensor.GST_MGR.total_mem["cuda"]
@@ -116,6 +121,7 @@ class AutoTensorPlacementPolicy(TensorPlacementPolicy):
     @staticmethod
     @functools.lru_cache(maxsize=None)
     def _sort_hold_cuda_tensors(hold_cuda_tensors: tuple, compute_idx: int, compute_list: tuple) -> list:
+        gd.debuginfo(prj="mt", info=f'')
         next_compute_idx = {t: len(compute_list) for t in hold_cuda_tensors}
         for i in range(len(compute_list) - 1, compute_idx, -1):
             if compute_list[i] in next_compute_idx:
@@ -127,6 +133,7 @@ class AutoTensorPlacementPolicy(TensorPlacementPolicy):
 class TensorPlacementPolicyFactory:
     @staticmethod
     def create(policy_name: str) -> Type[TensorPlacementPolicy]:
+        gd.debuginfo(prj="mt", info=f'')
         if policy_name == "cpu":
             return CPUTensorPlacementPolicy
         elif policy_name == "cuda":

@@ -37,6 +37,7 @@ class TorchAMPOptimizer(OptimizerWrapper):
         backoff_factor: float = 0.5,
         growth_interval: int = 2000,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(optim)
         self.scaler = torch.cuda.amp.GradScaler(
             init_scale=init_scale,
@@ -46,21 +47,26 @@ class TorchAMPOptimizer(OptimizerWrapper):
         )
 
     def backward(self, loss: Tensor, *args, **kwargs) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         scaled_loss = self.scale_loss(loss)
         scaled_loss.backward(*args, **kwargs)
 
     def step(self, *args, **kwargs) -> Optional[float]:
+        gd.debuginfo(prj="mt", info=f'')
         out = self.scaler.step(self.optim, *args, **kwargs)
         self.scaler.update()
         return out
 
     def scale_loss(self, loss: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         return self.scaler.scale(loss)
 
     def unscale_grad(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.scaler.unscale_(self.optim)
 
     def clip_grad_by_value(self, clip_value: float, *args, **kwargs) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.unscale_grad()
         super().clip_grad_by_value(clip_value, *args, **kwargs)
 
@@ -72,6 +78,7 @@ class TorchAMPOptimizer(OptimizerWrapper):
         *args,
         **kwargs,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.unscale_grad()
         super().clip_grad_by_norm(max_norm, norm_type, error_if_nonfinite, *args, **kwargs)
 
@@ -85,9 +92,11 @@ class TorchAMPModule(ModelWrapper):
     """
 
     def __init__(self, module: nn.Module):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(module)
 
     def forward(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         with torch.cuda.amp.autocast():
             return self.module(*args, **kwargs)
 
@@ -115,6 +124,7 @@ class FP16TorchMixedPrecision(MixedPrecision):
         backoff_factor: float = 0.5,
         growth_interval: int = 2000,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.torch_amp_kwargs = dict(
             init_scale=init_scale,
@@ -129,9 +139,12 @@ class FP16TorchMixedPrecision(MixedPrecision):
         optimizer: Optional[Optimizer] = None,
         criterion: Optional[Callable] = None,
     ) -> Tuple[nn.Module, OptimizerWrapper, Callable]:
+        gd.debuginfo(prj="mt", info=f'')
         model = TorchAMPModule(model)
         if optimizer is not None:
+            gd.debuginfo(prj="mt", info=f'')
             optimizer = TorchAMPOptimizer(optimizer, **self.torch_amp_kwargs)
         if criterion is not None:
+            gd.debuginfo(prj="mt", info=f'')
             criterion = TorchAMPModule(criterion)
         return model, optimizer, criterion

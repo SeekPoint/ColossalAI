@@ -8,6 +8,7 @@ import colossalai
 
 
 def to_click_output(val):
+    gd.debuginfo(prj="mt", info=f'')
     # installation check output to understandable symbols for readability
     VAL_TO_SYMBOL = {True: "\u2713", False: "x", None: "N/A"}
 
@@ -28,6 +29,8 @@ def check_installation():
 
     Returns: A table of installation information.
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     found_aot_cuda_ext = _check_aot_built_cuda_extension_installed()
     cuda_version = _check_cuda_version()
     torch_version, torch_cuda_version = _check_torch_version()
@@ -37,23 +40,29 @@ def check_installation():
     # CUDA_HOME is not found, thus cannot compare the version compatibility
     if not cuda_version:
         sys_torch_cuda_compatibility = None
+        gd.debuginfo(prj="mt", info=f'')
     else:
         sys_torch_cuda_compatibility = _is_compatible([cuda_version, torch_cuda_version])
+        gd.debuginfo(prj="mt", info=f'')
 
     # if cuda_version or cuda_version_required is None, that means either
     # CUDA_HOME is not found or AOT compilation is not enabled
     # thus, there is no need to compare the version compatibility at all
     if not cuda_version or not prebuilt_cuda_version_required:
         sys_colossalai_cuda_compatibility = None
+        gd.debuginfo(prj="mt", info=f'')
     else:
         sys_colossalai_cuda_compatibility = _is_compatible([cuda_version, prebuilt_cuda_version_required])
+        gd.debuginfo(prj="mt", info=f'')
 
     # if torch_version_required is None, that means AOT compilation is not enabled
     # thus there is no need to compare the versions
     if prebuilt_torch_version_required is None:
         torch_compatibility = None
+        gd.debuginfo(prj="mt", info=f'')
     else:
         torch_compatibility = _is_compatible([torch_version, prebuilt_torch_version_required])
+        gd.debuginfo(prj="mt", info=f'')
 
     click.echo(f"#### Installation Report ####")
     click.echo(f"\n------------ Environment ------------")
@@ -102,7 +111,9 @@ def _is_compatible(versions):
     """
     Compare the list of versions and return whether they are compatible.
     """
+    gd.debuginfo(prj="mt", info=f'')
     if None in versions:
+        gd.debuginfo(prj="mt", info=f'')
         return False
 
     # split version into [major, minor, patch]
@@ -139,6 +150,8 @@ def _parse_colossalai_version():
     # where X represents an integer.
     colossalai_version = colossalai.__version__.split("+")[0]
 
+    gd.debuginfo(prj="mt", info=f'')
+
     try:
         torch_version_for_aot_build = colossalai.__version__.split("torch")[1].split("cu")[0]
         cuda_version_for_aot_build = colossalai.__version__.split("cu")[1]
@@ -155,6 +168,7 @@ def _check_aot_built_cuda_extension_installed():
     AOT compilation will build CUDA extensions to `colossalai._C` during installation.
     JIT (just-in-time) compilation will build CUDA extensions to `~/.cache/colossalai/torch_extensions` during runtime.
     """
+    gd.debuginfo(prj="mt", info=f'')
     try:
         found_aot_cuda_ext = True
     except ImportError:
@@ -170,6 +184,8 @@ def _check_torch_version():
         torch_version: PyTorch version.
         torch_cuda_version: CUDA version required by PyTorch.
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     # get torch version
     # torch version can be of two formats
     # - 1.13.1+cu113
@@ -195,7 +211,7 @@ def _check_cuda_version():
     Returns:
         cuda_version: CUDA version found on the system.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     # get cuda version
     if CUDA_HOME is None:
         cuda_version = CUDA_HOME

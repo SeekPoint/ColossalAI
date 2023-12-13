@@ -18,7 +18,7 @@ def _all_gather(tensor, comm_spec):
     """
     process_groups = comm_spec.device_mesh.get_process_group_for_all_axes()
     process_group = process_groups[comm_spec.logical_process_axis]
-
+    gd.debuginfo(prj="mt", info=f'')
     tensor_list = [
         torch.zeros(tensor.shape, dtype=tensor.dtype, device=tensor.device)
         for _ in range(comm_spec.device_mesh.shape[comm_spec.logical_process_axis])
@@ -34,6 +34,7 @@ def _split(tensor, comm_spec):
     """
     Implement shard operation on device mesh based on information provided by comm_spec.
     """
+    gd.debuginfo(prj="mt", info=f'')
     process_groups = comm_spec.device_mesh.get_process_group_for_all_axes()
     process_group = process_groups[comm_spec.logical_process_axis]
 
@@ -48,6 +49,7 @@ def _all_to_all(tensor, comm_spec):
     """
     Implement all to all operation on device mesh based on information provided by comm_spec.
     """
+    gd.debuginfo(prj="mt", info=f'')
     process_groups = comm_spec.device_mesh.get_process_group_for_all_axes()
     process_group = process_groups[comm_spec.logical_process_axis]
     world_size = dist.get_world_size(process_group)
@@ -69,16 +71,19 @@ def _all_reduce(tensor, comm_spec, async_op=False):
     """
     Implement all reduce operation on device mesh based on information provided by comm_spec.
     """
+    gd.debuginfo(prj="mt", info=f'')
     process_groups = comm_spec.device_mesh.get_process_group_for_all_axes()
     process_group = process_groups[comm_spec.logical_process_axis]
 
     if not tensor.is_contiguous():
         tensor = tensor.contiguous()
+        gd.debuginfo(prj="mt", info=f'')
     dist.all_reduce(tensor, op=ReduceOp.SUM, group=process_group, async_op=async_op)
     return tensor
 
 
 def _mix_gather(tensor, comm_spec):
+    gd.debuginfo(prj="mt", info=f'')
     """
     Implement mix gather operation on device mesh based on information provided by comm_spec.
     Mix gather is the all-gather operation on all devices in the device_mesh(FlattenDeviceMesh) of the comm_spec. It is
@@ -145,6 +150,7 @@ def _mix_gather(tensor, comm_spec):
 
     if comm_spec.logical_process_axes[0] == comm_spec.logical_process_axes[1]:
         output = torch.cat(tuple(tensor_list), comm_spec.gather_dim[0]).contiguous()
+        gd.debuginfo(prj="mt", info=f'')
     else:
         mesh_shape = comm_spec.device_meshes.shape
         cat_slice = [mesh_shape[comm_spec.logical_process_axes[0]], mesh_shape[comm_spec.logical_process_axes[1]]]
@@ -159,6 +165,7 @@ def _mix_gather(tensor, comm_spec):
                 tuple(tensor_list[i * cat_slice[0] : (i + 1) * cat_slice[0]]), comm_spec.gather_dim[0]
             ).contiguous()
         output = torch.cat(tuple(tmp_tensor_list), comm_spec.gather_dim[1]).contiguous()
+        gd.debuginfo(prj="mt", info=f'')
 
     return output
 
@@ -179,6 +186,8 @@ def _mix_split(tensor, comm_spec):
             #  [4, 5, 6, 7]]
             # return {0: [0, 4, 1, 5, 2, 6, 3, 7], 1: [0, 1, 2, 3, 4, 5, 6, 7]}
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     mesh_shape = comm_spec.device_meshes.shape
     dim = comm_spec.gather_dim
     total_slices = comm_spec.device_mesh.shape[0]
@@ -194,6 +203,7 @@ def _mix_split(tensor, comm_spec):
         length = tensor.shape[dim[0]] // total_slices
         start = length * rank
         output = torch.narrow(tensor, dim[0], start, length).contiguous()
+        gd.debuginfo(prj="mt", info=f'')
     else:
         tensor_shape = [tensor.shape[dim[0]], tensor.shape[dim[1]]]
         rank_slice = [mesh_shape[comm_spec.logical_process_axes[0]], mesh_shape[comm_spec.logical_process_axes[1]]]
@@ -201,6 +211,7 @@ def _mix_split(tensor, comm_spec):
         start = [(rank % rank_slice[0]) * length[0], (rank // rank_slice[0]) * length[1]]
         tmp_output = torch.narrow(tensor, dim[0], start[0], length[0]).contiguous()
         output = torch.narrow(tmp_output, dim[1], start[1], length[1]).contiguous()
+        gd.debuginfo(prj="mt", info=f'')
 
     return output
 
@@ -217,15 +228,18 @@ class _ReduceGrad(torch.autograd.Function):
 
     @staticmethod
     def symbolic(graph, input_):
+        gd.debuginfo(prj="mt", info=f'')
         return input_
 
     @staticmethod
     def forward(ctx, input_, comm_spec):
         ctx.comm_spec = comm_spec
+        gd.debuginfo(prj="mt", info=f'')
         return input_
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return _all_reduce(grad_output, ctx.comm_spec), None
 
 
@@ -241,14 +255,17 @@ class _ReduceInput(torch.autograd.Function):
 
     @staticmethod
     def symbolic(graph, input_):
+        gd.debuginfo(prj="mt", info=f'')
         return _all_reduce(input_)
 
     @staticmethod
     def forward(ctx, input_, comm_spec):
+        gd.debuginfo(prj="mt", info=f'')
         return _all_reduce(input_, comm_spec)
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return grad_output, None
 
 
@@ -264,15 +281,18 @@ class _SplitForwardGatherBackward(torch.autograd.Function):
 
     @staticmethod
     def symbolic(graph, input_):
+        gd.debuginfo(prj="mt", info=f'')
         return _split(input_)
 
     @staticmethod
     def forward(ctx, input_, comm_spec):
         ctx.comm_spec = comm_spec
+        gd.debuginfo(prj="mt", info=f'')
         return _split(input_, comm_spec)
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return _all_gather(grad_output, ctx.comm_spec), None
 
 
@@ -288,15 +308,18 @@ class _GatherForwardSplitBackward(torch.autograd.Function):
 
     @staticmethod
     def symbolic(graph, input_):
+        gd.debuginfo(prj="mt", info=f'')
         return _all_gather(input_)
 
     @staticmethod
     def forward(ctx, input_, comm_spec):
         ctx.comm_spec = comm_spec
+        gd.debuginfo(prj="mt", info=f'')
         return _all_gather(input_, comm_spec)
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return _split(grad_output, ctx.comm_spec), None
 
 
@@ -312,10 +335,12 @@ class _AllToAll(torch.autograd.Function):
 
     @staticmethod
     def symbolic(graph, input_):
+        gd.debuginfo(prj="mt", info=f'')
         return _all_to_all(input_)
 
     @staticmethod
     def forward(ctx, input_, comm_spec):
+        gd.debuginfo(prj="mt", info=f'')
         output = _all_to_all(input_, comm_spec)
         comm_spec_for_backward = CommSpec(
             comm_pattern=comm_spec.comm_pattern,
@@ -329,45 +354,55 @@ class _AllToAll(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_outputs):
+        gd.debuginfo(prj="mt", info=f'')
         return _all_to_all(grad_outputs, ctx.comm_spec), None
 
 
 class _MixGatherForwardMixSplitBackward(torch.autograd.Function):
     @staticmethod
     def symbolic(graph, input_):
+        gd.debuginfo(prj="mt", info=f'')
         return _mix_gather(input_)
 
     @staticmethod
     def forward(ctx, input_, comm_spec):
         ctx.comm_spec = comm_spec
+        gd.debuginfo(prj="mt", info=f'')
         return _mix_gather(input_, comm_spec)
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return _mix_split(grad_output, ctx.comm_spec), None
 
 
 def reduce_grad(input_, comm_spec):
+    gd.debuginfo(prj="mt", info=f'')
     return _ReduceGrad.apply(input_, comm_spec)
 
 
 def reduce_input(input_, comm_spec):
+    gd.debuginfo(prj="mt", info=f'')
     return _ReduceInput.apply(input_, comm_spec)
 
 
 def split_forward_gather_backward(input_, comm_spec):
+    gd.debuginfo(prj="mt", info=f'')
     return _SplitForwardGatherBackward.apply(input_, comm_spec)
 
 
 def gather_forward_split_backward(input_, comm_spec):
+    gd.debuginfo(prj="mt", info=f'')
     return _GatherForwardSplitBackward.apply(input_, comm_spec)
 
 
 def all_to_all(input_, comm_spec):
+    gd.debuginfo(prj="mt", info=f'')
     return _AllToAll.apply(input_, comm_spec)
 
 
 def mixgather_forward_split_backward(input_, comm_spec):
+    gd.debuginfo(prj="mt", info=f'')
     return _MixGatherForwardMixSplitBackward.apply(input_, comm_spec)
 
 
@@ -413,17 +448,21 @@ class CommSpec:
         self.shard_dim = shard_dim
         self.logical_process_axis = logical_process_axis
         self.forward_only = forward_only
+        gd.debuginfo(prj="mt", info=f'')
         if isinstance(self.logical_process_axis, list):
             if not mix_gather:
                 self.device_mesh = self.sharding_spec.device_mesh.flatten()
                 self.logical_process_axis = 0
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 self.device_meshes = self.sharding_spec.device_mesh.flatten_device_meshes
                 self.device_mesh = self.sharding_spec.device_mesh.flatten_device_mesh
                 # Create a new member `logical_process_axes` to distinguish from original flatten
                 self.logical_process_axes = logical_process_axis
+                gd.debuginfo(prj="mt", info=f'')
         else:
             self.device_mesh = self.sharding_spec.device_mesh
+            gd.debuginfo(prj="mt", info=f'')
 
     def __repr__(self):
         res_list = ["CommSpec:("]
@@ -461,45 +500,54 @@ class CommSpec:
         compute the communication cost.
         For shard operation, it is an on-chip operation, so the communication cost is zero.
         """
+        gd.debuginfo(prj="mt", info=f'')
         comm_size = reduce(operator.mul, self.sharding_spec.get_sharded_shape_per_device(), 1)
         cost_dict = {}
         if self.comm_pattern == CollectiveCommPattern.GATHER_FWD_SPLIT_BWD:
             forward_communication_cost = self.device_mesh.all_gather_cost(comm_size, self.logical_process_axis)
             # give a tiny cost to shard
             backward_communication_cost = 100
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.comm_pattern == CollectiveCommPattern.ALL2ALL_FWD_ALL2ALL_BWD:
             forward_communication_cost = self.device_mesh.all_to_all_cost(comm_size, self.logical_process_axis)
             # grad should have same shape as input tensor
             # all to all operation has same logical process axis as forward.
             backward_communication_cost = self.device_mesh.all_to_all_cost(comm_size, self.logical_process_axis)
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.comm_pattern == CollectiveCommPattern.ALLREDUCE_FWD_IDENTITY_BWD:
             forward_communication_cost = self.device_mesh.all_reduce_cost(comm_size, self.logical_process_axis)
             backward_communication_cost = 0
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.comm_pattern == CollectiveCommPattern.IDENTITY_FWD_ALLREDUCE_BWD:
             forward_communication_cost = 0
             backward_communication_cost = self.device_mesh.all_reduce_cost(comm_size, self.logical_process_axis)
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.comm_pattern == CollectiveCommPattern.SPLIT_FWD_GATHER_BWD:
             # give a tiny cost to shard
             forward_communication_cost = 100
             backward_communication_cost = self.device_mesh.all_gather_cost(comm_size, self.logical_process_axis)
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.comm_pattern == CollectiveCommPattern.MIXGATHER_FWD_SPLIT_BWD:
             # no need for axis because all devices are used in mix_gather
             forward_communication_cost = self.device_mesh.mix_gather_cost(comm_size)
             backward_communication_cost = 100
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.forward_only:
             cost_dict["forward"] = forward_communication_cost
             cost_dict["backward"] = 0
             cost_dict["total"] = cost_dict["forward"] + cost_dict["backward"]
+            gd.debuginfo(prj="mt", info=f'')
         else:
             cost_dict["forward"] = forward_communication_cost
             cost_dict["backward"] = backward_communication_cost
             cost_dict["total"] = cost_dict["forward"] + cost_dict["backward"]
+            gd.debuginfo(prj="mt", info=f'')
 
         return cost_dict
 
@@ -513,8 +561,10 @@ class CommSpec:
         """
         if self.comm_pattern in pattern_to_func_dict:
             tensor = pattern_to_func_dict[self.comm_pattern](tensor, self)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             tensor = tensor
+            gd.debuginfo(prj="mt", info=f'')
         return tensor
 
 

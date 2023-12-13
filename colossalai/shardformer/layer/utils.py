@@ -28,6 +28,7 @@ class Randomizer:
     _INDEX = 0
 
     def __init__(self, seed: int):
+        gd.debuginfo(prj="mt", info=f'')
         self.seed = seed
 
         # Handle CUDA rng state
@@ -69,6 +70,7 @@ class Randomizer:
             >>> with _seed_manager.dropout_mode():
             >>>     input = super().forward(input)
         """
+        gd.debuginfo(prj="mt", info=f'')
         try:
             current_cuda_rng_state = self._get_cuda_rng_state()
             self._set_cuda_rng_state(self.cuda_rng_state)
@@ -82,6 +84,7 @@ class Randomizer:
             self._set_cuda_rng_state(current_cuda_rng_state)
 
             if enable_cpu:
+                gd.debuginfo(prj="mt", info=f'')
                 self.cpu_rng_state = self._get_cpu_rng_state()
                 self._set_cpu_rng_state(current_cpu_rng_state)
 
@@ -131,8 +134,10 @@ class Randomizer:
         """
         Return whether the randomizer index is synchronized across processes.
         """
+        gd.debuginfo(prj="mt", info=f'')
         index = Randomizer.index()
         if dist.is_initialized():
+            gd.debuginfo(prj="mt", info=f'')
             # convert the index to tensor
             index_tensor = torch.tensor(index, dtype=torch.int32).cuda()
 
@@ -152,9 +157,11 @@ class Randomizer:
         """
         All gather the index and pick the largest value.
         """
+        gd.debuginfo(prj="mt", info=f'')
         index = Randomizer.index()
 
         if dist.is_initialized():
+            gd.debuginfo(prj="mt", info=f'')
             # convert the index to tensor
             index_tensor = torch.tensor(index, dtype=torch.int32).cuda()
 
@@ -186,13 +193,16 @@ def create_randomizer_with_offset(
     Returns:
         Randomizer: the randomizer with offset.
     """
+    gd.debuginfo(prj="mt", info=f'')
     base_seed = seed
 
     if offset_by_rank and dist.is_initialized():
+        gd.debuginfo(prj="mt", info=f'')
         rank = dist.get_rank(process_group)
         base_seed += rank
 
     if offset_by_index:
+        gd.debuginfo(prj="mt", info=f'')
         # check if the randomizer index is synchronized
         is_synchronized = Randomizer.is_randomizer_index_synchronized(process_group)
         assert is_synchronized, (

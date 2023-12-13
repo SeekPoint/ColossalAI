@@ -34,11 +34,12 @@ except ImportError:
     HAS_TRITON_TOKEN_ATTENTION = False
 
 if HAS_TRITON:
-
+    gd.debuginfo(prj="mt", info=f'')
     @torch.no_grad()
     def token_attention_fwd(
         q, k, v, attn_out, kv_cache_loc, kv_cache_start_loc, kv_cache_seq_len, max_len_in_batch, alibi=None
     ):
+        gd.debuginfo(prj="mt", info=f'')
         head_num = k.shape[1]
         batch_size = kv_cache_seq_len.shape[0]
         calcu_shape1 = (batch_size, head_num, k.shape[2])
@@ -56,6 +57,7 @@ if HAS_TRITON:
                 kv_cache_seq_len,
                 max_len_in_batch,
             )
+            gd.debuginfo(prj="mt", info=f'')
         else:
             lightllm_bloom_token_att_fwd(
                 q.view(calcu_shape1),
@@ -67,6 +69,7 @@ if HAS_TRITON:
                 kv_cache_seq_len,
                 max_len_in_batch,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         prob = torch.empty_like(att_m_tensor)
 
@@ -107,6 +110,7 @@ class Llama2TokenAttentionForwards:
         BLOCK_DMODEL: tl.constexpr,
         BLOCK_N: tl.constexpr,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         cur_batch = tl.program_id(0)
         cur_head = tl.program_id(1)
 
@@ -159,6 +163,7 @@ class Llama2TokenAttentionForwards:
     @staticmethod
     @torch.no_grad()
     def token_softmax_reducev_fwd(logics, v, o, b_loc, b_start_loc, b_seq_len, max_input_len, other_kv_index):
+        gd.debuginfo(prj="mt", info=f'')
         BLOCK = 64
         batch, head = b_seq_len.shape[0], logics.shape[0]
         grid = (batch, head)
@@ -198,6 +203,7 @@ class Llama2TokenAttentionForwards:
     def token_attn(
         q, k, v, attn_out, kv_cache_loc, kv_cache_start_loc, kv_cache_seq_len, max_len_in_batch, other_kv_index
     ):
+        gd.debuginfo(prj="mt", info=f'')
         total_token_num = k.shape[0]
         batch_size, head_num, head_dim = q.shape
         calcu_shape1 = (batch_size, head_num, head_dim)
@@ -214,6 +220,7 @@ class Llama2TokenAttentionForwards:
         )
 
         if triton.__version__ == "2.0.0":
+            gd.debuginfo(prj="mt", info=f'')
             prob = torch.empty_like(att_m_tensor)
             lightllm_llama2_token_softmax_fwd(
                 att_m_tensor, kv_cache_start_loc, kv_cache_seq_len, prob, max_len_in_batch
@@ -244,5 +251,6 @@ class Llama2TokenAttentionForwards:
                 max_len_in_batch,
                 other_kv_index,
             )
+            gd.debuginfo(prj="mt", info=f'')
         else:
             raise Exception("not support triton version")

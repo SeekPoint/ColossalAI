@@ -6,20 +6,24 @@ from .stateful_tensor import StatefulTensor
 
 
 def is_storage_empty(tensor: torch.Tensor) -> bool:
+    gd.debuginfo(prj="mt", info=f'')
     return tensor.storage().size() == 0
 
 
 def free_storage(tensor: torch.Tensor) -> None:
+    gd.debuginfo(prj="mt", info=f'')
     if not is_storage_empty(tensor):
         tensor.storage().resize_(0)
 
 
 def alloc_storage(tensor: torch.Tensor) -> None:
+    gd.debuginfo(prj="mt", info=f'')
     if is_storage_empty(tensor):
         tensor.storage().resize_(tensor.numel())
 
 
 def colo_tensor_mem_usage(tensor: Union[torch.Tensor, StatefulTensor]) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
     if isinstance(tensor, StatefulTensor):
         t = tensor.payload
     elif isinstance(tensor, torch.Tensor):
@@ -52,6 +56,7 @@ def colo_model_data_tensor_move(
         src_t (Union[StatefulTensor, torch.Tensor]): source tensor
         tgt_t (Union[StatefulTensor, torch.Tensor]): target tensor
     """
+    gd.debuginfo(prj="mt", info=f'')
     if isinstance(src_t, StatefulTensor):
         src_t_payload = src_t.payload
     else:
@@ -81,6 +86,7 @@ def colo_model_data_tensor_move_inline(
         t (Union[StatefulTensor, torch.Tensor]): the tensor be moved
         target_device: a target device, if type is int, it the index of cuda card.
     """
+    gd.debuginfo(prj="mt", info=f'')
     if not isinstance(target_device, torch.device):
         target_device = torch.device(f"cuda:{target_device}")
 
@@ -98,6 +104,7 @@ def colo_model_data_move_to_cpu(t: Union[StatefulTensor, torch.Tensor]) -> None:
     Args:
         t (Union[StatefulTensor, torch.Tensor]): _description_
     """
+    gd.debuginfo(prj="mt", info=f'')
     # TODO() optimize the tensor moving with non-blocking
     if isinstance(t, torch.Tensor):
         t.data = t.data.cpu()
@@ -116,6 +123,7 @@ def colo_model_tensor_clone(t: Union[StatefulTensor, torch.Tensor], target_devic
     Returns:
         torch.Tensor: a cloned torch tensor
     """
+    gd.debuginfo(prj="mt", info=f'')
     # TODO() rename this function
     colo_model_data_tensor_move_inline(t, target_device)
     t_payload = t.payload if isinstance(t, StatefulTensor) else t

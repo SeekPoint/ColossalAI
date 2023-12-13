@@ -27,7 +27,7 @@ def get_whisper_flash_attention_forward():
     from transformers.models.whisper.modeling_whisper import WhisperAttention
 
     from colossalai.kernel.cuda_native import AttnMaskType, ColoAttention
-
+    gd.debuginfo(prj="mt", info=f'')
     def shape(tensor: torch.Tensor, seq_len: int, bsz: int, num_heads: int, head_dim: int):
         return tensor.view(bsz, seq_len, num_heads, head_dim).contiguous()
 
@@ -124,7 +124,7 @@ def get_whisper_flash_attention_forward():
 
 def get_jit_fused_whisper_encoder_layer_forward():
     from transformers.models.whisper.modeling_whisper import WhisperEncoderLayer
-
+    gd.debuginfo(prj="mt", info=f'')
     def forward(
         self: WhisperEncoderLayer,
         hidden_states: torch.Tensor,
@@ -178,7 +178,7 @@ def get_jit_fused_whisper_encoder_layer_forward():
 
 def get_jit_fused_whisper_decoder_layer_forward():
     from transformers.models.whisper.modeling_whisper import WhisperDecoderLayer
-
+    gd.debuginfo(prj="mt", info=f'')
     def forward(
         self: WhisperDecoderLayer,
         hidden_states: torch.Tensor,
@@ -273,7 +273,7 @@ class WhisperPipelineForwards:
     This class serves as a micro library for forward function substitution of Llama models
     under pipeline setting.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     @staticmethod
     def whisper_encoder_forward(
         self: WhisperEncoder,
@@ -316,7 +316,7 @@ class WhisperPipelineForwards:
                 Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
         """
         logging.get_logger(__name__)
-
+        gd.debuginfo(prj="mt", info=f'')
         stage = stage_manager.stage
         at_first_stage = stage == 0
         at_last_stage = stage == decoder_starting_stage - 1
@@ -341,6 +341,8 @@ class WhisperPipelineForwards:
             encoder_states = () if output_hidden_states else None
             all_attentions = () if output_attentions else None
 
+            gd.debuginfo(prj="mt", info=f'')
+
             # check if head_mask has a correct number of layers specified if desired
             if head_mask is not None:
                 assert head_mask.size()[0] == (
@@ -348,6 +350,7 @@ class WhisperPipelineForwards:
                 ), f"The head_mask should be specified for {len(self.layers)} layers, but it is for {head_mask.size()[0]}."
 
         else:
+            gd.debuginfo(prj="mt", info=f'')
             if hidden_states is None:
                 raise ValueError(
                     "hidden_states shouldn't be None for stages other than the first stage of encoder/decoder."
@@ -393,6 +396,7 @@ class WhisperPipelineForwards:
                 all_attentions = all_attentions + (layer_outputs[1],)
 
         if at_last_stage:
+            gd.debuginfo(prj="mt", info=f'')
             hidden_states = self.layer_norm(hidden_states)
             if output_hidden_states:
                 encoder_states = encoder_states + (hidden_states,)
@@ -404,6 +408,7 @@ class WhisperPipelineForwards:
             )
 
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return {"hidden_states": hidden_states, "head_mask": head_mask}
 
     @staticmethod
@@ -482,6 +487,8 @@ class WhisperPipelineForwards:
             return_dict (`bool`, *optional*):
                 Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         logger = logging.get_logger(__name__)
         stage = stage_manager.stage
         at_first_stage = stage == decoder_starting_stage
@@ -512,6 +519,7 @@ class WhisperPipelineForwards:
         past_key_values_length = past_key_values[0][0].shape[2] if past_key_values is not None else 0
 
         if at_first_stage:
+            gd.debuginfo(prj="mt", info=f'')
             # retrieve input_ids and inputs_embeds
             if input_ids is not None and inputs_embeds is not None:
                 raise ValueError("You cannot specify both decoder_input_ids and decoder_inputs_embeds at the same time")
@@ -547,6 +555,7 @@ class WhisperPipelineForwards:
                     use_cache = False
 
         else:
+            gd.debuginfo(prj="mt", info=f'')
             if hidden_states is None:
                 raise ValueError(
                     "hidden_states shouldn't be None for stages other than the first stage of encoder/decoder."
@@ -572,7 +581,7 @@ class WhisperPipelineForwards:
             past_key_value = past_key_values[idx] if past_key_values is not None else None
 
             if self.gradient_checkpointing and self.training:
-
+                gd.debuginfo(prj="mt", info=f'')
                 def create_custom_forward(module):
                     def custom_forward(*inputs):
                         # None for past_key_value
@@ -603,10 +612,12 @@ class WhisperPipelineForwards:
                     output_attentions=output_attentions,
                     use_cache=use_cache,
                 )
+                gd.debuginfo(prj="mt", info=f'')
             hidden_states = layer_outputs[0]
 
             if use_cache:
                 next_decoder_cache += (layer_outputs[3 if output_attentions else 1],)
+                gd.debuginfo(prj="mt", info=f'')
 
             if output_attentions:
                 all_self_attns += (layer_outputs[1],)
@@ -616,9 +627,12 @@ class WhisperPipelineForwards:
 
         if at_last_stage:
             hidden_states = self.layer_norm(hidden_states)
+            gd.debuginfo(prj="mt", info=f'')
+
             # add hidden states from the last decoder layer
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
+                gd.debuginfo(prj="mt", info=f'')
             next_cache = next_decoder_cache if use_cache else None
             if not return_dict:
                 return tuple(
@@ -635,6 +649,7 @@ class WhisperPipelineForwards:
             )
 
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return {
                 "head_mask": head_mask,
                 "cross_attn_head_mask": cross_attn_head_mask,

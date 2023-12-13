@@ -36,9 +36,13 @@ class WhisperPolicy(Policy):
         """
         vocab_size = self.model.config.vocab_size
         world_size = self.shard_config.tensor_parallel_size
+        gd.debuginfo(prj="mt", info=f'')
+
         if vocab_size % world_size != 0:
             new_vocab_size = vocab_size + world_size - vocab_size % world_size
             self.model.resize_token_embeddings(new_vocab_size)
+            gd.debuginfo(prj="mt", info=f'')
+
         return self.model
 
     def module_policy(self):
@@ -51,6 +55,7 @@ class WhisperPolicy(Policy):
         )
 
         policy = {}
+        gd.debuginfo(prj="mt", info=f'')
 
         if self.shard_config.enable_sequence_parallelism:
             self.shard_config.enable_sequence_parallelism = False
@@ -64,6 +69,7 @@ class WhisperPolicy(Policy):
             warnings.warn("Whisper dosen't support jit fused operator now, will ignore the jit fused operator flag.")
 
         if self.shard_config.enable_tensor_parallelism:
+            gd.debuginfo(prj="mt", info=f'')
             policy[WhisperEncoderLayer] = ModulePolicyDescription(
                 attribute_replacement={
                     "self_attn.embed_dim": self.model.config.d_model // self.shard_config.tensor_parallel_size,
@@ -162,6 +168,7 @@ class WhisperPolicy(Policy):
 
         # optimization configuration
         if self.shard_config.enable_fused_normalization:
+            gd.debuginfo(prj="mt", info=f'')
             # Handle encoder layer
             self.append_or_create_submodule_replacement(
                 description=[
@@ -227,6 +234,7 @@ class WhisperPolicy(Policy):
                 policy=policy,
                 target_key=WhisperAttention,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         # use jit fused operator
         if self.shard_config.enable_jit_fused:
@@ -246,12 +254,13 @@ class WhisperPolicy(Policy):
                 policy=policy,
                 target_key=WhisperEncoderLayer,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         return policy
 
     def add_lm_head_policy(self, base_policy):
         from transformers.models.whisper.modeling_whisper import WhisperForConditionalGeneration
-
+        gd.debuginfo(prj="mt", info=f'')
         # optimize for tensor parallelism
         if self.shard_config.enable_tensor_parallelism:
             self.append_or_create_submodule_replacement(
@@ -261,6 +270,7 @@ class WhisperPolicy(Policy):
                 policy=base_policy,
                 target_key=WhisperForConditionalGeneration,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         return base_policy
 
@@ -276,7 +286,7 @@ class WhisperPolicy(Policy):
         Return the layer distribution as a list and the starting stage of decoder.
         If decoder doesn't exist, returned decoder starting stage is set to num_encoder_layers.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         # number of encoder layers must be a positive integer
         if num_encoder_layers <= 0:
             raise ValueError("The number of encoder layers for whisper must be a positive integer.")
@@ -311,8 +321,10 @@ class WhisperPolicy(Policy):
         Return the starting/ending idx of layers in encoder/decoder
         """
         if stage < decoder_starting_stage:
+            gd.debuginfo(prj="mt", info=f'')
             return Policy.get_stage_index(layers_per_stage[:decoder_starting_stage], stage)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return Policy.get_stage_index(layers_per_stage[decoder_starting_stage:], stage - decoder_starting_stage)
 
     def get_held_layers(self) -> List[nn.Module]:
@@ -321,24 +333,31 @@ class WhisperPolicy(Policy):
 
         if self.model.__class__.__name__ == "WhisperModel":
             model = self.model
+            gd.debuginfo(prj="mt", info=f'')
         elif self.model.__class__.__name__ == "WhisperForConditionalGeneration":
             model = self.model.model
+            gd.debuginfo(prj="mt", info=f'')
         else:
             model = None
+            gd.debuginfo(prj="mt", info=f'')
 
         if model:
             encoder = self.model.get_encoder()
             decoder = self.model.get_decoder()
+            gd.debuginfo(prj="mt", info=f'')
         else:
             # whisper for audio classification holds encoder only
             encoder = self.model.encoder
             decoder = None
+            gd.debuginfo(prj="mt", info=f'')
 
         num_encoder_layers = len(encoder.layers)
         if decoder:
             num_decoder_layers = len(decoder.layers)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             num_decoder_layers = 0
+            gd.debuginfo(prj="mt", info=f'')
 
         held_layers = []
         layers_per_stage, decoder_starting_stage = WhisperPolicy.distribute_whisper_layers(
@@ -354,9 +373,13 @@ class WhisperPolicy(Policy):
                 held_layers.append(encoder.embed_positions)
                 held_layers.append(encoder.conv1)
                 held_layers.append(encoder.conv2)
+                gd.debuginfo(prj="mt", info=f'')
             if stage_manager.stage == decoder_starting_stage - 1:
                 held_layers.append(encoder.layer_norm)
+                gd.debuginfo(prj="mt", info=f'')
             held_layers.extend(encoder.layers[start_idx:end_idx])
+            gd.debuginfo(prj="mt", info=f'')
+
         else:
             # current stage is in whisper's decoder
             # TODO:(Jianghai) We divide encoder and decoder layers into different parts here,
@@ -364,9 +387,13 @@ class WhisperPolicy(Policy):
             if stage_manager.stage == decoder_starting_stage:
                 held_layers.append(decoder.embed_tokens)
                 held_layers.append(decoder.embed_positions)
+                gd.debuginfo(prj="mt", info=f'')
             if stage_manager.is_last_stage():
                 held_layers.append(decoder.layer_norm)
+                gd.debuginfo(prj="mt", info=f'')
             held_layers.extend(decoder.layers[start_idx:end_idx])
+            gd.debuginfo(prj="mt", info=f'')
+
         return held_layers
 
     def set_pipeline_forward(self, model_cls: nn.Module, new_forward: Callable, policy: Dict) -> None:
@@ -378,23 +405,30 @@ class WhisperPolicy(Policy):
 
         if self.model.__class__.__name__ == "WhisperModel":
             model = self.model
+            gd.debuginfo(prj="mt", info=f'')
         elif self.model.__class__.__name__ == "WhisperForConditionalGeneration":
             model = self.model.model
+            gd.debuginfo(prj="mt", info=f'')
         else:
             model = None
+            gd.debuginfo(prj="mt", info=f'')
 
         if model:
             encoder = self.model.get_encoder()
             decoder = self.model.get_decoder()
+            gd.debuginfo(prj="mt", info=f'')
         else:
             encoder = self.model.encoder
             decoder = None
+            gd.debuginfo(prj="mt", info=f'')
 
         num_encoder_layers = len(encoder.layers)
         if decoder:
             num_decoder_layers = len(decoder.layers)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             num_decoder_layers = 0
+            gd.debuginfo(prj="mt", info=f'')
 
         layers_per_stage, decoder_starting_stage = WhisperPolicy.distribute_whisper_layers(
             num_encoder_layers, num_decoder_layers, stage_manager.num_stages
@@ -418,20 +452,24 @@ class WhisperPolicy(Policy):
 class WhisperModelPolicy(WhisperPolicy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
         from transformers import WhisperModel
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'')
 
         if self.pipeline_stage_manager is not None:
             self.set_pipeline_forward(
                 model_cls=WhisperModel, new_forward=WhisperPipelineForwards.whisper_model_forward, policy=policy
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
+        gd.debuginfo(prj="mt", info=f'')
         return super().get_held_layers()
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
@@ -443,12 +481,14 @@ class WhisperModelPolicy(WhisperPolicy):
 class WhisperForConditionalGenerationPolicy(WhisperPolicy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
         from transformers import WhisperForConditionalGeneration
 
         policy = super().module_policy()
         policy = self.add_lm_head_policy(policy)
+        gd.debuginfo(prj="mt", info=f'')
 
         if self.pipeline_stage_manager is not None:
             self.set_pipeline_forward(
@@ -456,15 +496,19 @@ class WhisperForConditionalGenerationPolicy(WhisperPolicy):
                 new_forward=WhisperPipelineForwards.whisper_for_conditional_generation_forward,
                 policy=policy,
             )
+            gd.debuginfo(prj="mt", info=f'')
         return policy
 
     def postprocess(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self.model
 
     def get_held_layers(self) -> List[nn.Module]:
+        gd.debuginfo(prj="mt", info=f'')
         held_layers = super().get_held_layers()
         if self.pipeline_stage_manager.is_last_stage():
             held_layers.append(self.model.proj_out)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
@@ -474,18 +518,23 @@ class WhisperForConditionalGenerationPolicy(WhisperPolicy):
         if model:
             encoder = self.model.get_encoder()
             decoder = self.model.get_decoder()
+            gd.debuginfo(prj="mt", info=f'')
         else:
             encoder = self.model.encoder
             decoder = None
+            gd.debuginfo(prj="mt", info=f'')
 
         num_encoder_layers = len(encoder.layers)
         if decoder:
             num_decoder_layers = len(decoder.layers)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             num_decoder_layers = 0
+            gd.debuginfo(prj="mt", info=f'')
 
         stage_manager = self.pipeline_stage_manager
         if stage_manager is not None and stage_manager.num_stages > 1:
+            gd.debuginfo(prj="mt", info=f'')
             _, decoder_starting_stage = WhisperPolicy.distribute_whisper_layers(
                 num_encoder_layers, num_decoder_layers, stage_manager.num_stages
             )
@@ -494,8 +543,10 @@ class WhisperForConditionalGenerationPolicy(WhisperPolicy):
             if id(module.proj_out) == id(model.decoder.embed_tokens):
                 shared_embedding[decoder_starting_stage] = model.decoder.embed_tokens
                 shared_embedding[stage_manager.num_stages - 1] = module.proj_out
+                gd.debuginfo(prj="mt", info=f'')
             if len(shared_embedding) > 0:
                 shared_params.append(shared_embedding)
+                gd.debuginfo(prj="mt", info=f'')
             return shared_params
         return []
 
@@ -504,11 +555,14 @@ class WhisperForConditionalGenerationPolicy(WhisperPolicy):
 class WhisperForAudioClassificationPolicy(WhisperPolicy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def preprocess(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self.model
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         from transformers import WhisperForAudioClassification
 
         policy = super().module_policy()
@@ -519,13 +573,16 @@ class WhisperForAudioClassificationPolicy(WhisperPolicy):
                 new_forward=WhisperPipelineForwards.whisper_for_audio_classification_forward,
                 policy=policy,
             )
+            gd.debuginfo(prj="mt", info=f'')
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
+        gd.debuginfo(prj="mt", info=f'')
         held_layers = super().get_held_layers()
         if self.pipeline_stage_manager.is_last_stage():
             held_layers.append(self.model.projector)
             held_layers.append(self.model.classifier)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:

@@ -22,6 +22,7 @@ class BaseSchedule(ABC):
     """
 
     def __init__(self, data_process_func: Callable = None):
+        gd.debuginfo(prj="mt", info=f'')
         self.logger = get_dist_logger()
         self.data_process_func = data_process_func
 

@@ -11,6 +11,7 @@ TensorShape = Union[torch.Size, List[int], Tuple[int]]
 from pydebug import gd, infoTensor
 
 def send_meta_helper(obj, next_rank, tensor_kwargs):
+    gd.debuginfo(prj="mt", info=f'')
     send_shape = torch.tensor(obj.size(), **tensor_kwargs)
     send_ndims = torch.tensor(len(obj.size()), **tensor_kwargs)
     dist.send(send_ndims, next_rank)
@@ -31,6 +32,7 @@ def send_obj_meta(obj, need_meta=True, next_rank=None) -> bool:
     Returns:
         bool: False
     """
+    gd.debuginfo(prj="mt", info=f'')
     if need_meta:
         if next_rank is None:
             next_rank = gpc.get_next_global_rank(ParallelMode.PIPELINE)
@@ -50,6 +52,7 @@ def send_obj_meta(obj, need_meta=True, next_rank=None) -> bool:
 
 
 def recv_meta_helper(prev_rank, tensor_kwargs):
+    gd.debuginfo(prj="mt", info=f'')
     recv_ndims = torch.empty((), **tensor_kwargs)
     dist.recv(recv_ndims, prev_rank)
     recv_shape = torch.empty(recv_ndims, **tensor_kwargs)
@@ -70,6 +73,7 @@ def recv_obj_meta(obj_shape, prev_rank=None) -> torch.Size:
     Returns:
         Union[:class:`torch.Size`, List[:class:`torch.Size`]]: The shape of the obj to be received.
     """
+    gd.debuginfo(prj="mt", info=f'')
     if obj_shape is None:
         if prev_rank is None:
             prev_rank = gpc.get_prev_global_rank(ParallelMode.PIPELINE)
@@ -99,6 +103,7 @@ def split_tensor_into_1d_equal_chunks(tensor: torch.Tensor, new_buffer=False) ->
     Returns:
         :class:`torch.Tensor`: The split tensor
     """
+    gd.debuginfo(prj="mt", info=f'')
     partition_size = torch.numel(tensor) // gpc.get_world_size(ParallelMode.PARALLEL_1D)
     start_index = partition_size * gpc.get_local_rank(ParallelMode.PARALLEL_1D)
     end_index = start_index + partition_size
@@ -118,6 +123,7 @@ def gather_split_1d_tensor(tensor: torch.Tensor) -> torch.Tensor:
     Returns:
         :class:`torch.Tensor`: The gathered tensor.
     """
+    gd.debuginfo(prj="mt", info=f'')
     world_size = gpc.get_world_size(ParallelMode.PARALLEL_1D)
     numel = torch.numel(tensor)
     numel_gathered = world_size * numel

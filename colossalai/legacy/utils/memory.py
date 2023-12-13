@@ -25,6 +25,7 @@ def _bytes_to_MB(val, decimal=2):
 
 # copy from PatrickStar
 def _get_cpu_memory_info():
+    gd.debuginfo(prj="mt", info=f'')
     ps_mem_info = namedtuple("ps_mem_info", ["total", "free", "cached", "buffers", "used"])
     try:
         # psutil reads the memory info from /proc/memory_info,
@@ -68,6 +69,7 @@ def report_memory_usage(message, logger=None, report_cpu=False):
     Raises:
         EnvironmentError: Raise error if no distributed environment has been initialized.
     """
+    gd.debuginfo(prj="mt", info=f'')
     if not dist.is_initialized():
         raise EnvironmentError("No distributed environment is initialized")
 
@@ -107,6 +109,7 @@ def colo_device_memory_capacity(device: torch.device) -> int:
     Returns:
         int: size in byte
     """
+    gd.debuginfo(prj="mt", info=f'')
     assert isinstance(device, torch.device)
     if device.type == "cpu":
         # In the context of 1-CPU-N-GPU, the memory capacity of the current process is 1/N overall CPU memory.
@@ -125,6 +128,7 @@ def colo_device_memory_used(device: torch.device) -> int:
     Returns:
         int: memory size in bytes
     """
+    gd.debuginfo(prj="mt", info=f'')
     if device.type == "cpu":
         mem_info = _get_cpu_memory_info()
         # In the context of 1-CPU-N-GPU, the memory usage of the current process is 1/N CPU memory used.
@@ -147,6 +151,7 @@ def colo_set_process_memory_fraction(ratio: float) -> None:
     Args:
         ratio (float): a ratio between 0. ~ 1.
     """
+    gd.debuginfo(prj="mt", info=f'')
     if version.parse(torch.__version__) < version.parse("1.8"):
         logger = get_dist_logger("colo_set_process_memory_fraction")
         logger.warning("colo_set_process_memory_fraction failed because torch version is less than 1.8")
@@ -157,6 +162,7 @@ def colo_set_process_memory_fraction(ratio: float) -> None:
 
 
 def colo_set_cpu_memory_capacity(size: int) -> None:
+    gd.debuginfo(prj="mt", info=f'')
     global _GLOBAL_CPU_MEM_CAPACITY
     mem_info = _get_cpu_memory_info()
     total_size = mem_info.total
@@ -172,6 +178,7 @@ def colo_get_cpu_memory_capacity() -> int:
     Returns:
         int: _description_
     """
+    gd.debuginfo(prj="mt", info=f'')
     global _GLOBAL_CPU_MEM_CAPACITY
     if _GLOBAL_CPU_MEM_CAPACITY == -1:
         mem_info = _get_cpu_memory_info()

@@ -37,10 +37,16 @@ class GeneralCheckpointIO(CheckpointIO):
     """
 
     def load_unsharded_model(self, model: nn.Module, checkpoint: str, strict: bool):
+        gd.debuginfo(prj="mt", info=f'')
         checkpoint = load_state_dict(checkpoint)
         model.load_state_dict(checkpoint, strict=strict)
 
-    def save_unsharded_model(self, model: nn.Module, checkpoint: str, gather_dtensor: bool, use_safetensors: bool):
+    def save_unsharded_model(self,
+                             model: nn.Module,
+                             checkpoint: str,
+                             gather_dtensor: bool,
+                             use_safetensors: bool):
+        gd.debuginfo(prj="mt", info=f'')
         state_dict = model.state_dict()
 
         # TODO(FrankLeeeee): add support for gather_dtensor
@@ -54,7 +60,7 @@ class GeneralCheckpointIO(CheckpointIO):
         """
         Load sharded optimizer with the given path to index file.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         # Read checkpoint index file.
         ckpt_index_file = CheckpointIndexFile.from_file(index_file_path)
 
@@ -90,7 +96,7 @@ class GeneralCheckpointIO(CheckpointIO):
         - A group file (pytorch_optim_group.bin) recording information of param_groups
         - Multiple files (pytorch_optim-000XX.bin) that store state tensors of optimizer in a sharding way
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         if os.path.isfile(checkpoint):
             logging.error(f"Provided path ({checkpoint}) should be a directory, not a file")
             return
@@ -131,6 +137,7 @@ class GeneralCheckpointIO(CheckpointIO):
         )
 
     def load_unsharded_optimizer(self, optimizer: Optimizer, checkpoint: Path):
+        gd.debuginfo(prj="mt", info=f'')
         checkpoint = load_state_dict(checkpoint)
         optimizer.load_state_dict(checkpoint)
 
@@ -140,6 +147,7 @@ class GeneralCheckpointIO(CheckpointIO):
         checkpoint: Path,
         gather_dtensor: bool,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         # TODO(FrankLeeeee): handle distributed tensors
         save_state_dict(optimizer.state_dict(), checkpoint, use_safetensors=False)
 
@@ -156,6 +164,7 @@ class GeneralCheckpointIO(CheckpointIO):
         implement this method as it can be supported by Huggingface model,
         save shard model, save model to multiple files
         """
+        gd.debuginfo(prj="mt", info=f'')
         if os.path.isfile(checkpoint_path):
             logging.error(f"Provided path ({checkpoint_path}) should be a directory, not a file")
             return
@@ -199,8 +208,10 @@ class GeneralCheckpointIO(CheckpointIO):
         """
         load shard model, load model from multiple files
         """
+        gd.debuginfo(prj="mt", info=f'')
         use_safetensors = False
         if "safetensors" in checkpoint_index_file.name:
+            gd.debuginfo(prj="mt", info=f'')
             use_safetensors = True
 
         if use_safetensors and not is_safetensors_available():
@@ -218,6 +229,7 @@ class GeneralCheckpointIO(CheckpointIO):
             gc.collect()
 
         if strict:
+            gd.debuginfo(prj="mt", info=f'')
             remain_keys = reduce(lambda a, b: a & b, map(set, missing_keys))
             if len(remain_keys) > 0:
                 error_msgs = "Missing key(s) in state_dict: {}. ".format(

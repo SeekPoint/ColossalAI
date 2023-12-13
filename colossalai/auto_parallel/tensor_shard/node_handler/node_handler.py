@@ -39,6 +39,7 @@ class NodeHandler(ABC):
         shard_option: ShardOption = ShardOption.STANDARD,
         solver_perference: SolverPerference = SolverPerference.STANDARD,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.node = node
         self.predecessor_node = list(node._input_nodes.keys())
         self.successor_node = list(node.users.keys())
@@ -51,6 +52,7 @@ class NodeHandler(ABC):
         """
         Compute the resharding costs and save the costs in the ShardingStrategy object.
         """
+        gd.debuginfo(prj="mt", info=f'')
         # TODO: test this function when other handlers are ready
         resharding_costs = {}
         shape_consistency_manager = ShapeConsistencyManager()
@@ -145,6 +147,7 @@ class NodeHandler(ABC):
         This function is used to get the target function for the node handler.
         The target function is used to analyze the costs of strategies.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if self.node.op in ("placeholder", "get_attr", "output"):
             return None
 
@@ -163,6 +166,7 @@ class NodeHandler(ABC):
         """
         Register different sharding strategies for the current node.
         """
+        gd.debuginfo(prj="mt", info=f'')
         strategy_generators = self.get_strategy_generator()
         for generator in strategy_generators:
             strategies = generator.generate()
@@ -265,12 +269,14 @@ class MetaInfoNodeHandler(NodeHandler):
         This method is inherited from NodeHandler. It will register the strategies first,
         and rewrite the memory_cost and compute_cost of the strategy using the ShardMetaInfo class.
         """
+        gd.debuginfo(prj="mt", info=f'')
         super().register_strategy(compute_resharding_cost=compute_resharding_cost)
         target = self.get_target_function()
         # Currently we haven't patched all the torch functions and modules, so if the target
         # is not patched, we will use the default cost model to compute the cost.
         # TODO: patch all torch functions and modules to make it clean
         if meta_register.has(target.__class__) or meta_register.has(target):
+            gd.debuginfo(prj="mt", info=f'')
             strategies_info = []
             for strategy in self.strategies_vector:
                 metainfo = ShardMetaInfo(strategy, target)
@@ -282,14 +288,16 @@ class MetaInfoNodeHandler(NodeHandler):
             setattr(self, "strategies_info", strategies_info)
 
         else:
-            logger = get_dist_logger()
-            logger.warning(f"The target function {target} is not patched yet, ")
+            gd.debuginfo(prj="mt", info=f'The target function {target} is not patched yet, ')
+            # logger = get_dist_logger()
+            # logger.warning(f"")
 
         return self.strategies_vector
 
 
 class ModuleHandler(NodeHandler):
     def __init__(self, *args, **kwargs) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(*args, **kwargs)
 
         # set attributes to access module parameters for convenience
@@ -320,12 +328,14 @@ class MetaInfoModuleHandler(ModuleHandler):
         This method is inherited from NodeHandler. It will register the strategies first,
         and rewrite the memory_cost and compute_cost of the strategy using the ShardMetaInfo class.
         """
+        gd.debuginfo(prj="mt", info=f'')
         super().register_strategy(compute_resharding_cost=compute_resharding_cost)
         target = self.get_target_function()
         # Currently we haven't patched all the torch functions and modules, so if the target
         # is not patched, we will use the default cost model to compute the cost.
         # TODO: patch all torch functions and modules to make it clean
         if meta_register.has(target.__class__) or meta_register.has(target):
+            gd.debuginfo(prj="mt", info=f'')
             strategies_info = []
             for strategy in self.strategies_vector:
                 metainfo = ShardMetaInfo(strategy, target)
@@ -337,7 +347,8 @@ class MetaInfoModuleHandler(ModuleHandler):
             setattr(self, "strategies_info", strategies_info)
 
         else:
-            logger = get_dist_logger()
-            logger.warning(f"The target function {target} is not patched yet")
+            gd.debuginfo(prj="mt", info=f'The target function {target} is not patched yet')
+            # logger = get_dist_logger()
+            # logger.warning(f"")
 
         return self.strategies_vector

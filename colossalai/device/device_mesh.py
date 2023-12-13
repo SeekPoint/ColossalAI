@@ -50,6 +50,7 @@ class DeviceMesh:
         init_process_group: bool = False,
         device: str = "cuda",
     ):
+        gd.debuginfo(prj="mt", info=f'')
         # ============================
         # Physical & Logical Mesh IDs
         # ============================
@@ -67,9 +68,11 @@ class DeviceMesh:
         if logical_mesh_id is None:
             self._mesh_shape = mesh_shape
             self._logical_mesh_id = self._physical_mesh_id.reshape(self._mesh_shape)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             self._logical_mesh_id = logical_mesh_id
             self._mesh_shape = self._logical_mesh_id.shape
+            gd.debuginfo(prj="mt", info=f'')
 
         # ensure two things:
         # 1. logical and physical mesh IDs should contain the same elements
@@ -91,8 +94,10 @@ class DeviceMesh:
         # if the values are not provided, we assume they are 1 for simplicity
         if mesh_alpha is None:
             mesh_alpha = [1] * len(self._mesh_shape)
+            gd.debuginfo(prj="mt", info=f'')
         if mesh_beta is None:
             mesh_beta = [1] * len(self._mesh_shape)
+            gd.debuginfo(prj="mt", info=f'')
 
         self.mesh_alpha = tuple(mesh_alpha)
         self.mesh_beta = tuple(mesh_beta)
@@ -138,6 +143,7 @@ class DeviceMesh:
         self._init_process_group = init_process_group
         if init_process_group:
             self.init_logical_process_group()
+            gd.debuginfo(prj="mt", info=f'')
 
     @property
     def shape(self) -> torch.Size:
@@ -181,11 +187,12 @@ class DeviceMesh:
         Returns:
             DeviceMesh: the device mesh instance.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         def _get_device_by_backend(process_group):
             """
             Get the device type given a process group's backend.
             """
+            gd.debuginfo(prj="mt", info=f'')
             backend = dist.get_backend(process_group)
             for _device, _backend in DeviceMesh._DIST_BACKEND.items():
                 if _backend == backend:
@@ -194,6 +201,7 @@ class DeviceMesh:
 
         if isinstance(process_group, ProcessGroup):
             process_group = [process_group]
+            gd.debuginfo(prj="mt", info=f'')
 
         # get mesh shape
         mesh_shape = [dist.get_world_size(pg) for pg in process_group]
@@ -237,6 +245,7 @@ class DeviceMesh:
         """
         if global_rank is None:
             global_rank = self._global_rank_of_current_process
+            gd.debuginfo(prj="mt", info=f'')
         elif self._is_init_from_process_group:
             raise RuntimeError(
                 "The logical device mesh is create with DeviceMesh.from_process_group, this method is not supported for this creation method as no global rank information is known."
@@ -252,6 +261,7 @@ class DeviceMesh:
         """
         if global_rank is None:
             global_rank = self._global_rank_of_current_process
+            gd.debuginfo(prj="mt", info=f'')
         elif self._is_init_from_process_group:
             raise RuntimeError(
                 "The logical device mesh is create with DeviceMesh.from_process_group, this method is not supported for this creation method as no global rank information is known."
@@ -266,8 +276,10 @@ class DeviceMesh:
             axis (int): the axis of the process group.
             global_rank (int, optional): the global rank of the process
         """
+        gd.debuginfo(prj="mt", info=f'')
         if global_rank is None:
             global_rank = self._global_rank_of_current_process
+            gd.debuginfo(prj="mt", info=f'')
         elif self._is_init_from_process_group:
             raise RuntimeError(
                 "The logical device mesh is create with DeviceMesh.from_process_group, this method is not supported for this creation method as no global rank information is known."
@@ -275,6 +287,7 @@ class DeviceMesh:
         return self._ranks_in_the_process_group[global_rank][axis]
 
     def __deepcopy__(self, memo) -> "DeviceMesh":
+        gd.debuginfo(prj="mt", info=f'')
         cls = self.__class__
         result = cls.__new__(cls)
         memo[id(self)] = result
@@ -302,11 +315,13 @@ class DeviceMesh:
             mapping (Dict): a dictionary that maps the global rank to the local rank in the logical device mesh.
                 The value is a list of integers and each integer represents the local rank in the indexed axis.
         """
+        gd.debuginfo(prj="mt", info=f'')
         for index, inner_tensor in enumerate(tensor):
             # index means the local rank in the current axis
             # inner_tensor refers to the processes with the same local rank
 
             if inner_tensor.numel() == 1:
+                gd.debuginfo(prj="mt", info=f'')
                 # if the inner_tensor only has one element, it means that
                 # it already reaches the last axis
                 # we append its local_rank in the last axis to the index_list
@@ -314,6 +329,7 @@ class DeviceMesh:
                 # the value of the mapping is the the local rank at the indexed axis of the device mesh
                 mapping[int(inner_tensor)] = index_list + [index]
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 # we recursively go into the function until we reach the last axis
                 # meanwhile, we should add the local rank in the current axis in the index_list
                 self._init_global_to_logical_rank_mapping(mapping, inner_tensor, index_list + [index])
@@ -325,6 +341,7 @@ class DeviceMesh:
         Note: if init_process_group set to False, you have to call this method manually. Otherwise,
         the communication related function, such as ShapeConsistencyManager.apply will raise errors.
         """
+        gd.debuginfo(prj="mt", info=f'')
         # sanity check
         assert (
             dist.is_initialized
@@ -366,6 +383,7 @@ class DeviceMesh:
         """
         This method is used to initialize the ranks_in_the_same_group dictionary.
         """
+        gd.debuginfo(prj="mt", info=f'')
         # flatten the global ranks to 1D list
         global_rank_flatten_list = self._physical_mesh_id.view(-1).tolist()
 
@@ -389,6 +407,7 @@ class DeviceMesh:
             rank (int): the global rank in the logical device mesh.
             axis (int): the axis of the logical device mesh.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if self._is_init_from_process_group:
             raise RuntimeError(
                 "The logical device mesh is create with DeviceMesh.from_process_group, this method is not supported for this creation method as no global rank information is known."
@@ -440,6 +459,7 @@ class DeviceMesh:
         # find all the process_coordinates for processes in the same process group
         # as the given global rank
         # =========================================================================
+        gd.debuginfo(prj="mt", info=f'')
 
         # each
         processes_in_the_same_process_group = {}
@@ -482,6 +502,8 @@ class DeviceMesh:
         """
         Flatten the logical mesh into an effective 1d logical mesh,
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         if self._is_init_from_process_group:
             raise RuntimeError(
                 "The logical device mesh is create with DeviceMesh.from_process_group, this method is not supported for this creation method as no global rank information is known."
@@ -498,10 +520,12 @@ class DeviceMesh:
         )
 
     def all_gather_cost(self, num_bytes, mesh_dim):
+        gd.debuginfo(prj="mt", info=f'')
         num_devices = self.logical_mesh_id.shape[mesh_dim]
         return self.mesh_alpha[mesh_dim] + self.mesh_beta[mesh_dim] * (num_devices - 1) / num_devices * num_bytes + 0.1
 
     def all_reduce_cost(self, num_bytes, mesh_dim):
+        gd.debuginfo(prj="mt", info=f'')
         num_devices = self.logical_mesh_id.shape[mesh_dim]
         return (
             self.mesh_alpha[mesh_dim]
@@ -516,6 +540,7 @@ class DeviceMesh:
         )
 
     def all_to_all_cost(self, num_bytes, mesh_dim):
+        gd.debuginfo(prj="mt", info=f'')
         num_devices = self.logical_mesh_id.shape[mesh_dim]
         penalty_factor = num_devices / 2.0
         return (

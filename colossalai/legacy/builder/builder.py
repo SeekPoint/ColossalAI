@@ -19,6 +19,7 @@ def build_from_config(module, config: dict):
         AssertionError: Raises an AssertionError if `module` is not a class
 
     """
+    gd.debuginfo(prj="mt", info=f'')
     assert inspect.isclass(module), "module must be a class"
     return module(**config)
 
@@ -45,6 +46,7 @@ def build_from_registry(config, registry: Registry):
     Raises:
         Exception: Raises an Exception if an error occurred when building from registry.
     """
+    gd.debuginfo(prj="mt", info=f'')
     config_ = config.copy()  # keep the original config untouched
     assert isinstance(registry, Registry), f"Expected type Registry but got {type(registry)}"
 

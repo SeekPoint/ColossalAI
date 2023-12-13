@@ -35,15 +35,19 @@ def generate_alibi(n_head, dtype=torch.float16):
     in `transformers/models/bloom/modeling_bloom.py`
     of the huggingface/transformers GitHub repository.
     """
+    gd.debuginfo(prj="mt", info=f'')
 
     def get_slopes_power_of_2(n):
+        gd.debuginfo(prj="mt", info=f'')
         start = 2 ** (-(2 ** -(math.log2(n) - 3)))
         return [start * start**i for i in range(n)]
 
     def get_slopes(n):
         if math.log2(n).is_integer():
+            gd.debuginfo(prj="mt", info=f'')
             return get_slopes_power_of_2(n)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             closest_power_of_2 = 2 ** math.floor(math.log2(n))
             slopes_power_of_2 = get_slopes_power_of_2(closest_power_of_2)
             slopes_double = get_slopes(2 * closest_power_of_2)
@@ -79,7 +83,7 @@ class BloomInferenceForwards:
         **deprecated_arguments,
     ) -> Union[Tuple[torch.Tensor, ...], BaseModelOutputWithPastAndCrossAttentions]:
         logger = logging.get_logger(__name__)
-
+        gd.debuginfo(prj="mt", info=f'')
         if deprecated_arguments.pop("position_ids", False) is not False:
             # `position_ids` could have been `torch.Tensor` or `None` so defaulting pop to `False` allows to detect if users were passing explicitly `None`
             warnings.warn(
@@ -101,14 +105,17 @@ class BloomInferenceForwards:
             raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
         elif input_ids is not None:
             batch_size, seq_length = input_ids.shape
+            gd.debuginfo(prj="mt", info=f'')
         elif inputs_embeds is not None:
             batch_size, seq_length, _ = inputs_embeds.shape
+            gd.debuginfo(prj="mt", info=f'')
         else:
             raise ValueError("You have to specify either input_ids or inputs_embeds")
 
         # still need to keep past_key_values to fit original forward flow
         if past_key_values is None:
             past_key_values = tuple([None] * len(self.h))
+            gd.debuginfo(prj="mt", info=f'')
 
         # Prepare head mask if needed
         # 1.0 in head_mask indicate we keep the head
@@ -118,6 +125,7 @@ class BloomInferenceForwards:
 
         if inputs_embeds is None:
             inputs_embeds = self.word_embeddings(input_ids)
+            gd.debuginfo(prj="mt", info=f'')
 
         hidden_states = self.word_embeddings_layernorm(inputs_embeds)
 
@@ -138,12 +146,15 @@ class BloomInferenceForwards:
         if infer_state is None:
             assert hasattr(self, "infer_state")
             infer_state = self.infer_state
+            gd.debuginfo(prj="mt", info=f'')
 
         # infer_state.cache_manager = self.cache_manager
         if infer_state.is_context_stage:
             past_key_values_length = 0
+            gd.debuginfo(prj="mt", info=f'')
         else:
             past_key_values_length = infer_state.max_len_in_batch - 1
+            gd.debuginfo(prj="mt", info=f'')
 
         if use_cache and seq_length != 1:
             # prefill stage
@@ -152,6 +163,7 @@ class BloomInferenceForwards:
             BatchInferState.init_block_loc(
                 infer_state.block_loc, infer_state.seq_len, seq_length, infer_state.context_mem_index
             )
+            gd.debuginfo(prj="mt", info=f'')
         else:
             infer_state.is_context_stage = False
             alloc_mem = infer_state.cache_manager.alloc_contiguous(batch_size)
@@ -161,6 +173,7 @@ class BloomInferenceForwards:
                 infer_state.decode_mem_start = alloc_mem[1]
                 infer_state.decode_mem_end = alloc_mem[2]
                 infer_state.block_loc[:, infer_state.max_len_in_batch - 1] = infer_state.decode_mem_index
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 print(f" *** Encountered allocation non-contiguous")
                 print(f"    infer_state.max_len_in_batch : {infer_state.max_len_in_batch}")
@@ -170,11 +183,14 @@ class BloomInferenceForwards:
                 # infer_state.decode_key_buffer = torch.empty((batch_size, self.tp_head_num_, self.head_dim_), dtype=torch.float16, device="cuda")
                 # infer_state.decode_value_buffer = torch.empty((batch_size, self.tp_head_num_, self.head_dim_), dtype=torch.float16, device="cuda")
                 infer_state.block_loc[:, infer_state.max_len_in_batch - 1] = infer_state.decode_mem_index
+                gd.debuginfo(prj="mt", info=f'')
 
         if attention_mask is None:
             attention_mask = torch.ones((batch_size, infer_state.max_len_in_batch), device=hidden_states.device)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             attention_mask = attention_mask.to(hidden_states.device)
+            gd.debuginfo(prj="mt", info=f'')
 
         # NOTE revise: we might want to store a single 1D alibi(length is #heads) in model,
         #      or store to BatchInferState to prevent re-calculating
@@ -197,8 +213,10 @@ class BloomInferenceForwards:
         for i, (block, layer_past) in enumerate(zip(self.h, past_key_values)):
             if output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states,)
+                gd.debuginfo(prj="mt", info=f'')
 
             if self.gradient_checkpointing and self.training:
+                gd.debuginfo(prj="mt", info=f'')
                 # NOTE: currently our KV cache manager does not handle this condition
                 def create_custom_forward(module):
                     def custom_forward(*inputs):
@@ -216,6 +234,7 @@ class BloomInferenceForwards:
                     head_mask[i],
                 )
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 outputs = block(
                     hidden_states,
                     layer_past=layer_past,
@@ -231,15 +250,18 @@ class BloomInferenceForwards:
             hidden_states = outputs[0]
             if use_cache is True:
                 presents = presents + (outputs[1],)
+                gd.debuginfo(prj="mt", info=f'')
 
             if output_attentions:
                 all_self_attentions = all_self_attentions + (outputs[2 if use_cache else 1],)
+                gd.debuginfo(prj="mt", info=f'')
 
         # Add last hidden state
         hidden_states = self.ln_f(hidden_states)
 
         if output_hidden_states:
             all_hidden_states = all_hidden_states + (hidden_states,)
+            gd.debuginfo(prj="mt", info=f'')
 
         # update indices of kv cache block
         # NOT READY FOR PRIME TIME
@@ -250,6 +272,7 @@ class BloomInferenceForwards:
         infer_state.max_len_in_batch += 1
 
         if not return_dict:
+            gd.debuginfo(prj="mt", info=f'')
             return tuple(v for v in [hidden_states, presents, all_hidden_states, all_self_attentions] if v is not None)
 
         return BaseModelOutputWithPastAndCrossAttentions(
@@ -283,6 +306,8 @@ class BloomInferenceForwards:
         """
         logging.get_logger(__name__)
 
+        gd.debuginfo(prj="mt", info=f'')
+
         if deprecated_arguments.pop("position_ids", False) is not False:
             # `position_ids` could have been `torch.Tensor` or `None` so defaulting pop to `False` allows to detect if users were passing explicitly `None`
             warnings.warn(
@@ -314,6 +339,8 @@ class BloomInferenceForwards:
 
         loss = None
         if labels is not None:
+            gd.debuginfo(prj="mt", info=f'')
+
             # move labels to correct device to enable model parallelism
             labels = labels.to(lm_logits.device)
             # Shift so that tokens < n predict n
@@ -327,6 +354,7 @@ class BloomInferenceForwards:
             )
 
         if not return_dict:
+            gd.debuginfo(prj="mt", info=f'')
             output = (lm_logits,) + transformer_outputs[1:]
             return ((loss,) + output) if loss is not None else output
 
@@ -350,6 +378,7 @@ class BloomInferenceForwards:
         # only last token for input_ids if past is not None
         if past_key_values:
             input_ids = input_ids[:, -1].unsqueeze(-1)
+            gd.debuginfo(prj="mt", info=f'')
 
             # NOTE we won't use past key values here
             # the cache may be in the stardard format (e.g. in contrastive search), convert to bloom's format if needed
@@ -359,8 +388,10 @@ class BloomInferenceForwards:
         # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
         if inputs_embeds is not None and past_key_values is None:
             model_inputs = {"inputs_embeds": inputs_embeds}
+            gd.debuginfo(prj="mt", info=f'')
         else:
             model_inputs = {"input_ids": input_ids}
+            gd.debuginfo(prj="mt", info=f'')
 
         model_inputs.update(
             {
@@ -383,6 +414,7 @@ class BloomInferenceForwards:
         output_attentions: bool = False,
         infer_state: Optional[BatchInferState] = None,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         # hidden_states: [batch_size, seq_length, hidden_size]
 
         # Layer norm at the beginning of the transformer layer.
@@ -391,8 +423,10 @@ class BloomInferenceForwards:
         # Layer norm post the self attention.
         if self.apply_residual_connection_post_layernorm:
             residual = layernorm_output
+            gd.debuginfo(prj="mt", info=f'')
         else:
             residual = hidden_states
+            gd.debuginfo(prj="mt", info=f'')
 
         # Self attention.
         attn_outputs = self.self_attention(
@@ -416,16 +450,20 @@ class BloomInferenceForwards:
         # Get residual
         if self.apply_residual_connection_post_layernorm:
             residual = layernorm_output
+            gd.debuginfo(prj="mt", info=f'')
         else:
             residual = attention_output
+            gd.debuginfo(prj="mt", info=f'')
 
         # MLP.
         output = self.mlp(layernorm_output, residual)
 
         if use_cache:
             outputs = (output,) + outputs
+            gd.debuginfo(prj="mt", info=f'')
         else:
             outputs = (output,) + outputs[1:]
+            gd.debuginfo(prj="mt", info=f'')
 
         return outputs  # hidden_states, present, attentions
 
@@ -443,6 +481,7 @@ class BloomInferenceForwards:
         infer_state: Optional[BatchInferState] = None,
     ):
         fused_qkv = self.query_key_value(hidden_states)  # [batch_size, seq_length, 3 x hidden_size]
+        gd.debuginfo(prj="mt", info=f'')
 
         # 3 x [batch_size, seq_length, num_heads, head_dim]
         (query_layer, key_layer, value_layer) = self._split_heads(fused_qkv)
@@ -468,8 +507,10 @@ class BloomInferenceForwards:
 
             if HAS_LIGHTLLM_KERNEL:
                 lightllm_bloom_context_attention_fwd(q, k, v, output, alibi, b_start_loc, b_seq_len, max_input_len)
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 bloom_context_attn_fwd(q, k, v, output, b_start_loc, b_seq_len, max_input_len, alibi)
+                gd.debuginfo(prj="mt", info=f'')
 
             context_layer = output.view(batch_size, q_length, H * D_HEAD)
         else:
@@ -479,6 +520,7 @@ class BloomInferenceForwards:
             q = query_layer.reshape(-1, H, D_HEAD)
 
             if infer_state.decode_is_contiguous:
+                gd.debuginfo(prj="mt", info=f'')
                 # if decode is contiguous, then we copy to key cache and value cache in cache manager directly
                 cache_k = infer_state.cache_manager.key_buffer[layer_id][
                     infer_state.decode_mem_start : infer_state.decode_mem_end, :, :
@@ -489,6 +531,7 @@ class BloomInferenceForwards:
                 cache_k.copy_(k)
                 cache_v.copy_(v)
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 # if decode is not contiguous, use triton kernel to copy key and value cache
                 # k, v shape: [batch_size, num_heads, head_dim/embed_size_per_head]
                 copy_kv_cache_to_dest(k, infer_state.decode_mem_index, mem_manager.key_buffer[layer_id])
@@ -518,6 +561,7 @@ class BloomInferenceForwards:
 
         # aggregate results across tp ranks. See here: https://github.com/pytorch/pytorch/issues/76232
         if self.pretraining_tp > 1 and self.slow_but_exact:
+            gd.debuginfo(prj="mt", info=f'')
             slices = self.hidden_size / self.pretraining_tp
             output_tensor = torch.zeros_like(context_layer)
             for i in range(self.pretraining_tp):
@@ -527,6 +571,7 @@ class BloomInferenceForwards:
                 )
         else:
             output_tensor = self.dense(context_layer)
+            gd.debuginfo(prj="mt", info=f'')
 
         # dropout is not required here during inference
         output_tensor = residual + output_tensor

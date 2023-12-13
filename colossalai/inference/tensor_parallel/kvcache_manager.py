@@ -30,6 +30,7 @@ class MemoryManager:
         layer_num: int,
         device: torch.device = torch.device("cuda"),
     ):
+        gd.debuginfo(prj="mt", info=f'')
         self.logger = logging.get_logger(__name__)
         self.available_size = size
         self.max_len_in_batch = 0
@@ -37,12 +38,14 @@ class MemoryManager:
         self._init_kv_buffers(size, device, dtype, head_num, head_dim, layer_num)
 
     def _init_mem_states(self, size, device):
+        gd.debuginfo(prj="mt", info=f'')
         """Initialize tensors used to manage memory states"""
         self.mem_state = torch.ones((size,), dtype=torch.bool, device=device)
         self.mem_cum_sum = torch.empty((size,), dtype=torch.int32, device=device)
         self.indexes = torch.arange(0, size, dtype=torch.long, device=device)
 
     def _init_kv_buffers(self, size, device, dtype, head_num, head_dim, layer_num):
+        gd.debuginfo(prj="mt", info=f'')
         """Initialize key buffer and value buffer on specified device"""
         self.key_buffer = [
             torch.empty((size, head_num, head_dim), dtype=dtype, device=device) for _ in range(layer_num)
@@ -53,6 +56,7 @@ class MemoryManager:
 
     @torch.no_grad()
     def alloc(self, required_size):
+        gd.debuginfo(prj="mt", info=f'')
         """allocate space of required_size by providing indexes representing available physical spaces"""
         if required_size > self.available_size:
             self.logger.warning(f"No enough cache: required_size {required_size} " f"left_size {self.available_size}")
@@ -66,6 +70,7 @@ class MemoryManager:
 
     @torch.no_grad()
     def alloc_contiguous(self, required_size):
+        gd.debuginfo(prj="mt", info=f'')
         """allocate contiguous space of required_size"""
         if required_size > self.available_size:
             self.logger.warning(f"No enough cache: required_size {required_size} " f"left_size {self.available_size}")
@@ -93,12 +98,14 @@ class MemoryManager:
 
     @torch.no_grad()
     def free(self, free_index):
+        gd.debuginfo(prj="mt", info=f'')
         """free memory by updating memory states based on given indexes"""
         self.available_size += free_index.shape[0]
         self.mem_state[free_index] = 1
 
     @torch.no_grad()
     def free_all(self):
+        gd.debuginfo(prj="mt", info=f'')
         """free all memory by updating memory states"""
         self.available_size = len(self.mem_state)
         self.mem_state[:] = 1

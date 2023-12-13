@@ -14,6 +14,7 @@ from .prof_utils import BaseProfiler, _format_bandwidth, _format_memory, _format
 
 
 def _get_code_location(depth: int):
+    gd.debuginfo(prj="mt", info=f'')
     ret = []
     length = min(len(inspect.stack()), depth + 1)
     for i in range(3, length):
@@ -46,6 +47,7 @@ class CommEvent(object):
         self.self_count = count
         self.self_comm_vol = comm_vol
         self.self_cuda_time = cuda_time
+        gd.debuginfo(prj="mt", info=f'')
 
     def add(self, rhs):
         self.self_count += rhs.self_count
@@ -68,6 +70,7 @@ class CommProfiler(BaseProfiler):
         self.pending_op = None
         self.pending_metadata = None
         self.warn_flag = False
+        gd.debuginfo(prj="mt", info=f'')
 
     def reset(self):
         self.total_count = 0
@@ -206,12 +209,14 @@ class CommHandler(object):
     def __init__(self, profiler: CommProfiler):
         super().__init__()
         self.prof = profiler
+        gd.debuginfo(prj="mt", info=f'')
 
     def wait(self):
         self.prof.wait_async_op()
 
 
 def async_check(profiler: CommProfiler):
+    gd.debuginfo(prj="mt", info=f'')
     if profiler.pending_op is not None:
         profiler.warn_flag = True
         profiler.wait_async_op()
@@ -220,6 +225,7 @@ def async_check(profiler: CommProfiler):
 def all_reduce(
     tensor: torch.Tensor, op: ReduceOp = ReduceOp.SUM, group=None, async_op: bool = False, profiler: CommProfiler = None
 ) -> Optional[CommHandler]:
+    gd.debuginfo(prj="mt", info=f'')
     async_check(profiler)
 
     comm_size = dist.get_world_size(group)
@@ -242,6 +248,7 @@ def reduce_scatter(
     async_op: bool = False,
     profiler: CommProfiler = None,
 ) -> Optional[CommHandler]:
+    gd.debuginfo(prj="mt", info=f'')
     async_check(profiler)
 
     comm_size = dist.get_world_size(group)
@@ -266,6 +273,7 @@ def all_gather(
     async_op: bool = False,
     profiler: CommProfiler = None,
 ) -> Optional[CommHandler]:
+    gd.debuginfo(prj="mt", info=f'')
     async_check(profiler)
 
     comm_size = dist.get_world_size(group)
@@ -286,6 +294,7 @@ def all_gather(
 def broadcast(
     tensor: torch.Tensor, src: int, group=None, async_op: bool = False, profiler: CommProfiler = None
 ) -> Optional[CommHandler]:
+    gd.debuginfo(prj="mt", info=f'')
     async_check(profiler)
 
     comm_vol = 1.0 * tensor.element_size() * tensor.numel()
@@ -306,6 +315,7 @@ def reduce(
     async_op: bool = False,
     profiler: CommProfiler = None,
 ) -> Optional[CommHandler]:
+    gd.debuginfo(prj="mt", info=f'')
     async_check(profiler)
 
     comm_vol = 1.0 * tensor.element_size() * tensor.numel()

@@ -5,6 +5,7 @@ from pydebug import gd, infoTensor
 
 class Stats:
     def __init__(self, log_status, log_stats_interval) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.log_stats = log_status
         self.log_stats_interval = log_stats_interval
         self.last_log_time = time.time()
@@ -14,14 +15,18 @@ class Stats:
         return
 
     def count_prompt_tokens(self, run_batch):
+        gd.debuginfo(prj="mt", info=f'')
         if self.log_stats:
+            gd.debuginfo(prj="mt", info=f'')
             tokens = run_batch.input_tokens()
             self.prompt_tokens += tokens
             self.all_tokens += tokens
         return
 
     def count_output_tokens(self, run_batch):
+        gd.debuginfo(prj="mt", info=f'')
         if self.log_stats:
+            gd.debuginfo(prj="mt", info=f'')
             tokens = len(run_batch.reqs)
             self.output_tokens += tokens
             self.all_tokens += tokens

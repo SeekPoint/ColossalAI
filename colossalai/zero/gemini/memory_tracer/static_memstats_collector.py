@@ -22,6 +22,7 @@ class ModuleInfos:
         self.module_name = module_name
         self.module_full_name = module_full_name
         self.parent_module = parent_module
+        gd.debuginfo(prj="mt", info=f'')
 
 
 class StaticMemStatsCollector(ChunkMemStatsCollector):
@@ -33,6 +34,7 @@ class StaticMemStatsCollector(ChunkMemStatsCollector):
         super().__init__(chunk_manager)
         self.module = module
         self.module_info_list = []
+        gd.debuginfo(prj="mt", info=f'')
 
     def init_mem_stats(self, *inputs):
         self.register_opnodes_recursively(self.module)

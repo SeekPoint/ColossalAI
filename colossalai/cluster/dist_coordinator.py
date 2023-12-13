@@ -146,6 +146,7 @@ class DistCoordinator(metaclass=SingletonMeta):
             executor_rank (int): the process rank to execute without blocking, all other processes will be blocked
             process_group (ProcessGroup, optional): process group to use for the executor rank check. Defaults to None, which refers to the default process group.
         """
+        gd.debuginfo(prj="mt", info=f'')
         rank = dist.get_rank(group=process_group)
         should_block = rank != executor_rank
 
@@ -188,6 +189,7 @@ class DistCoordinator(metaclass=SingletonMeta):
             print(msg)
         ```
         """
+        gd.debuginfo(prj="mt", info=f'')
         is_master = self.is_master(process_group)
 
         # define an inner function

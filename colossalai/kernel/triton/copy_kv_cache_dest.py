@@ -10,6 +10,7 @@ except ImportError:
     print("please install triton from https://github.com/openai/triton")
 
 if HAS_TRITON:
+    gd.debuginfo(prj="mt", info=f'')
     # adapted from https://github.com/ModelTC/lightllm/blob/5c559dd7981ed67679a08a1e09a88fb4c1550b3a/lightllm/common/triton_kernel/destindex_copy_kv.py
     @triton.jit
     def _fwd_copy_kv_cache_dest(
@@ -26,6 +27,7 @@ if HAS_TRITON:
         BLOCK_DMODEL: tl.constexpr,
         BLOCK_HEAD: tl.constexpr,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         cur_index = tl.program_id(0)
         offs_h = tl.arange(0, BLOCK_HEAD)
         offs_d = tl.arange(0, BLOCK_DMODEL)
@@ -50,7 +52,7 @@ if HAS_TRITON:
         head_dim = k_ptr.shape[2]
         assert head_num == out.shape[1], "head_num should be the same for k_ptr and out"
         assert head_dim == out.shape[2], "head_dim should be the same for k_ptr and out"
-
+        gd.debuginfo(prj="mt", info=f'')
         num_warps = 2
         _fwd_copy_kv_cache_dest[(seq_len,)](
             k_ptr,

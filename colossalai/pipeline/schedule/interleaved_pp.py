@@ -16,7 +16,10 @@ from .base import PipelineSchedule
 
 
 class InterleavedSchedule(PipelineSchedule):
-    def __init__(self, num_microbatches: int, num_model_chunks: int, stage_manager: PipelineStageManager) -> None:
+    def __init__(self,
+                 num_microbatches: int,
+                 num_model_chunks: int,
+                 stage_manager: PipelineStageManager) -> None:
         self.num_model_chunks = num_model_chunks
         assert (
             num_microbatches % self.num_model_chunks == 0
@@ -28,6 +31,7 @@ class InterleavedSchedule(PipelineSchedule):
         self.batch_size: Optional[int] = None
         self.microbatch_offset: Optional[int] = None
         self.microbatch_size: Optional[int] = None
+        gd.debuginfo(prj="mt", info=f'')
 
     def load_batch(self, data_iter: Iterable, device: Optional[torch.device] = None) -> None:
         """Load a batch from data iterator.
@@ -36,6 +40,7 @@ class InterleavedSchedule(PipelineSchedule):
             data_iter (Iterable): Data iterator.
             device (Optional[torch.device], optional): Target device. Defaults to None.
         """
+        gd.debuginfo(prj="mt", info=f'')
         batch = next(data_iter)
         if device is not None:
             batch = tree_map(partial(to_device, device=device), batch)
@@ -54,6 +59,7 @@ class InterleavedSchedule(PipelineSchedule):
         Returns:
             Any: Micro batch.
         """
+        gd.debuginfo(prj="mt", info=f'')
         micro_batch = get_micro_batch(self.batch, self.microbatch_offset[model_chunk_id], self.microbatch_size)
         self.microbatch_offset[model_chunk_id] += self.microbatch_size
         return tree_map(partial(to_device, device=get_current_device()), micro_batch)
@@ -68,10 +74,12 @@ class InterleavedSchedule(PipelineSchedule):
         Returns:
             int: The model chunk idx of the input microbatch_id
         """
+        gd.debuginfo(prj="mt", info=f'')
         microbatch_id_in_group = (microbatch_id) % (self.stage_manager.num_stages * self.num_model_chunks)
         model_chunk_id = microbatch_id_in_group // self.stage_manager.num_stages
         if not forward:
             model_chunk_id = self.num_model_chunks - model_chunk_id - 1
+            gd.debuginfo(prj="mt", info=f'')
         return model_chunk_id
 
     def is_first_stage(self, model_chunk_id: int) -> bool:
@@ -83,7 +91,9 @@ class InterleavedSchedule(PipelineSchedule):
         Returns:
             bool: Whether the current virtual stage is the first stage.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if self.stage_manager.is_first_stage() and model_chunk_id == 0:
+            gd.debuginfo(prj="mt", info=f'')
             return True
         return False
 
@@ -96,7 +106,9 @@ class InterleavedSchedule(PipelineSchedule):
         Returns:
             bool: Whether the current virtual stage is the last stage.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if self.stage_manager.is_last_stage() and model_chunk_id == self.num_model_chunks - 1:
+            gd.debuginfo(prj="mt", info=f'')
             return True
         return False
 
@@ -113,8 +125,10 @@ class InterleavedSchedule(PipelineSchedule):
         """
         if self.is_first_stage(model_chunk_id):
             input_tensor = None
+            gd.debuginfo(prj="mt", info=f'')
         else:
             input_tensor = self.comm.recv_forward(prev_rank)
+            gd.debuginfo(prj="mt", info=f'')
 
         return input_tensor
 
@@ -131,8 +145,10 @@ class InterleavedSchedule(PipelineSchedule):
         """
         if self.is_last_stage(model_chunk_id):
             output_tensor_grad = None
+            gd.debuginfo(prj="mt", info=f'')
         else:
             output_tensor_grad = self.comm.recv_backward(next_rank)
+            gd.debuginfo(prj="mt", info=f'')
 
         return output_tensor_grad
 
@@ -145,7 +161,9 @@ class InterleavedSchedule(PipelineSchedule):
             output_object (Any): Object to be sent.
             next_rank (int, optional): The rank of the recipient of the tensor.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if not self.is_last_stage(model_chunk_id):
+            gd.debuginfo(prj="mt", info=f'')
             self.comm.send_forward(output_object, next_rank)
 
     def send_backward(self, model_chunk_id, input_object: Any, prev_rank: int = None) -> None:
@@ -157,7 +175,9 @@ class InterleavedSchedule(PipelineSchedule):
             input_object (Any): Object to be sent.
             prev_rank (int, optional): The rank of the recipient of the tensor
         """
+        gd.debuginfo(prj="mt", info=f'')
         if not self.is_first_stage(model_chunk_id):
+            gd.debuginfo(prj="mt", info=f'')
             self.comm.send_backward(input_object, prev_rank)
 
     def forward_step(
@@ -181,7 +201,7 @@ class InterleavedSchedule(PipelineSchedule):
             Union[torch.Tensor, dict]: The intermediate output (dict) of the current stage. If it is the last stage, the output is the loss (Tensor).
         """
         micro_batch = self.load_micro_batch(model_chunk_id=model_chunk_id)
-
+        gd.debuginfo(prj="mt", info=f'')
         # for the first stage, input_obj is None
         # for the non-first stage, input_obj is the output of the previous stage and it's must be a dict
         output_obj = model_forward(model_chunk[model_chunk_id], micro_batch, input_obj)
@@ -190,10 +210,13 @@ class InterleavedSchedule(PipelineSchedule):
             loss = criterion(output_obj, micro_batch) / self.num_microbatches
             if accum_loss is not None:
                 accum_loss.add_(loss.detach())
+                gd.debuginfo(prj="mt", info=f'')
             if outputs is not None:
                 outputs.append(tree_map(detach, output_obj))
+                gd.debuginfo(prj="mt", info=f'')
             return loss
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return output_obj
 
     def backward_step(
@@ -214,18 +237,21 @@ class InterleavedSchedule(PipelineSchedule):
         Returns:
             Optional[dict]: Gradient of the `input_obj`. If it is the first stage, the `input_obj_grad` is None.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         # Retain the grad on the input_obj.
         tree_map(retain_grad, input_obj)
 
         # Backward pass.
         if output_obj_grad is None:
             optimizer.backward(output_obj)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             if "backward_tensor_keys" not in output_obj:
+                gd.debuginfo(prj="mt", info=f'')
                 for k, grad in output_obj_grad.items():
                     optimizer.backward_by_grad(output_obj[k], grad)
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 for k, grad in output_obj_grad.items():
                     output_obj[k].grad = grad
                 for k in output_obj["backward_tensor_keys"]:
@@ -263,6 +289,7 @@ class InterleavedSchedule(PipelineSchedule):
         Returns:
             dict: A dict with keys: 'loss' and 'outputs'.
         """
+        gd.debuginfo(prj="mt", info=f'')
         forward_only = not torch.is_grad_enabled()
         if optimizer is None:
             assert forward_only, "Optimizer should be passed when doing backward."
@@ -274,10 +301,12 @@ class InterleavedSchedule(PipelineSchedule):
         num_microbatches = self.num_microbatches * num_model_chunks
         if forward_only:
             num_warmup_microbatches = num_microbatches
+            gd.debuginfo(prj="mt", info=f'')
         else:
             num_warmup_microbatches = (self.stage_manager.num_stages - self.stage_manager.stage - 1) * 2
             num_warmup_microbatches += (num_model_chunks - 1) * self.stage_manager.num_stages
             num_warmup_microbatches = min(num_warmup_microbatches, num_microbatches)
+            gd.debuginfo(prj="mt", info=f'')
 
         num_microbatches_remaining = num_microbatches - num_warmup_microbatches
 
@@ -288,13 +317,16 @@ class InterleavedSchedule(PipelineSchedule):
         if not forward_only:
             input_objs = [[] for _ in range(num_model_chunks)]
             output_objs = [[] for _ in range(num_model_chunks)]
+            gd.debuginfo(prj="mt", info=f'')
 
         outputs = [] if return_outputs and self.stage_manager.is_last_stage() else None
 
         if return_loss and self.stage_manager.is_last_stage():
             accum_loss = torch.zeros(1, device=get_current_device())
+            gd.debuginfo(prj="mt", info=f'')
         else:
             accum_loss = None
+            gd.debuginfo(prj="mt", info=f'')
 
         # for ranks except the first one, get into recv state
         # print(self.stage_manager.stage,num_microbatches, num_warmup_microbatches, num_microbatches_remaining)
@@ -377,4 +409,6 @@ class InterleavedSchedule(PipelineSchedule):
 
         if outputs is not None:
             outputs = merge_batch(outputs)
+            gd.debuginfo(prj="mt", info=f'')
+
         return {"loss": accum_loss, "outputs": outputs}

@@ -10,6 +10,7 @@ class BaseShardStrategy(ABC):
     def __init__(self) -> None:
         """Abstract Shard Strategy. Use to shard a tensors on multiple GPUs."""
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     @abstractmethod
     def shard(self, tensor_list: List[ShardedTensor], process_group: Optional[dist.ProcessGroup] = None):

@@ -38,6 +38,7 @@ class OneForwardOneBackwardSchedule(PipelineSchedule):
             num_microbatches (Optional[int], optional): The number of microbatches. If not provided, it will be derived from microbatch size. Defaults to None.
             microbatch_size (Optional[int], optional): Microbatch size. If num_microbatches is provided, this will be ignored. Defaults to None.
         """
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(stage_manager)
         assert (
             num_microbatches is not None or microbatch_size is not None
@@ -57,13 +58,16 @@ class OneForwardOneBackwardSchedule(PipelineSchedule):
             data_iter (Iterable): Data iterator.
             device (Optional[torch.device], optional): Target device. Defaults to None.
         """
+        gd.debuginfo(prj="mt", info=f'')
         batch = next(data_iter)
         if device is not None:
             batch = tree_map(partial(to_device, device=device), batch)
+            gd.debuginfo(prj="mt", info=f'')
         self.batch = batch
         self.batch_size = get_batch_size(batch)
         self.microbatch_offset = 0
         if not self._use_microbatch_size:
+            gd.debuginfo(prj="mt", info=f'')
             assert (
                 self.batch_size % self.num_microbatches == 0
             ), "Batch size should divided by the number of microbatches"
@@ -71,6 +75,7 @@ class OneForwardOneBackwardSchedule(PipelineSchedule):
         else:
             assert self.batch_size % self.microbatch_size == 0, "Batch size should divided by the microbatch size"
             self.num_microbatches = self.batch_size // self.microbatch_size
+            gd.debuginfo(prj="mt", info=f'')
 
     def load_micro_batch(self) -> Any:
         """Load a micro batch from the current batch.
@@ -78,6 +83,7 @@ class OneForwardOneBackwardSchedule(PipelineSchedule):
         Returns:
             Any: Micro batch.
         """
+        gd.debuginfo(prj="mt", info=f'')
         micro_batch = get_micro_batch(self.batch, self.microbatch_offset, self.microbatch_size)
         self.microbatch_offset += self.microbatch_size
         return tree_map(partial(to_device, device=get_current_device()), micro_batch)
@@ -94,8 +100,10 @@ class OneForwardOneBackwardSchedule(PipelineSchedule):
         """
         if self.stage_manager.is_first_stage():
             input_tensor = None
+            gd.debuginfo(prj="mt", info=f'')
         else:
             input_tensor = self.comm.recv_forward(prev_rank)
+            gd.debuginfo(prj="mt", info=f'')
 
         return input_tensor
 
@@ -111,8 +119,10 @@ class OneForwardOneBackwardSchedule(PipelineSchedule):
         """
         if self.stage_manager.is_last_stage():
             output_tensor_grad = None
+            gd.debuginfo(prj="mt", info=f'')
         else:
             output_tensor_grad = self.comm.recv_backward(next_rank)
+            gd.debuginfo(prj="mt", info=f'')
 
         return output_tensor_grad
 
@@ -124,7 +134,9 @@ class OneForwardOneBackwardSchedule(PipelineSchedule):
             output_object (Any): Object to be sent.
             next_rank (int, optional): The rank of the recipient of the tensor.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if not self.stage_manager.is_last_stage():
+            gd.debuginfo(prj="mt", info=f'')
             self.comm.send_forward(output_object, next_rank)
 
     def send_backward(self, input_object: Any, prev_rank: int = None) -> None:
@@ -135,7 +147,9 @@ class OneForwardOneBackwardSchedule(PipelineSchedule):
             input_object (Any): Object to be sent.
             prev_rank (int, optional): The rank of the recipient of the tensor
         """
+        gd.debuginfo(prj="mt", info=f'')
         if not self.stage_manager.is_first_stage():
+            gd.debuginfo(prj="mt", info=f'')
             self.comm.send_backward(input_object, prev_rank)
 
     def forward_step(
@@ -158,6 +172,7 @@ class OneForwardOneBackwardSchedule(PipelineSchedule):
         Returns:
             Union[torch.Tensor, dict]: The intermediate output (dict) of the current stage. If it is the last stage, the output is the loss (Tensor).
         """
+        gd.debuginfo(prj="mt", info=f'')
         micro_batch = self.load_micro_batch()
         # for the first stage, input_obj is None
         # for the non-first stage, input_obj is the output of the previous stage and it's must be a dict
@@ -166,10 +181,13 @@ class OneForwardOneBackwardSchedule(PipelineSchedule):
             loss = criterion(output_obj, micro_batch) / self.num_microbatches
             if accum_loss is not None:
                 accum_loss.add_(loss.detach())
+                gd.debuginfo(prj="mt", info=f'')
             if outputs is not None:
                 outputs.append(tree_map_hf(detach, output_obj))
+                gd.debuginfo(prj="mt", info=f'')
             return loss
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return output_obj
 
     def backward_step(
@@ -190,17 +208,20 @@ class OneForwardOneBackwardSchedule(PipelineSchedule):
         Returns:
             Optional[dict]: Gradient of the `input_obj`. If it is the first stage, the `input_obj_grad` is None.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         # Retain the grad on the input_obj.
         tree_map(retain_grad, input_obj)
         # Backward pass.
         if output_obj_grad is None:
             optimizer.backward(output_obj)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             if "backward_tensor_keys" not in output_obj:
+                gd.debuginfo(prj="mt", info=f'')
                 for k, grad in output_obj_grad.items():
                     optimizer.backward_by_grad(output_obj[k], grad)
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 for k, grad in output_obj_grad.items():
                     output_obj[k].grad = grad
                 for k in output_obj["backward_tensor_keys"]:
@@ -210,6 +231,7 @@ class OneForwardOneBackwardSchedule(PipelineSchedule):
         # Collect the grad of the input_obj.
         input_obj_grad = None
         if input_obj is not None:
+            gd.debuginfo(prj="mt", info=f'')
             input_obj_grad = {}
             for k, v in input_obj.items():
                 if isinstance(v, torch.Tensor) and v.grad is not None:
@@ -238,6 +260,7 @@ class OneForwardOneBackwardSchedule(PipelineSchedule):
         Returns:
             dict: A dict with keys: 'loss' and 'outputs'.
         """
+        gd.debuginfo(prj="mt", info=f'')
         forward_only = not torch.is_grad_enabled()
         if optimizer is None:
             assert forward_only, "Optimizer should be passed when doing backward."
@@ -254,14 +277,17 @@ class OneForwardOneBackwardSchedule(PipelineSchedule):
         output_objs = None
 
         if not forward_only:
+            gd.debuginfo(prj="mt", info=f'')
             input_objs = []
             output_objs = []
 
         outputs = [] if return_outputs and self.stage_manager.is_last_stage() else None
         if return_loss and self.stage_manager.is_last_stage():
             accum_loss = torch.zeros(1, device=get_current_device())
+            gd.debuginfo(prj="mt", info=f'')
         else:
             accum_loss = None
+            gd.debuginfo(prj="mt", info=f'')
 
         # Run warmup forward passes.
         for i in range(num_warmup_microbatches):
@@ -280,6 +306,7 @@ class OneForwardOneBackwardSchedule(PipelineSchedule):
         # receive this tensor here.
         if num_microbatches_remaining > 0:
             input_obj = self.recv_forward()
+            gd.debuginfo(prj="mt", info=f'')
 
         # Run 1F1B in steady state.
         for i in range(num_microbatches_remaining):
@@ -315,6 +342,7 @@ class OneForwardOneBackwardSchedule(PipelineSchedule):
 
         # Run cooldown backward passes.
         if not forward_only:
+            gd.debuginfo(prj="mt", info=f'')
             for i in range(num_warmup_microbatches):
                 input_obj = input_objs.pop(0)
                 output_obj = output_objs.pop(0)
@@ -324,7 +352,9 @@ class OneForwardOneBackwardSchedule(PipelineSchedule):
                 self.send_backward(input_obj_grad)
 
         if outputs is not None:
+            gd.debuginfo(prj="mt", info=f'')
             if isinstance(model, ModelWrapper):
+                gd.debuginfo(prj="mt", info=f'')
                 model = model.unwrap()
             outputs = merge_batch(outputs, getattr(model, "batch_size_dim", 0))
         return {"loss": accum_loss, "outputs": outputs}

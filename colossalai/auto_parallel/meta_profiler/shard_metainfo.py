@@ -18,6 +18,8 @@ class ShardMetaInfo:
     """
 
     def __init__(self, strategy: ShardingStrategy = None, target: Callable = None) -> None:
+        gd.debuginfo(prj="mt", info=f'')
+
         # compute cost of forward and backward computation
         self.compute_cost: TrainCycleItem
 
@@ -75,6 +77,7 @@ class ShardMetaInfo:
                 type=operation_data.type,
                 logical_shape=operation_data.logical_shape,
             )
+            gd.debuginfo(prj="mt", info=f'')
         elif isinstance(sharding_spec, (list, tuple)):
             data = operation_data.data
             assert isinstance(data, (list, tuple)), f"Data Should be list or tuple, but got {type(data)}."
@@ -83,6 +86,7 @@ class ShardMetaInfo:
             for d, s in zip(data, sharding_spec):
                 sharded_data.append(torch.zeros(s.get_sharded_shape_per_device(), device="meta"))
             op_data = OperationData(name=operation_data.name, data=sharded_data, type=operation_data.type)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             raise ValueError(f"Sharding spec should be ShardingSpec or list, but got {type(sharding_spec)}.")
 
@@ -101,6 +105,7 @@ class ShardMetaInfo:
 
             # check whether the target in the list that we don't need to save activation
             save_fwd_in = self._target.__class__ not in NO_SAVE_ACTIVATION
+            gd.debuginfo(prj="mt", info=f'')
         else:
             # function
             meta_func = meta_register.get(self._target)
@@ -108,20 +113,26 @@ class ShardMetaInfo:
             # check whether the target in the list that we don't need to save activation
             save_fwd_in = self._target.__class__ not in NO_SAVE_ACTIVATION
 
+            gd.debuginfo(prj="mt", info=f'')
+
         # construct args for meta_func
         args = [self.compute_sharded_opdata(k, v) for k, v in self._strategy.sharding_specs.items()]
 
         # construct kwargs
         if self.target in INPLACE_MODULE:
             kwargs = {"inplace": self.target.inplace}
+            gd.debuginfo(prj="mt", info=f'')
         elif self.target in INPLACE_OPS:
             kwargs = {"inplace": True}
+            gd.debuginfo(prj="mt", info=f'')
         else:
             kwargs = {"inplace": False}
+            gd.debuginfo(prj="mt", info=f'')
 
         # compute metainfo with meta_func
         self.compute_cost, self.memory_cost, self.fwd_in, self.fwd_buffer, self.fwd_out = meta_func(*args, **kwargs)
 
         # process corner case for NO_SAVE_ACTIVATION
         if not save_fwd_in:
+            gd.debuginfo(prj="mt", info=f'')
             self.fwd_in = []

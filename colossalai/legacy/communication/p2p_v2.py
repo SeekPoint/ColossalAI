@@ -27,6 +27,7 @@ def init_process_group():
     Returns:
         None
     """
+    gd.debuginfo(prj="mt", info=f'')
     world_size = gpc.get_world_size(ParallelMode.PIPELINE)
     for i in range(world_size - 1):
         _pg_manager[(i, i + 1)] = dist.new_group([i, i + 1])
@@ -42,6 +43,7 @@ def _acquire_pair_group_handle(first_rank: int, second_rank: int) -> ProcessGrou
     Returns:
         :class:`ProcessGroupNCCL`: the handle of the group consisting of the given two ranks
     """
+    gd.debuginfo(prj="mt", info=f'')
     if len(_pg_manager) == 0:
         init_process_group()
     if first_rank > second_rank:
@@ -61,6 +63,7 @@ def _cuda_safe_tensor_to_object(tensor: torch.Tensor, tensor_size: torch.Size) -
     Returns:
         Any: object after unpickled
     """
+    gd.debuginfo(prj="mt", info=f'')
     buf = tensor.numpy().tobytes()[:tensor_size]
     if b"cuda" in buf:
         buf_array = bytearray(buf)
@@ -89,7 +92,7 @@ def _broadcast_object_list(object_list: List[Any], src: int, dst: int, device=No
 
     """
     group = _acquire_pair_group_handle(src, dst)
-
+    gd.debuginfo(prj="mt", info=f'')
     if c10d._rank_not_in_group(group):
         c10d._warn_not_in_group("broadcast_object_list")
         return
@@ -165,6 +168,7 @@ def _send_object(object: Any, dst: int) -> None:
     Returns:
         None
     """
+    gd.debuginfo(prj="mt", info=f'')
     local_rank = gpc.get_local_rank(ParallelMode.PIPELINE)
     # handler = _acquire_pair_group_handle(local_rank, dst)
 
@@ -188,6 +192,7 @@ def _recv_object(src: int) -> Any:
     Returns:
         Any: Object received from src.
     """
+    gd.debuginfo(prj="mt", info=f'')
     local_rank = gpc.get_local_rank(ParallelMode.PIPELINE)
     # handler = _acquire_pair_group_handle(local_rank, src)
     # recv length first
@@ -214,6 +219,7 @@ def recv_forward(prev_rank: int = None) -> Any:
     Returns:
         Any: The input tensor or input tensor list.
     """
+    gd.debuginfo(prj="mt", info=f'')
     if gpc.is_pipeline_first_stage():
         input_tensor = None
     else:
@@ -234,6 +240,7 @@ def recv_backward(next_rank: int = None) -> Any:
     Returns:
         Any: The input gradient tensor or gradient tensor list.
     """
+    gd.debuginfo(prj="mt", info=f'')
     if gpc.is_pipeline_last_stage():
         output_tensor_grad = None
     else:
@@ -251,6 +258,7 @@ def send_forward(output_object: Any, next_rank: int = None) -> None:
         output_object Any: Object to be sent.
         next_rank (int, optional): The rank of the recipient of the tensor.
     """
+    gd.debuginfo(prj="mt", info=f'')
     if not gpc.is_pipeline_last_stage():
         if next_rank is None:
             next_rank = gpc.get_next_global_rank(ParallelMode.PIPELINE)
@@ -264,6 +272,7 @@ def send_backward(input_object: Any, prev_rank: int = None) -> None:
         input_tensor_grad (Union[:class:`torch.Tensor`, List[:class:`torch.Tensor`]]): Tensor to be sent
         prev_rank (int, optional): The rank of the recipient of the tensor
     """
+    gd.debuginfo(prj="mt", info=f'')
     if not gpc.is_pipeline_first_stage():
         if prev_rank is None:
             prev_rank = gpc.get_prev_global_rank(ParallelMode.PIPELINE)

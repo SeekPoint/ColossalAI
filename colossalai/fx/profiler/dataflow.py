@@ -68,6 +68,7 @@ class GraphInfo:
 
 
 def is_phase(n: Node, phase: Phase) -> bool:
+    gd.debuginfo(prj="mt", info=f'')
     assert "phase" in n.meta, f"Node meta of {n} has no key `phase`!"
     return n.meta["phase"] == phase
 
@@ -99,6 +100,7 @@ def autograd_graph_analysis(graph: Graph) -> GraphInfo:
     """
 
     def _peak_memory(deps: Dict[Node, int]):
+        gd.debuginfo(prj="mt", info=f'')
         peak_mem = 0
         for k, v in deps.items():
             if v > 0 and is_phase(k, Phase.BACKWARD) and not all(map(is_inplace, k.users)) and not is_inplace(k):
@@ -106,6 +108,8 @@ def autograd_graph_analysis(graph: Graph) -> GraphInfo:
             if v <= float("-inf") and is_phase(k, Phase.FORWARD):
                 peak_mem -= activation_size(k.meta["saved_tensor"])
         return peak_mem
+
+    gd.debuginfo(prj="mt", info=f'')
 
     # deps is used to track all the memory dependencies of the graph.
     deps = {}
@@ -123,15 +127,19 @@ def autograd_graph_analysis(graph: Graph) -> GraphInfo:
         # the node, `fwd_mem_tmp` can be freed.
         if is_phase(n, Phase.PLACEHOLDER):
             graph_info.fwd_in += n.meta["saved_tensor"]
+            gd.debuginfo(prj="mt", info=f'')
         if is_phase(n, Phase.FORWARD):
             graph_info.fwd_tmp += n.meta["saved_tensor"]
+            gd.debuginfo(prj="mt", info=f'')
         elif is_phase(n, Phase.BACKWARD):
             if len(n.users):
                 graph_info.bwd_mem_tmp = max(graph_info.bwd_mem_tmp, _peak_memory(deps))
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 # TODO: some of the bwd_mem_out might be model parameters.
                 # basically a backward node without user is a `grad_out` node
                 graph_info.bwd_mem_out += activation_size(n.meta["saved_tensor"])
+                gd.debuginfo(prj="mt", info=f'')
         for input_n in n.all_input_nodes:
             if input_n in deps:
                 deps[input_n] -= 1

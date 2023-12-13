@@ -30,6 +30,7 @@ class PipelinableContext(InsertPostInitMethodToModuleSubClasses):
         self._layer_spec_list = []
         self._func_dict = {}
         self._policy = policy
+        gd.debuginfo(prj="mt", info=f'')
 
     @property
     def policy(self):
@@ -236,6 +237,7 @@ class PipelinableContext(InsertPostInitMethodToModuleSubClasses):
 
 class PipelinableModel(torch.nn.Module):
     def __init__(self, module_list, front_func_dict, behind_func_dict):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self._module_list = module_list
         self._front_func_dict = front_func_dict

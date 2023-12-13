@@ -40,6 +40,7 @@ from colossalai.utils.moe import sync_moe_model_param
 from pydebug import gd, infoTensor
 
 def get_default_parser():
+    gd.debuginfo(prj="mt", info=f'')
     """Reads user command line and uses an argument parser to parse the input arguments.
     Input arguments include configuration, host, port, world size, local rank, backend for torch.distributed.
 
@@ -68,6 +69,7 @@ def launch(
     seed: int = 1024,
     verbose: bool = True,
 ):
+    gd.debuginfo(prj="mt", info=f'')
     """This function first parses the configuration arguments, using :func:`parse_args()` in case one of the input
     arguments are not given. Then initialize and set distributed environment by calling global_context's functions.
 
@@ -133,6 +135,7 @@ def launch_from_slurm(
     seed: int = 1024,
     verbose: bool = True,
 ):
+    gd.debuginfo(prj="mt", info=f'')
     """A wrapper for colossalai.launch for SLURM launcher by reading rank and world size from the environment variables
     set by SLURM
 
@@ -172,6 +175,7 @@ def launch_from_openmpi(
     seed: int = 1024,
     verbose: bool = True,
 ):
+    gd.debuginfo(prj="mt", info=f'')
     """A wrapper for colossalai.launch for OpenMPI launcher by reading rank and world size from the environment variables
     set by OpenMPI
 
@@ -208,6 +212,7 @@ def launch_from_openmpi(
 def launch_from_torch(
     config: Union[str, Path, Config, Dict], backend: str = "nccl", seed: int = 1024, verbose: bool = True
 ):
+    gd.debuginfo(prj="mt", info=f'')
     """A wrapper for colossalai.launch for torchrun or torch.distributed.launch by reading rank and world size
     from the environment variables set by PyTorch
 
@@ -269,6 +274,7 @@ def initialize(
             A tuple of ``(engine, train_dataloader, test_dataloader, lr_scheduler)``
             where only ``engine`` could not be None.
     """
+    gd.debuginfo(prj="mt", info=f'')
     # get logger
     logger = get_dist_logger()
     gpc.verbose = verbose

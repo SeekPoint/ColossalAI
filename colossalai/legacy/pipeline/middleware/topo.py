@@ -22,6 +22,7 @@ class PartitionInputVal(object):
         # every input from which partition_id and which offset
         val_pos = ValPosition(partition_id, offset)
         self._from_partition_and_offset: ValPosition = val_pos
+        gd.debuginfo(prj="mt", info=f'')
 
     def get(self):
         return self._from_partition_and_offset
@@ -39,6 +40,7 @@ class PartitionOutputVal(object):
     def __init__(self) -> None:
         # every output to which partition_id and which offset
         self._to_partition_and_offset: List[ValPosition] = []
+        gd.debuginfo(prj="mt", info=f'')
 
     def add(self, partition_id, offset):
         val_pos = ValPosition(partition_id, offset)
@@ -63,6 +65,7 @@ class Partition(object):
     def __init__(self) -> None:
         self._input_vals: List[PartitionInputVal] = []
         self._output_vals: List[PartitionOutputVal] = []
+        gd.debuginfo(prj="mt", info=f'')
 
     def add_input_val(self, input_val: PartitionInputVal):
         self._input_vals.append(input_val)
@@ -141,6 +144,7 @@ class Topo(object):
         self._partitions: Dict[int, Partition] = {}
         self._input_partition_id = input_partition_id
         self._output_partition_id = output_partition_id
+        gd.debuginfo(prj="mt", info=f'')
 
     def set_input_partition_id(self, partition_id: int):
         self._input_partition_id = partition_id

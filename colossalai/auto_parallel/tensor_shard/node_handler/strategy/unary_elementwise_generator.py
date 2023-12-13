@@ -14,9 +14,11 @@ class UnaryElementwiseGenerator(FollowingStrategyGenerator):
     """
 
     def validate(self) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         return super().validate()
 
     def update_compute_cost(self, strategy: ShardingStrategy):
+        gd.debuginfo(prj="mt", info=f'')
         compute_cost = TrainCycleItem(fwd=10, bwd=10, total=20)
         strategy.compute_cost = compute_cost
 
@@ -24,6 +26,7 @@ class UnaryElementwiseGenerator(FollowingStrategyGenerator):
         """
         Compute the memory cost per device with this specific strategy.
         """
+        gd.debuginfo(prj="mt", info=f'')
         forward_size_mapping = {
             "input": self._compute_size_in_bytes(strategy, "input"),
             "output": self._compute_size_in_bytes(strategy, "output"),
@@ -51,6 +54,7 @@ class UnaryElementwiseGenerator(FollowingStrategyGenerator):
         strategy.memory_cost = memory_cost
 
     def collate_strategies(self) -> List[ShardingStrategy]:
+        gd.debuginfo(prj="mt", info=f'')
         strategy_list = []
         # For element-wise function, we keep the sharding spec of output node same as
         # the input. Therefore, the different strategies of input node with same
@@ -70,6 +74,8 @@ class UnaryElementwiseGenerator(FollowingStrategyGenerator):
             # we keep same strategies with different name for node merging, and it will not increase the searching space,
             # because in solver, this node will be merged into other nodes, and solver will not create a new variable for this node.
             name = f'{sharding_spec_mapping["input"].sharding_sequence} -> {sharding_spec_mapping["output"].sharding_sequence}_{index}'
+            gd.debuginfo(prj="mt", info=f'name={name}')
+
             strategy = self.get_sharding_strategy(
                 name=name,
                 sharding_spec_mapping=sharding_spec_mapping,

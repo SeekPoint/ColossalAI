@@ -19,6 +19,7 @@ class SamplingParams:
         max_new_tokens: int = 256,
         stop_sequences: Optional[Union[str, List[str]]] = None,  # conditions to stop generation
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.do_sample = do_sample
         self.presence_penalty = presence_penalty
         self.frequency_penalty = frequency_penalty
@@ -29,17 +30,18 @@ class SamplingParams:
         self.max_new_tokens = max_new_tokens
         self.stop_sequences = stop_sequences
         if self.do_sample == False:
+            gd.debuginfo(prj="mt", info=f'')
             self.temperature = 1.0
             self.top_p = 1.0
             self.top_k = 1
-        if (
-            self.temperature >= 0.0 and self.temperature < _SAMPLING_EPS
-        ):  # temperature is too slow, change to greedy search
+        if (self.temperature >= 0.0 and self.temperature < _SAMPLING_EPS):  # temperature is too slow, change to greedy search
+            gd.debuginfo(prj="mt", info=f'')
             self.temperature = 1.0
             self.top_k = 1
         return
 
     def verify(self):
+        gd.debuginfo(prj="mt", info=f'')
         if self.presence_penalty < 0.0:
             raise ValueError(f"presence_penalty must >= 0.0, got {self.presence_penalty}")
         if self.frequency_penalty < 0.0:
@@ -56,10 +58,13 @@ class SamplingParams:
 
     def stop_sentences_to_token_ids(self, tokenizer):
         if self.stop_sequences is None:
+            gd.debuginfo(prj="mt", info=f'')
             self.stop_sequences = []
         else:
+            gd.debuginfo(prj="mt", info=f'')
             if isinstance(self.stop_sequences, str):
                 self.stop_sequences = [self.stop_sequences]
+                gd.debuginfo(prj="mt", info=f'')
             new_stop_sequences = []
             for stop_str in self.stop_sequences:
                 stop_str_ids = tokenizer.encode(stop_str)

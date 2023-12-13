@@ -3,6 +3,7 @@ from pydebug import gd, infoTensor
 
 class GeminiMemoryManager(object):
     def __init__(self, states_cls: EnumMeta):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.states_cls = states_cls
         self._cnter = 0  # the counter of instances

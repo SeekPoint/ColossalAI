@@ -2,11 +2,14 @@ from pydebug import gd, infoTensor
 
 class PatchRegistry:
     def __init__(self, name):
+        gd.debuginfo(prj="mt", info=f'')
         self.name = name
         self.store = {}
 
     def register(self, source):
+        gd.debuginfo(prj="mt", info=f'')
         def wrapper(func):
+            gd.debuginfo(prj="mt", info=f'')
             self.store[source] = func
             return func
 

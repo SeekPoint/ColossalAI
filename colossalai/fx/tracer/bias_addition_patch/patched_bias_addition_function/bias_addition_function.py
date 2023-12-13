@@ -12,6 +12,7 @@ class BiasAdditionFunc(ABC):
     """
 
     def __init__(self, tracer, target, args, kwargs, substitute_func):
+        gd.debuginfo(prj="mt", info=f'')
         self.tracer = tracer
         self.target = target
         self.args = args
@@ -57,6 +58,7 @@ class BiasAdditionFunc(ABC):
         Therefore, we need to use this method insert two more operator.mul nodes for
         the computation graph to compute the final result.
         """
+        gd.debuginfo(prj="mt", info=f'')
         node_kind = "call_function"
         node_target = operator.mul
         node_args = (
@@ -79,6 +81,7 @@ class LinearBasedBiasFunc(BiasAdditionFunc):
         This method is used to create the non_bias_func proxy, the node created by this proxy will
         compute the main computation, such as convolution, with bias option banned.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert self.substitute_func == torch.nn.functional.linear
         node_kind = "call_function"
         node_target = self.substitute_func
@@ -94,6 +97,7 @@ class LinearBasedBiasFunc(BiasAdditionFunc):
         This method is used to create the bias_addition_proxy, the node created by this proxy will
         compute the sum of non_bias_func result and bias with some reshape operation if needed.
         """
+        gd.debuginfo(prj="mt", info=f'')
         bias_add_node_kind = "call_function"
         bias_add_node_target = operator.add
         bias_add_args = (non_bias_func_proxy, bias_proxy)

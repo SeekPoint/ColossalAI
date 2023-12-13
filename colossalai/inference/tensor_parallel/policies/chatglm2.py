@@ -24,8 +24,10 @@ except:
 class ChatGLM2InferPolicy(ChatGLMModelPolicy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
         self.shard_config._infer()
 
@@ -53,15 +55,18 @@ class ChatGLM2InferPolicy(ChatGLMModelPolicy):
         return policy
 
     def postprocess(self):
+        gd.debuginfo(prj="mt", info=f'')
         init_to_get_rotary(self.model)
         return self.model
 
 
 class ChatGLM2ForConditionalGenerationInferPolicy(ChatGLM2InferPolicy):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
         model_infer_forward = ChatGLM2InferenceForwards.chatglm_for_conditional_generation_forward
         method_replacement = {"forward": partial(model_infer_forward)}
@@ -71,4 +76,5 @@ class ChatGLM2ForConditionalGenerationInferPolicy(ChatGLM2InferPolicy):
         return policy
 
     def postprocess(self):
+        gd.debuginfo(prj="mt", info=f'')
         return super().postprocess()

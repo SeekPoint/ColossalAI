@@ -8,6 +8,7 @@ class ShardedTensor(StatefulTensor):
         r"""
         A tensor sharded in multiple processes. Constructed from an existing torch.Tensor instance.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert tensor.requires_grad is False
         super().__init__(tensor, state)
 

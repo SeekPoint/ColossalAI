@@ -55,7 +55,7 @@ class HybridAdam(CPUAdam):
     .. _On the Convergence of Adam and Beyond:
         https://openreview.net/forum?id=ryQu7f-RZ
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     # Number of fp32 shards for per parameter
     # Param weight, grad, momentum and variance
     num_fp32_shards_per_param = 4
@@ -87,11 +87,14 @@ class HybridAdam(CPUAdam):
         fused_optim = FusedOptimBuilder().load()
         self.gpu_adam_op = fused_optim.multi_tensor_adam
         self._dummy_overflow_buf = torch.cuda.IntTensor([0])
+        gd.debuginfo(prj="mt", info=f'')
 
     @torch.no_grad()
     def step(self, closure=None, div_scale: float = -1):
+        gd.debuginfo(prj="mt", info=f'')
         loss = None
         if closure is not None:
+            gd.debuginfo(prj="mt", info=f'')
             with torch.enable_grad():
                 loss = closure()
 
@@ -140,6 +143,7 @@ class HybridAdam(CPUAdam):
                             bias_correction2,
                             self.adamw_mode,
                         )
+                        gd.debuginfo(prj="mt", info=f'')
                     else:
                         self.cpu_adam_op.step(
                             state["step"],
@@ -155,6 +159,7 @@ class HybridAdam(CPUAdam):
                             state["exp_avg_sq"],
                             div_scale,
                         )
+                        gd.debuginfo(prj="mt", info=f'')
                     self._post_update(p, "exp_avg", "exp_avg_sq")
 
                 elif target_device.type == "cuda":
@@ -166,6 +171,7 @@ class HybridAdam(CPUAdam):
                     p_l.append(p.data)
                     m_l.append(state["exp_avg"])
                     v_l.append(state["exp_avg_sq"])
+                    gd.debuginfo(prj="mt", info=f'')
 
                 else:
                     raise RuntimeError
@@ -186,5 +192,7 @@ class HybridAdam(CPUAdam):
                     group["weight_decay"],
                     div_scale,
                 )
+                gd.debuginfo(prj="mt", info=f'')
+
         self._post_step()
         return loss

@@ -27,6 +27,7 @@ class GradAccumOptimizer(OptimizerWrapper):
     """
 
     def __init__(self, optim: Optimizer, accumulate_size: int, model: nn.Module = None):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(optim)
         self.accumulate_size = accumulate_size
         self.accumulate_step = 0

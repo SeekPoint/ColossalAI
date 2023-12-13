@@ -51,6 +51,7 @@ class ColoParamOpHookManager:
             >>>         // clear hooks
             >>>         do_something()
         """
+        gd.debuginfo(prj="mt", info=f'')
         try:
             old_param_op_hooks = ColoParamOpHookManager.hooks
             ColoParamOpHookManager.hooks = hooks
@@ -60,26 +61,31 @@ class ColoParamOpHookManager:
 
     @staticmethod
     def _trigger_pre_forward(params: List[torch.Tensor]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         for hook in ColoParamOpHookManager.hooks:
             hook.pre_forward(params)
 
     @staticmethod
     def _trigger_post_forward(params: List[torch.Tensor]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         for hook in ColoParamOpHookManager.hooks:
             hook.post_forward(params)
 
     @staticmethod
     def _trigger_pre_backward(params: List[torch.Tensor]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         for hook in ColoParamOpHookManager.hooks:
             hook.pre_backward(params)
 
     @staticmethod
     def _trigger_post_backward(params: List[torch.Tensor]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         for hook in ColoParamOpHookManager.hooks:
             hook.post_backward(params)
 
     @staticmethod
     def pre_op(params: List[torch.Tensor], *args: Any) -> list:
+        gd.debuginfo(prj="mt", info=f'')
         ColoParamOpHookManager._trigger_pre_forward(params)
         # auto grad function can only recognize torch.Tensor, thus we have to flatten the input
         # if one of the input requires grad, all the output will be treated as requires grad
@@ -91,22 +97,26 @@ class ColoParamOpHookManager:
 
     @staticmethod
     def post_op(params: List[torch.Tensor], arg: Any) -> Any:
+        gd.debuginfo(prj="mt", info=f'')
         ColoParamOpHookManager._trigger_post_forward(params)
         return PostFwdPreBwd.apply(params, arg)
 
     @staticmethod
     def has_hook() -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         return len(ColoParamOpHookManager.hooks) > 0
 
 
 class PreFwdPostBwd(torch.autograd.Function):
     @staticmethod
     def forward(ctx, params, *args):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.params = params
         return args
 
     @staticmethod
     def backward(ctx, *grads):
+        gd.debuginfo(prj="mt", info=f'')
         ColoParamOpHookManager._trigger_post_backward(ctx.params)
         return (None,) + grads
 
@@ -115,15 +125,18 @@ class PostFwdPreBwd(torch.autograd.Function):
     @staticmethod
     def forward(ctx, params, args):
         ctx.params = params
+        gd.debuginfo(prj="mt", info=f'')
         return args
 
     @staticmethod
     def backward(ctx, *grads):
         ColoParamOpHookManager._trigger_pre_backward(ctx.params)
+        gd.debuginfo(prj="mt", info=f'')
         return (None,) + grads
 
 
 def _is_grad_tensor(obj) -> bool:
+    gd.debuginfo(prj="mt", info=f'')
     if torch.is_tensor(obj):
         if obj.grad_fn is not None or obj.requires_grad:
             return True
@@ -131,6 +144,7 @@ def _is_grad_tensor(obj) -> bool:
 
 
 def _flatten_grad_args(args) -> Tuple[list, list, List[bool], TreeSpec]:
+    gd.debuginfo(prj="mt", info=f'')
     flat_args, spec = tree_flatten(args)
     grad_args = []
     other_args = []
@@ -150,4 +164,6 @@ def _merge_args(grad_args, other_args, grad_flags, spec):
     grad_iter = iter(grad_args)
     other_iter = iter(other_args)
     flat_args = [next(grad_iter) if flag else next(other_iter) for flag in grad_flags]
+    gd.debuginfo(prj="mt", info=f'')
+
     return tree_unflatten(flat_args, spec)

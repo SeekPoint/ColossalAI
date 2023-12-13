@@ -33,8 +33,10 @@ class ScaledUpperTriangMaskedSoftmax(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, inputs, scale):
+        gd.debuginfo(prj="mt", info=f'')
         global scaled_upper_triang_masked_softmax
         if scaled_upper_triang_masked_softmax:
+            gd.debuginfo(prj="mt", info=f'')
             scaled_upper_triang_masked_softmax = ScaledUpperTrainglemaskedSoftmaxBuilder().load()
 
         scale_t = torch.tensor([scale])
@@ -45,6 +47,7 @@ class ScaledUpperTriangMaskedSoftmax(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, output_grads):
+        gd.debuginfo(prj="mt", info=f'')
         softmax_results, scale_t = ctx.saved_tensors
         input_grads = scaled_upper_triang_masked_softmax.backward(output_grads, softmax_results, scale_t[0])
 
@@ -62,12 +65,14 @@ class ScaledMaskedSoftmax(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, inputs, mask, scale):
+        gd.debuginfo(prj="mt", info=f'')
         scale_t = torch.tensor([scale])
 
         # build and load kernel if not pre-built
         global scaled_masked_softmax
         if scaled_masked_softmax is None:
             scaled_masked_softmax = ScaledMaskedSoftmaxBuilder().load()
+            gd.debuginfo(prj="mt", info=f'')
 
         softmax_results = scaled_masked_softmax.forward(inputs, mask, scale_t[0])
         ctx.save_for_backward(softmax_results, scale_t)
@@ -75,6 +80,7 @@ class ScaledMaskedSoftmax(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, output_grads):
+        gd.debuginfo(prj="mt", info=f'')
         softmax_results, scale_t = ctx.saved_tensors
 
         input_grads = scaled_masked_softmax.backward(output_grads, softmax_results, scale_t[0])
@@ -105,6 +111,7 @@ class FusedScaleMaskSoftmax(nn.Module):
         softmax_in_fp32,
         scale,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super(FusedScaleMaskSoftmax, self).__init__()
         self.input_in_fp16 = input_in_fp16
         self.input_in_bf16 = input_in_bf16
@@ -120,15 +127,21 @@ class FusedScaleMaskSoftmax(nn.Module):
         assert self.scale is None or softmax_in_fp32, "softmax should be in fp32 when scaled"
 
     def forward(self, input, mask):
+        gd.debuginfo(prj="mt", info=f'')
+
         # [b, np, sq, sk]
         assert input.dim() == 4
 
         if self.is_kernel_available(mask, *input.size()):
+            gd.debuginfo(prj="mt", info=f'')
             return self.forward_fused_softmax(input, mask)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return self.forward_torch_softmax(input, mask)
 
     def is_kernel_available(self, mask, b, np, sq, sk):
+        gd.debuginfo(prj="mt", info=f'')
+
         attn_batches = b * np
 
         if (
@@ -139,22 +152,29 @@ class FusedScaleMaskSoftmax(nn.Module):
             and sq % 4 == 0  # sq must be divisor of 4
             and attn_batches % 4 == 0  # np * b must be divisor of 4
         ):
+            gd.debuginfo(prj="mt", info=f'')
             if 0 <= sk <= 2048:
                 batch_per_block = self.get_batch_per_block(sq, sk, b, np)
 
                 if self.attn_mask_type.value > 1:
+                    gd.debuginfo(prj="mt", info=f'')
                     if attn_batches % batch_per_block == 0:
+                        gd.debuginfo(prj="mt", info=f'')
                         return True
                 else:
+                    gd.debuginfo(prj="mt", info=f'')
                     if sq % batch_per_block == 0:
+                        gd.debuginfo(prj="mt", info=f'')
                         return True
         return False
 
     def forward_fused_softmax(self, input, mask):
+        gd.debuginfo(prj="mt", info=f'')
         b, np, sq, sk = input.size()
         scale = self.scale if self.scale is not None else 1.0
 
         if self.attn_mask_type.value > 1:
+            gd.debuginfo(prj="mt", info=f'')
             assert sq == sk, "causal mask is only for self attention"
 
             # input is 3D tensor (attn_batches, sq, sk)
@@ -162,30 +182,39 @@ class FusedScaleMaskSoftmax(nn.Module):
             probs = ScaledUpperTriangMaskedSoftmax.apply(input, scale)
             return probs.view(b, np, sq, sk)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # input is 4D tensor (b, np, sq, sk)
             return ScaledMaskedSoftmax.apply(input, mask, scale)
 
     def forward_torch_softmax(self, input, mask):
+        gd.debuginfo(prj="mt", info=f'')
         if self.input_in_float16 and self.softmax_in_fp32:
             input = input.float()
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.scale is not None:
             input = input * self.scale
+            gd.debuginfo(prj="mt", info=f'')
+
         mask_output = self.mask_func(input, mask) if mask is not None else input
         probs = torch.nn.Softmax(dim=-1)(mask_output)
 
         if self.input_in_float16 and self.softmax_in_fp32:
             if self.input_in_fp16:
                 probs = probs.half()
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 probs = probs.bfloat16()
+                gd.debuginfo(prj="mt", info=f'')
 
         return probs
 
     def get_batch_per_block(self, sq, sk, b, np):
+        gd.debuginfo(prj="mt", info=f'')
         # build and load kernel if not pre-built
         global scaled_masked_softmax
         if scaled_masked_softmax is None:
             scaled_masked_softmax = ScaledMaskedSoftmaxBuilder().load()
+            gd.debuginfo(prj="mt", info=f'')
 
         return scaled_masked_softmax.get_batch_per_block(sq, sk, b, np)

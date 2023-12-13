@@ -27,6 +27,7 @@ def calculate_padding(numel, unit_size):
 
 
 def shuffle_by_round_robin(tensor_list, num_partitions):
+    gd.debuginfo(prj="mt", info=f'')
     partitions = dict()
 
     for tensor_idx, tensor in enumerate(tensor_list):
@@ -50,6 +51,7 @@ def shuffle_by_round_robin(tensor_list, num_partitions):
 
 # create a flat tensor aligned at the alignment boundary
 def flatten_dense_tensors_with_padding(tensor_list, unit_size):
+    gd.debuginfo(prj="mt", info=f'')
     num_elements = count_numel(tensor_list)
     padding = calculate_padding(num_elements, unit_size=unit_size)
 
@@ -126,6 +128,8 @@ def reduce_tensor_dp_group(
     :type dst_rank: int, optional
     :type pg: ProcessGroup, optional
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     # use the original dtype
     if dtype is None:
         dtype = tensor.dtype
@@ -158,6 +162,7 @@ def reduce_tensor_dp_group(
 
 
 def has_inf_or_nan(tensor):
+    gd.debuginfo(prj="mt", info=f'')
     try:
         # if tensor is half, the .float() incurs an additional deep copy, but it's necessary if
         # Pytorch's .sum() creates a one-element tensor of the same type as tensor
@@ -184,6 +189,7 @@ def release_param_grad(tensor_list):
 
 
 def calculate_global_norm_from_list(norm_list):
+    gd.debuginfo(prj="mt", info=f'')
     """Compute total from a list of norms"""
     total_norm = 0.0
     for norm in norm_list:
@@ -203,6 +209,7 @@ def sync_tensor(flat_tensor, tensor_list):
     :type flat_tensor: torch.Tensor
     :type tensor_list: List[torch.Tensor]
     """
+    gd.debuginfo(prj="mt", info=f'')
     updated_params = unflatten(flat_tensor, tensor_list)
 
     # update the tensor data

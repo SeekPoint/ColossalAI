@@ -9,6 +9,7 @@ from ...registry import meta_patched_module
 @meta_patched_module.register(torch.nn.BatchNorm2d)
 @meta_patched_module.register(torch.nn.BatchNorm3d)
 def torch_nn_normalize(self, input):
+    gd.debuginfo(prj="mt", info=f'')
     # check shape
     if isinstance(self, torch.nn.BatchNorm1d):
         assert input.dim() in [2, 3]

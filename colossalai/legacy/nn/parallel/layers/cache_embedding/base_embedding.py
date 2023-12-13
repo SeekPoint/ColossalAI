@@ -16,6 +16,7 @@ class BaseEmbeddingBag(abc.ABC, nn.Module):
         mode="mean",
         include_last_offset=False,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super(BaseEmbeddingBag, self).__init__()
         self.num_embeddings = num_embeddings
         self.embedding_dim = embedding_dim

@@ -16,6 +16,7 @@ class Unpad(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, tensor: torch.Tensor, indices: torch.Tensor):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.save_for_backward(indices)
         # [b, s, ...]
         assert tensor.ndim >= 3
@@ -27,6 +28,7 @@ class Unpad(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         (indices,) = ctx.saved_tensors
         # [ntokens, ...]
         grad = torch.zeros(ctx.shape, dtype=grad_output.dtype, device=grad_output.device)
@@ -44,6 +46,7 @@ class Repad(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, tensor: torch.Tensor, indices: torch.Tensor, batch_size: int, seq_len: int):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.save_for_backward(indices)
         # [ntokens, ...]
         tensor = tensor
@@ -54,6 +57,7 @@ class Repad(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         (indices,) = ctx.saved_tensors
         # [b*s, ...]
         grad = grad_output[indices]
@@ -73,10 +77,13 @@ class SeqLenInfo:
         if attn_mask is not None:
             indices = torch.nonzero(attn_mask.flatten(), as_tuple=False).flatten().to(device)
             seqlens = attn_mask.sum(dim=-1, dtype=torch.int32).flatten()
+            gd.debuginfo(prj="mt", info=f'')
         else:
             batch_size, tgt_len = size[0], size[1]
             indices = torch.arange(batch_size * tgt_len, dtype=torch.long, device=device)
             seqlens = torch.LongTensor([tgt_len] * batch_size, device=device)
+            gd.debuginfo(prj="mt", info=f'')
+
         max_seqlen = max(seqlens)
         cu_seqlens = F.pad(torch.cumsum(seqlens, dim=0, dtype=torch.int32), (1, 0)).to(device)
         return SeqLenInfo(seqlens.tolist(), indices, max_seqlen, cu_seqlens)

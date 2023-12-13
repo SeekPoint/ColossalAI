@@ -13,7 +13,7 @@ if HAS_TRITON:
     """
     this kernel function is modified from https://triton-lang.org/main/getting-started/tutorials/03-matrix-multiplication.html
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     @triton.jit
     def qkv_gemm_4d_kernel(
         a_ptr,

@@ -30,6 +30,7 @@ class BlipPolicy(Policy):
         return self.model
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         from transformers.models.blip_2.modeling_blip_2 import (
             Blip2Attention,
             Blip2EncoderLayer,
@@ -341,10 +342,12 @@ class BlipPolicy(Policy):
 # Blip2Model
 class Blip2ModelPolicy(BlipPolicy):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
 
 # Blip2ForConditionalGeneration
 class Blip2ForConditionalGenerationPolicy(BlipPolicy):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()

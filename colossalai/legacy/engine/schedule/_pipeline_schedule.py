@@ -18,6 +18,7 @@ from ._base_schedule import BaseSchedule
 from pydebug import gd, infoTensor
 
 def get_tensor_shape():
+    gd.debuginfo(prj="mt", info=f'')
     if hasattr(gpc.config, "TENSOR_SHAPE"):
         return gpc.config.TENSOR_SHAPE
 
@@ -50,6 +51,7 @@ def get_tensor_shape():
 
 
 def pack_return_tensors(return_tensors):
+    gd.debuginfo(prj="mt", info=f'')
     output, label = tuple(zip(*return_tensors))
     if isinstance(output[0], torch.Tensor):
         output = torch.cat(output, dim=0)
@@ -102,6 +104,7 @@ class PipelineSchedule(BaseSchedule):
         tensor_shape: Union[torch.Size, List[int], Tuple[int]] = None,
         scatter_gather_tensors: bool = False,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         # we need to make sure that the signature of the data_process_func is valid
         if data_process_func:
             sig = inspect.signature(data_process_func)
@@ -463,6 +466,7 @@ class InterleavedPipelineSchedule(PipelineSchedule):
         tensor_shape: Union[torch.Size, List[int], Tuple[int]] = None,
         scatter_gather_tensors: bool = False,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         """A helper schedule class for pipeline parallelism running environment.
         It uses interleaved 1F1B strategy. Other properties are similar as
         :class:`NonPipelineSchedule`.

@@ -12,6 +12,7 @@ import torch
 from pydebug import gd, infoTensor
 
 def ensure_path_exists(filename: str):
+    gd.debuginfo(prj="mt", info=f'')
     # ensure the path exists
     dirpath = os.path.dirname(filename)
     if not os.path.exists(dirpath):
@@ -20,6 +21,7 @@ def ensure_path_exists(filename: str):
 
 @contextmanager
 def conditional_context(context_manager, enable=True):
+    gd.debuginfo(prj="mt", info=f'')
     if enable:
         with context_manager:
             yield
@@ -33,9 +35,10 @@ def is_ddp_ignored(p):
 
 def disposable(func: Callable) -> Callable:
     executed = False
-
+    gd.debuginfo(prj="mt", info=f'')
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         nonlocal executed
         if not executed:
             executed = True
@@ -46,11 +49,13 @@ def disposable(func: Callable) -> Callable:
 
 def free_storage(data: torch.Tensor) -> None:
     """Free underlying storage of a Tensor."""
+    gd.debuginfo(prj="mt", info=f'')
     if data.storage().size() > 0:
         # Since we're modifying the Tensor's Storage directly, make sure the Tensor
         # is the sole occupant of the Storage.
         assert data.storage_offset() == 0
         data.storage().resize_(0)
+        gd.debuginfo(prj="mt", info=f'')
 
 
 def _cast_float(args, dtype: torch.dtype):
@@ -60,10 +65,12 @@ def _cast_float(args, dtype: torch.dtype):
         args = type(args)(_cast_float(t, dtype) for t in args)
     elif isinstance(args, dict):
         args = {k: _cast_float(v, dtype) for k, v in args.items()}
+    gd.debuginfo(prj="mt", info=f'')
     return args
 
 
 def set_seed(seed):
+    gd.debuginfo(prj="mt", info=f'')
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)

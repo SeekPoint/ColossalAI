@@ -7,6 +7,7 @@ from colossalai.legacy.zero.gemini.stateful_tensor import StatefulTensor
 
 
 def get_gradient_predivide_factor(world_size: int) -> float:
+    gd.debuginfo(prj="mt", info=f'')
     factor: int = 1
     while world_size % factor == 0 and world_size / factor > factor:
         factor *= 2
@@ -14,6 +15,7 @@ def get_gradient_predivide_factor(world_size: int) -> float:
 
 
 def free_storage(data: torch.Tensor) -> None:
+    gd.debuginfo(prj="mt", info=f'')
     """Free underlying storage of a Tensor."""
     if data.storage().size() > 0:
         # Since we're modifying the Tensor's Storage directly, make sure the Tensor
@@ -24,6 +26,7 @@ def free_storage(data: torch.Tensor) -> None:
 
 @torch.no_grad()
 def alloc_storage(data: torch.Tensor, size: torch.Size) -> None:
+    gd.debuginfo(prj="mt", info=f'')
     """Allocate storage for a tensor."""
     if data.storage().size() == size.numel():  # no need to reallocate
         return
@@ -32,6 +35,7 @@ def alloc_storage(data: torch.Tensor, size: torch.Size) -> None:
 
 
 def cast_tensor_to_fp16(tensor: torch.Tensor) -> torch.Tensor:
+    gd.debuginfo(prj="mt", info=f'')
     if isinstance(tensor, StatefulTensor):
         tensor = tensor.payload
     if torch.is_floating_point(tensor) and tensor.dtype is torch.float32:
@@ -40,6 +44,7 @@ def cast_tensor_to_fp16(tensor: torch.Tensor) -> torch.Tensor:
 
 
 def cast_tensor_to_fp32(tensor: Union[torch.Tensor, StatefulTensor]) -> torch.Tensor:
+    gd.debuginfo(prj="mt", info=f'')
     if isinstance(tensor, StatefulTensor):
         tensor = tensor.payload
 
@@ -49,6 +54,7 @@ def cast_tensor_to_fp32(tensor: Union[torch.Tensor, StatefulTensor]) -> torch.Te
 
 
 def cast_tensor_to_bf16(tensor: torch.Tensor) -> torch.Tensor:
+    gd.debuginfo(prj="mt", info=f'')
     if isinstance(tensor, StatefulTensor):
         tensor = tensor.payload
     if torch.is_floating_point(tensor) and tensor.dtype is torch.float32:
@@ -57,6 +63,7 @@ def cast_tensor_to_bf16(tensor: torch.Tensor) -> torch.Tensor:
 
 
 def apply_to_tensors(x: Any, fn: Callable):
+    gd.debuginfo(prj="mt", info=f'')
     if torch.is_tensor(x):
         return fn(x)
     elif isinstance(x, list):
@@ -70,10 +77,12 @@ def apply_to_tensors(x: Any, fn: Callable):
 
 
 def cast_float_arguments(fn: Callable, *args: Any, **kwargs: Any) -> Tuple[Any, Any]:
+    gd.debuginfo(prj="mt", info=f'')
     return apply_to_tensors(args, fn), apply_to_tensors(kwargs, fn)
 
 
 def chunk_and_pad(tensor: torch.Tensor, num_chunks: int) -> List[torch.Tensor]:
+    gd.debuginfo(prj="mt", info=f'')
     """Chunk a given Tensor into num_chunks parts and add any necessary padding."""
     chunks = list(torch.flatten(tensor).chunk(num_chunks))
     # torch.chunk may return fewer than num_chunks chunks, pad accordingly.

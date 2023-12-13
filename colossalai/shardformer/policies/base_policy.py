@@ -71,6 +71,7 @@ class Policy(ABC):
     """
 
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.shard_config: Optional[ShardConfig] = None
         self.model: Optional[Module] = None
 
@@ -81,6 +82,7 @@ class Policy(ABC):
         Args:
             model (:class:`nn.Module`): The model to be perform
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.model = model
 
     def set_shard_config(self, shard_config: ShardConfig) -> None:
@@ -90,12 +92,15 @@ class Policy(ABC):
         Args:
             shard_config (:class:`ShardConfig`): The shard config to be perform
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.shard_config = shard_config
         self.config_sanity_check()
 
     @property
     def pipeline_stage_manager(self) -> Optional[PipelineStageManager]:
+        gd.debuginfo(prj="mt", info=f'')
         if self.shard_config is not None:
+            gd.debuginfo(prj="mt", info=f'')
             return self.shard_config.pipeline_stage_manager
         return None
 
@@ -142,18 +147,23 @@ class Policy(ABC):
             policy (Dict[Union[str, nn.Module], ModulePolicyDescription]): the policy to be updated
             target_key (Union[str, nn.Module]): the key of the policy to be updated
         """
+        gd.debuginfo(prj="mt", info=f'')
         # convert to list
         if isinstance(description, SubModuleReplacementDescription):
             description = [description]
+            gd.debuginfo(prj="mt", info=f'')
 
         # append or create a new description
         if target_key in policy:
             if policy[target_key].sub_module_replacement is None:
                 policy[target_key].sub_module_replacement = description
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 policy[target_key].sub_module_replacement.extend(description)
+                gd.debuginfo(prj="mt", info=f'')
         else:
             policy[target_key] = ModulePolicyDescription(sub_module_replacement=description)
+            gd.debuginfo(prj="mt", info=f'')
 
         return policy
 
@@ -174,10 +184,13 @@ class Policy(ABC):
         if target_key in policy:
             if policy[target_key].method_replacement is None:
                 policy[target_key].method_replacement = description
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 policy[target_key].method_replacement.update(description)
+                gd.debuginfo(prj="mt", info=f'')
         else:
             policy[target_key] = ModulePolicyDescription(method_replacement=description)
+            gd.debuginfo(prj="mt", info=f'')
 
         return policy
 
@@ -199,6 +212,7 @@ class Policy(ABC):
 
     @staticmethod
     def distribute_layers(num_layers: int, num_stages: int) -> List[int]:
+        gd.debuginfo(prj="mt", info=f'')
         """Divide layers into stages"""
         quotient = num_layers // num_stages
         remainder = num_layers % num_stages
@@ -208,6 +222,7 @@ class Policy(ABC):
 
         # deal with the rest layers
         if remainder > 0:
+            gd.debuginfo(prj="mt", info=f'')
             start_position = num_stages // 2 - remainder // 2
             for i in range(start_position, start_position + remainder):
                 layers_per_stage[i] += 1
@@ -222,5 +237,6 @@ class Policy(ABC):
 
         start_idx = num_layers_per_stage_accumulated[stage]
         end_idx = num_layers_per_stage_accumulated[stage + 1]
+        gd.debuginfo(prj="mt", info=f'')
 
         return [start_idx, end_idx]

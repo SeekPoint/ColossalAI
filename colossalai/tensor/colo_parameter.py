@@ -11,19 +11,23 @@ WHITE_LIST_FUNCS = {torch.Tensor.__getitem__}
 
 
 def is_no_hook_op(func) -> bool:
+    gd.debuginfo(prj="mt", info=f'')
     return func.__name__.startswith("__") and func not in WHITE_LIST_FUNCS
 
 
 def filter_colo_parameters(*args, **kwargs):
+    gd.debuginfo(prj="mt", info=f'')
     param_list = []
 
     def get_colo_parameters(element) -> None:
         if isinstance(element, list) or isinstance(element, tuple):
+            gd.debuginfo(prj="mt", info=f'')
             for e in element:
                 get_colo_parameters(e)
         elif isinstance(element, dict):
             raise RuntimeError("Found Dict: ColoParameter can't deal with complicated arguments.")
         elif isinstance(element, ColoParameter):
+            gd.debuginfo(prj="mt", info=f'')
             param_list.append(element)
         return
 
@@ -36,6 +40,7 @@ def filter_colo_parameters(*args, **kwargs):
 
 
 def replace_args(args, kwargs, new_args):
+    gd.debuginfo(prj="mt", info=f'')
     args = new_args[: len(args)]
     for k, v in zip(kwargs.keys(), new_args[len(args) :]):
         kwargs[k] = v
@@ -46,17 +51,22 @@ class ColoParameter(ColoTensor, torch.nn.Parameter):
     r"""A kind of ColoTensor to be considered as a module parameter."""
 
     def __new__(cls, data: Optional[torch.Tensor] = None, requires_grad: bool = True) -> "ColoParameter":
+        gd.debuginfo(prj="mt", info=f'')
         if data is None:
             data = torch.empty(0)
         return torch.Tensor._make_subclass(cls, data, requires_grad)
 
     @classmethod
     def __torch_function__(cls, func, types, args=..., kwargs=None):
+        gd.debuginfo(prj="mt", info=f'')
         if kwargs is None:
             kwargs = {}
+            gd.debuginfo(prj="mt", info=f'')
         if ColoParamOpHookManager.has_hook() and not is_no_hook_op(func):
             params = filter_colo_parameters(*args, **kwargs)
+            gd.debuginfo(prj="mt", info=f'')
             if len(params) > 0:
+                gd.debuginfo(prj="mt", info=f'')
                 with torch._C.DisableTorchFunction():
                     new_args = ColoParamOpHookManager.pre_op(params, *args, *kwargs.values())
                 args, kwargs = replace_args(args, kwargs, new_args)
@@ -68,8 +78,10 @@ class ColoParameter(ColoTensor, torch.nn.Parameter):
 
     def __deepcopy__(self, memo):
         if id(self) in memo:
+            gd.debuginfo(prj="mt", info=f'')
             return memo[id(self)]
         else:
+            gd.debuginfo(prj="mt", info=f'')
             with torch._C.DisableTorchFunction():
                 data = self.data.clone()
             tensor = ColoParameter(data, self.requires_grad)

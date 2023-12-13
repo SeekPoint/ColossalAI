@@ -15,9 +15,11 @@ class SoftmaxGenerator(FollowingStrategyGenerator):
     """
 
     def validate(self) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         return super().validate()
 
     def update_compute_cost(self, strategy: ShardingStrategy):
+        gd.debuginfo(prj="mt", info=f'')
         """
         Compute the computation cost per device with this specific strategy.
         """
@@ -36,6 +38,7 @@ class SoftmaxGenerator(FollowingStrategyGenerator):
         """
         Compute the memory cost per device with this specific strategy.
         """
+        gd.debuginfo(prj="mt", info=f'')
         forward_size_mapping = {
             "input": self._compute_size_in_bytes(strategy, "input"),
             "output": self._compute_size_in_bytes(strategy, "output"),
@@ -63,6 +66,7 @@ class SoftmaxGenerator(FollowingStrategyGenerator):
         strategy.memory_cost = memory_cost
 
     def collate_strategies(self) -> List[ShardingStrategy]:
+        gd.debuginfo(prj="mt", info=f'')
         strategy_list = []
         for index, strategy in enumerate(self.predecessor_node.strategies_vector):
             dim_partition_dict_mapping = {}
@@ -84,6 +88,7 @@ class SoftmaxGenerator(FollowingStrategyGenerator):
             # we keep same strategies with different name for node merging, and it will not increase the searching space,
             # because in solver, this node will be merged into other nodes, and solver will not create a new variable for this node.
             name = f'{sharding_spec_mapping["input"].sharding_sequence} -> {sharding_spec_mapping["output"].sharding_sequence}_{index}'
+            gd.debuginfo(prj="mt", info=f'name={name}')
 
             strategy = self.get_sharding_strategy(
                 name=name,

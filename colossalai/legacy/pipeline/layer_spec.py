@@ -7,6 +7,7 @@ class LayerSpec:
     """ """
 
     def __init__(self, typename, *module_args, **module_kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         self.typename = typename
         self.module_args = module_args
         self.module_kwargs = module_kwargs

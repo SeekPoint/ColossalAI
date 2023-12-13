@@ -75,6 +75,7 @@ class CaiInferEngine:
         do_sample: bool = False,
         num_beams: int = 1,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         assert model.__class__.__name__ in _supported_models, f"Model {model.__class__.__name__} is not supported."
         assert (
             tp_size * pp_size == dist.get_world_size()
@@ -93,17 +94,21 @@ class CaiInferEngine:
         if dtype == "fp16":
             self.dtype = torch.float16
             model.half()
+            gd.debuginfo(prj="mt", info=f'')
         elif dtype == "bf16":
             self.dtype = torch.bfloat16
             model.to(torch.bfloat16)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             self.dtype = torch.float32
+            gd.debuginfo(prj="mt", info=f'')
 
         # Init pg mesh
         pg_mesh = ProcessGroupMesh(pp_size, tp_size)
 
         stage_manager = None
         if pp_size > 1:
+            gd.debuginfo(prj="mt", info=f'')
             stage_manager = PipelineStageManager(pg_mesh, PP_AXIS, True)
             self.cache_manager_list = [
                 self._init_manager(model, max_batch_size, max_input_len, max_output_len)
@@ -135,6 +140,7 @@ class CaiInferEngine:
             input_list, (BatchEncoding, dict)
         ), f"Only accept BatchEncoding or dict as input, but get {input_list.__class__.__name__}."
         if isinstance(input_list, BatchEncoding):
+            gd.debuginfo(prj="mt", info=f'')
             input_list = input_list.data
         out, timestamp = self.schedule.generate_step(self.model, iter([input_list]))
         if self.verbose:
@@ -143,6 +149,7 @@ class CaiInferEngine:
             return out
 
     def _shardformer(self, model, model_policy, stage_manager, tp_group):
+        gd.debuginfo(prj="mt", info=f'')
         shardconfig = ShardConfig(
             tensor_parallel_process_group=tp_group,
             pipeline_stage_manager=stage_manager,
@@ -158,6 +165,7 @@ class CaiInferEngine:
         return shard_model.cuda()
 
     def _init_manager(self, model, max_batch_size: int, max_input_len: int, max_output_len: int) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         max_total_token_num = max_batch_size * (max_input_len + max_output_len)
         head_dim = model.config.hidden_size // model.config.num_attention_heads
         head_num = model.config.num_attention_heads

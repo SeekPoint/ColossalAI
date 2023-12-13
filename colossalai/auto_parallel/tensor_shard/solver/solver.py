@@ -50,6 +50,7 @@ class Solver:
             solution_numbers: If solution_numbers is larger than one, solver will us a serious of solutions based on different memory budget.
             memory_increasing_coefficient: If solution_numbers is larger than one, we will use this coefficient to generate new memory budget.
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.graph = graph
         self.strategies_constructor = strategies_constructor
         self.cost_graph = cost_graph
@@ -61,8 +62,10 @@ class Solver:
         self.solution_numbers = solution_numbers
         self.forward_only = forward_only
         if self.solution_numbers > 1:
+            gd.debuginfo(prj="mt", info=f'')
             self.memory_increasing_coefficient = memory_increasing_coefficient
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.memory_increasing_coefficient = 1
         # temporarily we use all nodes as liveness list, we count the backward memory cost together with
         # forward memory cost into the node memory cost, and no activation checkpoint is used in this phase.
@@ -81,6 +84,7 @@ class Solver:
         Therefore, the index of those strategies are copied from the previous node. This method is used to recover the strategy index of those merged
         node.
         """
+        gd.debuginfo(prj="mt", info=f'')
         for node_index, node in enumerate(self.nodes):
             if node.strategies_vector.check_merge():
                 # the merged node has only one input, and its strategies follow the input sharding strategy
@@ -93,6 +97,7 @@ class Solver:
                         break
 
     def _generate_node_index_dict(self) -> Dict[Node, int]:
+        gd.debuginfo(prj="mt", info=f'')
         node_index_dict = {}
         for index, strategies_vector in enumerate(self.leaf_strategies):
             node_index_dict[strategies_vector.node] = index
@@ -102,6 +107,7 @@ class Solver:
         """
         Extract information from components for solver.
         """
+        gd.debuginfo(prj="mt", info=f'')
         node_nums = len(self.leaf_strategies)
         memory_budget = self.memory_budget
 
@@ -228,7 +234,7 @@ class Solver:
         """
         Call the solver with serialized arguments.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         tic = time.time()
 
         for x in [strategies_len, edge_pairs, compute_costs, communication_costs, memory_costs, resharding_costs]:
@@ -499,7 +505,9 @@ class Solver:
         Call the solver with serialized arguments and handle python errors. Additionally,
         we could give a serious of solutions with different memory budget.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if self.solution_numbers == 1:
+            gd.debuginfo(prj="mt", info=f'')
             args = self._prepare_data_for_solver()
             ret = self._call_solver_serialized_args(*args)
 

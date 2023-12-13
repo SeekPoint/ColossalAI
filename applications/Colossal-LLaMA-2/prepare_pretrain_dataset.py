@@ -24,6 +24,7 @@ logger = get_dist_logger()
 
 
 def main():
+    gd.debuginfo(prj="mt", info=f'')
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--data_input_dirs",
@@ -118,6 +119,7 @@ def main():
         # Save each jsonl spliced dataset.
         output_index = "0" * (5 - len(str(index))) + str(index)
         output_name = f"part-{output_index}"
+        gd.debuginfo(prj="mt", info=f'output_name={output_name}')
         output_jsonl_path = os.path.join(args.data_jsonl_output_dir, output_name + ".jsonl")
         st = time.time()
         with open(file=output_jsonl_path, mode="w", encoding="utf-8") as fp_writer:

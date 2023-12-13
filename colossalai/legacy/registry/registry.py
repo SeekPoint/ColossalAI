@@ -19,6 +19,7 @@ class Registry:
         self._name = name
         self._registry = dict()
         self._third_party_lib = third_party_library
+        gd.debuginfo(prj="mt", info=f'')
 
     @property
     def name(self):

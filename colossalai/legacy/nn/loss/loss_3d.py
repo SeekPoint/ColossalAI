@@ -33,6 +33,7 @@ class CrossEntropyLoss3D(_Loss):
     """
 
     def __init__(self, reduction=True, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.input_parallel_mode = get_parallel_mode_from_env(INPUT_GROUP_3D)
         self.weight_parallel_mode = get_parallel_mode_from_env(WEIGHT_GROUP_3D)
@@ -47,6 +48,7 @@ class CrossEntropyLoss3D(_Loss):
             logits (:class:`torch.tensor`): Predicted unnormalized scores (often referred to as logits).
             targets (:class:`torch.tensor`): Ground truth class indices or class probabilities.
         """
+        gd.debuginfo(prj="mt", info=f'')
         targets = split_tensor_3d(targets, 0, self.weight_parallel_mode)
         targets = split_tensor_3d(targets, 0, self.input_parallel_mode)
         loss = cross_entropy(logits, targets, reduction="none", *self.loss_args, **self.loss_kwargs)
@@ -63,6 +65,7 @@ class _VocabParallelCrossEntropy3D(torch.autograd.Function):
     @staticmethod
     @custom_fwd(cast_inputs=torch.float32)
     def forward(ctx, logits, targets, output_parallel_mode):
+        gd.debuginfo(prj="mt", info=f'')
         # logits: [b/q^2, c/q]
         # labels: [b/q^2]
         # loss: [b/q^2]
@@ -100,6 +103,7 @@ class _VocabParallelCrossEntropy3D(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx, output_grad):
+        gd.debuginfo(prj="mt", info=f'')
         # Retrieve tensors from the forward path.
         softmax, target_mask, masked_target = ctx.saved_tensors
 
@@ -126,6 +130,7 @@ class VocabParallelCrossEntropyLoss3D(_Loss):
     """
 
     def __init__(self, reduction=True):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.input_parallel_mode = get_parallel_mode_from_env(INPUT_GROUP_3D)
         self.weight_parallel_mode = get_parallel_mode_from_env(WEIGHT_GROUP_3D)
@@ -133,6 +138,7 @@ class VocabParallelCrossEntropyLoss3D(_Loss):
         self.reduction_mean = reduction
 
     def forward(self, logits, targets):
+        gd.debuginfo(prj="mt", info=f'')
         """Calculate loss between logits and targets.
 
         Args:

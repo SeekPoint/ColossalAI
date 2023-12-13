@@ -25,7 +25,7 @@ def convert_to_zero_v2(
     :return: (model, optimizer)
     :rtype: Tuple
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     logger = get_dist_logger("convert_to_zero_v2")
 
     logger.info(f"optimizer_config is {optimizer_config}", ranks=[0])

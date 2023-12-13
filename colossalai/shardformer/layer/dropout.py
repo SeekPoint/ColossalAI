@@ -29,6 +29,7 @@ class DropoutForParallelInput(ParallelModule, nn.Dropout):
         # offset the seed with randomizer index and rank
         seed = torch.random.initial_seed()
         self.randomizer = create_randomizer_with_offset(seed, process_group=process_group)
+        gd.debuginfo(prj="mt", info=f'')
 
     @staticmethod
     def from_native_module(
@@ -37,11 +38,13 @@ class DropoutForParallelInput(ParallelModule, nn.Dropout):
         """
         Create a DropoutForParallelInput layer from a native dropout layer.
         """
+        gd.debuginfo(prj="mt", info=f'')
         p = module.p
         inplace = module.inplace
         return DropoutForParallelInput(p=p, inplace=inplace, process_group=process_group)
 
     def forward(self, input):
+        gd.debuginfo(prj="mt", info=f'')
         with self.randomizer.fork_rng():
             input = super().forward(input)
         return input
@@ -60,6 +63,7 @@ class DropoutForReplicatedInput(ParallelModule, nn.Dropout):
     """
 
     def __init__(self, p: float = 0.5, inplace: bool = False, process_group: ProcessGroup = None):
+        gd.debuginfo(prj="mt", info=f'')
         # init with nn.Dropout
         super(nn.Dropout, self).__init__(p=p, inplace=inplace)
 
@@ -74,11 +78,13 @@ class DropoutForReplicatedInput(ParallelModule, nn.Dropout):
         """
         Create a Dropout1D layer from a native dropout layer.
         """
+        gd.debuginfo(prj="mt", info=f'')
         p = module.p
         inplace = module.inplace
         return DropoutForReplicatedInput(p=p, inplace=inplace, process_group=process_group)
 
     def forward(self, input):
+        gd.debuginfo(prj="mt", info=f'')
         with self.randomizer.fork_rng():
             input = super().forward(input)
         return input

@@ -8,11 +8,14 @@ from .bias_addition_function import LinearBasedBiasFunc
 @bias_addition_function.register(torch.addbmm)
 class Addbmm(LinearBasedBiasFunc):
     def extract_kwargs_from_origin_func(self):
+        gd.debuginfo(prj="mt", info=f'')
         kwargs = {}
         if "beta" in self.kwargs:
             kwargs["beta"] = self.kwargs["beta"]
+            gd.debuginfo(prj="mt", info=f'')
         if "alpha" in self.kwargs:
             kwargs["alpha"] = self.kwargs["alpha"]
+            gd.debuginfo(prj="mt", info=f'')
         return kwargs
 
     def create_non_bias_func_proxy(self, input_proxy, other_proxy):
@@ -20,6 +23,7 @@ class Addbmm(LinearBasedBiasFunc):
         This method is used to create the non_bias_func proxy, the node created by this proxy will
         compute the main computation, such as convolution, with bias option banned.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert self.substitute_func == torch.bmm
         node_kind = "call_function"
         node_target = self.substitute_func
@@ -34,6 +38,7 @@ class Addbmm(LinearBasedBiasFunc):
         """
         This method is used to sum the input_proxy through the sum_dims.
         """
+        gd.debuginfo(prj="mt", info=f'')
         node_kind = "call_function"
         node_target = torch.sum
         node_args = (input_proxy, sum_dims)
@@ -42,6 +47,8 @@ class Addbmm(LinearBasedBiasFunc):
         return sum_proxy
 
     def generate(self):
+        gd.debuginfo(prj="mt", info=f'')
+
         # The formula for addbmm is output = beta * input + alpha * (torch.bmm(b1, b2))
 
         # doing the non-bias computation(temp_0 = torch.bmm(b1, b2))
@@ -55,15 +62,19 @@ class Addbmm(LinearBasedBiasFunc):
             beta = kwargs["beta"]
             # doing the multiplication with beta if it exists(temp_2 = beta * input)
             beta_proxy = self.create_mul_node(self.args[0], beta)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             beta_proxy = self.args[0]
+            gd.debuginfo(prj="mt", info=f'')
 
         if "alpha" in kwargs:
             alpha = kwargs["alpha"]
             # doing the multiplication with alpha if it exists(temp_3 = alpha * temp_1)
             alpha_proxy = self.create_mul_node(alpha, sum_proxy)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             alpha_proxy = sum_proxy
+            gd.debuginfo(prj="mt", info=f'')
 
         # doing the addition(temp_4 = temp_2 + temp_3)
         bias_addition_proxy = self.create_bias_addition_proxy(alpha_proxy, beta_proxy)

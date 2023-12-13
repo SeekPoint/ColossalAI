@@ -39,6 +39,7 @@ class ModuleWrapper(nn.Module):
             origin_spec_dict: The origin_spec_dict is used to record the original sharding spec of each tensor.
             comm_actions_dict: The comm_actions_dict is used to record the communication actions of each tensor.
         """
+        gd.debuginfo(prj="mt", info=f'')
         super(ModuleWrapper, self).__init__()
         self.module = module
         self.sharding_spec_dict = sharding_spec_dict
@@ -46,6 +47,7 @@ class ModuleWrapper(nn.Module):
         self.comm_actions_dict = comm_actions_dict
 
     def forward(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         return self.module(
             *args,
             sharding_spec_convert_dict=self.sharding_spec_dict,
@@ -80,28 +82,37 @@ def build_strategy_constructor(
     """
     if solver_preference == "standard":
         solver_preference = SolverPerference.STANDARD
+        gd.debuginfo(prj="mt", info=f'')
     elif solver_preference == "tp":
         solver_preference = SolverPerference.TP
+        gd.debuginfo(prj="mt", info=f'')
     elif solver_preference == "dp":
         solver_preference = SolverPerference.DP
+        gd.debuginfo(prj="mt", info=f'')
     else:
         raise ValueError(f"Invalid solver_preference: {solver_preference}")
 
     if dataloader_option == "replicated":
         dataloader_option = DataloaderOption.REPLICATED
+        gd.debuginfo(prj="mt", info=f'')
     elif dataloader_option == "distributed":
         dataloader_option = DataloaderOption.DISTRIBUTED
+        gd.debuginfo(prj="mt", info=f'')
     else:
         raise ValueError(f"Invalid dataloader_option: {dataloader_option}")
 
     if shard_option == "standard":
         shard_option = ShardOption.STANDARD
+        gd.debuginfo(prj="mt", info=f'')
     elif shard_option == "shard":
         shard_option = ShardOption.SHARD
+        gd.debuginfo(prj="mt", info=f'')
     elif shard_option == "shard_last_axis":
         shard_option = ShardOption.SHARD_LAST_AXIS
+        gd.debuginfo(prj="mt", info=f'')
     elif shard_option == "full_shard":
         shard_option = ShardOption.FULL_SHARD
+        gd.debuginfo(prj="mt", info=f'')
     else:
         raise ValueError(f"Invalid shard_option: {shard_option}")
 
@@ -119,6 +130,7 @@ def solve_solution(gm: ColoGraphModule, strategy_constructor: StrategiesConstruc
     This method is used to solve the best solution for the given graph.
     The solution is a list of integers, each integer represents the best strategy index of the corresponding node.
     """
+    gd.debuginfo(prj="mt", info=f'')
     # temporarily we use all nodes as liveness list, we count the backward memory cost together with
     # forward memory cost into the node memory cost, and no activation checkpoint is used in this phase.
     # graph_analyser = GraphAnalyser(gm)
@@ -146,6 +158,7 @@ def transform_to_sharded_model(
     will be added to the sharded graph using the runtime_preparation_pass.
     The communication node will be added into the graph using the runtime_apply_pass.
     """
+    gd.debuginfo(prj="mt", info=f'')
     gm, sharding_spec_dict, origin_spec_dict, comm_actions_dict = runtime_preparation_pass(
         gm, solution, device_mesh, strategies_constructor, overlap=overlap
     )
@@ -178,6 +191,7 @@ def initialize_device_mesh(
             mesh shape.
         logical_mesh_id(optional): the logical_mesh_id is used to specify the logical mesh id.
     """
+    gd.debuginfo(prj="mt", info=f'')
     # if world_size is not set, use the world size from torch.distributed
     if world_size == -1:
         world_size = dist.get_world_size()
@@ -187,13 +201,16 @@ def initialize_device_mesh(
     physical_mesh = torch.tensor(physical_devices)
 
     if alpha_beta_dict is None:
+        gd.debuginfo(prj="mt", info=f'')
         # if alpha_beta_dict is not given, use a series of executions to profile alpha and beta values for each device
         ab_profiler = AlphaBetaProfiler(physical_devices)
         alpha_beta_dict = ab_profiler.alpha_beta_dict
     else:
+        gd.debuginfo(prj="mt", info=f'')
         ab_profiler = AlphaBetaProfiler(physical_devices, alpha_beta_dict=alpha_beta_dict)
 
     if logical_mesh_shape is None and logical_mesh_id is None:
+        gd.debuginfo(prj="mt", info=f'')
         # search for the best logical mesh shape
         logical_mesh_id = ab_profiler.search_best_logical_mesh()
         logical_mesh_id = torch.Tensor(logical_mesh_id).to(torch.int)
@@ -203,6 +220,7 @@ def initialize_device_mesh(
         mesh_alpha, mesh_beta = ab_profiler.extract_alpha_beta_for_device_mesh()
 
     elif logical_mesh_shape is not None and logical_mesh_id is None:
+        gd.debuginfo(prj="mt", info=f'')
         logical_mesh_id = physical_mesh.reshape(logical_mesh_shape)
 
         # extract alpha and beta values for the chosen logical mesh shape
@@ -258,6 +276,7 @@ def initialize_model(
             solution will be used to debug or help to analyze the sharding result. Therefore, we will not just
             return a series of integers, but return the best strategies.
     """
+    gd.debuginfo(prj="mt", info=f'')
     tracer = ColoTracer(trace_act_ckpt=True, bias_addition_split=True)
 
     graph = tracer.trace(root=model, meta_args=meta_args)
@@ -275,10 +294,13 @@ def initialize_model(
         shard_option=shard_option,
     )
     if load_solver_solution:
+        gd.debuginfo(prj="mt", info=f'')
         solution = torch.load(solution_path)
     else:
+        gd.debuginfo(prj="mt", info=f'')
         solution = solve_solution(gm, strategies_constructor, memory_budget)
         if save_solver_solution:
+            gd.debuginfo(prj="mt", info=f'')
             torch.save(solution, solution_path)
 
     gm, sharding_spec_dicts = transform_to_sharded_model(
@@ -288,12 +310,14 @@ def initialize_model(
     model_to_return = ModuleWrapper(gm, *sharding_spec_dicts)
 
     if return_solution:
+        gd.debuginfo(prj="mt", info=f'')
         solution_to_return = []
         nodes = [strategies_vector.node for strategies_vector in strategies_constructor.leaf_strategies]
         for index, node in enumerate(nodes):
             solution_to_return.append(f"{node.name} {node.strategies_vector[solution[index]].name}")
         return model_to_return, solution_to_return
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return model_to_return
 
 
@@ -350,6 +374,7 @@ def autoparallelize(
         alpha_beta_dict=alpha_beta_dict, logical_mesh_shape=logical_mesh_shape, logical_mesh_id=logical_mesh_id
     )
     if meta_args is None:
+        gd.debuginfo(prj="mt", info=f'')
         meta_args = extract_meta_args_from_dataloader(data_loader, data_process_func)
 
     rst_to_unpack = initialize_model(
@@ -367,8 +392,10 @@ def autoparallelize(
     )
 
     if return_solution:
+        gd.debuginfo(prj="mt", info=f'')
         model, solution = rst_to_unpack
         return model, solution
     else:
+        gd.debuginfo(prj="mt", info=f'')
         model = rst_to_unpack
         return model

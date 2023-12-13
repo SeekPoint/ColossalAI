@@ -26,10 +26,12 @@ def log_cuda_info(scope_name: str):
         f" {scope_name}: CUDA_VISIBLE_DEVICES: {os.getenv('CUDA_VISIBLE_DEVICES', 'NO DEVICES FOUND!')}"
     )
     if torch.cuda.is_available():
+        gd.debuginfo(prj="mt", info=f'')
         ray_serve_logger.info(
             f" {scope_name}: cuda current_device: {torch.cuda.current_device()}, cuda device count: {torch.cuda.device_count()}"
         )
     else:
+        gd.debuginfo(prj="mt", info=f'')
         ray_serve_logger.info(f" {scope_name}: cuda is not available!")
 
 
@@ -44,6 +46,7 @@ class Worker:
         max_output_len: int,
         router_config: RooterArgsClass,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         log_cuda_info("Worker.init")
         self.tensor_parallel_size = tensor_parallel_size
         self.model_path = model_path
@@ -53,6 +56,7 @@ class Worker:
         self.router_config = router_config
 
     def setup(self, world_size, rank, port):
+        gd.debuginfo(prj="mt", info=f'')
         # initialize a ray collective group, otherwise colossalai distributed env won't be built successfully
         collective.init_collective_group(world_size, rank, "nccl", "default")
         # initialize and set distributed environment
@@ -83,23 +87,29 @@ class Worker:
     #     return final_outputs
 
     def add_input(self, request_id: str, prompt: str, sampling_params: SamplingParams):
+        gd.debuginfo(prj="mt", info=f'')
         self.start_dynamic_batching.add_input(request_id, prompt, sampling_params)
 
     def abort(self, request_id: str):
+        gd.debuginfo(prj="mt", info=f'')
         self.start_dynamic_batching.abort(request_id)
 
     def step(self) -> List[RequestOutput]:
+        gd.debuginfo(prj="mt", info=f'')
         return self.start_dynamic_batching._step()
 
     def add_req(self, prompt_ids: List[int], sampling_params: SamplingParams, request_id: str, prompt: str):
+        gd.debuginfo(prj="mt", info=f'')
         self.start_dynamic_batching.add_req(prompt_ids, sampling_params, request_id, prompt)
 
     def is_running(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self.start_dynamic_batching.is_running()
 
 
 class Driver:
     def __init__(self, router_config: RooterArgsClass, engine_config: EngineArgsClass):
+        gd.debuginfo(prj="mt", info=f'')
         log_cuda_info("Driver:init")
         model_path = engine_config.model
         tensor_parallel_size = engine_config.tensor_parallel_size

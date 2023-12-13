@@ -10,6 +10,7 @@ from ..registry import meta_profiler_module
 def _rnn_flops(
     flops: int, macs: int, module: torch.nn.RNNBase, w_ih: torch.Tensor, w_hh: torch.Tensor
 ) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
     # copied from https://github.com/sovrasov/flops-counter.pytorch/blob/master/ptflops/pytorch_ops.py
 
     # matrix matrix mult ih state and internal state
@@ -18,9 +19,11 @@ def _rnn_flops(
     # matrix matrix mult hh state and internal state
     macs += reduce(operator.mul, w_hh.shape)
     flops += 2 * reduce(operator.mul, w_hh.shape)
+
     if isinstance(module, (torch.nn.RNN, torch.nn.RNNCell)):
         # add both operations
         flops += module.hidden_size
+        gd.debuginfo(prj="mt", info=f'')
     elif isinstance(module, (torch.nn.GRU, torch.nn.GRUCell)):
         # hadamard of r
         flops += module.hidden_size
@@ -28,6 +31,7 @@ def _rnn_flops(
         flops += module.hidden_size * 3
         # last two hadamard product and add
         flops += module.hidden_size * 3
+        gd.debuginfo(prj="mt", info=f'')
     elif isinstance(module, (torch.nn.LSTM, torch.nn.LSTMCell)):
         # adding operations from both states
         flops += module.hidden_size * 4
@@ -35,6 +39,7 @@ def _rnn_flops(
         flops += module.hidden_size * 3
         # final hadamard
         flops += module.hidden_size * 3
+        gd.debuginfo(prj="mt", info=f'')
     return flops, macs
 
 
@@ -42,6 +47,7 @@ def _rnn_flops(
 @meta_profiler_module.register(torch.nn.GRU)
 @meta_profiler_module.register(torch.nn.RNN)
 def torch_nn_rnn(self: torch.nn.RNNBase, input: torch.Tensor, hx: Optional[torch.Tensor] = None) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
     flops = 0
     macs = 0
     for i in range(self.num_layers):
@@ -57,6 +63,7 @@ def torch_nn_rnn(self: torch.nn.RNNBase, input: torch.Tensor, hx: Optional[torch
     if self.bidirectional:
         flops *= 2
         macs *= 2
+        gd.debuginfo(prj="mt", info=f'')
     return flops, macs
 
 
@@ -64,6 +71,7 @@ def torch_nn_rnn(self: torch.nn.RNNBase, input: torch.Tensor, hx: Optional[torch
 @meta_profiler_module.register(torch.nn.GRUCell)
 @meta_profiler_module.register(torch.nn.RNNCell)
 def torch_nn_rnn(self: torch.nn.RNNCellBase, input: torch.Tensor, hx: Optional[torch.Tensor] = None) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
     flops = 0
     macs = 0
     w_ih = self.__getattr__("weight_ih_l")
@@ -73,6 +81,7 @@ def torch_nn_rnn(self: torch.nn.RNNCellBase, input: torch.Tensor, hx: Optional[t
         b_ih = self.__getattr__("bias_ih_l")
         b_hh = self.__getattr__("bias_hh_l")
         flops += reduce(operator.mul, b_ih) + reduce(operator.mul, b_hh)
+        gd.debuginfo(prj="mt", info=f'')
     flops *= input.shape[0]
     macs *= input.shape[0]
     return flops, macs

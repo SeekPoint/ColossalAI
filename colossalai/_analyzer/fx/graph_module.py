@@ -26,6 +26,7 @@ from torch.nn.modules.module import _addindent
 # It should be removed when we stop supporting torch < 1.12.0.
 class _WrappedCall:
     def __init__(self, cls, cls_call):
+        gd.debuginfo(prj="mt", info=f'')
         self.cls = cls
         self.cls_call = cls_call
 
@@ -40,6 +41,7 @@ class _WrappedCall:
     # line
     @staticmethod
     def _generate_error_message(frame_summary: traceback.FrameSummary) -> str:
+        gd.debuginfo(prj="mt", info=f'')
         # auxiliary variables (for readability)
         err_lineno = frame_summary.lineno
         assert err_lineno is not None
@@ -63,6 +65,7 @@ class _WrappedCall:
         return "\n".join([tb_repr, custom_msg, before_err, marker, err_and_after_err])
 
     def __call__(self, obj, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         try:
             if self.cls_call is not None:
                 return self.cls_call(obj, *args, **kwargs)
@@ -108,6 +111,7 @@ class ColoGraphModule(torch.fx.GraphModule):
         self, root: Union[torch.nn.Module, Dict[str, Any]], graph: torch.fx.Graph, class_name: str = "GraphModule"
     ):
         super().__init__(root, graph, class_name)
+        gd.debuginfo(prj="mt", info=f'')
 
     def bind(self, ckpt_def, globals):
         """Bind function needed for correctly execute ``GraphModule.forward()``
@@ -119,7 +123,7 @@ class ColoGraphModule(torch.fx.GraphModule):
             ckpt_def (List[str]): definition before the forward function
             globals (Dict[str, Any]): global variables
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         ckpt_code = "\n".join(ckpt_def)
         globals_copy = globals.copy()
         _exec_with_source(ckpt_code, globals_copy)
@@ -135,6 +139,7 @@ class ColoGraphModule(torch.fx.GraphModule):
         called after editing the contained ``graph``, otherwise the generated
         code of this ``GraphModule`` will be out of date.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if SUPPORT_PT_CODEGEN and isinstance(self._graph._codegen, _PyTreeCodeGen):
             self._in_spec = self._graph._codegen.pytree_info.in_spec
             self._out_spec = self._graph._codegen.pytree_info.out_spec
@@ -184,6 +189,7 @@ class ColoGraphModule(torch.fx.GraphModule):
             module_name (str): Top-level name to use for the ``Module`` while
                 writing out the code
         """
+        gd.debuginfo(prj="mt", info=f'')
         folder = Path(folder)
         Path(folder).mkdir(exist_ok=True)
         torch.save(self.state_dict(), folder / "state_dict.pt")
@@ -203,10 +209,13 @@ class {module_name}(torch.nn.Module):
 """
 
         def _gen_model_repr(module_name: str, module: torch.nn.Module) -> Optional[str]:
+
             safe_reprs = [nn.Linear, nn.Conv1d, nn.Conv2d, nn.Conv3d, nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d]
             if type(module) in safe_reprs:
+                gd.debuginfo(prj="mt", info=f'')
                 return f"{module.__repr__()}"
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 return None
 
         blobified_modules = []

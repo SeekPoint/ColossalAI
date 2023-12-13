@@ -28,6 +28,7 @@ class ConvStrategyGenerator(StrategyGenerator):
         For Conv2d, the dim of input data should be 4([N, C, H, W]).
         For Conv3d, the dim of input data should be 5([N, C, H, W, D]).
         """
+        gd.debuginfo(prj="mt", info=f'')
         input_op_data = self.op_data["input"]
         assert input_op_data.data.dim() in (
             3,
@@ -41,6 +42,7 @@ class ConvStrategyGenerator(StrategyGenerator):
 
         Note: compute_cost need to be divided by TFLOPS, now it just shows the computation size.
         """
+        gd.debuginfo(prj="mt", info=f'')
         # TODO: compute_cost need to be divided by TFLOPS, now it just shows the computation size.
         # 1D: (L) * N * Cout * Cin * kernel
         # 2D: (H * W) * N * Cout * Cin * kernel
@@ -76,6 +78,7 @@ class ConvStrategyGenerator(StrategyGenerator):
         strategy.compute_cost = compute_cost
 
     def update_memory_cost(self, strategy: ShardingStrategy):
+        gd.debuginfo(prj="mt", info=f'')
         forward_size_mapping = {
             "input": self._compute_size_in_bytes(strategy, "input"),
             "other": self._compute_size_in_bytes(strategy, "other"),
@@ -83,6 +86,7 @@ class ConvStrategyGenerator(StrategyGenerator):
         }
 
         if self.has_bias:
+            gd.debuginfo(prj="mt", info=f'')
             bias_size = self._compute_size_in_bytes(strategy, "bias")
             forward_size_mapping["bias"] = bias_size
 
@@ -110,6 +114,7 @@ class ConvStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def split_input_batch_weight_out_channel(self, mesh_dim_0, mesh_dim_1):
         name = f"S{mesh_dim_0}S{mesh_dim_1} = S{mesh_dim_0}R x RS{mesh_dim_1}"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         dim_partition_dict_mapping = {
             "input": {0: [mesh_dim_0]},
@@ -117,6 +122,7 @@ class ConvStrategyGenerator(StrategyGenerator):
             "output": {0: [mesh_dim_0], 1: [mesh_dim_1]},
         }
         if self.has_bias:
+            gd.debuginfo(prj="mt", info=f'')
             dim_partition_dict_mapping["bias"] = {0: [mesh_dim_1]}
 
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict_mapping)
@@ -132,6 +138,7 @@ class ConvStrategyGenerator(StrategyGenerator):
         communication_action_mapping = {"input": input_comm_action}
 
         if self.is_param("other"):
+            gd.debuginfo(prj="mt", info=f'')
             other_comm_action = self.get_communication_action(
                 sharding_spec_mapping["other"],
                 communication_pattern=CollectiveCommPattern.IDENTITY_FWD_ALLREDUCE_BWD,
@@ -140,6 +147,7 @@ class ConvStrategyGenerator(StrategyGenerator):
             )
 
         else:
+            gd.debuginfo(prj="mt", info=f'')
             other_comm_action = self.get_communication_action(
                 sharding_spec_mapping["other"],
                 communication_pattern=CollectiveCommPattern.IDENTITY_FWD_ALLREDUCE_BWD,
@@ -152,6 +160,7 @@ class ConvStrategyGenerator(StrategyGenerator):
 
         if self.has_bias:
             if self.is_param("bias"):
+                gd.debuginfo(prj="mt", info=f'')
                 bias_comm_action = self.get_communication_action(
                     sharding_spec_mapping["bias"],
                     communication_pattern=CollectiveCommPattern.IDENTITY_FWD_ALLREDUCE_BWD,
@@ -159,6 +168,7 @@ class ConvStrategyGenerator(StrategyGenerator):
                     comm_type=CommType.HOOK,
                 )
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 bias_comm_action = self.get_communication_action(
                     sharding_spec_mapping["bias"],
                     communication_pattern=CollectiveCommPattern.IDENTITY_FWD_ALLREDUCE_BWD,
@@ -177,6 +187,7 @@ class ConvStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def split_input_batch(self, mesh_dim_0):
         name = f"S{mesh_dim_0}R = S{mesh_dim_0}R x RR"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         dim_partition_dict_mapping = {
             "input": {0: [mesh_dim_0]},
@@ -186,12 +197,14 @@ class ConvStrategyGenerator(StrategyGenerator):
             },
         }
         if self.has_bias:
+            gd.debuginfo(prj="mt", info=f'')
             dim_partition_dict_mapping["bias"] = {}
 
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict_mapping)
 
         communication_action_mapping = {}
         if self.is_param("other"):
+            gd.debuginfo(prj="mt", info=f'')
             other_comm_action = self.get_communication_action(
                 sharding_spec_mapping["other"],
                 communication_pattern=CollectiveCommPattern.IDENTITY_FWD_ALLREDUCE_BWD,
@@ -200,6 +213,7 @@ class ConvStrategyGenerator(StrategyGenerator):
             )
 
         else:
+            gd.debuginfo(prj="mt", info=f'')
             other_comm_action = self.get_communication_action(
                 sharding_spec_mapping["other"],
                 communication_pattern=CollectiveCommPattern.IDENTITY_FWD_ALLREDUCE_BWD,
@@ -212,6 +226,7 @@ class ConvStrategyGenerator(StrategyGenerator):
 
         if self.has_bias:
             if self.is_param("bias"):
+                gd.debuginfo(prj="mt", info=f'')
                 bias_comm_action = self.get_communication_action(
                     sharding_spec_mapping["bias"],
                     communication_pattern=CollectiveCommPattern.IDENTITY_FWD_ALLREDUCE_BWD,
@@ -219,6 +234,7 @@ class ConvStrategyGenerator(StrategyGenerator):
                     comm_type=CommType.HOOK,
                 )
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 bias_comm_action = self.get_communication_action(
                     sharding_spec_mapping["bias"],
                     communication_pattern=CollectiveCommPattern.IDENTITY_FWD_ALLREDUCE_BWD,
@@ -237,7 +253,7 @@ class ConvStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def split_input_both_dim_weight_in_channel(self, mesh_dim_0, mesh_dim_1):
         name = f"S{mesh_dim_0}R = S{mesh_dim_0}S{mesh_dim_1} x S{mesh_dim_1}R"
-
+        gd.debuginfo(prj="mt", info=f'name={name}')
         dim_partition_dict_mapping = {
             "input": {
                 0: [mesh_dim_0],
@@ -249,6 +265,7 @@ class ConvStrategyGenerator(StrategyGenerator):
             },
         }
         if self.has_bias:
+            gd.debuginfo(prj="mt", info=f'')
             dim_partition_dict_mapping["bias"] = {}
 
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict_mapping)
@@ -270,6 +287,7 @@ class ConvStrategyGenerator(StrategyGenerator):
                 logical_process_axis=mesh_dim_0,
                 comm_type=CommType.HOOK,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         else:
             other_comm_action = self.get_communication_action(
@@ -279,6 +297,7 @@ class ConvStrategyGenerator(StrategyGenerator):
                 comm_type=CommType.BEFORE,
                 arg_index=1,
             )
+            gd.debuginfo(prj="mt", info=f'')
         communication_action_mapping["other"] = other_comm_action
         if self.has_bias:
             if self.is_param("bias"):
@@ -288,6 +307,7 @@ class ConvStrategyGenerator(StrategyGenerator):
                     logical_process_axis=mesh_dim_0,
                     comm_type=CommType.HOOK,
                 )
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 bias_comm_action = self.get_communication_action(
                     sharding_spec_mapping["bias"],
@@ -296,6 +316,7 @@ class ConvStrategyGenerator(StrategyGenerator):
                     comm_type=CommType.BEFORE,
                     key_for_kwarg="bias",
                 )
+                gd.debuginfo(prj="mt", info=f'')
             communication_action_mapping["bias"] = bias_comm_action
 
         return self.get_sharding_strategy(
@@ -307,6 +328,7 @@ class ConvStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def split_input_in_channel_weight_both_channel(self, mesh_dim_0, mesh_dim_1):
         name = f"RS{mesh_dim_1} = RS{mesh_dim_0} x S{mesh_dim_0}S{mesh_dim_1}"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         dim_partition_dict_mapping = {
             "input": {
@@ -325,6 +347,7 @@ class ConvStrategyGenerator(StrategyGenerator):
             dim_partition_dict_mapping["bias"] = {
                 0: [mesh_dim_1],
             }
+            gd.debuginfo(prj="mt", info=f'')
 
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict_mapping)
 
@@ -354,6 +377,7 @@ class ConvStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def split_input_in_channel_weight_in_channel(self, mesh_dim_0):
         name = f"RR = RS{mesh_dim_0} x S{mesh_dim_0}R"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         dim_partition_dict_mapping = {
             "input": {
@@ -367,6 +391,7 @@ class ConvStrategyGenerator(StrategyGenerator):
 
         if self.has_bias:
             dim_partition_dict_mapping["bias"] = {}
+            gd.debuginfo(prj="mt", info=f'')
 
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict_mapping)
 
@@ -389,6 +414,7 @@ class ConvStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def split_weight_out_channel(self, mesh_dim_0):
         name = f"RS{mesh_dim_0} = RR x RS{mesh_dim_0}"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         dim_partition_dict_mapping = {
             "input": {},
@@ -404,6 +430,7 @@ class ConvStrategyGenerator(StrategyGenerator):
             dim_partition_dict_mapping["bias"] = {
                 0: [mesh_dim_0],
             }
+            gd.debuginfo(prj="mt", info=f'')
 
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict_mapping)
 
@@ -427,6 +454,7 @@ class ConvStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def non_split(self):
         name = f"RR = RR x RR"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         dim_partition_dict_mapping = {
             "input": {},
@@ -436,6 +464,7 @@ class ConvStrategyGenerator(StrategyGenerator):
 
         if self.has_bias:
             dim_partition_dict_mapping["bias"] = {}
+            gd.debuginfo(prj="mt", info=f'')
 
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict_mapping)
 
@@ -446,6 +475,7 @@ class ConvStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def split_1d_parallel_on_input_batch(self, mesh_dim_0, mesh_dim_1):
         name = f"S{mesh_dim_0}{mesh_dim_1}R = S{mesh_dim_0}{mesh_dim_1}R x RR"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         dim_partition_dict_mapping = {
             "input": {
@@ -459,6 +489,7 @@ class ConvStrategyGenerator(StrategyGenerator):
 
         if self.has_bias:
             dim_partition_dict_mapping["bias"] = {}
+            gd.debuginfo(prj="mt", info=f'')
 
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict_mapping)
 
@@ -470,6 +501,7 @@ class ConvStrategyGenerator(StrategyGenerator):
                 logical_process_axis=[mesh_dim_0, mesh_dim_1],
                 comm_type=CommType.HOOK,
             )
+            gd.debuginfo(prj="mt", info=f'')
         else:
             other_comm_action = self.get_communication_action(
                 sharding_spec_mapping["other"],
@@ -478,6 +510,7 @@ class ConvStrategyGenerator(StrategyGenerator):
                 comm_type=CommType.BEFORE,
                 arg_index=1,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         communication_action_mapping["other"] = other_comm_action
 
@@ -489,6 +522,7 @@ class ConvStrategyGenerator(StrategyGenerator):
                     logical_process_axis=[mesh_dim_0, mesh_dim_1],
                     comm_type=CommType.HOOK,
                 )
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 bias_comm_action = self.get_communication_action(
                     sharding_spec_mapping["bias"],
@@ -497,6 +531,7 @@ class ConvStrategyGenerator(StrategyGenerator):
                     comm_type=CommType.BEFORE,
                     key_for_kwarg="bias",
                 )
+                gd.debuginfo(prj="mt", info=f'')
             communication_action_mapping["bias"] = bias_comm_action
 
         return self.get_sharding_strategy(
@@ -508,6 +543,7 @@ class ConvStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def split_1d_parallel_on_in_channel(self, mesh_dim_0, mesh_dim_1):
         name = f"RR = RS{mesh_dim_0}{mesh_dim_1} x S{mesh_dim_0}{mesh_dim_1}R"
+        gd.debuginfo(prj="mt", info=f'name={name}')
         dim_partition_dict_mapping = {
             "input": {
                 1: [mesh_dim_0, mesh_dim_1],
@@ -520,6 +556,7 @@ class ConvStrategyGenerator(StrategyGenerator):
 
         if self.has_bias:
             dim_partition_dict_mapping["bias"] = {}
+            gd.debuginfo(prj="mt", info=f'')
 
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict_mapping)
 
@@ -542,6 +579,7 @@ class ConvStrategyGenerator(StrategyGenerator):
     @ignore_sharding_exception
     def split_1d_parallel_on_out_channel(self, mesh_dim_0, mesh_dim_1):
         name = f"RS{mesh_dim_0}{mesh_dim_1} = RR x RS{mesh_dim_0}{mesh_dim_1}"
+        gd.debuginfo(prj="mt", info=f'name={name}')
         dim_partition_dict_mapping = {
             "input": {},
             "other": {
@@ -556,6 +594,7 @@ class ConvStrategyGenerator(StrategyGenerator):
             dim_partition_dict_mapping["bias"] = {
                 0: [mesh_dim_0, mesh_dim_1],
             }
+            gd.debuginfo(prj="mt", info=f'')
 
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict_mapping)
 
@@ -577,6 +616,8 @@ class ConvStrategyGenerator(StrategyGenerator):
         )
 
     def collate_strategies(self) -> List[ShardingStrategy]:
+        gd.debuginfo(prj="mt", info=f'')
+
         strategies = []
         # SS = SR x RS
         strategies.append(self.split_input_batch_weight_out_channel(0, 1))

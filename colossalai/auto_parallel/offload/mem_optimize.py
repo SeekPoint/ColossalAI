@@ -17,6 +17,7 @@ from .util import GlobalRuntimeInfo, compute_act_peak_mem, compute_max_param_mem
 def memory_optimize(
     model: torch.nn.Module, inps: Dict[str, torch.Tensor], memory_budget: float = -1.0, solver_name: str = "asyn"
 ):
+    gd.debuginfo(prj="mt", info=f'')
     model = model.cpu().half()
     tracer = ColoTracer()
     assert is_compatible_with_meta()
@@ -40,8 +41,10 @@ def memory_optimize(
 
     if solver_name == "syn":
         gm = runtime_syn_offload_apply_pass(gm, region_manager.region_list)
+        gd.debuginfo(prj="mt", info=f'')
     elif solver_name == "asyn":
         gm = runtime_asyn_offload_apply_pass(gm, region_manager.region_list)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         raise TypeError(f"Unknown solver name {solver_name}!")
 

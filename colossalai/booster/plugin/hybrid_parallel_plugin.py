@@ -35,6 +35,7 @@ DP_AXIS, PP_AXIS, TP_AXIS = 0, 1, 2
 
 
 def _convert_floating_point(x, dtype: torch.dtype = torch.float16):
+    gd.debuginfo(prj="mt", info=f'')
     if isinstance(x, torch.Tensor) and torch.is_floating_point(x):
         return x.to(dtype)
     return x
@@ -51,6 +52,7 @@ class HybridParallelModule(ModelWrapper):
         ddp_config: dict,
         custom_policy: Policy,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.stage_manager = shard_config.pipeline_stage_manager
         self.dp_group = dp_group
 
@@ -70,20 +72,25 @@ class HybridParallelModule(ModelWrapper):
         # setting mixed_precision
         self.mixed_precision = None
         if precision == "fp16":
+            gd.debuginfo(prj="mt", info=f'')
             self.mixed_precision = torch.float16
         elif precision == "bf16":
+            gd.debuginfo(prj="mt", info=f'')
             self.mixed_precision = torch.bfloat16
         if self.mixed_precision is not None:
+            gd.debuginfo(prj="mt", info=f'')
             module = module.to(self.mixed_precision)
         module = module.cuda()
 
         # setting input type cast when using mixed precision
         self.convert_fn = None
         if self.mixed_precision is not None:
+            gd.debuginfo(prj="mt", info=f'')
             self.convert_fn = partial(_convert_floating_point, dtype=self.mixed_precision)
 
         # setting ddp configs
         if use_ddp:
+            gd.debuginfo(prj="mt", info=f'')
             # convert model to sync bn
             module = SyncBatchNorm.convert_sync_batchnorm(module, dp_group)
             # wrap the model with PyTorch DDP
@@ -92,6 +99,7 @@ class HybridParallelModule(ModelWrapper):
         super().__init__(module)
 
     def sync_shared_params(self):
+        gd.debuginfo(prj="mt", info=f'')
         for shared_param, group in zip(self.shared_params, self.shared_param_process_groups):
             if self.stage_manager.stage in shared_param:
                 param = shared_param[self.stage_manager.stage]
@@ -99,12 +107,14 @@ class HybridParallelModule(ModelWrapper):
             dist.barrier()
 
     def no_sync(self) -> Iterator[None]:
+        gd.debuginfo(prj="mt", info=f'')
         # no sync grads across data parallel
         return nullcontext()
 
     def sync_grads(self):
         # sync grad across data parallel
         if self.dp_group.size() == 1:
+            gd.debuginfo(prj="mt", info=f'')
             return
         for p in self.module.parameters():
             if p.grad is not None:
@@ -112,14 +122,17 @@ class HybridParallelModule(ModelWrapper):
                 p.grad.div_(self.dp_group.size())
 
     def forward(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         if self.convert_fn is not None:
             args = tree_map(self.convert_fn, args)
             kwargs = tree_map(self.convert_fn, kwargs)
         return super().forward(*args, **kwargs)
 
     def unwrap(self):
+        gd.debuginfo(prj="mt", info=f'')
         module = super().unwrap()
         if isinstance(module, DDP):
+            gd.debuginfo(prj="mt", info=f'')
             module = module.module
         return module
 
@@ -131,7 +144,7 @@ def get_param_info(optim: Optimizer):
     # 3. A mapping from integer param_id to param address.
     # 4. A mapping from param_address (obtained using id(param)) to the original shape of parameter before sharding.
     # When Zero is used, the params here are fp16/bf16 model params rather than fp32 master params in optimizer.
-
+    gd.debuginfo(prj="mt", info=f'')
     if optim is None:
         return {}
     param_info = {"param_groups": [], "param2id": {}, "id2param": {}, "param2shape": {}}
@@ -154,6 +167,7 @@ def get_param_info(optim: Optimizer):
 
 
 def init_pipeline_optimizer(optim: Optimizer, model: Module):
+    gd.debuginfo(prj="mt", info=f'')
     model_params = set(model.parameters())
     new_param_groups = []
     for group in optim.param_groups:
@@ -173,8 +187,10 @@ class HybridParallelNaiveOptimizer(OptimizerWrapper):
         tp_process_group: Optional[ProcessGroup] = None,  # if using tp
         pp_process_group: Optional[ProcessGroup] = None,  # if using pp
     ):
+        gd.debuginfo(prj="mt", info=f'')
         self.param_info = param_info
         if use_pipeline:
+            gd.debuginfo(prj="mt", info=f'')
             init_pipeline_optimizer(optim, model)
         self.stage_manager = model.stage_manager
         self.shared_params = model.shared_params
@@ -191,8 +207,9 @@ class HybridParallelNaiveOptimizer(OptimizerWrapper):
             *args: Variable-length positional arguments to be passed to the optimizer's step function.
             **kwargs: Keyword arguments to be passed to the optimizer's step function.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         if self.max_norm > 0:
+            gd.debuginfo(prj="mt", info=f'')
             # Compute the total gradient norm.
             param_gradient_pairs = [
                 (p, p.grad) for group in self.optim.param_groups for p in group["params"] if p.grad is not None
@@ -216,8 +233,9 @@ class HybridParallelNaiveOptimizer(OptimizerWrapper):
         Returns:
             float: The total norm of the given gradients.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         if len(param_gradient_pairs) == 0:
+            gd.debuginfo(prj="mt", info=f'')
             return 0.0
 
         tp_size = get_world_size(self.tp_pg) if self.tp_pg is not None else 1
@@ -231,11 +249,15 @@ class HybridParallelNaiveOptimizer(OptimizerWrapper):
             total_norm = max(grad.data.abs().max() for grad in gradients)
             total_norm_cuda = torch.cuda.FloatTensor([float(total_norm)])
             if tp_size > 1:
+                gd.debuginfo(prj="mt", info=f'')
                 dist.all_reduce(tensor=total_norm_cuda, op=dist.ReduceOp.MAX, group=self.tp_pg)
             if pp_size > 1:
+                gd.debuginfo(prj="mt", info=f'')
                 dist.all_reduce(tensor=total_norm_cuda, op=dist.ReduceOp.MAX, group=self.pp_pg)
             total_norm = total_norm_cuda.item()
         else:
+            gd.debuginfo(prj="mt", info=f'')
+
             # gradients used for norm calculation.
             gradients = [grad for param, grad in param_gradient_pairs]
             # grad_to_param_mapping is used to check which gradients are not distributed across devices of the 'tp_group'.
@@ -270,9 +292,11 @@ class HybridParallelNaiveOptimizer(OptimizerWrapper):
 
             total_norm_exponentiated_cuda = torch.cuda.FloatTensor([float(total_norm_exponentiated)])
             if tp_size > 1:
+                gd.debuginfo(prj="mt", info=f'')
                 # compute norm in tp process group
                 dist.all_reduce(tensor=total_norm_exponentiated_cuda, op=dist.ReduceOp.SUM, group=self.tp_pg)
             if pp_size > 1:
+                gd.debuginfo(prj="mt", info=f'')
                 # compute norm in pp process group
                 dist.all_reduce(tensor=total_norm_exponentiated_cuda, op=dist.ReduceOp.SUM, group=self.pp_pg)
 
@@ -291,6 +315,7 @@ class HybridParallelNaiveOptimizer(OptimizerWrapper):
         Returns:
             None
         """
+        gd.debuginfo(prj="mt", info=f'')
         clip_coef = torch.tensor(self.max_norm / (total_norm + 1e-6))
         clip_coef_clamped = torch.clamp(clip_coef, max=1.0)
 
@@ -329,12 +354,14 @@ class HybridParallelAMPOptimizer(MixedPrecisionOptimizer):
         tp_process_group: Optional[ProcessGroup] = None,  # if using tp
         pp_process_group: Optional[ProcessGroup] = None,  # if using pp
     ):
+        gd.debuginfo(prj="mt", info=f'')
         self.param_info = param_info
         self.stage_manager = model.stage_manager
         self.shared_params = model.shared_params
         self.tp_pg = tp_process_group
         self.pp_pg = pp_process_group
         if use_pipeline:
+            gd.debuginfo(prj="mt", info=f'')
             init_pipeline_optimizer(optim, model)
         super().__init__(
             optim,
@@ -360,7 +387,9 @@ class HybridParallelAMPOptimizer(MixedPrecisionOptimizer):
         Returns:
             float: The total norm of the given gradients.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if len(param_gradient_pairs) == 0:
+            gd.debuginfo(prj="mt", info=f'')
             return 0.0
 
         tp_size = get_world_size(self.tp_pg) if self.tp_pg is not None else 1
@@ -375,13 +404,16 @@ class HybridParallelAMPOptimizer(MixedPrecisionOptimizer):
             total_norm_cuda = torch.cuda.FloatTensor([float(total_norm)])
 
             if tp_size > 1:
+                gd.debuginfo(prj="mt", info=f'')
                 dist.all_reduce(tensor=total_norm_cuda, op=dist.ReduceOp.MAX, group=self.tp_pg)
             if pp_size > 1:
+                gd.debuginfo(prj="mt", info=f'')
                 dist.all_reduce(tensor=total_norm_cuda, op=dist.ReduceOp.MAX, group=self.pp_pg)
 
             total_norm = total_norm_cuda.item()
 
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # gradients used for norm calculation.
             gradients = [grad for param, grad in param_gradient_pairs]
             # grad_to_param_mapping is used to check which gradients are not distributed in tensor parallelism.
@@ -417,9 +449,11 @@ class HybridParallelAMPOptimizer(MixedPrecisionOptimizer):
 
             total_norm_exponentiated_cuda = torch.cuda.FloatTensor([float(total_norm_exponentiated)])
             if tp_size > 1:
+                gd.debuginfo(prj="mt", info=f'')
                 # compute norm in tp process group
                 dist.all_reduce(tensor=total_norm_exponentiated_cuda, op=dist.ReduceOp.SUM, group=self.tp_pg)
             if pp_size > 1:
+                gd.debuginfo(prj="mt", info=f'')
                 # compute norm in pp process group
                 dist.all_reduce(tensor=total_norm_exponentiated_cuda, op=dist.ReduceOp.SUM, group=self.pp_pg)
 
@@ -455,6 +489,7 @@ class HybridParallelZeroOptimizer(LowLevelZeroOptimizer):
         pp_process_group: Optional[ProcessGroup] = None,  # if using pp
         forced_dtype: Optional[torch.dtype] = None,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         self.param_info = param_info
         self.stage_manager = model.stage_manager
         self.shared_params = model.shared_params
@@ -462,6 +497,7 @@ class HybridParallelZeroOptimizer(LowLevelZeroOptimizer):
         self.tp_pg = tp_process_group
         self.pp_pg = pp_process_group
         if use_pipeline:
+            gd.debuginfo(prj="mt", info=f'')
             init_pipeline_optimizer(optimizer, model)
         super().__init__(
             optimizer=optimizer,
@@ -494,9 +530,10 @@ class HybridParallelZeroOptimizer(LowLevelZeroOptimizer):
         Returns:
             float: The computed gradient norm.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         # Check if the list of gradients is empty
         if len(gradients) == 0:
+            gd.debuginfo(prj="mt", info=f'')
             return 0.0
 
         dp_size = get_world_size(self.dp_pg) if self.dp_pg is not None else 1
@@ -505,6 +542,7 @@ class HybridParallelZeroOptimizer(LowLevelZeroOptimizer):
         norm_type = float(norm_type)
 
         if norm_type == inf:
+
             # The parent class calculates the norm of 'dp' gradients,
             # so we only need to calculate the norm 'tp' of 'pp' gradients.
             total_norm = super()._compute_grad_norm(gradients, norm_type)
@@ -512,12 +550,15 @@ class HybridParallelZeroOptimizer(LowLevelZeroOptimizer):
             total_norm_cuda = torch.cuda.FloatTensor([float(total_norm)])
 
             if tp_size > 1:
+                gd.debuginfo(prj="mt", info=f'')
                 dist.all_reduce(tensor=total_norm_cuda, op=dist.ReduceOp.MAX, group=self.tp_pg)
             if pp_size > 1:
+                gd.debuginfo(prj="mt", info=f'')
                 dist.all_reduce(tensor=total_norm_cuda, op=dist.ReduceOp.MAX, group=self.pp_pg)
 
             total_norm = total_norm_cuda.item()
         else:
+            gd.debuginfo(prj="mt", info=f'')
             total_norm_exponentiated = 0.0
             for grad in gradients:
                 grad_norm_exponentiated = grad.data.double().norm(norm_type) ** norm_type
@@ -550,12 +591,15 @@ class HybridParallelZeroOptimizer(LowLevelZeroOptimizer):
 
             total_norm_exponentiated_cuda = torch.cuda.FloatTensor([float(total_norm_exponentiated)])
             if dp_size > 1:
+                gd.debuginfo(prj="mt", info=f'')
                 # compute norm in dp process group
                 dist.all_reduce(tensor=total_norm_exponentiated_cuda, op=dist.ReduceOp.SUM, group=self.dp_pg)
             if tp_size > 1:
+                gd.debuginfo(prj="mt", info=f'')
                 # compute norm in tp process group
                 dist.all_reduce(tensor=total_norm_exponentiated_cuda, op=dist.ReduceOp.SUM, group=self.tp_pg)
             if pp_size > 1:
+                gd.debuginfo(prj="mt", info=f'')
                 # compute norm in pp process group
                 dist.all_reduce(tensor=total_norm_exponentiated_cuda, op=dist.ReduceOp.SUM, group=self.pp_pg)
 
@@ -658,6 +702,7 @@ class HybridParallelPlugin(PipelinePluginBase):
         overlap_communication: bool = True,
         custom_policy: Policy = None,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         assert (
             dist.get_world_size() % (tp_size * pp_size) == 0
@@ -683,6 +728,7 @@ class HybridParallelPlugin(PipelinePluginBase):
         self.custom_policy = custom_policy
         assert zero_stage in (0, 1, 2)
         if self.pp_size > 1:
+            gd.debuginfo(prj="mt", info=f'')
             assert (
                 num_microbatches is not None or microbatch_size is not None
             ), "num_microbatches or microbatch_size must be specified when using pipeline parallelism"
@@ -764,8 +810,10 @@ class HybridParallelPlugin(PipelinePluginBase):
         dataloader: Optional[DataLoader] = None,
         lr_scheduler: Optional[LRScheduler] = None,
     ) -> Tuple[Module, OptimizerWrapper, Callable, DataLoader, LRScheduler]:
+        gd.debuginfo(prj="mt", info=f'')
         param_info = get_param_info(optimizer)
         if not isinstance(model, ModelWrapper):
+            gd.debuginfo(prj="mt", info=f'')
             use_ddp = self.dp_size > 1 and self.pp_size == 1 and self.zero_stage == 0
             model = HybridParallelModule(
                 model, self.precision, self.shard_config, self.dp_group, use_ddp, self.ddp_config, self.custom_policy
@@ -773,6 +821,7 @@ class HybridParallelPlugin(PipelinePluginBase):
         if optimizer is not None and not isinstance(optimizer, OptimizerWrapper):
             if self.zero_stage == 0:
                 if self.precision in ["fp16", "bf16"]:
+                    gd.debuginfo(prj="mt", info=f'')
                     optimizer = HybridParallelAMPOptimizer(
                         optimizer,
                         model,
@@ -785,6 +834,7 @@ class HybridParallelPlugin(PipelinePluginBase):
                         **self.amp_config,
                     )
                 else:
+                    gd.debuginfo(prj="mt", info=f'')
                     optimizer = HybridParallelNaiveOptimizer(
                         optimizer,
                         model,
@@ -795,6 +845,7 @@ class HybridParallelPlugin(PipelinePluginBase):
                         tp_process_group=self.tp_group,
                     )
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 assert self.dp_size > 1, "Please use Zero when data parallel size is greater than 1."
                 assert self.precision != "fp32", "Please set precision to 'fp16' or 'bf16' when using ZeRO."
                 optimizer = HybridParallelZeroOptimizer(
@@ -825,6 +876,7 @@ class HybridParallelPlugin(PipelinePluginBase):
         return_loss: bool = True,
         return_outputs: bool = False,
     ) -> dict:
+        gd.debuginfo(prj="mt", info=f'')
         assert self.enable_pipeline_parallelism, "pipeline parallelism is not enabled"
         # return loss or outputs if needed
         ctx = optimizer.no_sync() if isinstance(optimizer, HybridParallelZeroOptimizer) else model.no_sync()
@@ -834,9 +886,11 @@ class HybridParallelPlugin(PipelinePluginBase):
             )
         model.sync_shared_params()
         if isinstance(optimizer, HybridParallelZeroOptimizer):
+            gd.debuginfo(prj="mt", info=f'')
             optimizer.sync_grad()
         else:
             model.sync_grads()
+            gd.debuginfo(prj="mt", info=f'')
         return outputs
 
     def prepare_dataloader(
@@ -863,6 +917,7 @@ class HybridParallelPlugin(PipelinePluginBase):
         Returns:
             :class:`torch.utils.data.DataLoader`: A DataLoader used for training or testing.
         """
+        gd.debuginfo(prj="mt", info=f'')
         _kwargs = kwargs.copy()
         sampler = DistributedSampler(
             dataset, num_replicas=self.pg_mesh.size(DP_AXIS), rank=self.pg_mesh.coordinate(DP_AXIS), shuffle=shuffle
@@ -887,6 +942,7 @@ class HybridParallelPlugin(PipelinePluginBase):
         )
 
     def get_checkpoint_io(self) -> CheckpointIO:
+        gd.debuginfo(prj="mt", info=f'')
         return HybridParallelCheckpointIO(self.dp_group, self.pp_group, self.tp_group, self.zero_stage)
 
     def no_sync(self, model: Module) -> Iterator[None]:

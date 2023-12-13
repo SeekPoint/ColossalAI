@@ -19,6 +19,7 @@ class SoftmaxHandler(NodeHandler):
     """
 
     def get_strategy_generator(self) -> List[StrategyGenerator]:
+        gd.debuginfo(prj="mt", info=f'')
         op_data_mapping = self.get_operation_data_mapping()
         generators = []
         generators.append(SoftmaxGenerator(op_data_mapping, self.device_mesh, self.node.args[0]))
@@ -28,8 +29,10 @@ class SoftmaxHandler(NodeHandler):
         # check if the input operand is a parameter
         if isinstance(self.node.args[0]._meta_data, torch.nn.parameter.Parameter):
             data_type = OperationDataType.PARAM
+            gd.debuginfo(prj="mt", info=f'')
         else:
             data_type = OperationDataType.ARG
+            gd.debuginfo(prj="mt", info=f'')
 
         input_data = self.node.args[0]._meta_data
         physical_input_operand = OperationData(name=str(self.node.args[0]), type=data_type, data=input_data)
@@ -39,6 +42,7 @@ class SoftmaxHandler(NodeHandler):
         num_dims = self.node.args[0]._meta_data.dim()
         # recover negative value to positive
         if softmax_dim < 0:
+            gd.debuginfo(prj="mt", info=f'')
             softmax_dim += num_dims
 
         physical_dim_operand = OperationData(name="softmax_dim", type=OperationDataType.ARG, data=softmax_dim)

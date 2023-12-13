@@ -58,3 +58,4 @@ class ChatGLMConfig(PretrainedConfig):
         self.pre_seq_len = pre_seq_len
         self.prefix_projection = prefix_projection
         super().__init__(**kwargs)
+        gd.debuginfo(prj="mt", info=f'')

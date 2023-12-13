@@ -3,6 +3,7 @@ from pydebug import gd, infoTensor
 
 class TensorBucket:
     def __init__(self, size):
+        gd.debuginfo(prj="mt", info=f'')
         self._max_size = size
         self._current_size = 0
         self._bucket = []

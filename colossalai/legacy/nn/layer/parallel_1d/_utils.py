@@ -11,25 +11,30 @@ from ..utils import divide
 from pydebug import gd, infoTensor
 
 def set_parallel_input(input_parallel: bool):
+    gd.debuginfo(prj="mt", info=f'')
     env.parallel_input_1d = input_parallel
 
 
 def get_parallel_input():
+    gd.debuginfo(prj="mt", info=f'')
     return env.parallel_input_1d
 
 
 def vocab_range_from_per_partition_vocab_size(per_partition_vocab_size, rank):
+    gd.debuginfo(prj="mt", info=f'')
     index_f = rank * per_partition_vocab_size
     index_l = index_f + per_partition_vocab_size
     return index_f, index_l
 
 
 def vocab_range_from_global_vocab_size(global_vocab_size, rank, world_size):
+    gd.debuginfo(prj="mt", info=f'')
     per_partition_vocab_size = divide(global_vocab_size, world_size)
     return vocab_range_from_per_partition_vocab_size(per_partition_vocab_size, rank)
 
 
 def _reduce(input_, parallel_mode):
+    gd.debuginfo(prj="mt", info=f'')
     # skip if only one rank involved
     if gpc.get_world_size(parallel_mode) == 1:
         return input_
@@ -40,6 +45,7 @@ def _reduce(input_, parallel_mode):
 
 
 def _split(input_, parallel_mode, dim=-1):
+    gd.debuginfo(prj="mt", info=f'')
     # skip if only one rank involved
     world_size = gpc.get_world_size(parallel_mode)
     if world_size == 1:
@@ -60,6 +66,7 @@ def _split(input_, parallel_mode, dim=-1):
 
 
 def _gather(input_, parallel_mode, dim=-1):
+    gd.debuginfo(prj="mt", info=f'')
     # skip if only one rank involved
     world_size = gpc.get_world_size(parallel_mode)
     if world_size == 1:
@@ -93,11 +100,13 @@ class _ReduceGrad(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input_, parallel_mode):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.mode = parallel_mode
         return input_
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return _reduce(grad_output, ctx.mode), None
 
 
@@ -116,10 +125,12 @@ class _ReduceInput(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input_, parallel_mode):
+        gd.debuginfo(prj="mt", info=f'')
         return _reduce(input_, parallel_mode)
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return grad_output, None
 
 
@@ -139,12 +150,14 @@ class _SplitForwardGatherBackward(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input_, parallel_mode, dim):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.mode = parallel_mode
         ctx.dim = dim
         return _split(input_, parallel_mode, dim)
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return _gather(grad_output, ctx.mode, ctx.dim), None, None
 
 
@@ -163,26 +176,32 @@ class _GatherForwardSplitBackward(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input_, parallel_mode, dim):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.mode = parallel_mode
         ctx.dim = dim
         return _gather(input_, parallel_mode, dim)
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return _split(grad_output, ctx.mode, ctx.dim), None, None
 
 
 def reduce_grad(input_, parallel_mode):
+    gd.debuginfo(prj="mt", info=f'')
     return _ReduceGrad.apply(input_, parallel_mode)
 
 
 def reduce_input(input_, parallel_mode):
+    gd.debuginfo(prj="mt", info=f'')
     return _ReduceInput.apply(input_, parallel_mode)
 
 
 def split_forward_gather_backward(input_, parallel_mode, dim):
+    gd.debuginfo(prj="mt", info=f'')
     return _SplitForwardGatherBackward.apply(input_, parallel_mode, dim)
 
 
 def gather_forward_split_backward(input_, parallel_mode, dim):
+    gd.debuginfo(prj="mt", info=f'')
     return _GatherForwardSplitBackward.apply(input_, parallel_mode, dim)

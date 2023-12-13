@@ -12,6 +12,8 @@ def colo_model_optimizer_usage(optim) -> Tuple[int, int]:
     Returns:
         Tuple[int, int]: cuda/cpu memory usage in Byte
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     if optim is None:
         return 0, 0
     assert hasattr(optim, "get_memory_usage"), f"{type(optim)} has no attr get_memory_usage()"
@@ -27,6 +29,8 @@ def colo_model_mem_usage(model: torch.nn.Module) -> Tuple[int, int]:
     Returns:
         Tuple[int, int]: cuda memory usage in Byte, cpu memory usage in Byte
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     if model is None:
         return 0, 0
 

@@ -32,6 +32,7 @@ class ProcessGroupManager:
         Returns:
             ProcessGroup: the process group
         """
+        gd.debuginfo(prj="mt", info=f'')
         if name not in self.pg_store:
             pg = dist.new_group(ranks=ranks, backend=backend)
             self.pg_store[name] = pg
@@ -49,6 +50,7 @@ class ProcessGroupManager:
         Returns:
             ProcessGroup: the process group
         """
+        gd.debuginfo(prj="mt", info=f'')
         if name in self.pg_store:
             return self.pg_store[name]
         else:
@@ -61,6 +63,7 @@ class ProcessGroupManager:
         Args:
             name (str): name of the process group
         """
+        gd.debuginfo(prj="mt", info=f'')
         if name in self.pg_store:
             dist.destroy_process_group(self.pg_store[name])
             del self.pg_store[name]
@@ -71,6 +74,7 @@ class ProcessGroupManager:
         """
         Destroy all process groups.
         """
+        gd.debuginfo(prj="mt", info=f'')
         for name in self.pg_store:
             dist.destroy_process_group(self.pg_store[name])
         self.pg_store.clear()

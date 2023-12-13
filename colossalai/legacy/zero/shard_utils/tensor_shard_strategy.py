@@ -16,10 +16,12 @@ class TensorShardStrategy(BaseShardStrategy):
     """
 
     def shard(self, tensor_list: List[ShardedTensor], process_group: Optional[dist.ProcessGroup] = None):
+        gd.debuginfo(prj="mt", info=f'')
         for t in tensor_list:
             self._shard_tensor(t, process_group)
 
     def gather(self, tensor_list: List[ShardedTensor], process_group: Optional[dist.ProcessGroup] = None):
+        gd.debuginfo(prj="mt", info=f'')
         for t in tensor_list:
             self._gather_tensor(t, process_group)
 
@@ -31,6 +33,7 @@ class TensorShardStrategy(BaseShardStrategy):
             process_group (Optional[dist.ProcessGroup], optional): the process group among which tensor shards.
             Defaults to None.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if t.is_sharded:
             return
         if t.payload.device.type == "cuda":
@@ -43,6 +46,7 @@ class TensorShardStrategy(BaseShardStrategy):
         t.is_sharded = True
 
     def _gather_tensor(self, t: ShardedTensor, process_group: Optional[dist.ProcessGroup] = None):
+        gd.debuginfo(prj="mt", info=f'')
         if not t.is_sharded:
             return
         target_device = t.device

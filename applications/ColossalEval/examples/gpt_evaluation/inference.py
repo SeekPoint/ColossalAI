@@ -24,7 +24,7 @@ def rm_and_merge(world_size: int, save_path: str, model_names: List[str], datase
         dataset_names: Names of dataset for inference.
 
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     for model_name in model_names:
         for dataset_name, categories in dataset_names.items():
             all_answers = {}

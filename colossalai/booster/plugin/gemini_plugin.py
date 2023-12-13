@@ -35,6 +35,7 @@ PRECISION_STR_TO_DTYPE = {"fp16": torch.half, "bf16": torch.bfloat16}
 
 class GeminiCheckpointIO(GeneralCheckpointIO):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.coordinator = DistCoordinator()
 
@@ -44,9 +45,11 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
         The model should be unwrapped in self.load_model via ModelWrapper.unwrap.
         As there is communication when getting state dict, model.state_dict() must be called on all processes.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(model, GeminiDDP), "Please boost the model before saving!"
         state_dict = model.state_dict(only_rank_0=True)
         if self.coordinator.is_master():
+            gd.debuginfo(prj="mt", info=f'')
             save_state_dict(state_dict, checkpoint, use_safetensors)
 
     def load_unsharded_model(self, model: GeminiDDP, checkpoint: str, strict: bool = True):
@@ -54,6 +57,7 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
         Load model from checkpoint with automatic unwrapping.
         The model should be unwrapped in self.load_model via ModelWrapper.unwrap.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(model, GeminiDDP), "Please boost the model before loading!"
         super().load_unsharded_model(model, checkpoint, strict=strict)
 
@@ -64,9 +68,11 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
         As there is communication when getting state dict, optimizer.state_dict() must be called on all processes.
         The saving process will only be executed by master rank.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(optimizer, GeminiOptimizer), "Please boost the optimizer before saving!"
         state_dict = optimizer.state_dict()
         if self.coordinator.is_master():
+            gd.debuginfo(prj="mt", info=f'')
             save_state_dict(state_dict, checkpoint, use_safetensors=False)
 
     def load_unsharded_optimizer(self, optimizer: GeminiOptimizer, checkpoint: str):
@@ -74,6 +80,7 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
         Loading unsharded optimizer from checkpoint file.
         For each process, only loading optimizer states of parameters it controls.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(optimizer, GeminiOptimizer), "Please boost the optimizer before loading!"
         super().load_unsharded_optimizer(optimizer, checkpoint)
 
@@ -90,6 +97,7 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
         Save sharded model.
         As there is communication when getting state dict, model.state_dict() must be called on all processes.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(model, GeminiDDP), "Please boost the model before saving!"
         if os.path.isfile(checkpoint_path):
             logging.error(f"Provided path ({checkpoint_path}) should be a directory, not a file")
@@ -114,6 +122,7 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
 
         # only save the index file on the master rank
         if self.coordinator.is_master():
+            gd.debuginfo(prj="mt", info=f'')
             index_file.append_meta_data("total_size", total_size)
             index_file.write_index_file(save_index_file)
             save_config_file(model.unwrap(), checkpoint_path)
@@ -123,12 +132,15 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
                 f"index located at {save_index_file}."
             )
 
-    def load_sharded_model(
-        self, model: GeminiDDP, checkpoint_index_file: Path, strict: bool = False, use_safetensors: bool = False
-    ):
+    def load_sharded_model(self,
+                           model: GeminiDDP,
+                           checkpoint_index_file: Path,
+                           strict: bool = False,
+                           use_safetensors: bool = False):
         """
         Load shard model, load model from multiple files.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(model, GeminiDDP), "Please boost the model before loading!"
         return super().load_sharded_model(model, checkpoint_index_file, strict, use_safetensors, load_sub_module=False)
 
@@ -139,6 +151,7 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
         Save sharded optimizer state dict to checkpoint folder.
         As there is communication when getting state dict, this must be called on all processes.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(optimizer, GeminiOptimizer), "Please boost the optimizer before saving!"
 
         if os.path.isfile(checkpoint):
@@ -173,6 +186,7 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
 
         # Wrap up index file. Only save it on master rank.
         if self.coordinator.is_master():
+            gd.debuginfo(prj="mt", info=f'')
             index_file.append_meta_data("total_size", total_size)
             index_file.write_index_file(save_index_file)
             logging.info(
@@ -186,6 +200,7 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
         Loading sharded optimizer from checkpoint folder, with index file given.
         For each process, only loading optimizer states of parameters it controls.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(optimizer, GeminiOptimizer), "Please boost the optimizer before loading!"
         if not os.path.isfile(checkpoint_index_file):
             logging.error(f"Provided path ({checkpoint_index_file}) should be a file")
@@ -221,7 +236,9 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
         """
         Save model to checkpoint but only on master process.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if self.coordinator.is_master():
+            gd.debuginfo(prj="mt", info=f'')
             super().save_lr_scheduler(lr_scheduler, checkpoint)
 
 
@@ -319,6 +336,7 @@ class GeminiPlugin(DPPluginBase):
         norm_type: float = 2.0,
         verbose: bool = False,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         assert precision in SUPPORTED_PRECISION, f"precision {precision} is not supported"
         self.gemini_config = dict(
@@ -380,7 +398,9 @@ class GeminiPlugin(DPPluginBase):
         dataloader: Optional[DataLoader] = None,
         lr_scheduler: Optional[LRScheduler] = None,
     ) -> Tuple[nn.Module, OptimizerWrapper, Callable, DataLoader, LRScheduler]:
+        gd.debuginfo(prj="mt", info=f'')
         if not isinstance(model, ModelWrapper):
+            gd.debuginfo(prj="mt", info=f'')
             # convert model to sync bn
             # FIXME(ver217): gemini does not support sync bn
             # In torch/nn/modules/_functions.py, line 22, ``mean, invstd = torch.batch_norm_stats(input, eps)`` will get fp32 mean and invstd even though the input is fp16.
@@ -394,16 +414,21 @@ class GeminiPlugin(DPPluginBase):
             model = GeminiDDP(model, **self.gemini_config, verbose=self.verbose)
 
         if optimizer is not None and not isinstance(optimizer, OptimizerWrapper):
-            optimizer = GeminiOptimizer(
-                optimizer, model, **self.zero_optim_config, **self.optim_kwargs, verbose=self.verbose
-            )
+            gd.debuginfo(prj="mt", info=f'')
+            optimizer = GeminiOptimizer(optimizer,
+                                        model,
+                                        **self.zero_optim_config,
+                                        **self.optim_kwargs,
+                                        verbose=self.verbose)
 
         return model, optimizer, criterion, dataloader, lr_scheduler
 
     def control_checkpoint_io(self) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         return True
 
     def get_checkpoint_io(self) -> CheckpointIO:
+        gd.debuginfo(prj="mt", info=f'')
         return GeminiCheckpointIO()
 
     def no_sync(self, model: nn.Module, optimizer: OptimizerWrapper) -> Iterator[None]:

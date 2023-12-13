@@ -43,6 +43,7 @@ class CosineAnnealingLR(_CosineAnnealingLR):
     """
 
     def __init__(self, optimizer, total_steps: int, eta_min: int = 0, last_epoch: int = -1, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(optimizer, total_steps, eta_min=eta_min, last_epoch=last_epoch)
 
 
@@ -58,10 +59,14 @@ class CosineAnnealingWarmupLR(WarmupScheduler):
             the schedule is started from the beginning or When last_epoch=-1, sets initial lr as lr.
     """
 
-    def __init__(self, optimizer, total_steps: int, warmup_steps: int = 0, eta_min: float = 0.0, last_epoch: int = -1):
-        base_scheduler = _CosineAnnealingLR(
-            optimizer, total_steps - warmup_steps, eta_min=eta_min, last_epoch=last_epoch
-        )
+    def __init__(self,
+                 optimizer,
+                 total_steps: int,
+                 warmup_steps: int = 0,
+                 eta_min: float = 0.0,
+                 last_epoch: int = -1):
+        gd.debuginfo(prj="mt", info=f'')
+        base_scheduler = _CosineAnnealingLR(optimizer, total_steps - warmup_steps, eta_min=eta_min, last_epoch=last_epoch)
         super().__init__(optimizer, warmup_steps, base_scheduler, last_epoch=last_epoch)
 
 
@@ -77,6 +82,7 @@ class FlatAnnealingLR(DelayerScheduler):
     """
 
     def __init__(self, optimizer, total_steps: int, pct_start: float = 0.72, last_epoch: int = -1, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         if not (0.0 <= pct_start <= 1.0):
             raise ValueError(f"pct_start must >= 0.0 and <= 1.0, got {pct_start}")
         flat_steps = int(total_steps * pct_start)
@@ -109,6 +115,7 @@ class FlatAnnealingWarmupLR(WarmupDelayerScheduler):
         last_epoch: int = -1,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         if not (0.0 <= pct_start <= 1.0):
             raise ValueError(f"pct_start must >= 0.0 and <= 1.0, got {pct_start}")
         flat_steps = int((total_steps - warmup_steps) * pct_start)

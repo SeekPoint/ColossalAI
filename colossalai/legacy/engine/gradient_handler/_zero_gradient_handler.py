@@ -16,5 +16,6 @@ class ZeROGradientHandler(BaseGradientHandler):
     """
 
     def handle_gradient(self):
+        gd.debuginfo(prj="mt", info=f'')
         """A method running a all-reduce operation in a data parallel group."""
         self._optimizer.sync_grad()

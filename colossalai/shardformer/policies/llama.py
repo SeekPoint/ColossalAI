@@ -19,14 +19,17 @@ class LlamaPolicy(Policy):
         pass
 
     def preprocess(self):
+        gd.debuginfo(prj="mt", info=f'')
         if self.shard_config.enable_tensor_parallelism:
             # Resize embedding
             vocab_size = self.model.config.vocab_size
             world_size = self.shard_config.tensor_parallel_size
+            gd.debuginfo(prj="mt", info=f'')
 
             if vocab_size % world_size != 0:
                 new_vocab_size = vocab_size + world_size - vocab_size % world_size
                 self.model.resize_token_embeddings(new_vocab_size)
+                gd.debuginfo(prj="mt", info=f'')
 
         return self.model
 
@@ -34,6 +37,7 @@ class LlamaPolicy(Policy):
         from transformers.models.llama.modeling_llama import LlamaAttention, LlamaDecoderLayer, LlamaModel
 
         policy = {}
+        gd.debuginfo(prj="mt", info=f'')
 
         if self.shard_config.enable_sequence_parallelism:
             self.shard_config.enable_sequence_parallelism = False
@@ -133,14 +137,17 @@ class LlamaPolicy(Policy):
         return self.model
 
     def set_pipeline_forward(self, model_cls: nn.Module, new_forward: Callable, policy: Dict) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         """If under pipeline parallel setting, replacing the original forward method of huggingface
         to customized forward method, and add this changing to policy."""
         if self.pipeline_stage_manager:
             stage_manager = self.pipeline_stage_manager
             if self.model.__class__.__name__ == "LlamaModel":
                 module = self.model
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 module = self.model.model
+                gd.debuginfo(prj="mt", info=f'')
 
             layers_per_stage = Policy.distribute_layers(len(module.layers), stage_manager.num_stages)
             stage_index = Policy.get_stage_index(layers_per_stage, stage_manager.stage)
@@ -154,21 +161,29 @@ class LlamaPolicy(Policy):
     def get_held_layers(self) -> List[Module]:
         """Get pipeline layers for current stage."""
         assert self.pipeline_stage_manager is not None
+        gd.debuginfo(prj="mt", info=f'')
 
         if self.model.__class__.__name__ == "LlamaModel":
             module = self.model
+            gd.debuginfo(prj="mt", info=f'')
         else:
             module = self.model.model
+            gd.debuginfo(prj="mt", info=f'')
+
         stage_manager = self.pipeline_stage_manager
 
         held_layers = []
         layers_per_stage = self.distribute_layers(len(module.layers), stage_manager.num_stages)
         if stage_manager.is_first_stage():
             held_layers.append(module.embed_tokens)
+            gd.debuginfo(prj="mt", info=f'')
+
         start_idx, end_idx = self.get_stage_index(layers_per_stage, stage_manager.stage)
         held_layers.extend(module.layers[start_idx:end_idx])
+
         if stage_manager.is_last_stage():
             held_layers.append(module.norm)
+            gd.debuginfo(prj="mt", info=f'')
 
         return held_layers
 
@@ -176,11 +191,12 @@ class LlamaPolicy(Policy):
 class LlamaModelPolicy(LlamaPolicy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
         policy = super().module_policy()
         from transformers.models.llama.modeling_llama import LlamaModel
-
+        gd.debuginfo(prj="mt", info=f'')
         if self.pipeline_stage_manager:
             # set None as default
             self.set_pipeline_forward(
@@ -191,6 +207,7 @@ class LlamaModelPolicy(LlamaPolicy):
     def get_held_layers(self) -> List[Module]:
         """Get pipeline layers for current stage."""
         held_layers = super().get_held_layers()
+        gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
@@ -201,7 +218,7 @@ class LlamaModelPolicy(LlamaPolicy):
 class LlamaForCausalLMPolicy(LlamaPolicy):
     def module_policy(self):
         from transformers import LlamaForCausalLM
-
+        gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
 
         if self.shard_config.enable_tensor_parallelism:
@@ -216,12 +233,14 @@ class LlamaForCausalLMPolicy(LlamaPolicy):
                 )
             }
             policy.update(new_item)
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.pipeline_stage_manager:
             # set None as default
             self.set_pipeline_forward(
                 model_cls=LlamaForCausalLM, new_forward=LlamaPipelineForwards.llama_for_causal_lm_forward, policy=policy
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         return policy
 
@@ -229,17 +248,23 @@ class LlamaForCausalLMPolicy(LlamaPolicy):
         """Get pipeline layers for current stage."""
         stage_manager = self.pipeline_stage_manager
         held_layers = super().get_held_layers()
+        gd.debuginfo(prj="mt", info=f'')
         if stage_manager.is_last_stage():
             held_layers.append(self.model.lm_head)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
         llama_model = self.model.model
+        gd.debuginfo(prj="mt", info=f'')
+
         if self.pipeline_stage_manager and self.pipeline_stage_manager.num_stages > 1:
+            gd.debuginfo(prj="mt", info=f'')
             if (
                 id(llama_model.embed_tokens.weight) == id(self.model.lm_head.weight)
                 and self.pipeline_stage_manager.num_stages > 1
             ):
+                gd.debuginfo(prj="mt", info=f'')
                 # tie weights
                 return [
                     {
@@ -255,6 +280,7 @@ class LlamaForSequenceClassificationPolicy(LlamaPolicy):
         from transformers import LlamaForSequenceClassification
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'')
 
         if self.shard_config.enable_tensor_parallelism:
             # add a new item for sequence classification
@@ -268,6 +294,8 @@ class LlamaForSequenceClassificationPolicy(LlamaPolicy):
                 )
             }
             policy.update(new_item)
+            gd.debuginfo(prj="mt", info=f'')
+
         # to be confirmed
         if self.pipeline_stage_manager:
             # set None as default
@@ -276,14 +304,19 @@ class LlamaForSequenceClassificationPolicy(LlamaPolicy):
                 new_forward=LlamaPipelineForwards.llama_for_sequence_classification_forward,
                 policy=policy,
             )
+            gd.debuginfo(prj="mt", info=f'')
+
         return policy
 
     def get_held_layers(self) -> List[Module]:
         """Get pipeline layers for current stage."""
         stage_manager = self.pipeline_stage_manager
         held_layers = super().get_held_layers()
+        gd.debuginfo(prj="mt", info=f'')
+
         if stage_manager.is_last_stage():
             held_layers.append(self.model.score)
+            gd.debuginfo(prj="mt", info=f'')
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:

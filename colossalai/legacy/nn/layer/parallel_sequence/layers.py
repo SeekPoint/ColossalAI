@@ -46,6 +46,7 @@ class TransformerSelfAttentionRing(nn.Module):
         fp16=False,
         bf16=False,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.convert_fp16_to_fp32_in_softmax = convert_fp16_to_fp32_in_softmax
         self.apply_query_key_layer_scaling = apply_query_key_layer_scaling
@@ -226,6 +227,7 @@ class _Linear(nn.Module):
     """
 
     def __init__(self, input_size, output_size, bias=True, skip_bias_add=False):
+        gd.debuginfo(prj="mt", info=f'')
         super(_Linear, self).__init__()
 
         # Keep input parameters

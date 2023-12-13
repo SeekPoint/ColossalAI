@@ -29,6 +29,7 @@ def compute_size_in_bytes(elem: Union[torch.Tensor, Dict, List, Tuple, int]) -> 
     Returns:
         int: The size of the tensor or the collection of tensors in bytes.
     """
+    gd.debuginfo(prj="mt", info=f'')
     nbytes = 0
     if isinstance(elem, torch.Tensor):
         if elem.is_quantized:
@@ -80,7 +81,7 @@ class MetaInfo:
     Remarks:
         This feature is experimental and all the entries are subject to change.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     # reference
     node: Node
 
@@ -117,6 +118,7 @@ class MetaInfo:
     sharding_spec: str = "RR"
 
     def __new__(cls, node: Node, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         orig_init = cls.__init__
 
         # if initialized, return the existing one

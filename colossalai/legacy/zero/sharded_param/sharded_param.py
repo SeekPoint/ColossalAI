@@ -11,6 +11,7 @@ EMPTY_TENSOR_DICT = {}
 
 
 def get_empty_tensor(device: torch.device, dtype: torch.dtype):
+    gd.debuginfo(prj="mt", info=f'')
     key = (device, dtype)
     if key not in EMPTY_TENSOR_DICT:
         EMPTY_TENSOR_DICT[key] = torch.empty(0, dtype=dtype, device=device)
@@ -20,6 +21,7 @@ def get_empty_tensor(device: torch.device, dtype: torch.dtype):
 
 class ShardedParamV2(object):
     def __init__(self, param: torch.nn.Parameter, set_data_none: bool = False) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self._sharded_data_tensor: ShardedTensor = ShardedTensor(param.data)
         self.saved_grad: StatefulTensor = StatefulTensor(None, TensorState.FREE)
         # This attribute must be initialized in ShardedModel

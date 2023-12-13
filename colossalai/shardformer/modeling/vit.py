@@ -17,6 +17,7 @@ def _encoder_forward(
     return_dict: bool = True,
     stage_manager: PipelineStageManager = None,
 ) -> Union[tuple, BaseModelOutput]:
+    gd.debuginfo(prj="mt", info=f'')
     for i in range(start_idx, end_idx):
         layer_module = encoder.layer[i]
 
@@ -53,7 +54,7 @@ def _encoder_forward(
 
 def ViTModel_pipeline_forward(stage_manager: PipelineStageManager, stage_index: List[int]):
     from transformers.models.vit.modeling_vit import BaseModelOutputWithPooling
-
+    gd.debuginfo(prj="mt", info=f'')
     def pp_forward(
         self,
         pixel_values: Optional[torch.Tensor] = None,
@@ -139,7 +140,7 @@ def ViTModel_pipeline_forward(stage_manager: PipelineStageManager, stage_index: 
 def ViTForImageClassification_pipeline_forward(stage_manager: PipelineStageManager, stage_index: List[int]):
     from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
     from transformers.models.vit.modeling_vit import ImageClassifierOutput
-
+    gd.debuginfo(prj="mt", info=f'')
     def pp_forward(
         self,
         pixel_values: Optional[torch.Tensor] = None,
@@ -227,7 +228,7 @@ def ViTForMaskedImageModeling_pipeline_forward(stage_manager: PipelineStageManag
 
     import torch.nn as nn
     from transformers.models.vit.modeling_vit import ImageClassifierOutput, MaskedImageModelingOutput
-
+    gd.debuginfo(prj="mt", info=f'')
     def pp_forward(
         self,
         pixel_values: Optional[torch.Tensor] = None,
@@ -337,7 +338,7 @@ def get_vit_flash_self_attention_forward():
     from transformers.models.vit.modeling_vit import ViTSelfAttention
 
     from colossalai.kernel.cuda_native import ColoAttention
-
+    gd.debuginfo(prj="mt", info=f'')
     def transpose_for_scores(x: torch.Tensor, num_attention_heads, attention_head_size) -> torch.Tensor:
         new_x_shape = x.size()[:-1] + (num_attention_heads, attention_head_size)
         x = x.view(new_x_shape)
@@ -372,7 +373,7 @@ def get_vit_flash_self_attention_forward():
 
 def get_jit_fused_vit_output_forward():
     from transformers.models.vit.modeling_vit import ViTOutput
-
+    gd.debuginfo(prj="mt", info=f'')
     def forward(self: ViTOutput, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor:
         hidden_states = self.dense(hidden_states)
         hidden_states = self.dropout_add(hidden_states, input_tensor, self.dropout.p, self.dropout.training)

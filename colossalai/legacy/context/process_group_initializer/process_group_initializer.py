@@ -27,6 +27,7 @@ class ProcessGroupInitializer(ABC):
         pipeline_parallel_size: int,
         tensor_parallel_size: int,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         self.rank = rank
         self.world_size = world_size
         self.data_parallel_size = data_parallel_size

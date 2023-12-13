@@ -23,6 +23,7 @@ class Partition:
         self.graph: torch.fx.graph.Graph = torch.fx.graph.Graph()
         self.environment: Dict[torch.fx.node.Node, torch.fx.node.Node] = {}
         self.targets: Dict[str, Any] = {}
+        gd.debuginfo(prj="mt", info=f'')
 
     def __repr__(self) -> str:
         return (
@@ -119,41 +120,53 @@ def split_module(
     """
     partitions: Dict[str, Partition] = {}
     orig_nodes: Dict[str, torch.fx.node.Node] = {}
+    gd.debuginfo(prj="mt", info=f'')
 
     def record_cross_partition_use(def_node: torch.fx.node.Node, use_node: Optional[torch.fx.node.Node]):  # noqa: B950
+        gd.debuginfo(prj="mt", info=f'')
         def_partition_name = getattr(def_node, "_fx_partition", None)
         use_partition_name = getattr(use_node, "_fx_partition", None)
         if def_partition_name != use_partition_name:
             if def_partition_name is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 def_partition = partitions[def_partition_name]
                 def_partition.outputs.setdefault(def_node.name)
                 if use_partition_name is not None:
                     def_partition.partition_dependents.setdefault(use_partition_name)
 
             if use_partition_name is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 use_partition = partitions[use_partition_name]
                 use_partition.inputs.setdefault(def_node.name)
                 if def_partition_name is not None:
                     use_partition.partitions_dependent_on.setdefault(def_partition_name)
 
     def record_output(def_node: torch.fx.node.Node, use_node: Optional[torch.fx.node.Node]):  # noqa: B950
+        gd.debuginfo(prj="mt", info=f'')
         def_partition_name = getattr(def_node, "_fx_partition", None)
         use_partition_name = getattr(use_node, "_fx_partition", None)
         if def_partition_name != use_partition_name:
+            gd.debuginfo(prj="mt", info=f'')
             if def_partition_name is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 def_partition = partitions[def_partition_name]
                 def_partition.outputs.setdefault(def_node.name)
                 if use_partition_name is not None:
+                    gd.debuginfo(prj="mt", info=f'')
                     def_partition.partition_dependents.setdefault(use_partition_name)
 
             if use_partition_name is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 use_partition = partitions[use_partition_name]
                 use_partition.inputs.setdefault(def_node.name)
                 if def_partition_name is not None:
+                    gd.debuginfo(prj="mt", info=f'')
                     use_partition.partitions_dependent_on.setdefault(def_partition_name)
             use_partition.outputs.setdefault(def_node.name)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             if use_partition_name is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 use_partition = partitions[use_partition_name]
                 use_partition.outputs.setdefault(def_node.name)
 
@@ -270,6 +283,7 @@ def split_module(
 
         # Construct GraphModule for this partition
         submod_name = f"submod_{partition_name}"
+        gd.debuginfo(prj="mt", info=f'submod_name={submod_name}')
         base_mod_attrs[submod_name] = torch.fx.graph_module.GraphModule(
             partition.targets, partition.graph
         )  # noqa: B950

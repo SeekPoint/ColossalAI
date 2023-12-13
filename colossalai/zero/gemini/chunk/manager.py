@@ -20,6 +20,7 @@ class ChunkManager:
     """
 
     def __init__(self, chunk_configuration, init_device: Optional[torch.device] = None) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.device = init_device or get_current_device()
         self.dp_degree_chunk_size_dict: Dict[int, int] = dict()
         self.kwargs_config = chunk_configuration
@@ -61,6 +62,7 @@ class ChunkManager:
         chunk_kwargs = self.kwargs_config[config_key]
         group_name = "{}_{}".format(group_type, config_key)
         chunk_group = self.__get_chunk_group(group_name)
+        gd.debuginfo(prj="mt", info=f'')
 
         try:
             # append the tensor to the last chunk
@@ -96,31 +98,39 @@ class ChunkManager:
 
     def close_all_groups(self):
         """Close all the chunks of all groups."""
+        gd.debuginfo(prj="mt", info=f'')
         for group_name in self.chunk_groups:
             self.__close_one_chunk(self.chunk_groups[group_name][-1])
 
     def access_chunk(self, chunk: Chunk) -> None:
         """Make the chunk can be used for calculation."""
+        gd.debuginfo(prj="mt", info=f'')
         if chunk in self.accessed_chunks:
+            gd.debuginfo(prj="mt", info=f'')
             return
         self.__sub_memory_usage(chunk.memory_usage)
         if chunk.device_type == "cpu":
             chunk.shard_move(get_current_device())
+            gd.debuginfo(prj="mt", info=f'')
         self.__add_accessed_chunk(chunk)
         self.__add_memory_usage(chunk.memory_usage)
 
     def release_chunk(self, chunk: Chunk) -> None:
         """Scatter the chunk in CUDA."""
         if chunk not in self.accessed_chunks:
+            gd.debuginfo(prj="mt", info=f'')
             return
         if chunk.can_release:
             self.__sub_memory_usage(chunk.memory_usage)
             self.__sub_accessed_chunk(chunk)
             self.__add_memory_usage(chunk.memory_usage)
+            gd.debuginfo(prj="mt", info=f'')
 
     def move_chunk(self, chunk: Chunk, device: torch.device, force_copy: bool = False) -> None:
         """Move the shard of the chunk to the target device."""
+        gd.debuginfo(prj="mt", info=f'')
         if not chunk.can_move or chunk.device_type == device.type:
+            gd.debuginfo(prj="mt", info=f'')
             return
         self.__sub_memory_usage(chunk.memory_usage)
         chunk.shard_move(device, force_copy)
@@ -130,10 +140,13 @@ class ChunkManager:
         """Transit tensor state according to pre-defined state machine."""
         chunk = self.tensor_chunk_map[tensor]
         chunk.tensor_trans_state(tensor, state)
+        gd.debuginfo(prj="mt", info=f'')
 
     def reduce_chunk(self, chunk: Chunk) -> bool:
         """Reduce or all reduce the chunk."""
+        gd.debuginfo(prj="mt", info=f'')
         if not chunk.can_reduce:
+            gd.debuginfo(prj="mt", info=f'')
             return False
         self.__sub_memory_usage(chunk.memory_usage)
         chunk.reduce()
@@ -145,6 +158,7 @@ class ChunkManager:
         """Release gathered chunk in a fake mode.
         This function is used for keep-gathered chunk in the inference mode.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert chunk.keep_gathered
         assert chunk.tensor_state_cnter[TensorState.HOLD] == chunk.num_tensors
         self.__sub_accessed_chunk(chunk)
@@ -157,6 +171,7 @@ class ChunkManager:
             tensor (torch.Tensor): the tensor used to retrieve meta information
             data (torch.Tensor): the tensor to be copied to the chunk
         """
+        gd.debuginfo(prj="mt", info=f'')
         chunk = self.tensor_chunk_map[tensor]
         chunk.copy_tensor_to_chunk_slice(tensor, data)
 
@@ -167,12 +182,14 @@ class ChunkManager:
         Args:
             tensor (torch.Tensor): a torch tensor object
         """
+        gd.debuginfo(prj="mt", info=f'')
         return self.tensor_chunk_map[tensor]
 
     def get_cuda_movable_chunks(self) -> List[Chunk]:
         """
         Get all chunks that can be moved.
         """
+        gd.debuginfo(prj="mt", info=f'')
         chunk_list = []
         for chunk in self.accessed_chunks:
             if chunk.can_release:
@@ -187,6 +204,7 @@ class ChunkManager:
         Args:
             tensors (Iterable[torch.Tensor]): the tensors used to look for chunks
         """
+        gd.debuginfo(prj="mt", info=f'')
         chunks = []
         for tensor in tensors:
             chunk = self.get_chunk(tensor)
@@ -203,6 +221,7 @@ class ChunkManager:
         Args:
             tensor (torch.Tensor): An extern static tensor. E.g. optimizer state.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert tensor not in self.tensor_chunk_map
         self.total_mem[tensor.device.type] += tensor.numel() * tensor.element_size()
 
@@ -219,60 +238,74 @@ class ChunkManager:
 
     def __get_chunk_group(self, group_name: str) -> Deque[Chunk]:
         """Register a chunk group."""
+        gd.debuginfo(prj="mt", info=f'')
         if group_name not in self.chunk_groups:
             self.chunk_groups[group_name] = deque()
+            gd.debuginfo(prj="mt", info=f'')
         return self.chunk_groups[group_name]
 
     def __close_one_chunk(self, chunk: Chunk):
+        gd.debuginfo(prj="mt", info=f'')
         self.__sub_memory_usage(chunk.memory_usage)
         chunk.close_chunk()
         self.__add_memory_usage(chunk.memory_usage)
 
     def __sub_memory_usage(self, usage: Dict[str, int]):
+        gd.debuginfo(prj="mt", info=f'')
         for k, v in usage.items():
             self.total_mem[k] -= v
 
     def __add_memory_usage(self, usage: Dict[str, int]):
+        gd.debuginfo(prj="mt", info=f'')
         for k, v in usage.items():
             self.total_mem[k] += v
 
     def __add_accessed_chunk(self, chunk: Chunk):
+        gd.debuginfo(prj="mt", info=f'')
         chunk.access_chunk()
         self.accessed_chunks.add(chunk)
         self.accessed_mem += chunk.chunk_mem
 
     def __sub_accessed_chunk(self, chunk: Chunk):
+        gd.debuginfo(prj="mt", info=f'')
         chunk.release_chunk()
         self.accessed_chunks.remove(chunk)
         self.accessed_mem -= chunk.chunk_mem
 
     def init_grad_chunk(self, chunk: Chunk) -> Chunk:
+        gd.debuginfo(prj="mt", info=f'')
         if chunk.grad_chunk is not None:
             self.__sub_memory_usage(chunk.grad_chunk.memory_usage)
+            gd.debuginfo(prj="mt", info=f'')
         grad_chunk = chunk.init_grad_chunk()
         self.__add_memory_usage(grad_chunk.memory_usage)
         if grad_chunk not in self.accessed_chunks:
             self.accessed_chunks.add(grad_chunk)
             self.accessed_mem += grad_chunk.chunk_mem
+            gd.debuginfo(prj="mt", info=f'')
         return grad_chunk
 
     def rearrange_accumulated_grad_chunk(self, chunk: Chunk) -> Chunk:
         """Rearrange gradients accumulated in chunk.grad_chunk, and getP prepared for gradient reduction."""
 
         assert chunk.grad_chunk is not None
+        gd.debuginfo(prj="mt", info=f'')
 
         # Make a backup for gradient accumulated before.
         # Here backup gradients should be multiplied, since it will be divided after gradient reduction.
         if chunk.grad_chunk.is_gathered:
             accumulated_grad = chunk.grad_chunk.cuda_global_chunk.clone().detach().mul_(chunk.pg_size)
             accumulated_grad_gathered = True
+            gd.debuginfo(prj="mt", info=f'')
         else:
             if chunk.grad_chunk.cuda_shard is not None:
                 accumulated_grad = chunk.grad_chunk.cuda_shard.clone().detach().mul_(chunk.pg_size)
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 accumulated_grad = (
                     chunk.grad_chunk.cpu_shard.to(get_current_device()).clone().detach().mul_(chunk.pg_size)
                 )
+                gd.debuginfo(prj="mt", info=f'')
             accumulated_grad_gathered = False
 
         # Reset grad_chunk, and chunk.grad_chunk will be accessed.
@@ -282,8 +315,10 @@ class ChunkManager:
         # Add backup gradients to grad_chunk.
         if accumulated_grad_gathered:
             grad_chunk.cuda_global_chunk.add_(accumulated_grad)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             grad_chunk.cuda_global_chunk[grad_chunk.shard_begin : grad_chunk.shard_end].add_(accumulated_grad)
+            gd.debuginfo(prj="mt", info=f'')
 
         # Release accumulated_grad
         free_storage(accumulated_grad)

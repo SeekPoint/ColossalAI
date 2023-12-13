@@ -17,6 +17,7 @@ class ComputeSpec(object):
     """
 
     def __init__(self, compute_pattern: ComputePattern) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(compute_pattern, ComputePattern)
         self.compute_pattern = compute_pattern
         # Make sure output tensors are replicate

@@ -51,6 +51,7 @@ class AMPOptimizer(OptimizerWrapper):
         clipping_norm: float = 0.0,
         norm_type: float = 2.0,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(optimizer)
 
         self.module = module
@@ -65,6 +66,7 @@ class AMPOptimizer(OptimizerWrapper):
         self.fp32_to_fp16_params: Dict[torch.Tensor, torch.nn.Parameter] = dict()
 
         if self.clipping_flag:
+            gd.debuginfo(prj="mt", info=f'')
             assert norm_type == 2.0, "AMPOptimizer only supports L2 norm now"
 
         self.__init__optimizer()
@@ -83,6 +85,7 @@ class AMPOptimizer(OptimizerWrapper):
         self._logger = get_dist_logger()
 
     def _set_grad_ptr(self):
+        gd.debuginfo(prj="mt", info=f'')
         for group in self.param_groups:
             for fake_param in group["params"]:
                 region = self.param_to_region[fake_param]
@@ -93,6 +96,7 @@ class AMPOptimizer(OptimizerWrapper):
                 fake_param.data = region.fp32_data[begin:end]
 
     def _update_fp16_params(self):
+        gd.debuginfo(prj="mt", info=f'')
         none_tensor = torch.empty([0])
         for group in self.param_groups:
             for fake_param in group["params"]:
@@ -101,11 +105,13 @@ class AMPOptimizer(OptimizerWrapper):
                 self.param_to_region[fake_param].cpu_grad = None
 
     def _check_overflow(self):
+        gd.debuginfo(prj="mt", info=f'')
         # clear previous overflow record
         self._found_overflow.fill_(self.module.overflow_counter.item())
         return self._found_overflow.item() > 0
 
     def _get_combined_scale(self):
+        gd.debuginfo(prj="mt", info=f'')
         loss_scale = 1
 
         if self.optim_state == OptimState.SCALED:
@@ -115,24 +121,30 @@ class AMPOptimizer(OptimizerWrapper):
         combined_scale = loss_scale
 
         if combined_scale == 1:
+            gd.debuginfo(prj="mt", info=f'')
             return -1
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return combined_scale
 
     @property
     def loss_scale(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self.grad_scaler.scale.item()
 
     def zero_grad(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         self.module.overflow_counter = torch.cuda.IntTensor([0])
         return self.optim.zero_grad(set_to_none=True)
 
     def step(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         # Copy gradients from model params to main params.
         self._set_grad_ptr()
 
         found_inf = self._check_overflow()
         if found_inf:
+            gd.debuginfo(prj="mt", info=f'')
             self.optim_state = OptimState.UNSCALED  # no need to unscale grad
             self.grad_scaler.update(found_inf)  # update gradient scaler
             self._logger.info(f"Found overflow. Skip step")
@@ -146,6 +158,8 @@ class AMPOptimizer(OptimizerWrapper):
         self.grad_scaler.update(found_inf)
 
         ret = self.optim.step(div_scale=combined_scale, *args, **kwargs)
+        gd.debuginfo(prj="mt", info=f'')
+
         self.zero_grad()
         self._update_fp16_params()
         return ret
@@ -154,11 +168,13 @@ class AMPOptimizer(OptimizerWrapper):
         raise NotImplementedError
 
     def backward(self, loss: torch.Tensor):
+        gd.debuginfo(prj="mt", info=f'')
         loss = self.loss_scale * loss
         self.optim_state = OptimState.SCALED
         self.module.backward(loss)
 
     def __init__optimizer(self):
+        gd.debuginfo(prj="mt", info=f'')
         for group in self.optim.param_groups:
             fake_params_list = list()
 

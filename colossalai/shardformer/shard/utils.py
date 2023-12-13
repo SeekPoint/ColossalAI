@@ -9,6 +9,8 @@ def set_tensors_to_none(model: nn.Module, exclude: Set[nn.Module] = set()) -> No
     Args:
         model (nn.Module): The model to set
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     if model in exclude:
         return
     for child in model.children():

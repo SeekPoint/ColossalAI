@@ -22,6 +22,7 @@ class MoeGradientHandler(BaseGradientHandler):
     """
 
     def __init__(self, model, optimizer=None):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(model, optimizer)
 
     def handle_gradient(self):

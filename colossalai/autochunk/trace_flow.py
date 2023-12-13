@@ -17,6 +17,7 @@ from .utils import (
 
 class TraceFlow(object):
     def __init__(self, trace_indice: TraceIndice, node_mgr: NodeMgr) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.trace_indice = trace_indice
         self.node_mgr = node_mgr
 
@@ -32,6 +33,7 @@ class TraceFlow(object):
         Returns:
             bool: True if check pass
         """
+        gd.debuginfo(prj="mt", info=f'')
         # we use start_node_idx instead of real chunk index
         start_node_idx = self.node_mgr.find_node_idx(start_node)
         end_node_trace = self.trace_indice._find_trace_from_node(end_node)
@@ -57,9 +59,11 @@ class TraceFlow(object):
         Returns:
             bool: True if check pass
         """
+        gd.debuginfo(prj="mt", info=f'')
         end_node_trace = self.trace_indice._find_trace_from_node(end_node)
         end_node_compute = end_node_trace["compute"][end_dim]
         if any(start_idx <= i <= end_idx for i in end_node_compute):
+            gd.debuginfo(prj="mt", info=f'')
             return False
         return True
 
@@ -94,6 +98,7 @@ class TraceFlow(object):
         Returns:
             bool: True if this node can be added to the flow, vice versa.
         """
+        gd.debuginfo(prj="mt", info=f'')
         arg_idx = self.node_mgr.find_node_idx(arg_node)
         # arg in chunk range or be inputs
         if not (start_idx <= arg_idx < end_idx):
@@ -102,27 +107,35 @@ class TraceFlow(object):
         # get fix dim
         arg_fix_dim = []
         if cur_node_dim is not None:
+            gd.debuginfo(prj="mt", info=f'')
             for i in cur_node_fix_dim:
                 fix_dim_source = cur_node_source[i]
                 if arg_idx in fix_dim_source:
                     arg_fix_dim.append(fix_dim_source[arg_idx][0])
         if arg_node in all_node_info:
+            gd.debuginfo(prj="mt", info=f'')
             arg_fix_dim = list(set(all_node_info[arg_node]["fix_dim"] + arg_fix_dim))
 
         # find arg dim
         if cur_node_dim is not None:
+            gd.debuginfo(prj="mt", info=f'')
             # dim is computed
             if arg_idx in cur_node_compute[cur_node_dim]:
+                gd.debuginfo(prj="mt", info=f'')
                 return False
             if arg_idx not in cur_node_source[cur_node_dim]:
+                gd.debuginfo(prj="mt", info=f'')
                 arg_dim = None
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 arg_dim = cur_node_source[cur_node_dim][arg_idx][0]
                 # chunk dim cannot be in fix dims
                 if arg_dim in arg_fix_dim:
+                    gd.debuginfo(prj="mt", info=f'')
                     return False
                 # chunk dim should be None if shape size is 1
                 if get_node_shape(arg_node)[arg_dim] == 1:
+                    gd.debuginfo(prj="mt", info=f'')
                     arg_dim = None
                 # chunk shape should equal cur node
                 elif get_node_shape(arg_node)[arg_dim] != 1:
@@ -131,25 +144,31 @@ class TraceFlow(object):
                             return False
         else:
             arg_dim = None
+            gd.debuginfo(prj="mt", info=f'')
 
         # add arg rest dim as fix dim
         arg_fix_dim = list(range(len(get_node_shape(arg_node))))
         if arg_dim is not None:
+            gd.debuginfo(prj="mt", info=f'')
             arg_fix_dim.remove(arg_dim)
 
         # if already in node_info, arg dim must be same
         if arg_node in all_node_info:
+            gd.debuginfo(prj="mt", info=f'')
             if all_node_info[arg_node]["chunk_dim"] != arg_dim:
+                gd.debuginfo(prj="mt", info=f'')
                 return False
             all_node_info[arg_node]["fix_dim"] = arg_fix_dim
         # else add it to list
         else:
+            gd.debuginfo(prj="mt", info=f'')
             all_node_info[arg_node] = {"chunk_dim": arg_dim, "fix_dim": arg_fix_dim}
 
         next_node_list.append(arg_node)
         return True
 
     def _get_all_node_info(self, end_dim, start_idx, end_idx):
+        gd.debuginfo(prj="mt", info=f'')
         cur_node_list = [self.node_mgr.get_node_by_idx(end_idx)]  # start from the last node
         all_node_info = {cur_node_list[0]: {"chunk_dim": end_dim, "fix_dim": []}}
 
@@ -208,6 +227,7 @@ class TraceFlow(object):
             inputs (List(Node)): new inputs
             inputs_dim (List): chunk dim for inputs
         """
+        gd.debuginfo(prj="mt", info=f'')
         inputs_dim = []
         remove_inputs = []
         for input_node in inputs:
@@ -233,9 +253,12 @@ class TraceFlow(object):
                         else:
                             return None, None
             if len(input_dict) == 0:
+                gd.debuginfo(prj="mt", info=f'')
                 remove_inputs.append(input_node)
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 inputs_dim.append(input_dict)
+
         # remove unchunked inputs
         for i in remove_inputs:
             if i in inputs:
@@ -254,6 +277,8 @@ class TraceFlow(object):
         Returns:
             List[Node]: all nodes to be preposed
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         # get all possible prepose nodes
         maybe_prepose_nodes = []
         for node, node_info in all_node_info.items():
@@ -301,9 +326,11 @@ class TraceFlow(object):
                 tmp_cur_prepose_nodes = tmp_next_prepose_nodes
 
             if prepose_flag == False:
+                gd.debuginfo(prj="mt", info=f'')
                 maybe_prepose_nodes.remove(maybe_prepose_nodes[0])
                 continue
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 for n in tmp_cur_related_prepose_nodes:
                     if n not in prepose_nodes:
                         prepose_nodes.append(n)
@@ -314,6 +341,7 @@ class TraceFlow(object):
         chunk_info["args"]["prepose_nodes"] = prepose_nodes
 
     def _get_non_chunk_inputs(self, chunk_info, start_idx, end_idx):
+        gd.debuginfo(prj="mt", info=f'')
         # we need to log input nodes to avoid deleting them in the loop
         chunk_node_list = self.node_mgr.get_node_slice_by_idx(start_idx, end_idx + 1)
         # also need to get some prepose node's arg out of non_chunk_inputs
@@ -326,6 +354,7 @@ class TraceFlow(object):
         return chunk_info
 
     def flow_search(self, start_idx, start_dim, end_idx, end_dim):
+        gd.debuginfo(prj="mt", info=f'')
         inputs, outputs = find_chunk_compute_input_and_output_nodes(
             self.node_mgr.get_node_slice_by_idx(start_idx, end_idx + 1)
         )
@@ -333,6 +362,7 @@ class TraceFlow(object):
         # get every node's chunk dim and fix dim
         all_node_info = self._get_all_node_info(end_dim, start_idx, end_idx)
         if all_node_info is None:
+            gd.debuginfo(prj="mt", info=f'')
             return None
 
         chunk_info = {
@@ -349,8 +379,10 @@ class TraceFlow(object):
 
         # find chunk info for other outputs
         if len(find_tensor_shape_node(outputs)) > 1:
+            gd.debuginfo(prj="mt", info=f'')
             chunk_info = self._get_other_output_info(outputs, start_idx, start_dim, end_idx, end_dim, chunk_info)
             if chunk_info is None:
+                gd.debuginfo(prj="mt", info=f'')
                 return None
 
         # get input nodes' chunk dim
@@ -371,9 +403,14 @@ class TraceFlow(object):
 
         return chunk_info
 
-    def _get_other_output_info(
-        self, outputs: List[Node], start_idx: int, start_dim: int, end_idx: int, end_dim: int, chunk_info: Dict
-    ):
+    def _get_other_output_info(self,
+                               outputs: List[Node],
+                               start_idx: int,
+                               start_dim: int,
+                               end_idx: int,
+                               end_dim: int,
+                               chunk_info: Dict):
+        gd.debuginfo(prj="mt", info=f'')
         start_node = self.node_mgr.get_node_by_idx(start_idx)
         # loop all outputs
         for output in outputs:
@@ -404,10 +441,15 @@ class TraceFlow(object):
                 return None
         return chunk_info
 
-    def _update_chunk_info(self, chunk_info: Dict, new_all_node_info: Dict, output: Node, output_dim: int) -> bool:
+    def _update_chunk_info(self,
+                           chunk_info: Dict,
+                           new_all_node_info: Dict,
+                           output: Node,
+                           output_dim: int) -> bool:
         """
         check if there is conflict between new node info and old chunk info. If not, update old chunk info
         """
+        gd.debuginfo(prj="mt", info=f'')
         # check if conflict
         overlap_flag = False
         for k, v in new_all_node_info.items():
@@ -435,6 +477,7 @@ class TraceFlow(object):
         Some shape args in reshape may have changed due to chunk
         reassign those changed shape
         """
+        gd.debuginfo(prj="mt", info=f'')
         chunk_region = chunk_info["region"]
         reshape_size = {}
         chunk_shape = get_node_shape(chunk_info["outputs"][0])[chunk_info["outputs_dim"][0]]
@@ -467,25 +510,37 @@ class TraceFlow(object):
         chunk_info["reshape_size"] = reshape_size
         return chunk_info
 
-    def check_region_start_end(
-        self, start_node: Node, start_dim: int, start_idx: int, end_node: Node, end_dim: int, end_idx: int
-    ) -> bool:
+    def check_region_start_end(self,
+                               start_node: Node,
+                               start_dim: int,
+                               start_idx: int,
+                               end_node: Node,
+                               end_dim: int,
+                               end_idx: int) -> bool:
         """
         check if region start and end is legal
         """
         # dim cannot be None
         if get_node_shape(end_node) is None or get_node_shape(start_node) is None:
+            gd.debuginfo(prj="mt", info=f'')
             return False
         # dim size cannot be 1
         if get_node_shape(end_node)[end_dim] == 1 or get_node_shape(start_node)[start_dim] == 1:
+            gd.debuginfo(prj="mt", info=f'')
             return False
         # must have users
         if len(end_node.users) == 0:
+            gd.debuginfo(prj="mt", info=f'')
             return False
         # check index source align
         if not self.check_index_source(start_dim, start_node, start_idx, end_dim, end_node):
+            gd.debuginfo(prj="mt", info=f'')
             return False
         # check index compute
         if not self.check_index_compute(start_idx, end_dim, end_node, end_idx):
+            gd.debuginfo(prj="mt", info=f'')
             return False
+
+        gd.debuginfo(prj="mt", info=f'')
+
         return True

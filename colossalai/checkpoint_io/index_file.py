@@ -21,6 +21,7 @@ class CheckpointIndexFile:
     """
 
     def __init__(self, root_path=None) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.root_path = root_path
 
         # use ordered dict to preserve the tensor checkpoint order
@@ -38,6 +39,7 @@ class CheckpointIndexFile:
         Returns:
             CheckpointIndexFile: CheckpointIndexFile object.
         """
+        gd.debuginfo(prj="mt", info=f'')
         index = CheckpointIndexFile()
         index.load(index_path)
         return index
@@ -49,14 +51,18 @@ class CheckpointIndexFile:
         Args:
             json_path (str): path to the json file.
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         # load the json file
         with open(json_path, "r") as f:
             index = json.load(f)
 
         # assign attributes if exists
         if "metadata" in index:
+            gd.debuginfo(prj="mt", info=f'')
             self.metadata = index["metadata"]
         if "weight_map" in index:
+            gd.debuginfo(prj="mt", info=f'')
             self.weight_map = index["weight_map"]
 
         # assign the root directory for the index file
@@ -69,6 +75,8 @@ class CheckpointIndexFile:
         Args:
             json_path (str): path to the json file.
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         # create the index file
         index = dict()
         index["metadata"] = self.metadata
@@ -86,6 +94,7 @@ class CheckpointIndexFile:
             param_name (str): name of the parameter.
             shard_file (str): name of the shard file.
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.weight_map[param_name] = shard_file
 
     def append_meta_data(self, name: str, val: Any):
@@ -96,6 +105,7 @@ class CheckpointIndexFile:
             name (str): name of the metadata.
             val (Any): value of the metadata.
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.metadata[name] = val
 
     def contains_dtensor(self):
@@ -106,6 +116,7 @@ class CheckpointIndexFile:
         Returns:
             bool: True if the index file contains any distributed tensor, False otherwise.
         """
+        gd.debuginfo(prj="mt", info=f'')
         for value in self.weight_map.values():
             if value.endswith(".*.bin") or value.endswith(".*.safetensors"):
                 return True
@@ -118,6 +129,8 @@ class CheckpointIndexFile:
         Returns:
             list: checkpoint shard filenames.
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         # read the checkpoint file list from the json file and get a list of unique file names
         checkpoint_files = sorted(list(set(self.weight_map.values())))
 
@@ -150,6 +163,7 @@ class CheckpointIndexFile:
         Returns:
             str: checkpoint file name.
         """
+        gd.debuginfo(prj="mt", info=f'')
         ckpt_path = self.weight_map[param_name]
         return ckpt_path
 
@@ -165,6 +179,7 @@ class CheckpointIndexFile:
         Returns:
             str: param_group file name
         """
+        gd.debuginfo(prj="mt", info=f'')
         filename = self.metadata.get("param_groups", None)
         if filename:
             return str(self.root_path.joinpath(filename))
@@ -175,6 +190,7 @@ class CheckpointIndexFile:
         """
         Write index file.
         """
+        gd.debuginfo(prj="mt", info=f'')
         save_index_file = os.path.join(self.root_path, save_index_file)
         index = {"metadata": self.metadata, "weight_map": self.weight_map}
         with open(save_index_file, "w", encoding="utf-8") as f:

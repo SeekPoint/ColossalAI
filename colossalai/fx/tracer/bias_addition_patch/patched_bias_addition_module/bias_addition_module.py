@@ -12,6 +12,7 @@ class BiasAdditionModule(ABC):
     """
 
     def __init__(self, tracer, target, args, kwargs, substitute_func):
+        gd.debuginfo(prj="mt", info=f'')
         self.tracer = tracer
         self.target = target
         self.args = args
@@ -27,6 +28,7 @@ class BiasAdditionModule(ABC):
         Note: this function will be invoked during module initializing,
               you should never call this function.
         """
+        gd.debuginfo(prj="mt", info=f'')
         weight_node_kind = "get_attr"
         weight_node_target = self.target + ".weight"
         weight_proxy = self.tracer.create_proxy(weight_node_kind, weight_node_target, (), {})
@@ -39,6 +41,7 @@ class BiasAdditionModule(ABC):
         Note: this function will be invoked during module initializing,
               you should never call this function.
         """
+        gd.debuginfo(prj="mt", info=f'')
         bias_node_kind = "get_attr"
         bias_node_target = self.target + ".bias"
         bias_proxy = self.tracer.create_proxy(bias_node_kind, bias_node_target, (), {})
@@ -60,10 +63,12 @@ class BiasAdditionModule(ABC):
         This method is used to create the non_bias_func proxy, the node created by this proxy will
         compute the main computation, such as convolution, with bias option banned.
         """
+        gd.debuginfo(prj="mt", info=f'')
         node_kind = "call_function"
         node_target = self.substitute_func
         if input_proxy is None:
             input_proxy = self.args[0]
+            gd.debuginfo(prj="mt", info=f'')
         node_args = (input_proxy, self.weight_proxy)
         node_kwargs = self.extract_kwargs_from_mod()
         non_bias_func_proxy = self.tracer.create_proxy(node_kind, node_target, node_args, node_kwargs)
@@ -74,6 +79,7 @@ class BiasAdditionModule(ABC):
         This method is used to create the bias_addition_proxy, the node created by this proxy will
         compute the sum of non_bias_func result and bias with some reshape operation if needed.
         """
+        gd.debuginfo(prj="mt", info=f'')
         bias_add_node_kind = "call_function"
         bias_add_node_target = operator.add
         bias_add_args = (non_bias_func_proxy, bias_proxy)

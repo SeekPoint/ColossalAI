@@ -16,6 +16,7 @@ except ImportError:
 
 class W8A8BFP32O32LinearSiLU(torch.nn.Module):
     def __init__(self, in_features, out_features, alpha=1.0, beta=1.0):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -37,6 +38,7 @@ class W8A8BFP32O32LinearSiLU(torch.nn.Module):
         self.register_buffer("a", torch.tensor(alpha))
 
     def to(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().to(*args, **kwargs)
         self.weight = self.weight.to(*args, **kwargs)
         self.bias = self.bias.to(*args, **kwargs)
@@ -44,6 +46,7 @@ class W8A8BFP32O32LinearSiLU(torch.nn.Module):
 
     @torch.no_grad()
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         x_shape = x.shape
         x = x.view(-1, x_shape[-1])
         y = smoothquant_cuda.linear_silu_a8_w8_bfp32_ofp32(x, self.weight, self.bias, self.a.item(), 1.0)
@@ -52,12 +55,14 @@ class W8A8BFP32O32LinearSiLU(torch.nn.Module):
 
     @staticmethod
     def from_float(module: torch.nn.Linear, input_scale):
+        gd.debuginfo(prj="mt", info=f'')
         int8_module = W8A8BFP32O32LinearSiLU(module.in_features, module.out_features)
         int8_weight, weight_scale = quantize_per_tensor_absmax(module.weight)
         alpha = input_scale * weight_scale
         int8_module.weight = int8_weight
         if module.bias is not None:
             int8_module.bias.data.copy_(module.bias.to(torch.float))
+            gd.debuginfo(prj="mt", info=f'')
         int8_module.a = alpha
         return int8_module
 
@@ -66,6 +71,7 @@ class W8A8BFP32O32LinearSiLU(torch.nn.Module):
 class W8A8B8O8Linear(torch.nn.Module):
     # For qkv_proj
     def __init__(self, in_features, out_features, alpha=1.0, beta=1.0):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -88,6 +94,7 @@ class W8A8B8O8Linear(torch.nn.Module):
         self.register_buffer("b", torch.tensor(beta))
 
     def to(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().to(*args, **kwargs)
         self.weight = self.weight.to(*args, **kwargs)
         self.bias = self.bias.to(*args, **kwargs)
@@ -95,6 +102,7 @@ class W8A8B8O8Linear(torch.nn.Module):
 
     @torch.no_grad()
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         x_shape = x.shape
         x = x.view(-1, x_shape[-1])
         y = linear_a8_w8_b8_o8(x, self.weight, self.bias, self.a.item(), self.b.item())
@@ -103,6 +111,7 @@ class W8A8B8O8Linear(torch.nn.Module):
 
     @staticmethod
     def from_float(module: torch.nn.Linear, input_scale, output_scale):
+        gd.debuginfo(prj="mt", info=f'')
         int8_module = W8A8B8O8Linear(module.in_features, module.out_features)
         int8_weight, weight_scale = quantize_per_tensor_absmax(module.weight)
         alpha = input_scale * weight_scale / output_scale
@@ -110,6 +119,7 @@ class W8A8B8O8Linear(torch.nn.Module):
         int8_module.a = alpha
 
         if module.bias is not None:
+            gd.debuginfo(prj="mt", info=f'')
             int8_bias, bias_scale = quantize_per_tensor_absmax(module.bias)
             int8_module.bias = int8_bias
             beta = bias_scale / output_scale
@@ -122,6 +132,7 @@ class W8A8B8O8Linear(torch.nn.Module):
 class W8A8BFP32OFP32Linear(torch.nn.Module):
     # For fc2 and out_proj
     def __init__(self, in_features, out_features, alpha=1.0, beta=1.0):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -143,12 +154,14 @@ class W8A8BFP32OFP32Linear(torch.nn.Module):
         self.register_buffer("a", torch.tensor(alpha))
 
     def _apply(self, fn):
+        gd.debuginfo(prj="mt", info=f'')
         # prevent the bias from being converted to half
         super()._apply(fn)
         self.bias = self.bias.to(torch.float32)
         return self
 
     def to(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().to(*args, **kwargs)
         self.weight = self.weight.to(*args, **kwargs)
         self.bias = self.bias.to(*args, **kwargs)
@@ -157,6 +170,7 @@ class W8A8BFP32OFP32Linear(torch.nn.Module):
 
     @torch.no_grad()
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         x_shape = x.shape
         x = x.view(-1, x_shape[-1])
         y = linear_a8_w8_bfp32_ofp32(x, self.weight, self.bias, self.a.item(), 1)
@@ -165,6 +179,7 @@ class W8A8BFP32OFP32Linear(torch.nn.Module):
 
     @staticmethod
     def from_float(module: torch.nn.Linear, input_scale):
+        gd.debuginfo(prj="mt", info=f'')
         int8_module = W8A8BFP32OFP32Linear(module.in_features, module.out_features)
         int8_weight, weight_scale = quantize_per_tensor_absmax(module.weight)
         alpha = input_scale * weight_scale
@@ -175,5 +190,6 @@ class W8A8BFP32OFP32Linear(torch.nn.Module):
 
         if module.bias is not None:
             int8_module.bias = module.bias.to(torch.float32)
+            gd.debuginfo(prj="mt", info=f'')
 
         return int8_module

@@ -44,7 +44,7 @@ class ConcreteInfoProp(torch.fx.Interpreter):
          module (GraphModule): The module to be executed
 
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     _is_proped: bool = False
 
     def run(self, *args, initial_env: Optional[Dict[Node, Any]] = None, enable_io_processing: bool = True) -> Any:
@@ -63,7 +63,7 @@ class ConcreteInfoProp(torch.fx.Interpreter):
         Returns:
             Any: The value returned from executing the Module
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         flatten_args, _ = tree_flatten(args)
         self.device = next(item for item in flatten_args if hasattr(item, "device")).device
         return super().run(*args, initial_env, enable_io_processing)
@@ -82,6 +82,7 @@ class ConcreteInfoProp(torch.fx.Interpreter):
         Returns:
             Any: The result of executing ``n``
         """
+        gd.debuginfo(prj="mt", info=f'')
         self._is_proped = True
         result, meta_info = super().run_node(n)
 
@@ -116,6 +117,7 @@ class ConcreteInfoProp(torch.fx.Interpreter):
             result (Any): The argument value that was retrieved
             meta_info (MetaInfo): The memory cost and forward & backward time.
         """
+        gd.debuginfo(prj="mt", info=f'')
         return super().placeholder(target, args, kwargs), GraphInfo()
 
     @compatibility(is_backward_compatible=True)
@@ -135,6 +137,7 @@ class ConcreteInfoProp(torch.fx.Interpreter):
             result (Any): The argument value that was retrieved
             meta_info (MetaInfo): The memory cost and FLOPs estimated with `MetaTensor`.
         """
+        gd.debuginfo(prj="mt", info=f'')
         return super().get_attr(target, args, kwargs), GraphInfo()
 
     @compatibility(is_backward_compatible=True)
@@ -153,6 +156,7 @@ class ConcreteInfoProp(torch.fx.Interpreter):
             result (Any): The argument value that was retrieved
             meta_info (MetaInfo): The memory cost and forward & backward time.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert not isinstance(target, str)
         return profile_function(target, self.device)(*args, **kwargs)
 
@@ -172,6 +176,7 @@ class ConcreteInfoProp(torch.fx.Interpreter):
             result (Any): The argument value that was retrieved
             meta_info (MetaInfo): The memory cost and forward & backward time.
         """
+        gd.debuginfo(prj="mt", info=f'')
         return profile_method(target, self.device)(*args, **kwargs)
 
     @compatibility(is_backward_compatible=True)
@@ -192,6 +197,7 @@ class ConcreteInfoProp(torch.fx.Interpreter):
         """
         # Retrieve executed args and kwargs values from the environment
         # Execute the method and return the result
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(target, str)
         submod = self.fetch_attr(target)
         return profile_module(submod, self.device)(*args, **kwargs)
@@ -213,6 +219,7 @@ class ConcreteInfoProp(torch.fx.Interpreter):
             result (Any): The argument value that was retrieved
             meta_info (MetaInfo): The memory cost and forward & backward time.
         """
+        gd.debuginfo(prj="mt", info=f'')
         return args[0], GraphInfo(save_fwd_in=True)
 
     def propagate(self, *args):
@@ -226,6 +233,7 @@ class ConcreteInfoProp(torch.fx.Interpreter):
         Returns:
             Any: The value returned from executing the Module
         """
+        gd.debuginfo(prj="mt", info=f'')
         return self.run(*args)
 
     def summary(self, unit: str = "MB") -> str:
@@ -234,6 +242,7 @@ class ConcreteInfoProp(torch.fx.Interpreter):
         tabular format. Note that this API requires the ``tabulate`` module
         to be installed.
         """
+        gd.debuginfo(prj="mt", info=f'')
         # https://github.com/pytorch/pytorch/blob/master/torch/fx/graph.py
         try:
             from tabulate import tabulate

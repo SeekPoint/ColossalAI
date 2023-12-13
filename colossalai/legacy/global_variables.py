@@ -10,6 +10,7 @@ class TensorParallelEnv(object):
         return cls._instance
 
     def __init__(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         self.load(*args, **kwargs)
 
     def load(

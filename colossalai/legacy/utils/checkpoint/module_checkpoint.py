@@ -18,6 +18,7 @@ def save_checkpoint(
     *args,
     **kwargs,
 ):
+    gd.debuginfo(prj="mt", info=f'')
     """save_checkpoint
     save a model, whose parameters are `ColoTensor`s.
     Args:
@@ -85,6 +86,7 @@ def load_checkpoint(
     torch_load_kwargs: Optional[Dict] = None,
     load_state_dict_kwargs: Optional[Dict] = None,
 ):
+    gd.debuginfo(prj="mt", info=f'')
     """load_checkpoint
     load a model, whose parameters are `ColoTensor`s.
     Args:

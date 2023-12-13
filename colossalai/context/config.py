@@ -18,6 +18,7 @@ class Config(dict):
     """
 
     def __init__(self, config: dict = None):
+        gd.debuginfo(prj="mt", info=f'')
         if config is not None:
             for k, v in config.items():
                 self._add_item(k, v)
@@ -64,8 +65,10 @@ class Config(dict):
         # check config path
         if isinstance(filename, str):
             filepath = Path(filename).absolute()
+            gd.debuginfo(prj="mt", info=f'')
         elif isinstance(filename, Path):
             filepath = filename.absolute()
+            gd.debuginfo(prj="mt", info=f'')
 
         assert filepath.exists(), f"{filename} is not found, please check your configuration path"
 
@@ -78,6 +81,7 @@ class Config(dict):
         if filepath.parent not in sys.path:
             sys.path.insert(0, (filepath))
             remove_path = True
+            gd.debuginfo(prj="mt", info=f'')
 
         module_name = filepath.stem
         source_file = SourceFileLoader(fullname=str(module_name), path=str(filepath))

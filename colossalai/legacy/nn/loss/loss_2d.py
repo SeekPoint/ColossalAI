@@ -33,6 +33,7 @@ class CrossEntropyLoss2D(_Loss):
     """
 
     def __init__(self, reduction=True, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         assert_summa_initialization()
         self.reduction_mean = reduction
@@ -63,6 +64,7 @@ class _VocabParallelCrossEntropy2D(torch.autograd.Function):
     @staticmethod
     @custom_fwd(cast_inputs=torch.float32)
     def forward(ctx, logits, targets):
+        gd.debuginfo(prj="mt", info=f'')
         # logits: [b/q, h/q]
         # labels: [b/q]
         # loss: [b/q]
@@ -107,6 +109,7 @@ class _VocabParallelCrossEntropy2D(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx, output_grad):
+        gd.debuginfo(prj="mt", info=f'')
         # Retrieve tensors from the forward path.
         softmax, target_mask, masked_target = ctx.saved_tensors
 
@@ -136,6 +139,7 @@ class VocabParallelCrossEntropyLoss2D(_Loss):
     """
 
     def __init__(self, reduction=True):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         self.reduction_mean = reduction
 

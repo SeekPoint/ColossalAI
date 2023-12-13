@@ -38,6 +38,7 @@ class PcieEvent(object):
         self.count = count
         self.pcie_vol = pcie_vol
         self.cuda_time = cuda_time
+        gd.debuginfo(prj="mt", info=f'')
 
     def add(self, rhs):
         self.count += rhs.count
@@ -62,6 +63,8 @@ class PcieProfiler(BaseProfiler):
 
         self.ops_record = dict()
         self.profiler = None
+
+        gd.debuginfo(prj="mt", info=f'')
 
     def reset(self):
         self.h2d_count = 0

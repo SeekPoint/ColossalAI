@@ -26,6 +26,7 @@ class PipelineSharedModuleGradientHandler(BaseGradientHandler):
     """
 
     def handle_gradient(self):
+        gd.debuginfo(prj="mt", info=f'')
         """A method running a all-reduce operation in sub pipeline parallel groups."""
         if gpc.pipeline_parallel_size > 1:
             # bucketize and all-reduce

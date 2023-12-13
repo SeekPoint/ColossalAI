@@ -70,6 +70,7 @@ class Engine:
         verbose: bool = True,
         schedule: Optional[BaseSchedule] = None,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         self._model = model
         self._optimizer = optimizer
         self._criterion = criterion
@@ -137,6 +138,7 @@ class Engine:
         return isinstance(self._schedule, (PipelineSchedule, InterleavedPipelineSchedule))
 
     def add_hook(self, ophook: Type[BaseOpHook]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         """add necessary hook"""
         # whether this hook exist
         for h in self._ophook_list:
@@ -156,6 +158,7 @@ class Engine:
         self.optimizer.zero_grad()
 
     def step(self):
+        gd.debuginfo(prj="mt", info=f'')
         """Execute parameter update"""
         self._all_reduce_gradients()
         self.optimizer.clip_grad_by_norm(self._clip_grad_norm)

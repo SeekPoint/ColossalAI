@@ -21,6 +21,7 @@ def _default_device():
 
 
 def _current_device(module: torch.nn.Module):
+    gd.debuginfo(prj="mt", info=f'')
     try:
         return next(module.parameters()).device
     except:
@@ -146,6 +147,7 @@ def symbolic_trace(
         Colossal-AI.
     """
     if meta_args:
+        gd.debuginfo(prj="mt", info=f'')
         device, orig_device = _default_device(), _current_device(root)
         wrap_fn = lambda elem: MetaTensor(elem, device=device) if isinstance(elem, torch.Tensor) else elem
         graph = ColoTracer(trace_act_ckpt=trace_act_ckpt, bias_addition_split=bias_addition_split).trace(
@@ -155,6 +157,7 @@ def symbolic_trace(
             graph.set_codegen(ActivationCheckpointCodeGen())
         root.to(orig_device)
     else:
+        gd.debuginfo(prj="mt", info=f'')
         graph = Tracer().trace(root, concrete_args=concrete_args)
     name = root.__class__.__name__ if isinstance(root, torch.nn.Module) else root.__name__
     return ColoGraphModule(root, graph, name)

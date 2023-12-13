@@ -32,17 +32,23 @@ except:
 
 # This func is same as Llama model init_to_get_rotary, we should move them into _utils.py
 def _init_to_get_rotary(self, base=10000):
+    gd.debuginfo(prj="mt", info=f'')
     self.config.head_dim_ = self.config.hidden_size // self.config.num_attention_heads
     if not hasattr(self.config, "rope_scaling"):
         rope_scaling_factor = 1.0
+        gd.debuginfo(prj="mt", info=f'')
     else:
         rope_scaling_factor = self.config.rope_scaling.factor if self.config.rope_scaling is not None else 1.0
+        gd.debuginfo(prj="mt", info=f'')
     if hasattr(self.config, "max_sequence_length"):
         max_seq_len = self.config.max_sequence_length
+        gd.debuginfo(prj="mt", info=f'')
     elif hasattr(self.config, "max_position_embeddings"):
         max_seq_len = self.config.max_position_embeddings * rope_scaling_factor
+        gd.debuginfo(prj="mt", info=f'')
     else:
         max_seq_len = 2048 * rope_scaling_factor
+        gd.debuginfo(prj="mt", info=f'')
     base = float(base)
 
     # NTK  ref: https://www.reddit.com/r/LocalLLaMA/comments/14lz7j5/ntkaware_scaled_rope_allows_llama_models_to_have/
@@ -66,6 +72,7 @@ def _init_to_get_rotary(self, base=10000):
 
 
 def get_masks(self, input_ids, past_length, padding_mask=None):
+    gd.debuginfo(prj="mt", info=f'')
     batch_size, seq_length = input_ids.shape
     full_attention_mask = torch.ones(batch_size, seq_length, seq_length, device=input_ids.device)
     full_attention_mask.tril_()
@@ -80,8 +87,12 @@ def get_masks(self, input_ids, past_length, padding_mask=None):
 
     if padding_mask is not None:
         full_attention_mask = full_attention_mask * padding_mask.unsqueeze(1)
+        gd.debuginfo(prj="mt", info=f'')
+
     if not past_length and padding_mask is not None:
         full_attention_mask -= padding_mask.unsqueeze(-1) - 1
+        gd.debuginfo(prj="mt", info=f'')
+
     full_attention_mask = (full_attention_mask < 0.5).bool()
     full_attention_mask.unsqueeze_(1)
     return full_attention_mask
@@ -112,19 +123,25 @@ class ChatGLM2InferenceForwards:
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
         infer_state = self.infer_state
 
+        gd.debuginfo(prj="mt", info=f'')
+
         if input_ids is not None and inputs_embeds is not None:
             raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
         elif input_ids is not None:
             batch_size, seq_length = input_ids.shape
+            gd.debuginfo(prj="mt", info=f'')
         elif inputs_embeds is not None:
             batch_size, seq_length, _ = inputs_embeds.shape
+            gd.debuginfo(prj="mt", info=f'')
         else:
             raise ValueError("You have to specify either input_ids or inputs_embeds")
 
         if infer_state.is_context_stage:
             past_key_values_length = 0
+            gd.debuginfo(prj="mt", info=f'')
         else:
             past_key_values_length = infer_state.max_len_in_batch - 1
+            gd.debuginfo(prj="mt", info=f'')
 
         seq_length_with_past = seq_length + past_key_values_length
 
@@ -135,7 +152,9 @@ class ChatGLM2InferenceForwards:
             infer_state.init_block_loc(
                 infer_state.block_loc, infer_state.seq_len, seq_length, infer_state.context_mem_index
             )
+            gd.debuginfo(prj="mt", info=f'')
         else:
+            gd.debuginfo(prj="mt", info=f'')
             infer_state.is_context_stage = False
             alloc_mem = infer_state.cache_manager.alloc_contiguous(batch_size)
             if alloc_mem is not None:
@@ -144,6 +163,7 @@ class ChatGLM2InferenceForwards:
                 infer_state.decode_mem_start = alloc_mem[1]
                 infer_state.decode_mem_end = alloc_mem[2]
                 infer_state.block_loc[:, seq_length_with_past - 1] = infer_state.decode_mem_index
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 print(f" *** Encountered allocation non-contiguous")
                 print(
@@ -164,11 +184,13 @@ class ChatGLM2InferenceForwards:
             infer_state.position_sin = torch.index_select(self._sin_cached, 0, position_ids.view(-1)).view(
                 position_ids.view(-1).shape[0], -1
             )
+            gd.debuginfo(prj="mt", info=f'')
         else:
             seq_len = infer_state.seq_len
             infer_state.position_cos = torch.index_select(self._cos_cached, 0, seq_len - 1).view(seq_len.shape[0], -1)
             infer_state.position_sin = torch.index_select(self._sin_cached, 0, seq_len - 1).view(seq_len.shape[0], -1)
             infer_state.other_kv_index = infer_state.block_loc[0, infer_state.max_len_in_batch - 1].item()
+            gd.debuginfo(prj="mt", info=f'')
 
         transformer_outputs = self.transformer(
             input_ids=input_ids,
@@ -183,8 +205,11 @@ class ChatGLM2InferenceForwards:
         )
 
         hidden_states = transformer_outputs[0]
+
         if return_last_logit:
             hidden_states = hidden_states[-1:]
+            gd.debuginfo(prj="mt", info=f'')
+
         lm_logits = self.transformer.output_layer(hidden_states)
         lm_logits = lm_logits.transpose(0, 1).contiguous()
 
@@ -202,8 +227,11 @@ class ChatGLM2InferenceForwards:
             lm_logits = lm_logits.to(hidden_states.dtype)
             loss = loss.to(hidden_states.dtype)
 
+            gd.debuginfo(prj="mt", info=f'')
+
         if not return_dict:
             output = (lm_logits,) + transformer_outputs[1:]
+            gd.debuginfo(prj="mt", info=f'')
             return ((loss,) + output) if loss is not None else output
 
         return CausalLMOutputWithPast(
@@ -228,6 +256,7 @@ class ChatGLM2InferenceForwards:
         return_dict: Optional[bool] = None,
         infer_state: BatchInferState = None,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
@@ -237,15 +266,19 @@ class ChatGLM2InferenceForwards:
 
         if inputs_embeds is None:
             inputs_embeds = self.embedding(input_ids)
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.pre_seq_len is not None:
+            gd.debuginfo(prj="mt", info=f'')
             if past_key_values is None:
+                gd.debuginfo(prj="mt", info=f'')
                 past_key_values = self.get_prompt(
                     batch_size=batch_size,
                     device=input_ids.device,
                     dtype=inputs_embeds.dtype,
                 )
             if attention_mask is not None:
+                gd.debuginfo(prj="mt", info=f'')
                 attention_mask = torch.cat(
                     [
                         attention_mask.new_ones((batch_size, self.pre_seq_len)),
@@ -254,7 +287,9 @@ class ChatGLM2InferenceForwards:
                     dim=-1,
                 )
         if full_attention_mask is None:
+            gd.debuginfo(prj="mt", info=f'')
             if (attention_mask is not None and not attention_mask.all()) or (past_key_values and seq_length != 1):
+                gd.debuginfo(prj="mt", info=f'')
                 full_attention_mask = get_masks(
                     self, input_ids, infer_state.cache_manager.past_key_values_length, padding_mask=attention_mask
                 )
@@ -304,9 +339,11 @@ class ChatGLM2InferenceForwards:
         output_hidden_states: Optional[bool] = False,
         infer_state: Optional[BatchInferState] = None,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         hidden_states = hidden_states.transpose(0, 1).contiguous()
         if not kv_caches:
             kv_caches = [None for _ in range(self.num_layers)]
+            gd.debuginfo(prj="mt", info=f'')
         presents = () if use_cache else None
         all_self_attentions = None
         all_hidden_states = () if output_hidden_states else None
@@ -328,15 +365,18 @@ class ChatGLM2InferenceForwards:
             hidden_states, kv_cache = layer_ret
             if use_cache:
                 presents = presents + (kv_cache,)
+                gd.debuginfo(prj="mt", info=f'')
 
         if output_hidden_states:
             all_hidden_states = all_hidden_states + (hidden_states,)
+            gd.debuginfo(prj="mt", info=f'')
 
         # Final layer norm.
         hidden_states = hidden_states.transpose(0, 1).contiguous()
 
         if self.post_layer_norm:
             hidden_states = self.final_layernorm(hidden_states)
+            gd.debuginfo(prj="mt", info=f'')
 
         return hidden_states, presents, all_hidden_states, all_self_attentions
 
@@ -349,6 +389,7 @@ class ChatGLM2InferenceForwards:
         use_cache=True,
         infer_state: Optional[BatchInferState] = None,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         # hidden_states: [s, b, h]
 
         # Layer norm at the beginning of the transformer layer.
@@ -364,8 +405,10 @@ class ChatGLM2InferenceForwards:
         # Residual connection.
         if self.apply_residual_connection_post_layernorm:
             residual = layernorm_output
+            gd.debuginfo(prj="mt", info=f'')
         else:
             residual = hidden_states
+            gd.debuginfo(prj="mt", info=f'')
         layernorm_input = torch.nn.functional.dropout(attention_output, p=self.hidden_dropout, training=self.training)
         layernorm_input = residual + layernorm_input
         # Layer norm post the self attention.
@@ -376,8 +419,10 @@ class ChatGLM2InferenceForwards:
         # Second residual connection.
         if self.apply_residual_connection_post_layernorm:
             residual = layernorm_output
+            gd.debuginfo(prj="mt", info=f'')
         else:
             residual = layernorm_input
+            gd.debuginfo(prj="mt", info=f'')
 
         output = torch.nn.functional.dropout(mlp_output, p=self.hidden_dropout, training=self.training)
         output = residual + output
@@ -392,6 +437,7 @@ class ChatGLM2InferenceForwards:
         use_cache=True,
         infer_state: Optional[BatchInferState] = None,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         assert use_cache is True, "use_cache should be set to True using this chatglm attention"
         # hidden_states: original :[sq, b, h] --> this [b, sq, h]
         batch_size = hidden_states.shape[0]
@@ -399,6 +445,7 @@ class ChatGLM2InferenceForwards:
         mixed_x_layer = self.query_key_value(hidden_states)
 
         if self.multi_query_attention:
+            gd.debuginfo(prj="mt", info=f'')
             (query_layer, key_layer, value_layer) = mixed_x_layer.split(
                 [
                     self.num_attention_heads_per_partition * self.hidden_size_per_attention_head,
@@ -430,6 +477,7 @@ class ChatGLM2InferenceForwards:
             )
 
         else:
+            gd.debuginfo(prj="mt", info=f'')
             new_tensor_shape = mixed_x_layer.size()[:-1] + (
                 self.num_attention_heads_per_partition,
                 3 * self.hidden_size_per_attention_head,
@@ -444,12 +492,14 @@ class ChatGLM2InferenceForwards:
             query_layer.view(-1, self.num_attention_heads_per_partition, self.hidden_size_per_attention_head), cos, sin
         )
         if self.multi_query_attention:
+            gd.debuginfo(prj="mt", info=f'')
             chatglm2_rotary_emb_fwd(
                 key_layer.view(-1, self.num_multi_query_groups_per_partition, self.hidden_size_per_attention_head),
                 cos,
                 sin,
             )
         else:
+            gd.debuginfo(prj="mt", info=f'')
             chatglm2_rotary_emb_fwd(
                 key_layer.view(-1, self.num_attention_heads_per_partition, self.hidden_size_per_attention_head),
                 cos,
@@ -467,6 +517,7 @@ class ChatGLM2InferenceForwards:
             -1, self.num_multi_query_groups_per_partition, self.hidden_size_per_attention_head
         )
         if infer_state.is_context_stage:
+            gd.debuginfo(prj="mt", info=f'')
             # first token generation:
             # copy key and value calculated in current step to memory manager
 
@@ -493,6 +544,7 @@ class ChatGLM2InferenceForwards:
 
         else:
             if infer_state.decode_is_contiguous:
+                gd.debuginfo(prj="mt", info=f'')
                 # if decode is contiguous, then we copy to key cache and value cache in cache manager directly
                 cache_k = infer_state.cache_manager.key_buffer[infer_state.decode_layer_id][
                     infer_state.decode_mem_start : infer_state.decode_mem_end, :, :
@@ -503,6 +555,7 @@ class ChatGLM2InferenceForwards:
                 cache_k.copy_(key_layer)
                 cache_v.copy_(value_layer)
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 # if decode is not contiguous, use triton kernel to copy key and value cache
                 # k, v shape: [batch_size, num_heads, head_dim/embed_size_per_head
                 copy_kv_to_mem_cache(

@@ -49,6 +49,8 @@ class MoeLayer(nn.Module):
 
         nn.init.trunc_normal_(self.gate_weight, std=math.sqrt(0.1 / dim_model))
 
+        gd.debuginfo(prj="mt", info=f'')
+
     def a2a_process(self, dispatch_data: torch.Tensor):
         expert_input = AllToAll.apply(dispatch_data, self.ep_group)
         input_shape = expert_input.shape
@@ -56,12 +58,15 @@ class MoeLayer(nn.Module):
         expert_output = self.experts(expert_input)
         expert_output = expert_output.reshape(input_shape)
         expert_output = AllToAll.apply(expert_output, self.ep_group)
+        gd.debuginfo(prj="mt", info=f'')
+
         return expert_output
 
     def tp_process(self, dispatch_data: torch.Tensor):
         expert_in = AllGather.apply(dispatch_data, self.ep_group)
         expert_out = self.experts(expert_in)
         expert_out = ReduceScatter.apply(expert_out, self.ep_group)
+        gd.debuginfo(prj="mt", info=f'')
         return expert_out
 
     def forward(self, inputs: torch.Tensor) -> Tuple:
@@ -79,15 +84,19 @@ class MoeLayer(nn.Module):
         if self.use_kernel:
             dispatch_data = MoeDispatch.apply(tokens, *route_result_list[1:])
             dispatch_data = dispatch_data.reshape(self.num_experts, -1, self.d_model)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             sec_mask_f = route_result_list[1].type_as(inputs)
             dispatch_data = torch.matmul(sec_mask_f.permute(1, 2, 0), tokens)
+            gd.debuginfo(prj="mt", info=f'')
 
         # dispatch_data [e, c, h]
         if self.experts.comm_name == "all_to_all":
             expert_output = self.a2a_process(dispatch_data)
+            gd.debuginfo(prj="mt", info=f'')
         elif self.experts.comm_name == "all_gather":
             expert_output = self.tp_process(dispatch_data)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             raise NotImplementedError(
                 "This kind of communication has not been implemented yet.\n Please use Experts " "build function."
@@ -96,11 +105,13 @@ class MoeLayer(nn.Module):
         if self.use_kernel:
             expert_output = expert_output.reshape(-1, self.d_model)
             ans = MoeCombine.apply(expert_output, *route_result_list)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             combine_weights = route_result_list[0].type_as(inputs)
             combine_weights = combine_weights.view(combine_weights.shape[0], -1)
             expert_output = expert_output.view(-1, expert_output.shape[-1])
             ans = torch.matmul(combine_weights, expert_output)
+            gd.debuginfo(prj="mt", info=f'')
 
         ans = ans.reshape(inputs.shape)
         l_aux = self.router.pop_routing_loss()
@@ -152,21 +163,26 @@ class MoeModule(nn.Module):
         expert_cls: Optional[Type[nn.Module]] = None,
         **expert_args,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
         noisy_func = None
         if noisy_policy is not None:
             if noisy_policy == "Jitter":
                 noisy_func = UniformNoiseGenerator()
+                gd.debuginfo(prj="mt", info=f'')
             elif noisy_policy == "Gaussian":
                 noisy_func = NormalNoiseGenerator(num_experts)
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 raise NotImplementedError("Unsupported input noisy policy")
 
         if top_k == 1:
             moe_router_cls = Top1Router
+            gd.debuginfo(prj="mt", info=f'')
         elif top_k == 2:
             moe_router_cls = Top2Router
+            gd.debuginfo(prj="mt", info=f'')
         else:
             raise NotImplementedError("top_k > 2 is not supported yet")
 
@@ -181,18 +197,22 @@ class MoeModule(nn.Module):
         if use_residual:
             if residual_instance is not None:
                 self.residual_module = residual_instance
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 assert expert_cls is not None, "Expert class can't be None when residual instance is not given"
                 self.residual_module = expert_cls(**expert_args)
+                gd.debuginfo(prj="mt", info=f'')
 
             with no_shard_zero_context():
                 self.residual_combine = nn.Linear(dim_model, 2, device=get_current_device())
 
         if expert_instance is not None:
             my_experts = expert_instance
+            gd.debuginfo(prj="mt", info=f'')
         else:
             assert expert_cls is not None, "Expert class can't be None when experts instance is not given"
             my_experts = Experts(expert_cls, num_experts, **expert_args)
+            gd.debuginfo(prj="mt", info=f'')
 
         self.moe_layer = MoeLayer(
             dim_model=dim_model, num_experts=num_experts, router=self.moe_router, experts=my_experts
@@ -206,7 +226,9 @@ class MoeModule(nn.Module):
             combine_coef = self.residual_combine(inputs)
             combine_coef = F.softmax(combine_coef, dim=-1)
             output = moe_output * combine_coef[..., 0:1] + residual_output * combine_coef[..., 1:]
+            gd.debuginfo(prj="mt", info=f'')
         else:
             output = moe_output
+            gd.debuginfo(prj="mt", info=f'')
 
         return output, l_aux

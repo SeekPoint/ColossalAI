@@ -65,6 +65,7 @@ class ColoTracer(Tracer):
     ]
 
     def __init__(self, trace_act_ckpt: bool = False, bias_addition_split: bool = False, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(*args, **kwargs)
         self.disable_module_getattr = False
         self.proxy_buffer_attributes = True
@@ -80,6 +81,7 @@ class ColoTracer(Tracer):
         self.bias_addition_split = bias_addition_split
 
     def is_leaf_module(self, m: nn.Module, module_qualified_name: str) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         # if bias-addiction split is enabled, and module has bias, then it is not a leaf module
         # we will enter the module and split the bias-addition ops
         if self.bias_addition_split and type(m) in self._bias_addition_module and m.bias is not None:
@@ -114,12 +116,14 @@ class ColoTracer(Tracer):
         proxy: ColoProxy = super().create_proxy(kind, target, args, kwargs, name, type_expr, proxy_factory_fn)
         unwrap_fn = lambda p: p.meta_data if isinstance(p, ColoProxy) else p
         if kind == "placeholder":
+            gd.debuginfo(prj="mt", info=f'')
             proxy.meta_data = (
                 self.meta_args[target]
                 if target in self.meta_args
                 else self.concrete_args.get(_truncate_suffix(target), None)
             )
         elif kind == "get_attr":
+            gd.debuginfo(prj="mt", info=f'')
             self.disable_module_getattr = True
             try:
                 attr_itr = self.root
@@ -130,8 +134,10 @@ class ColoTracer(Tracer):
             finally:
                 self.disable_module_getattr = False
         elif kind == "call_function":
+            gd.debuginfo(prj="mt", info=f'')
             proxy.meta_data = target(*tree_map(unwrap_fn, args), **tree_map(unwrap_fn, kwargs))
         elif kind == "call_method":
+            gd.debuginfo(prj="mt", info=f'')
             self.disable_module_getattr = True
             try:
                 if target == "__call__":
@@ -144,6 +150,7 @@ class ColoTracer(Tracer):
             finally:
                 self.disable_module_getattr = False
         elif kind == "call_module":
+            gd.debuginfo(prj="mt", info=f'')
             mod = self.root.get_submodule(target)
             self.disable_module_getattr = True
             try:
@@ -159,6 +166,7 @@ class ColoTracer(Tracer):
         return proxy
 
     def create_node(self, *args, **kwargs) -> Node:
+        gd.debuginfo(prj="mt", info=f'')
         node = super().create_node(*args, **kwargs)
         n_info = MetaInfo(node, mod_dir=self.mod_dir, activation_checkpoint=tuple(self.ckpt_regions))
         return node
@@ -234,6 +242,7 @@ class ColoTracer(Tracer):
 
     @contextmanager
     def _tracer_override(self):
+        gd.debuginfo(prj="mt", info=f'')
         # override the tracer to support custom modules and checkpointing
         if self.trace_act_ckpt:
             orig_ckpt_func_apply = torch.utils.checkpoint.CheckpointFunction.apply
@@ -267,6 +276,7 @@ class ColoTracer(Tracer):
 
     @contextmanager
     def _torch_factory_override(self):
+        gd.debuginfo(prj="mt", info=f'')
         # override the torch factory functions to create a proxy when the method
         # is called during ``symbolic_trace()``.
         def wrap_factory_method(target):

@@ -30,12 +30,14 @@ class LiveVariableVector(list):
         """
         Check if a variable has already existed in the current list by name.
         """
+        gd.debuginfo(prj="mt", info=f'')
         for var in self:
             if name == var.name:
                 return True
         return False
 
     def get(self, name) -> LiveVariable:
+        gd.debuginfo(prj="mt", info=f'')
         for var in self:
             if name == var.name:
                 return var
@@ -45,6 +47,7 @@ class LiveVariableVector(list):
         """
         Create a copy of this vector
         """
+        gd.debuginfo(prj="mt", info=f'')
         vector = LiveVariableVector()
         for var in self:
             vector.append(var)

@@ -28,10 +28,13 @@ def train(args):
     # configure strategy
     if args.strategy == "ddp":
         strategy = DDPStrategy()
+        gd.debuginfo(prj="mt", info=f'')
     elif args.strategy == "colossalai_gemini":
+        gd.debuginfo(prj="mt", info=f'')
         strategy = GeminiStrategy(placement_policy="auto")
     elif args.strategy == "colossalai_zero2":
         strategy = LowLevelZeroStrategy(stage=2, placement_policy="cuda")
+        gd.debuginfo(prj="mt", info=f'')
     else:
         raise ValueError(f'Unsupported strategy "{args.strategy}"')
 
@@ -43,12 +46,16 @@ def train(args):
     with strategy.model_init_context():
         if args.model == "bloom":
             model = BLOOMRM(pretrained=args.pretrain, lora_rank=args.lora_rank)
+            gd.debuginfo(prj="mt", info=f'')
         elif args.model == "opt":
             model = OPTRM(pretrained=args.pretrain, lora_rank=args.lora_rank)
+            gd.debuginfo(prj="mt", info=f'')
         elif args.model == "gpt2":
             model = GPTRM(pretrained=args.pretrain, lora_rank=args.lora_rank)
+            gd.debuginfo(prj="mt", info=f'')
         elif args.model == "llama":
             model = LlamaRM(pretrained=args.pretrain, lora_rank=args.lora_rank)
+            gd.debuginfo(prj="mt", info=f'')
         else:
             raise ValueError(f'Unsupported model "{args.model}"')
 
@@ -62,34 +69,42 @@ def train(args):
     if args.model == "gpt2":
         tokenizer = GPT2Tokenizer.from_pretrained("gpt2" if args.tokenizer is None else args.tokenizer)
         tokenizer.pad_token = tokenizer.eos_token
+        gd.debuginfo(prj="mt", info=f'')
     elif args.model == "bloom":
         tokenizer = BloomTokenizerFast.from_pretrained(
             "/share/hf_model/bloom-560m" if args.tokenizer is None else args.tokenizer
         )
         tokenizer.pad_token = tokenizer.eos_token
+        gd.debuginfo(prj="mt", info=f'')
     elif args.model == "opt":
         tokenizer = AutoTokenizer.from_pretrained("/share/hf_model/opt-350m" if args.tokenizer is None else args.tokenizer)
         tokenizer.pad_token = tokenizer.eos_token
+        gd.debuginfo(prj="mt", info=f'')
     elif args.model == "llama":
         tokenizer = LlamaTokenizer.from_pretrained(
             "/share/hf_model/llama-tokenizer" if args.tokenizer is None else args.tokenizer
         )
         tokenizer.eos_token = "<\s>"
         tokenizer.pad_token = tokenizer.unk_token
+        gd.debuginfo(prj="mt", info=f'')
     else:
         raise ValueError(f'Unsupported model "{args.model}"')
 
     # configure optimizer
     if args.strategy.startswith("colossalai"):
         optim = HybridAdam(model.parameters(), lr=args.lr)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         optim = Adam(model.parameters(), lr=args.lr)
+        gd.debuginfo(prj="mt", info=f'')
 
     # configure loss function
     if args.loss_fn == "log_sig":
         loss_fn = LogSigLoss()
+        gd.debuginfo(prj="mt", info=f'')
     elif args.loss_fn == "log_exp":
         loss_fn = LogExpLoss()
+        gd.debuginfo(prj="mt", info=f'')
     else:
         raise ValueError(f'Unsupported loss function "{args.loss_fn}"')
 
@@ -102,12 +117,15 @@ def train(args):
         data_path = '/share/hf_model/rm-static'
     else:
         data_path = args.dataset
+    gd.debuginfo(prj="mt", info=f'data_path={data_path}')
 
     # prepare for data and dataset
     if args.subset is not None:
         data = load_dataset(data_path, data_dir=args.subset)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         data = load_dataset(data_path)
+        gd.debuginfo(prj="mt", info=f'')
 
     train_data = data["train"].select(range(min(args.max_datasets_size, len(data["train"]))))
     eval_data = data["test"].select(range(min(args.max_datasets_size, len(data["test"]))))
@@ -115,9 +133,11 @@ def train(args):
     if args.dataset == "Dahoas/rm-static":
         train_dataset = RmStaticDataset(train_data, tokenizer, args.max_len)
         eval_dataset = RmStaticDataset(eval_data, tokenizer, args.max_len)
+        gd.debuginfo(prj="mt", info=f'')
     elif args.dataset == "Anthropic/hh-rlhf":
         train_dataset = HhRlhfDataset(train_data, tokenizer, args.max_len)
         eval_dataset = HhRlhfDataset(eval_data, tokenizer, args.max_len)
+        gd.debuginfo(prj="mt", info=f'')
     else:
         raise ValueError(f'Unsupported dataset "{args.dataset}"')
 

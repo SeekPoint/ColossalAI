@@ -9,8 +9,10 @@ __all__ = [
 
 
 def get_pretrained_path(model: Module) -> Optional[str]:
+    gd.debuginfo(prj="mt", info=f'')
     return getattr(model, "_pretrained", None)
 
 
 def set_pretrained_path(model: Module, path: str) -> None:
+    gd.debuginfo(prj="mt", info=f'')
     setattr(model, "_pretrained", path)

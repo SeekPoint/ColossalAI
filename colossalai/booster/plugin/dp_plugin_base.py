@@ -13,6 +13,7 @@ class DPPluginBase(Plugin):
     """This is a base class for all DP plugins. It sets up world size and rank, and provides data loader creation."""
 
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
         assert (
             dist.is_initialized()
@@ -44,11 +45,13 @@ class DPPluginBase(Plugin):
         Returns:
             :class:`torch.utils.data.DataLoader`: A DataLoader used for training or testing.
         """
+        gd.debuginfo(prj="mt", info=f'')
         _kwargs = kwargs.copy()
         sampler = DistributedSampler(dataset, num_replicas=self.world_size, rank=self.rank, shuffle=shuffle)
 
         # Deterministic dataloader
         def seed_worker(worker_id):
+            gd.debuginfo(prj="mt", info=f'')
             worker_seed = seed
             np.random.seed(worker_seed)
             torch.manual_seed(worker_seed)

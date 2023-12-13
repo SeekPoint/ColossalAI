@@ -37,13 +37,17 @@ class DynamicGradScaler(BaseGradScaler):
     ):
         super().__init__(initial_scale, verbose)
         if min_scale:
+            gd.debuginfo(prj="mt", info=f'')
             self._min_scale = torch.cuda.FloatTensor([min_scale])
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self._min_scale = None
 
         if max_scale:
+            gd.debuginfo(prj="mt", info=f'')
             self._max_scale = torch.cuda.FloatTensor([max_scale])
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self._max_scale = None
 
         self._growth_factor = growth_factor
@@ -55,6 +59,7 @@ class DynamicGradScaler(BaseGradScaler):
         self._sanity_checks()
 
     def _sanity_checks(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         """Check if the arguments are correct."""
 
         if self._min_scale:
@@ -74,13 +79,16 @@ class DynamicGradScaler(BaseGradScaler):
             overflow (bool): whether overflow occurs
         """
         if overflow:
+            gd.debuginfo(prj="mt", info=f'')
             self._hysteresis_step += 1
             self._growth_step = 0
 
             if self._hysteresis_step >= self._hysteresis:
+                gd.debuginfo(prj="mt", info=f'')
                 self._backoff_scale()
                 self.log(f"Overflow occurs, the loss scale is adjusted to {self.scale.item()}", ranks=[0])
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self._growth_step += 1
             if self._growth_step == self._growth_interval:
                 self._growth_step = 0
@@ -93,20 +101,25 @@ class DynamicGradScaler(BaseGradScaler):
                 )
 
     def _backoff_scale(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         """Decrease the loss scale"""
 
         self._scale = self._scale * self._backoff_factor
         if self._min_scale:
+            gd.debuginfo(prj="mt", info=f'')
             self._scale = torch.max(self._scale, self._min_scale)
 
     def _grow_scale(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         """Increase the loss scale"""
 
         self._scale = self._scale * self._growth_factor
         if self._max_scale:
+            gd.debuginfo(prj="mt", info=f'')
             self._scale = torch.min(self._scale, self._max_scale)
 
     def state_dict(self):
+        gd.debuginfo(prj="mt", info=f'')
         state_dict = dict()
         state_dict["scale"] = self._scale
         state_dict["growth_factor"] = self._growth_factor
@@ -115,6 +128,7 @@ class DynamicGradScaler(BaseGradScaler):
         return state_dict
 
     def load_state_dict(self, state_dict):
+        gd.debuginfo(prj="mt", info=f'')
         self._scale = state_dict["scale"].cuda(torch.cuda.current_device())
         self._growth_factor = state_dict["growth_factor"]
         self._backoff_factor = state_dict["backoff_factor"]

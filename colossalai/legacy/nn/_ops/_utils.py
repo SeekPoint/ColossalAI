@@ -13,20 +13,24 @@ Number = Union[int, float]
 
 
 def convert_to_colo_tensor(tensor: Optional[GeneralTensor], pg: ProcessGroup) -> Optional[ColoTensor]:
+    gd.debuginfo(prj="mt", info=f'')
     if tensor is not None and not isinstance(tensor, ColoTensor):
         tensor = ColoTensor.from_torch_tensor(tensor, ColoTensorSpec(pg))
     return tensor
 
 
 def set_parallel_input(input_parallel: bool):
+    gd.debuginfo(prj="mt", info=f'')
     env.parallel_input_1d = input_parallel
 
 
 def get_parallel_input():
+    gd.debuginfo(prj="mt", info=f'')
     return env.parallel_input_1d
 
 
 def vocab_range_from_per_partition_vocab_size(per_partition_vocab_size, rank):
+    gd.debuginfo(prj="mt", info=f'')
     index_f = rank * per_partition_vocab_size
     index_l = index_f + per_partition_vocab_size
     return index_f, index_l
@@ -49,6 +53,7 @@ def _reduce(input_, pg: ProcessGroup):
 
 
 def _split(input_, pg: ProcessGroup, dim=-1):
+    gd.debuginfo(prj="mt", info=f'')
     # skip if only one rank involved
     world_size = pg.tp_world_size()
     if world_size == 1:
@@ -69,6 +74,7 @@ def _split(input_, pg: ProcessGroup, dim=-1):
 
 
 def _gather(input_, pg: ProcessGroup, dim=-1):
+    gd.debuginfo(prj="mt", info=f'')
     # skip if only one rank involved
     world_size = pg.tp_world_size()
     if world_size == 1:
@@ -103,11 +109,13 @@ class _ReduceGrad(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input_, process_group):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.mode = process_group
         return input_
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return _reduce(grad_output, ctx.mode), None
 
 
@@ -126,10 +134,12 @@ class _ReduceInput(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input_, process_group):
+        gd.debuginfo(prj="mt", info=f'')
         return _reduce(input_, process_group)
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return grad_output, None
 
 
@@ -145,16 +155,19 @@ class _SplitForwardGatherBackward(torch.autograd.Function):
 
     @staticmethod
     def symbolic(graph, input_):
+        gd.debuginfo(prj="mt", info=f'')
         return _split(input_)
 
     @staticmethod
     def forward(ctx, input_, process_group, dim):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.mode = process_group
         ctx.dim = dim
         return _split(input_, process_group, dim)
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return _gather(grad_output, ctx.mode, ctx.dim), None, None
 
 
@@ -173,28 +186,34 @@ class _GatherForwardSplitBackward(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input_, process_group, dim):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.mode = process_group
         ctx.dim = dim
         return _gather(input_, process_group, dim)
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'')
         return _split(grad_output, ctx.mode, ctx.dim), None, None
 
 
 def reduce_grad(input_, process_group):
+    gd.debuginfo(prj="mt", info=f'')
     return _ReduceGrad.apply(input_, process_group)
 
 
 def reduce_input(input_, process_group):
+    gd.debuginfo(prj="mt", info=f'')
     return _ReduceInput.apply(input_, process_group)
 
 
 def split_forward_gather_backward(input_, process_group, dim):
+    gd.debuginfo(prj="mt", info=f'')
     return _SplitForwardGatherBackward.apply(input_, process_group, dim)
 
 
 def gather_forward_split_backward(input_, process_group, dim):
+    gd.debuginfo(prj="mt", info=f'')
     return _GatherForwardSplitBackward.apply(input_, process_group, dim)
 
 
@@ -219,6 +238,7 @@ def _all_to_all(x: torch.Tensor, pg: ProcessGroup, scatter_dim: int, gather_dim:
 class _DualAllToAll(torch.autograd.Function):
     @staticmethod
     def forward(ctx, x, pg, scatter_dim, gather_dim):
+        gd.debuginfo(prj="mt", info=f'')
         ctx.scatter_dim = scatter_dim
         ctx.gather_dim = gather_dim
         ctx.pg = pg
@@ -226,6 +246,7 @@ class _DualAllToAll(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad):
+        gd.debuginfo(prj="mt", info=f'')
         return _all_to_all(grad, ctx.pg, ctx.gather_dim, ctx.scatter_dim), None, None, None
 
 
@@ -239,6 +260,7 @@ def dual_all_to_all(x, pg, scatter_dim: int, gather_dim: int):
 def _all_to_all_for_tablewise(
     x: torch.Tensor, pg: ProcessGroup, scatter_strides: List[int], gather_strides: List[int], forward=True
 ) -> torch.Tensor:
+    gd.debuginfo(prj="mt", info=f'')
     world_size = pg.tp_world_size()
     rank = pg.tp_local_rank()
     if world_size == 1:
@@ -266,6 +288,8 @@ def _all_to_all_for_tablewise(
 class _DualAllToAllForTablewise(torch.autograd.Function):
     @staticmethod
     def forward(ctx, x, pg, scatter_strides, gather_strides):
+
+        gd.debuginfo(prj="mt", info=f'')
         ctx.pg = pg
         ctx.scatter_strides = scatter_strides
         ctx.gather_strides = gather_strides
@@ -273,6 +297,7 @@ class _DualAllToAllForTablewise(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad):
+        gd.debuginfo(prj="mt", info=f'')
         return (
             _all_to_all_for_tablewise(grad, ctx.pg, ctx.gather_strides, ctx.scatter_strides, forward=False),
             None,

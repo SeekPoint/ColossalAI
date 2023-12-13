@@ -25,6 +25,7 @@ class ApexAMPOptimizer(OptimizerWrapper):
         Args:
             loss (torch.Tensor): Loss computed by a loss function
         """
+        gd.debuginfo(prj="mt", info=f'')
         with apex_amp.scale_loss(loss, self.optim) as scaled_loss:
             scaled_loss.backward()
 
@@ -35,5 +36,6 @@ class ApexAMPOptimizer(OptimizerWrapper):
             model (torch.nn.Module): Your model object
             max_norm (float): The max norm value for gradient clipping
         """
+        gd.debuginfo(prj="mt", info=f'')
         if max_norm > 0:
             clip_grad_norm_fp32(apex_amp.master_params(self.optim), max_norm)

@@ -19,9 +19,11 @@ class GetattrGenerator(StrategyGenerator):
     """
 
     def validate(self) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         return super().validate()
 
     def update_compute_cost(self, strategy: ShardingStrategy):
+        gd.debuginfo(prj="mt", info=f'')
         compute_cost = TrainCycleItem(fwd=10, bwd=10, total=20)
         strategy.compute_cost = compute_cost
 
@@ -29,6 +31,8 @@ class GetattrGenerator(StrategyGenerator):
         """
         Compute the memory cost per device with this specific strategy.
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         forward_size_mapping = {"output": self._compute_size_in_bytes(strategy, "output")}
 
         # compute fwd cost incurred
@@ -45,6 +49,8 @@ class GetattrGenerator(StrategyGenerator):
 
     @ignore_sharding_exception
     def enumerate_all_possible_output(self, mesh_dim_0, mesh_dim_1):
+        gd.debuginfo(prj="mt", info=f'')
+
         # we check for the output logical shape to get the number of dimensions
         dim_partition_list = []
         dim_size = len(self.op_data["output"].logical_shape)
@@ -75,6 +81,8 @@ class GetattrGenerator(StrategyGenerator):
 
                 # get name
                 name = f"get_attr {sharding_spec_mapping['output'].sharding_sequence}"
+                gd.debuginfo(prj="mt", info=f'name={name}')
+
                 sharding_strategy = self.get_sharding_strategy(
                     name=name,
                     sharding_spec_mapping=sharding_spec_mapping,
@@ -87,4 +95,5 @@ class GetattrGenerator(StrategyGenerator):
         return strategy_list
 
     def collate_strategies(self) -> List[ShardingStrategy]:
+        gd.debuginfo(prj="mt", info=f'')
         return self.enumerate_all_possible_output(0, 1)

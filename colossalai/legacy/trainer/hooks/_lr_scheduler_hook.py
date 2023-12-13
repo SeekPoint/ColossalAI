@@ -31,6 +31,7 @@ class LRSchedulerHook(MetricHook):
         self.by_epoch = by_epoch
         self.lr_scheduler = lr_scheduler
         self.store_lr_in_state = store_lr_in_state
+        gd.debuginfo(prj="mt", info=f'')
 
     def after_hook_is_attached(self, trainer):
         self._check_metric_states_initialization(trainer)

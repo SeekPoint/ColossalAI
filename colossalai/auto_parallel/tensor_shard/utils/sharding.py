@@ -25,6 +25,7 @@ def transpose_partition_dim(sharding_spec: ShardingSpec, dim1: int, dim2: int) -
         dim1 (int): the tensor dimension to switch
         dim2 (int): the tensor dimension to switch
     """
+    gd.debuginfo(prj="mt", info=f'')
     assert len(sharding_spec.entire_shape) >= 2, "The entire_shape of the sharding spec must have at least 2 dimensions"
     dim_partition_dict = sharding_spec.dim_partition_dict
 
@@ -33,9 +34,12 @@ def transpose_partition_dim(sharding_spec: ShardingSpec, dim1: int, dim2: int) -
     dim2_partition = dim_partition_dict.pop(dim2, None)
 
     if dim1_partition:
+        gd.debuginfo(prj="mt", info=f'')
         dim_partition_dict[dim2] = dim1_partition
+
     if dim2_partition:
         dim_partition_dict[dim1] = dim2_partition
+        gd.debuginfo(prj="mt", info=f'')
 
     # get the transposed shape
     new_shape = list(sharding_spec.entire_shape[:])
@@ -61,8 +65,10 @@ def update_partition_dim(
 
     if inplace:
         current_sharding_spec = sharding_spec
+        gd.debuginfo(prj="mt", info=f'')
     else:
         current_sharding_spec = deepcopy(sharding_spec)
+        gd.debuginfo(prj="mt", info=f'')
 
     old_dim_partition_dict = current_sharding_spec.dim_partition_dict
     new_dim_partition_dict = {}

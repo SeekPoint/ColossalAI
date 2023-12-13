@@ -6,6 +6,7 @@ from ...registry import meta_patched_function
 @meta_patched_function.register(torch.matmul)
 @meta_patched_function.register("matmul")  # for built-in op @
 def torch_matmul(input, other, *, out=None):
+    gd.debuginfo(prj="mt", info=f'')
     # copied from huggingface.utils.fx
     d1 = input.dim()
     d2 = other.dim()
@@ -38,18 +39,21 @@ def torch_matmul(input, other, *, out=None):
         if d2 == 1:
             shape.pop(-1)
     if shape is None:
+        gd.debuginfo(prj="mt", info=f'')
         return torch.tensor(0.0, device="meta")
     return torch.empty(*shape, device="meta")
 
 
 @meta_patched_function.register(torch.abs)
 def torch_abs(input, *, out=None):
+    gd.debuginfo(prj="mt", info=f'')
     assert out is None, "out is not supported yet"
     return torch.empty(input.shape, device="meta")
 
 
 @meta_patched_function.register(torch.bmm)
 def torch_bmm(input, mat2, *, out=None):
+    gd.debuginfo(prj="mt", info=f'')
     if out is not None:
         raise ValueError("Don't support in-place abs for MetaTensor analysis")
     batch_size, n, m = input.shape
@@ -59,6 +63,7 @@ def torch_bmm(input, mat2, *, out=None):
 
 @meta_patched_function.register(torch.nn.functional.linear)
 def torch_linear(input, mat2, bias=None, *, out=None):
+    gd.debuginfo(prj="mt", info=f'')
     if out is not None:
         raise ValueError("Don't support in-place abs for MetaTensor analysis")
     output_shape = list(input.shape)
@@ -70,6 +75,7 @@ def torch_linear(input, mat2, bias=None, *, out=None):
 @meta_patched_function.register(torch.addbmm)
 @meta_patched_function.register(torch.Tensor.addbmm)
 def torch_addbmm(input, mat1, mat2, *, beta=1, alpha=1, out=None):
+    gd.debuginfo(prj="mt", info=f'')
     if out is not None:
         raise ValueError("Don't support in-place abs for MetaTensor analysis")
     _, n, _ = mat1.shape
@@ -80,6 +86,7 @@ def torch_addbmm(input, mat1, mat2, *, beta=1, alpha=1, out=None):
 @meta_patched_function.register(torch.addmm)
 @meta_patched_function.register(torch.Tensor.addmm)
 def torch_addmm(input, mat1, mat2, *, beta=1, alpha=1, out=None):
+    gd.debuginfo(prj="mt", info=f'')
     if out is not None:
         raise ValueError("Don't support in-place abs for MetaTensor analysis")
     n, _ = mat1.shape
@@ -89,6 +96,7 @@ def torch_addmm(input, mat1, mat2, *, beta=1, alpha=1, out=None):
 
 @meta_patched_function.register(torch.var_mean)
 def torch_var_mean(input, dim, unbiased=True, keepdim=False, *, out=None):
+    gd.debuginfo(prj="mt", info=f'')
     assert out is None, "saving to out is not supported yet"
     var = torch.empty(1).squeeze(0).to("meta")
     mean = torch.empty(1).squeeze(0).to("meta")

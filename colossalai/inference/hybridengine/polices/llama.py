@@ -30,23 +30,28 @@ except:
 
 def get_triton_rmsnorm_forward():
     if HAS_TRITON_RMSNORM:
-
+        gd.debuginfo(prj="mt", info=f'')
         def _triton_rmsnorm_forward(self: LlamaRMSNorm, hidden_states: torch.Tensor):
+            gd.debuginfo(prj="mt", info=f'')
             return rmsnorm_forward(hidden_states, self.weight.data, self.variance_epsilon)
 
         return _triton_rmsnorm_forward
     else:
+        gd.debuginfo(prj="mt", info=f'')
         return None
 
 
 class LlamaModelInferPolicy(LlamaForCausalLMPolicy):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
 
         if self.shard_config.inference_gptq:
+            gd.debuginfo(prj="mt", info=f'')
             from colossalai.inference.quant.gptq.cai_gptq import ColCaiQuantLinear, RowCaiQuantLinear
 
             decoder_attribute_replacement = {
@@ -130,13 +135,16 @@ class LlamaModelInferPolicy(LlamaForCausalLMPolicy):
         return policy
 
     def postprocess(self):
+        gd.debuginfo(prj="mt", info=f'')
         init_to_get_rotary(self.model.model)
         return self.model
 
     def get_held_layers(self) -> List[Module]:
         """Get pipeline layers for current stage."""
+        gd.debuginfo(prj="mt", info=f'')
         stage_manager = self.pipeline_stage_manager
         held_layers = super().get_held_layers()
         if stage_manager.is_first_stage():
+            gd.debuginfo(prj="mt", info=f'')
             held_layers.append(self.model.lm_head)
         return held_layers

@@ -20,7 +20,12 @@ class RegionManager:
         cnode (List[str], optional): Common node List, should be the subset of input.
     """
 
-    def __init__(self, graph: Graph, solver_name: str = "asyn", memory_budget: float = -1.0, cnode: List[str] = None):
+    def __init__(self,
+                 graph: Graph,
+                 solver_name: str = "asyn",
+                 memory_budget: float = -1.0,
+                 cnode: List[str] = None):
+        gd.debuginfo(prj="mt", info=f'')
         self.graph = graph
         assert graph.owning_module is not None, "The given graph is not associated with a owning_module"
         self.root_module = self.graph.owning_module
@@ -47,7 +52,7 @@ class RegionManager:
         3. Post-processing, mainly contains early region placement if using asynchronous mode,
             and initialize region data.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         self._pre_process()
 
         solver_cls = SolverFactory.create(self.solver_name)
@@ -57,12 +62,14 @@ class RegionManager:
         self._post_process(solver.best_ts)
 
     def _pre_process(self):
+        gd.debuginfo(prj="mt", info=f'')
         init_region_list = self._linearize_graph()
 
         if len(self.shared_region_pairs) > 1:
             raise NotImplementedError("The current version only considers at most one pair of parameter sharing.")
 
         elif len(self.shared_region_pairs) == 1:
+            gd.debuginfo(prj="mt", info=f'')
             shared_regs = self.shared_region_pairs[0]
             assert shared_regs[0].shared_rid == shared_regs[1].r_id and shared_regs[1].shared_rid == shared_regs[0].r_id
             fst_id = shared_regs[0].r_id
@@ -71,6 +78,7 @@ class RegionManager:
             regs_right_out = init_region_list[lst_id:]
             hold_regs = init_region_list[fst_id + 1 : lst_id]
         else:
+            gd.debuginfo(prj="mt", info=f'')
             regs_left_out = []
             regs_right_out = []
             hold_regs = init_region_list
@@ -79,6 +87,7 @@ class RegionManager:
         hold_regs = self._merge_small_regions(hold_regs)
 
         if self.require_pool:
+            gd.debuginfo(prj="mt", info=f'')
             for reg in hold_regs:
                 reg.in_mem_pool_flag = True
                 self.rid_in_pool.append(reg.r_id)
@@ -97,7 +106,9 @@ class RegionManager:
         self.memory_budget -= self.max_param_num * torch.tensor([], dtype=torch.float32).element_size()
 
     def _post_process(self, ts: TrainingSimulator = None):
+        gd.debuginfo(prj="mt", info=f'')
         if self.require_pool:
+            gd.debuginfo(prj="mt", info=f'')
             self._early_region_placement(ts)
         self._init_region_data()
 
@@ -114,7 +125,7 @@ class RegionManager:
             NotImplementedError: due to the naive implementation,
                 it may not find a suitable region placement strategy for the given execution flow.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         reg_flow = torch.cat([ts.fwd_reg_flow, ts.bwd_reg_flow], dim=0)
         mem_block_num = torch.max(torch.sum(reg_flow[:, self.rid_in_pool], dim=1))
         coexist_matrix = torch.logical_or(ts.fwd_reg_flow, ts.bwd_reg_flow)
@@ -152,7 +163,7 @@ class RegionManager:
         Returns:
             List[Region]: region list after merging.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         r_id = orig_reg_list[0].r_id
         region = Region(r_id=r_id)
         region_list = [region]
@@ -184,11 +195,12 @@ class RegionManager:
         Returns:
             int: the best memory block size.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         def _get_wasted_mem(size_list: List[int], blk_size: int):
             """
             Get wasted byte for a certain block size.
             """
+            gd.debuginfo(prj="mt", info=f'')
             acc_wasted = 0
             left = 0
             for s in size_list:
@@ -218,7 +230,7 @@ class RegionManager:
         """
         Initialize region data, which maps the parameters in the region to a contiguous memory space.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         self.temp_fp32_data = torch.zeros(self.max_param_num, device="cuda", dtype=torch.float32)
 
         for region in self.region_list:
@@ -242,7 +254,7 @@ class RegionManager:
         """
         Special processing for the shared region, which uses GPT2 and Bert case as a priori knowledge.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         if len(self.shared_region_pairs):
             assert len(self.shared_region_pairs) <= 1
             former_reg, latter_reg = self.shared_region_pairs[0]
@@ -280,7 +292,7 @@ class RegionManager:
         Remarks:
             Do merge the inplace ops and shape-consistency ops into the previous node.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         # List of target name that could be seen as common node
         common_ops = ["getattr", "getitem", "size"]
 
@@ -295,8 +307,10 @@ class RegionManager:
             """
 
             if isinstance(target, str):
+                gd.debuginfo(prj="mt", info=f'')
                 return target in common_ops
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 return target.__name__ in common_ops
 
         def _is_act(data: Any) -> bool:
@@ -308,7 +322,7 @@ class RegionManager:
             Returns:
                 bool
             """
-
+            gd.debuginfo(prj="mt", info=f'')
             label = False
             if isinstance(data, torch.Tensor):
                 return True
@@ -326,7 +340,7 @@ class RegionManager:
             Returns:
                 bool
             """
-
+            gd.debuginfo(prj="mt", info=f'')
             label = False
             if n.op == "get_attr":
                 label = True
@@ -350,7 +364,7 @@ class RegionManager:
             Returns:
                 bool
             """
-
+            gd.debuginfo(prj="mt", info=f'')
             def _is_inplace(n: Node):
                 """Get the inplace argument from ``torch.fx.Node``"""
                 inplace = False
@@ -379,12 +393,14 @@ class RegionManager:
             return label and not sum([v for _, v in param_op_deps.items()]) and not any(map(_is_inplace, n.users))
 
         def _exception_node_handling():
+            gd.debuginfo(prj="mt", info=f'')
             # TODO meta info prop bug
             if n.name.__contains__("transpose") and n.meta["fwd_out"][0].dim() <= 2:
                 n.meta["fwd_out"] = []
 
         # make sure that item in cnode is valid
         if self.cnode:
+            gd.debuginfo(prj="mt", info=f'')
             for name in self.cnode:
                 try:
                     assert (
@@ -393,6 +409,7 @@ class RegionManager:
                 except StopIteration:
                     raise ValueError(f"Common node name {name} not in graph.")
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.cnode = []
 
         node_id = 0
@@ -467,6 +484,7 @@ class RegionManager:
         cur_n.node_info = NodeInfo(node_id)
 
         if cur_n.op == "call_module":
+            gd.debuginfo(prj="mt", info=f'')
             target = cur_n.target
             submod = self.root_module.get_submodule(target)
             for p in list(submod.parameters(recurse=False)):
@@ -482,6 +500,7 @@ class RegionManager:
                 cur_reg.param_size += p.data.numel() * p.data.element_size()
 
         elif cur_n.op == "get_attr":
+            gd.debuginfo(prj="mt", info=f'')
             attr_itr = self.root_module
             atoms = cur_n.target.split(".")
             for atom in atoms:
@@ -506,8 +525,10 @@ class RegionManager:
         Args:
             param (torch.nn.Parameter): a torch parameter object
         """
+        gd.debuginfo(prj="mt", info=f'')
         return self.param_region_map[param]
 
     def __update_param_region_map(self, params: List[torch.nn.Parameter], region: Region):
+        gd.debuginfo(prj="mt", info=f'')
         for p in params:
             self.param_region_map[p] = region

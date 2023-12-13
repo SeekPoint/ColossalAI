@@ -35,8 +35,10 @@ def generate_sharding_spec(
         meta_tensor = input_._meta_data
         assert meta_tensor is not None, "The given node's _meta_data attribute is None"
         shape = meta_tensor.shape
+        gd.debuginfo(prj="mt", info=f'')
     elif isinstance(input_, torch.Tensor):
         shape = input_.shape
+        gd.debuginfo(prj="mt", info=f'')
     else:
         raise TypeError(
             f"We cannot generate sharding spec for {type(input_)} type, only torch.fx.Node or torch.Tensor is expected."
@@ -68,6 +70,7 @@ def generate_resharding_costs(
         count_backward (Optional[bool]): whether to include the cost of resharding in the backward pass, default is True. False can be used for inference.
         dtype (Optional[torch.dtype]): the data type for cost calculation, default is None.
     """
+    gd.debuginfo(prj="mt", info=f'')
     # The resharding_cost of weight is counted due to sharing weight cases.
     resharding_costs = {}
     size_per_elem_bytes = torch.tensor([], dtype=dtype).element_size()
@@ -106,10 +109,11 @@ def find_repeat_blocks(node_list: List[torch.fx.Node], root_module, common_lengt
         gm (GraphModule): the graph module to be analyzed.
         common_length_threshold (int): the threshold of the repeat block length.
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     # graph = gm.graph
 
     def _process_args(args):
+        gd.debuginfo(prj="mt", info=f'')
         new_args = []
         for arg in args:
             if hasattr(arg, "_meta_data"):
@@ -130,6 +134,7 @@ def find_repeat_blocks(node_list: List[torch.fx.Node], root_module, common_lengt
         return new_args
 
     def _all_equal(check_list, check_fn):
+        gd.debuginfo(prj="mt", info=f'')
         base_value = check_list[-1]
         for e in check_list:
             if not check_fn(e, base_value):
@@ -137,6 +142,7 @@ def find_repeat_blocks(node_list: List[torch.fx.Node], root_module, common_lengt
         return True
 
     def _check_node_list_equal(l1, l2):
+        gd.debuginfo(prj="mt", info=f'')
         if len(l1) != len(l2):
             return False
         for node1, node2 in zip(l1, l2):
@@ -151,18 +157,22 @@ def find_repeat_blocks(node_list: List[torch.fx.Node], root_module, common_lengt
 
     for index, node in enumerate(node_list):
         if node.op == "call_module":
+            gd.debuginfo(prj="mt", info=f'')
             target = node.target
             submod = root_module.get_submodule(target)
             submod_type = type(submod)
             target = submod_type
         else:
+            gd.debuginfo(prj="mt", info=f'')
             target = node.target
 
         new_args = _process_args(node.args)
 
         if node.op != "get_attr":
+            gd.debuginfo(prj="mt", info=f'')
             hash_key = (node.op, target, *new_args)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             hash_key = (node.op,)
 
         setattr(node, "hash_key", hash_key)

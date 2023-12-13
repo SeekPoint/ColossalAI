@@ -30,12 +30,14 @@ class sim_env(saved_tensors_hooks):
     """
 
     def __init__(self, module: Optional[torch.nn.Module] = None):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(self.pack_hook, self.unpack_hook)
         self.ctx = {}
         self.param_ctx = {param.data_ptr(): param for param in module.parameters()}
         self.buffer_ctx = {buffer.data_ptr(): buffer for buffer in module.buffers()} if module else {}
 
     def pack_hook(self, tensor: torch.Tensor):
+        gd.debuginfo(prj="mt", info=f'')
         if tensor.data_ptr() not in self.param_ctx and tensor.data_ptr() not in self.buffer_ctx:
             self.ctx[tensor.data_ptr()] = tensor
         return tensor
@@ -45,12 +47,14 @@ class sim_env(saved_tensors_hooks):
 
 
 def _normalize_tuple(x):
+    gd.debuginfo(prj="mt", info=f'')
     if not isinstance(x, tuple):
         return (x,)
     return x
 
 
 def _current_device(module):
+    gd.debuginfo(prj="mt", info=f'')
     try:
         return next(module.parameters()).device
     except StopIteration:
@@ -95,6 +99,7 @@ class ShapeProp(torch.fx.Interpreter):
     _mode = MetaTensorMode()
 
     def __init__(self, module: torch.fx.GraphModule, garbage_collect_values: bool = True):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(module, garbage_collect_values)
         self.global_hook = sim_env(module=self.module)
 
@@ -111,6 +116,7 @@ class ShapeProp(torch.fx.Interpreter):
         Returns:
             Any: The result of executing ``n``
         """
+        gd.debuginfo(prj="mt", info=f'')
         args, kwargs = self.fetch_args_kwargs_from_env(n)
         with self.global_hook:
             r = getattr(self, n.op)(n.target, args, kwargs)
@@ -140,11 +146,13 @@ class ShapeProp(torch.fx.Interpreter):
         n_info.outputs = _normalize_tuple(r)
 
         if n.op == "call_module":
+            gd.debuginfo(prj="mt", info=f'')
             submod = self.fetch_attr(n.target)
             n_info.parameters.update({k: MetaTensor(v) for k, v in submod.named_parameters()})
             n_info.buffers.update({k: MetaTensor(v) for k, v in submod.named_buffers()})
 
         else:
+            gd.debuginfo(prj="mt", info=f'')
             n_info.parameters.update(
                 {
                     k.name: MetaTensor(v)
@@ -188,16 +196,24 @@ class ShapeProp(torch.fx.Interpreter):
         Return
             Any: The value returned by the function invocation
         """
+
         convert_to_param = False
         if target in (torch.transpose, torch.reshape) and isinstance(args[0], torch.nn.parameter.Parameter):
+            gd.debuginfo(prj="mt", info=f'')
             convert_to_param = True
+
         if target in self._custom_dispatch_func:
+            gd.debuginfo(prj="mt", info=f'')
             res = self._custom_dispatch_func[target](*args, **kwargs)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             res = super().call_function(target, args, kwargs)
+
         if convert_to_param:
+            gd.debuginfo(prj="mt", info=f'')
             return torch.nn.Parameter(res)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return res
 
     def call_method(self, target: "Target", args: Tuple[Any, ...], kwargs: Dict[str, Any]) -> Any:
@@ -214,6 +230,8 @@ class ShapeProp(torch.fx.Interpreter):
         Return
             Any: The value returned by the method invocation
         """
+        gd.debuginfo(prj="mt", info=f'')
+
         # args[0] is the `self` object for this method call
         self_obj, *args_tail = args
 
@@ -228,8 +246,10 @@ class ShapeProp(torch.fx.Interpreter):
         assert isinstance(target, str)
         res = getattr(self_obj, target)(*args_tail, **kwargs)
         if convert_to_parameter:
+            gd.debuginfo(prj="mt", info=f'')
             return torch.nn.Parameter(res)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return res
 
     def propagate(self, *args, device=None):
@@ -250,6 +270,7 @@ class ShapeProp(torch.fx.Interpreter):
                 return elem
 
         with self._mode:
+            gd.debuginfo(prj="mt", info=f'')
             return super().run(*tree_map(wrap_fn, args))
 
 
@@ -265,6 +286,6 @@ def shape_prop_pass(module: torch.fx.GraphModule, *args) -> torch.fx.GraphModule
     Returns:
         GraphModule: The same GraphModule with shape information
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     ShapeProp(module).propagate(*args, device=_current_device(module))
     return module

@@ -23,6 +23,7 @@ class Initializer_Pipeline(ProcessGroupInitializer):
     """
 
     def __init__(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(*args, **kwargs)
         self.data_group_size = self.world_size // self.data_parallel_size
         self.pipeline_stage_size = self.data_group_size // self.pipeline_parallel_size
@@ -34,6 +35,7 @@ class Initializer_Pipeline(ProcessGroupInitializer):
             List[Tuple (local_rank, group_world_size, process_group, ranks_in_group, mode)]:
                 A Pipeline parallelism's information in list of tuples.
         """
+        gd.debuginfo(prj="mt", info=f'')
         dist_settings = list()
         for i in range(self.data_parallel_size):
             for j in range(self.pipeline_stage_size):

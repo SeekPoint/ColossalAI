@@ -14,6 +14,7 @@ class SamPolicy(Policy):
         return self.model
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         from transformers.models.sam.modeling_sam import (
             SamAttention,
             SamTwoWayAttentionBlock,
@@ -230,4 +231,5 @@ class SamPolicy(Policy):
 # SamModel
 class SamModelPolicy(SamPolicy):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__()

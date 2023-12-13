@@ -89,6 +89,7 @@ class ShardedOptimizerV2(OptimizerWrapper):
         mp_process_group: Optional[ProcessGroup] = None,
         verbose: bool = False,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(sharded_model, ShardedModelV2), "model must be wrapped with ShardedModel"
         assert not isinstance(optimizer, ShardedOptimizerV2), "Nested ShardedOptimizerV2 is not supported."
 

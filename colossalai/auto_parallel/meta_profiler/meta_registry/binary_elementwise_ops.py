@@ -23,7 +23,7 @@ def binary_elementwise_meta_info(*args, **kwargs) -> Tuple[TrainCycleItem, Train
     Returns:
         Tuple[TrainCycleItem, TrainCycleItem, List[torch.Tensor]]: compute cost, memory cost and forward inputs
     """
-
+    gd.debuginfo(prj="mt", info=f'')
     input_op_data = [arg for arg in args if arg.type != OperationDataType.OUTPUT]
     output_op_data = next(filter(lambda arg: arg.type == OperationDataType.OUTPUT, args))
 

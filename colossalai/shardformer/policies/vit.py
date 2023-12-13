@@ -27,6 +27,7 @@ class ViTPolicy(Policy):
         return self.model
 
     def module_policy(self) -> Dict[Union[str, nn.Module], ModulePolicyDescription]:
+        gd.debuginfo(prj="mt", info=f'')
         from transformers.models.vit.modeling_vit import ViTEmbeddings, ViTLayer, ViTOutput, ViTSelfAttention
 
         policy = {}
@@ -36,6 +37,7 @@ class ViTPolicy(Policy):
             warnings.warn("Vit dosen't support sequence parallelism now, will ignore the sequence parallelism flag.")
 
         if self.shard_config.enable_tensor_parallelism:
+            gd.debuginfo(prj="mt", info=f'')
             policy[ViTEmbeddings] = ModulePolicyDescription(
                 attribute_replacement={},
                 param_replacement=[],
@@ -97,6 +99,7 @@ class ViTPolicy(Policy):
 
         # use flash attention
         if self.shard_config.enable_flash_attention:
+            gd.debuginfo(prj="mt", info=f'')
             self.append_or_create_method_replacement(
                 description={
                     "forward": get_vit_flash_self_attention_forward(),
@@ -107,6 +110,7 @@ class ViTPolicy(Policy):
 
         # use jit fused operator
         if self.shard_config.enable_jit_fused:
+            gd.debuginfo(prj="mt", info=f'')
             self.append_or_create_method_replacement(
                 description={
                     "forward": get_jit_fused_vit_output_forward(),
@@ -129,8 +133,10 @@ class ViTPolicy(Policy):
 
         if self.model.__class__.__name__ == "ViTModel":
             module = self.model
+            gd.debuginfo(prj="mt", info=f'')
         else:
             module = self.model.vit
+            gd.debuginfo(prj="mt", info=f'')
         stage_manager = self.pipeline_stage_manager
 
         held_layers = []
@@ -142,6 +148,7 @@ class ViTPolicy(Policy):
         return held_layers
 
     def set_pipeline_forward(self, model_cls: nn.Module, pipeline_forward: Callable, policy: Dict):
+        gd.debuginfo(prj="mt", info=f'')
         if self.pipeline_stage_manager:
             stage_manager = self.pipeline_stage_manager
             if self.model.__class__.__name__ == "ViTModel":
@@ -161,17 +168,21 @@ class ViTPolicy(Policy):
 class ViTModelPolicy(ViTPolicy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         from transformers.models.vit.modeling_vit import ViTModel
 
         policy = super().module_policy()
 
         if self.shard_config.pipeline_stage_manager is not None:
+            gd.debuginfo(prj="mt", info=f'')
             self.set_pipeline_forward(model_cls=ViTModel, pipeline_forward=ViTModel_pipeline_forward, policy=policy)
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
+        gd.debuginfo(prj="mt", info=f'')
         held_layers = super().get_held_layers()
         assert self.pipeline_stage_manager is not None, "pipeline_stage_manager is None"
 
@@ -180,6 +191,7 @@ class ViTModelPolicy(ViTPolicy):
         if stage_manager.is_last_stage():
             held_layers.append(module.layernorm)
             held_layers.append(module.pooler)
+            gd.debuginfo(prj="mt", info=f'')
 
         return held_layers
 
@@ -190,6 +202,8 @@ class ViTForImageClassificationPolicy(ViTPolicy):
         from transformers.models.vit.modeling_vit import ViTForImageClassification, ViTModel
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'')
+
         if self.shard_config.enable_tensor_parallelism:
             new_item = {
                 ViTForImageClassification: ModulePolicyDescription(
@@ -201,6 +215,7 @@ class ViTForImageClassificationPolicy(ViTPolicy):
                 )
             }
             policy.update(new_item)
+            gd.debuginfo(prj="mt", info=f'')
 
         if self.shard_config.pipeline_stage_manager is not None:
             self.set_pipeline_forward(model_cls=ViTModel, pipeline_forward=ViTModel_pipeline_forward, policy=policy)
@@ -209,10 +224,12 @@ class ViTForImageClassificationPolicy(ViTPolicy):
                 pipeline_forward=ViTForImageClassification_pipeline_forward,
                 policy=policy,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
+        gd.debuginfo(prj="mt", info=f'')
         held_layers = super().get_held_layers()
         assert self.pipeline_stage_manager is not None, "pipeline_stage_manager is None"
 
@@ -221,6 +238,7 @@ class ViTForImageClassificationPolicy(ViTPolicy):
         if stage_manager.is_last_stage():
             held_layers.append(module.layernorm)
             held_layers.append(self.model.classifier)
+            gd.debuginfo(prj="mt", info=f'')
 
         return held_layers
 
@@ -229,11 +247,14 @@ class ViTForImageClassificationPolicy(ViTPolicy):
 class ViTForMaskedImageModelingPolicy(ViTPolicy):
     def __init__(self) -> None:
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
         from transformers.models.vit.modeling_vit import ViTForMaskedImageModeling, ViTModel
 
         policy = super().module_policy()
+
+        gd.debuginfo(prj="mt", info=f'')
 
         if self.shard_config.pipeline_stage_manager is not None:
             self.set_pipeline_forward(model_cls=ViTModel, pipeline_forward=ViTModel_pipeline_forward, policy=policy)
@@ -242,9 +263,12 @@ class ViTForMaskedImageModelingPolicy(ViTPolicy):
                 pipeline_forward=ViTForMaskedImageModeling_pipeline_forward,
                 policy=policy,
             )
+            gd.debuginfo(prj="mt", info=f'')
+
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
+        gd.debuginfo(prj="mt", info=f'')
         held_layers = super().get_held_layers()
         assert self.pipeline_stage_manager is not None, "pipeline_stage_manager is None"
 
@@ -253,5 +277,6 @@ class ViTForMaskedImageModelingPolicy(ViTPolicy):
         if stage_manager.is_last_stage():
             held_layers.append(module.layernorm)
             held_layers.append(self.model.decoder)
+            gd.debuginfo(prj="mt", info=f'')
 
         return held_layers

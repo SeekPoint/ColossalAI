@@ -13,6 +13,8 @@ from pydebug import gd, infoTensor
 
 @meta_profiler_module.register(torch.nn.Conv1d)
 def torch_nn_conv1d(self: torch.nn.Conv1d, input: torch.Tensor) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
+
     # the output shape is calculated using the formula stated
     # at https://pytorch.org/docs/stable/generated/torch.nn.Conv1d.html
     c_in, l_in = input.shape[-2:]
@@ -30,11 +32,14 @@ def torch_nn_conv1d(self: torch.nn.Conv1d, input: torch.Tensor) -> Tuple[int, in
     flops = 2 * macs
     if self.bias is not None:
         flops += num_elem
+        gd.debuginfo(prj="mt", info=f'')
     return flops, macs
 
 
 @meta_profiler_module.register(torch.nn.Conv2d)
 def torch_nn_conv2d(self: torch.nn.Conv2d, input: torch.Tensor) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
+
     # the output shape is calculated using the formula stated
     # at https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
     c_in, h_in, w_in = input.shape[-3:]
@@ -56,11 +61,13 @@ def torch_nn_conv2d(self: torch.nn.Conv2d, input: torch.Tensor) -> Tuple[int, in
     flops = 2 * macs
     if self.bias is not None:
         flops += num_elem
+        gd.debuginfo(prj="mt", info=f'')
     return flops, macs
 
 
 @meta_profiler_module.register(torch.nn.Conv3d)
 def torch_nn_conv3d(self: torch.nn.Conv3d, input: torch.Tensor) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
     # the output shape is calculated using the formula stated
     # at https://pytorch.org/docs/stable/generated/torch.nn.Conv3d.html
     c_in, d_in, h_in, w_in = input.shape[-4:]
@@ -86,11 +93,13 @@ def torch_nn_conv3d(self: torch.nn.Conv3d, input: torch.Tensor) -> Tuple[int, in
     flops = 2 * macs
     if self.bias is not None:
         flops += num_elem
+        gd.debuginfo(prj="mt", info=f'')
     return flops, macs
 
 
 @meta_profiler_module.register(torch.nn.ConvTranspose1d)
 def torch_nn_convtranspose1d(self: torch.nn.ConvTranspose1d, input: torch.Tensor) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
     # the output shape is calculated using the formula stated
     # at https://pytorch.org/docs/stable/generated/torch.nn.ConvTranspose1d.html
     c_in, l_in = input.shape[-2:]
@@ -114,11 +123,13 @@ def torch_nn_convtranspose1d(self: torch.nn.ConvTranspose1d, input: torch.Tensor
     flops = 2 * macs
     if self.bias is not None:
         flops += reduce(operator.mul, result_shape)
+        gd.debuginfo(prj="mt", info=f'')
     return flops, macs
 
 
 @meta_profiler_module.register(torch.nn.ConvTranspose2d)
 def torch_nn_convtranspose2d(self: torch.nn.ConvTranspose2d, input: torch.Tensor) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
     # the output shape is calculated using the formula stated
     # at https://pytorch.org/docs/stable/generated/torch.nn.ConvTranspose2d.html
     c_in, h_in, w_in = input.shape[-3:]
@@ -148,11 +159,13 @@ def torch_nn_convtranspose2d(self: torch.nn.ConvTranspose2d, input: torch.Tensor
     flops = 2 * macs
     if self.bias is not None:
         flops += reduce(operator.mul, result_shape)
+        gd.debuginfo(prj="mt", info=f'')
     return flops, macs
 
 
 @meta_profiler_module.register(torch.nn.ConvTranspose3d)
 def torch_nn_convtranspose3d(self: torch.nn.ConvTranspose3d, input: torch.Tensor) -> Tuple[int, int]:
+    gd.debuginfo(prj="mt", info=f'')
     # the output shape is calculated using the formula stated
     # at https://pytorch.org/docs/stable/generated/torch.nn.ConvTranspose3d.html
     c_in, d_in, h_in, w_in = input.shape[-4:]
@@ -190,4 +203,5 @@ def torch_nn_convtranspose3d(self: torch.nn.ConvTranspose3d, input: torch.Tensor
     flops = 2 * macs
     if self.bias is not None:
         flops += reduce(operator.mul, result_shape)
+        gd.debuginfo(prj="mt", info=f'')
     return flops, macs

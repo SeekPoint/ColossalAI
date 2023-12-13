@@ -46,6 +46,7 @@ def get_model_numel(model: torch.nn.Module) -> int:
 
 
 def format_numel_str(numel: int) -> str:
+    gd.debuginfo(prj="mt", info=f'')
     B = 1024**3
     M = 1024**2
     K = 1024
@@ -60,12 +61,14 @@ def format_numel_str(numel: int) -> str:
 
 
 def all_reduce_mean(tensor: torch.Tensor) -> torch.Tensor:
+    gd.debuginfo(prj="mt", info=f'')
     dist.all_reduce(tensor=tensor, op=dist.ReduceOp.SUM)
     tensor.div_(dist.get_world_size())
     return tensor
 
 
 def main() -> None:
+    gd.debuginfo(prj="mt", info=f'')
     # ==============================
     # Parse Arguments
     # ==============================

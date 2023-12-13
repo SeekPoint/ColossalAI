@@ -78,6 +78,7 @@ class Embedding(ColossalaiModule):
         *args,
         **kwargs,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         tensor_parallel = get_tensor_parallel_mode()
         if tensor_parallel is None:
             embed = (
@@ -142,6 +143,7 @@ class PatchEmbedding(ColossalaiModule):
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
         position_embed_initializer: Callable = init.zeros_(),
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         tensor_parallel = get_tensor_parallel_mode()
         embed = _parallel_patchembedding[tensor_parallel](
             img_size,

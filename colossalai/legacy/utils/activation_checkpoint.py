@@ -11,6 +11,7 @@ from colossalai.utils import get_current_device
 from pydebug import gd, infoTensor
 
 def copy_to_device(obj, device):
+    gd.debuginfo(prj="mt", info=f'')
     if torch.is_tensor(obj):
         # Notice:
         # When in no_grad context, requires_gard is False after movement
@@ -30,6 +31,7 @@ def copy_to_device(obj, device):
 class CheckpointFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx, run_function, activation_offload=False, *args):
+        gd.debuginfo(prj="mt", info=f'')
         check_backward_validity(args)
         ctx.run_function = run_function
         ctx.activation_offload = activation_offload
@@ -77,6 +79,7 @@ class CheckpointFunction(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, *args):
+        gd.debuginfo(prj="mt", info=f'')
         if not torch.autograd._is_checkpoint_valid():
             raise RuntimeError(
                 "Checkpointing is not compatible with .grad() or when an `inputs` parameter is "
@@ -151,6 +154,7 @@ def checkpoint(function, activation_offload, *args, use_reentrant: bool = True):
     Returns:
         Output of running function with provided args.
     """
+    gd.debuginfo(prj="mt", info=f'')
     if use_reentrant:
         return CheckpointFunction.apply(function, activation_offload, *args)
     else:
@@ -162,6 +166,7 @@ def checkpoint(function, activation_offload, *args, use_reentrant: bool = True):
 
 
 def _checkpoint_without_reentrant(function, activation_offload=False, *args):
+    gd.debuginfo(prj="mt", info=f'')
     # store rng_state
     fwd_cpu_state = torch.get_rng_state()
     sync_states()

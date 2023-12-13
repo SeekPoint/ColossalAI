@@ -22,6 +22,7 @@ class MatMulStrategyGenerator(StrategyGenerator):
     """
 
     def update_memory_cost(self, strategy: ShardingStrategy) -> ShardingStrategy:
+        gd.debuginfo(prj="mt", info=f'')
         size_mapping = {
             "input": self._compute_size_in_bytes(strategy, "input"),
             "other": self._compute_size_in_bytes(strategy, "other"),
@@ -31,6 +32,7 @@ class MatMulStrategyGenerator(StrategyGenerator):
         if self.has_bias:
             bias_size = self._compute_size_in_bytes(strategy, "bias")
             size_mapping["bias"] = bias_size
+            gd.debuginfo(prj="mt", info=f'')
 
         # compute fwd cost incurred
         # fwd_cost = input + other + bias + output
@@ -53,11 +55,13 @@ class MatMulStrategyGenerator(StrategyGenerator):
 
 class DotProductStrategyGenerator(MatMulStrategyGenerator):
     def validate(self) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         input_op_data = self.op_data["input"]
         other_op_data = self.op_data["other"]
         assert input_op_data.data.dim() == 1 and other_op_data.data.dim() == 1
 
     def update_compute_cost(self, strategy: ShardingStrategy) -> ShardingStrategy:
+        gd.debuginfo(prj="mt", info=f'')
         sharded_input_shape = strategy.sharding_specs[self.op_data["input"]].get_sharded_shape_per_device()
         fwd_compute_cost = sharded_input_shape[0]
         bwd_compute_cost = fwd_compute_cost * 2
@@ -69,6 +73,8 @@ class DotProductStrategyGenerator(MatMulStrategyGenerator):
     @ignore_sharding_exception
     def no_split(self):
         name = f"R = R dot R"
+        gd.debuginfo(prj="mt", info=f'name={name}')
+
         dim_partition_dict = {"input": {}, "other": {}, "output": {}, "bias": {}}
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict)
         communication_action_mapping = {}
@@ -81,6 +87,7 @@ class DotProductStrategyGenerator(MatMulStrategyGenerator):
     @ignore_sharding_exception
     def split_one_dim(self, mesh_dim):
         name = f"R = S{mesh_dim} dot S{mesh_dim}"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         # get sharding spec
         dim_partition_dict = {"input": {0: [mesh_dim]}, "other": {0: [mesh_dim]}, "output": {}, "bias": {0: [mesh_dim]}}
@@ -101,6 +108,7 @@ class DotProductStrategyGenerator(MatMulStrategyGenerator):
         )
 
     def collate_strategies(self) -> List[ShardingStrategy]:
+        gd.debuginfo(prj="mt", info=f'')
         strategy_list = []
 
         # do not split dimensions for dot product
@@ -117,11 +125,13 @@ class DotProductStrategyGenerator(MatMulStrategyGenerator):
 
 class MatVecStrategyGenerator(MatMulStrategyGenerator):
     def validate(self) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         input_op_data = self.op_data["input"]
         other_op_data = self.op_data["other"]
         assert input_op_data.data.dim() == 2 and other_op_data.data.dim() == 1
 
     def update_compute_cost(self, strategy: ShardingStrategy) -> ShardingStrategy:
+        gd.debuginfo(prj="mt", info=f'')
         sharded_input_shape = strategy.sharding_specs[self.op_data["input"]].get_sharded_shape_per_device()
         fwd_compute_cost = sharded_input_shape[0]
         bwd_compute_cost = fwd_compute_cost * 2
@@ -132,6 +142,7 @@ class MatVecStrategyGenerator(MatMulStrategyGenerator):
 
     @ignore_sharding_exception
     def no_split(self):
+        gd.debuginfo(prj="mt", info=f'')
         name = "R = R x R"
         dim_partition_dict = {"input": {}, "other": {}, "output": {}}
 
@@ -145,6 +156,7 @@ class MatVecStrategyGenerator(MatMulStrategyGenerator):
     @ignore_sharding_exception
     def split_input_batch(self, mesh_dim):
         name = f"S{mesh_dim}R = S{mesh_dim}R x R"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         # get sharding spec
         dim_partition_dict = {
@@ -160,6 +172,7 @@ class MatVecStrategyGenerator(MatMulStrategyGenerator):
         # get communication action
         communication_action_mapping = {}
         if self.is_param("other"):
+            gd.debuginfo(prj="mt", info=f'')
             other_comm_action = self.get_communication_action(
                 sharding_spec=sharding_spec_mapping["other"],
                 communication_pattern=CollectiveCommPattern.IDENTITY_FWD_ALLREDUCE_BWD,
@@ -174,6 +187,8 @@ class MatVecStrategyGenerator(MatMulStrategyGenerator):
                 comm_type=CommType.BEFORE,
                 arg_index=1,
             )
+            gd.debuginfo(prj="mt", info=f'')
+
         communication_action_mapping["other"] = other_comm_action
 
         if self.has_bias:
@@ -184,6 +199,7 @@ class MatVecStrategyGenerator(MatMulStrategyGenerator):
                     logical_process_axis=mesh_dim,
                     comm_type=CommType.HOOK,
                 )
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 bias_comm_action = self.get_communication_action(
                     sharding_spec=sharding_spec_mapping["bias"],
@@ -192,6 +208,7 @@ class MatVecStrategyGenerator(MatMulStrategyGenerator):
                     comm_type=CommType.BEFORE,
                     arg_index=2,
                 )
+                gd.debuginfo(prj="mt", info=f'')
             communication_action_mapping["bias"] = bias_comm_action
 
         return self.get_sharding_strategy(
@@ -201,6 +218,7 @@ class MatVecStrategyGenerator(MatMulStrategyGenerator):
         )
 
     def collate_strategies(self) -> List[ShardingStrategy]:
+        gd.debuginfo(prj="mt", info=f'')
         strategy_list = []
 
         # no split
@@ -221,11 +239,14 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
         linear_projection_type="linear",
         solver_perference=SolverPerference.STANDARD,
     ):
+        gd.debuginfo(prj="mt", info=f'')
         super().__init__(operation_data_mapping, device_mesh)
         self.linear_projection_type = linear_projection_type
         self.solver_perference = solver_perference
 
     def update_compute_cost(self, strategy: ShardingStrategy) -> ShardingStrategy:
+        gd.debuginfo(prj="mt", info=f'')
+
         # C = AB
         # C: [M, N], A: [M, P], B: [P, N]
         # fwd cost = MNP (only count mul)
@@ -244,6 +265,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
         strategy.compute_cost = compute_cost
 
     def dp_strategies(self) -> List[ShardingStrategy]:
+        gd.debuginfo(prj="mt", info=f'')
         strategies = []
 
         # S01R = S01R x RR
@@ -252,6 +274,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
         return strategies
 
     def tp_strategies(self) -> List[ShardingStrategy]:
+        gd.debuginfo(prj="mt", info=f'')
         strategies = []
 
         # RR = RS01 x S01R
@@ -275,6 +298,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
         return strategies
 
     def mix_strategies(self) -> List[ShardingStrategy]:
+        gd.debuginfo(prj="mt", info=f'')
         strategies = []
 
         # SS = SR x RS
@@ -297,10 +321,13 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
             strategies.extend(self.dp_strategies())
             strategies.extend(self.tp_strategies())
             strategies.extend(self.mix_strategies())
+            gd.debuginfo(prj="mt", info=f'')
         elif self.solver_perference == SolverPerference.DP:
             strategies.extend(self.dp_strategies())
+            gd.debuginfo(prj="mt", info=f'')
         elif self.solver_perference == SolverPerference.TP:
             strategies.extend(self.tp_strategies())
+            gd.debuginfo(prj="mt", info=f'')
 
         return strategies
 
@@ -308,6 +335,8 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
     def split_lhs_space_rhs_space(self, mesh_dim_0, mesh_dim_1):
         # handle case SS = SR x RS
         name = f"S{mesh_dim_0}S{mesh_dim_1} = S{mesh_dim_0}R x RS{mesh_dim_1}"
+        gd.debuginfo(prj="mt", info=f'name={name}')
+
         dim_partition_dict_mapping = {
             "input": {0: [mesh_dim_0]},
             "other": {-1: [mesh_dim_1]},
@@ -318,8 +347,10 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
         # as the output logically.
         if self.linear_projection_type == "linear":
             dim_partition_dict_mapping["bias"] = {-1: [mesh_dim_1]}
+            gd.debuginfo(prj="mt", info=f'')
         elif self.linear_projection_type == "addmm":
             dim_partition_dict_mapping["bias"] = {0: [mesh_dim_0], -1: [mesh_dim_1]}
+            gd.debuginfo(prj="mt", info=f'')
         else:
             raise ("Unsupported linear projection type")
 
@@ -342,6 +373,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
                 logical_process_axis=mesh_dim_0,
                 comm_type=CommType.HOOK,
             )
+            gd.debuginfo(prj="mt", info=f'')
         else:
             other_comm_action = self.get_communication_action(
                 sharding_spec_mapping["other"],
@@ -350,6 +382,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
                 comm_type=CommType.BEFORE,
                 arg_index=1,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         communication_action_mapping["input"] = input_comm_action
         communication_action_mapping["other"] = other_comm_action
@@ -364,6 +397,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
                     logical_process_axis=mesh_dim_0,
                     comm_type=CommType.HOOK,
                 )
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 bias_comm_action = self.get_communication_action(
                     sharding_spec_mapping["bias"],
@@ -372,6 +406,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
                     comm_type=CommType.BEFORE,
                     key_for_kwarg="bias",
                 )
+                gd.debuginfo(prj="mt", info=f'')
             communication_action_mapping["bias"] = bias_comm_action
 
         return self.get_sharding_strategy(
@@ -384,6 +419,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
     def split_lhs_space_both_contract(self, mesh_dim_0, mesh_dim_1):
         # handle the case SR = SS x SR
         name = f"S{mesh_dim_0}R = S{mesh_dim_0}S{mesh_dim_1} x S{mesh_dim_1}R"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         # get sharding spec mapping
         dim_partition_dict_mapping = {
@@ -397,8 +433,10 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
         # as the output logically.
         if self.linear_projection_type == "linear":
             dim_partition_dict_mapping["bias"] = {}
+            gd.debuginfo(prj="mt", info=f'')
         elif self.linear_projection_type == "addmm":
             dim_partition_dict_mapping["bias"] = {0: [mesh_dim_0]}
+            gd.debuginfo(prj="mt", info=f'')
         else:
             raise ("Unsupported linear projection type")
 
@@ -421,6 +459,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
                 logical_process_axis=mesh_dim_0,
                 comm_type=CommType.HOOK,
             )
+            gd.debuginfo(prj="mt", info=f'')
         else:
             other_comm_action = self.get_communication_action(
                 sharding_spec_mapping["other"],
@@ -429,6 +468,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
                 comm_type=CommType.BEFORE,
                 arg_index=1,
             )
+            gd.debuginfo(prj="mt", info=f'')
 
         communication_action_mapping["other"] = other_comm_action
         communication_action_mapping["output"] = output_comm_action
@@ -443,6 +483,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
                     logical_process_axis=mesh_dim_0,
                     comm_type=CommType.HOOK,
                 )
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 bias_comm_action = self.get_communication_action(
                     sharding_spec_mapping["bias"],
@@ -451,6 +492,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
                     comm_type=CommType.BEFORE,
                     key_for_kwarg="bias",
                 )
+                gd.debuginfo(prj="mt", info=f'')
             communication_action_mapping["bias"] = bias_comm_action
 
         return self.get_sharding_strategy(
@@ -462,6 +504,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
     @ignore_sharding_exception
     def split_rhs_space_both_contract(self, mesh_dim_0, mesh_dim_1):
         name = f"RS{mesh_dim_1} = RS{mesh_dim_0} x S{mesh_dim_0}S{mesh_dim_1}"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         # get sharding specs
         dim_partition_dict_mapping = {
@@ -502,6 +545,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
     @ignore_sharding_exception
     def recompute_split_both_contract(self, mesh_dim):
         name = f"RR = RS{mesh_dim} x S{mesh_dim}R"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         # get sharding spec
         dim_partition_dict_mapping = {
@@ -533,6 +577,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
     @ignore_sharding_exception
     def split_rhs_space_only(self, mesh_dim):
         name = f"RS{mesh_dim} = RR x RS{mesh_dim}"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         # get sharding spec
         dim_partition_dict_mapping = {
@@ -565,6 +610,8 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
     @ignore_sharding_exception
     def split_lhs_1st_dim_1d(self, mesh_dim_0, mesh_dim_1):
         name = f"S{mesh_dim_0}{mesh_dim_1}R = S{mesh_dim_0}{mesh_dim_1}R x RR"
+        gd.debuginfo(prj="mt", info=f'name={name}')
+
         # get sharding spec
         dim_partition_dict_mapping = {
             "input": {0: [mesh_dim_0, mesh_dim_1]},
@@ -577,8 +624,10 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
         # as the output logically.
         if self.linear_projection_type == "linear":
             dim_partition_dict_mapping["bias"] = {}
+            gd.debuginfo(prj="mt", info=f'')
         elif self.linear_projection_type == "addmm":
             dim_partition_dict_mapping["bias"] = {0: [mesh_dim_0, mesh_dim_1]}
+            gd.debuginfo(prj="mt", info=f'')
         else:
             raise ("Unsupported linear projection type")
 
@@ -593,6 +642,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
                 logical_process_axis=[mesh_dim_0, mesh_dim_1],
                 comm_type=CommType.HOOK,
             )
+            gd.debuginfo(prj="mt", info=f'')
         else:
             other_comm_action = self.get_communication_action(
                 sharding_spec=sharding_spec_mapping["other"],
@@ -601,6 +651,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
                 comm_type=CommType.BEFORE,
                 arg_index=1,
             )
+            gd.debuginfo(prj="mt", info=f'')
         communication_action_mapping["other"] = other_comm_action
 
         # we only add allreduce comm action for linear bias, because
@@ -613,6 +664,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
                     logical_process_axis=[mesh_dim_0, mesh_dim_1],
                     comm_type=CommType.HOOK,
                 )
+                gd.debuginfo(prj="mt", info=f'')
             else:
                 bias_comm_action = self.get_communication_action(
                     sharding_spec=sharding_spec_mapping["bias"],
@@ -621,6 +673,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
                     comm_type=CommType.BEFORE,
                     key_for_kwarg="bias",
                 )
+                gd.debuginfo(prj="mt", info=f'')
             communication_action_mapping["bias"] = bias_comm_action
         return self.get_sharding_strategy(
             name=name,
@@ -631,6 +684,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
     @ignore_sharding_exception
     def split_lhs_2nd_dim_1d(self, mesh_dim_0, mesh_dim_1):
         name = f"RR = RS{mesh_dim_0}{mesh_dim_1} x S{mesh_dim_0}{mesh_dim_1}R"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         # get sharding spec
         dim_partition_dict_mapping = {
@@ -663,6 +717,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
     @ignore_sharding_exception
     def split_rhs_2nd_dim_1d(self, mesh_dim_0, mesh_dim_1):
         name = f"RS{mesh_dim_0}{mesh_dim_1} = RR x RS{mesh_dim_0}{mesh_dim_1}"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         # get sharding spec
         dim_partition_dict_mapping = {
@@ -696,6 +751,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
     @ignore_sharding_exception
     def non_split(self):
         name = f"RR = RR x RR"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         # get sharding spec
         dim_partition_dict_mapping = {
@@ -719,6 +775,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
         )
 
     def validate(self) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         assert "input" in self.op_data
         assert "other" in self.op_data
 
@@ -729,6 +786,7 @@ class LinearProjectionStrategyGenerator(MatMulStrategyGenerator):
         assert other_data.logical_shape[0] == input_data.logical_shape[-1]
 
         if self.has_bias:
+            gd.debuginfo(prj="mt", info=f'')
             bias_data = self.op_data["bias"]
             assert bias_data.logical_shape[-1] == other_data.logical_shape[-1]
 
@@ -749,10 +807,12 @@ class BatchedMatMulStrategyGenerator(MatMulStrategyGenerator):
 
     # TODO: torch.addbmm correctness issue need to be fixed.
     def __init__(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         self.squeeze_batch_dim = False
         super().__init__(*args, **kwargs)
 
     def _pop_batch_dim_sharding_for_output(self, dim_partition_dict):
+        gd.debuginfo(prj="mt", info=f'')
         # remove partition dict for dim 0
         dim_partition_dict["output"].pop(0, None)
 
@@ -765,15 +825,18 @@ class BatchedMatMulStrategyGenerator(MatMulStrategyGenerator):
         dim_partition_dict["output"].update(temp_dim_partition)
 
     def validate(self) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         input_op_data = self.op_data["input"]
         other_op_data = self.op_data["other"]
         assert len(input_op_data.logical_shape) == 3 or len(other_op_data.logical_shape) == 3
 
         if "bias" in self.op_data:
+            gd.debuginfo(prj="mt", info=f'')
             bias_op_data = self.op_data["bias"]
             assert bias_op_data.data.dim() < 3 and len(bias_op_data.logical_shape) == 2
 
     def update_compute_cost(self, strategy: ShardingStrategy) -> ShardingStrategy:
+        gd.debuginfo(prj="mt", info=f'')
         fwd_compute_cost = self.op_data["input"].data.shape[-1] * reduce(
             operator.mul, self.op_data["output"].data.shape
         )
@@ -786,11 +849,13 @@ class BatchedMatMulStrategyGenerator(MatMulStrategyGenerator):
     @ignore_sharding_exception
     def split_one_batch_dim(self, mesh_dim):
         name = f"Sb{mesh_dim} = Sb{mesh_dim} x Sb{mesh_dim}"
+        gd.debuginfo(prj="mt", info=f'name={name}')
 
         # get sharding_spec
         dim_partition_dict = {"input": {0: [mesh_dim]}, "other": {0: [mesh_dim]}, "bias": {}, "output": {0: [mesh_dim]}}
         if self.squeeze_batch_dim:
             self._pop_batch_dim_sharding_for_output(dim_partition_dict)
+            gd.debuginfo(prj="mt", info=f'')
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict)
 
         # get communication actions
@@ -804,6 +869,8 @@ class BatchedMatMulStrategyGenerator(MatMulStrategyGenerator):
                 arg_index=0,
             )
             communication_action_mapping["bias"] = bias_comm_action
+            gd.debuginfo(prj="mt", info=f'')
+
         return self.get_sharding_strategy(
             name=name,
             sharding_spec_mapping=sharding_spec_mapping,
@@ -813,6 +880,7 @@ class BatchedMatMulStrategyGenerator(MatMulStrategyGenerator):
     @ignore_sharding_exception
     def split_two_batch_dim(self, mesh_dim_0, mesh_dim_1):
         name = f"Sb{mesh_dim_0}{mesh_dim_1} = Sb{mesh_dim_0}{mesh_dim_1} x Sb{mesh_dim_0}{mesh_dim_1}"
+        gd.debuginfo(prj="mt", info=f'name={name}')
         dim_partition_dict = {
             "input": {0: [mesh_dim_0, mesh_dim_1]},
             "other": {0: [mesh_dim_0, mesh_dim_1]},
@@ -821,6 +889,8 @@ class BatchedMatMulStrategyGenerator(MatMulStrategyGenerator):
         }
         if self.squeeze_batch_dim:
             self._pop_batch_dim_sharding_for_output(dim_partition_dict)
+            gd.debuginfo(prj="mt", info=f'')
+
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict)
 
         # get communication actions
@@ -834,6 +904,7 @@ class BatchedMatMulStrategyGenerator(MatMulStrategyGenerator):
                 arg_index=0,
             )
             communication_action_mapping["bias"] = bias_comm_action
+            gd.debuginfo(prj="mt", info=f'')
 
         return self.get_sharding_strategy(
             name=name,
@@ -844,6 +915,8 @@ class BatchedMatMulStrategyGenerator(MatMulStrategyGenerator):
     @ignore_sharding_exception
     def split_batch_dim_lhs_space(self, mesh_dim_0, mesh_dim_1):
         name = f"Sb{mesh_dim_0}Si{mesh_dim_1} = Sb{mesh_dim_0}Si{mesh_dim_1} x Sb{mesh_dim_0}"
+        gd.debuginfo(prj="mt", info=f'name={name}')
+
         dim_partition_dict = {
             "input": {0: [mesh_dim_0], 1: [mesh_dim_1]},
             "other": {0: [mesh_dim_0]},
@@ -852,6 +925,8 @@ class BatchedMatMulStrategyGenerator(MatMulStrategyGenerator):
         }
         if self.squeeze_batch_dim:
             self._pop_batch_dim_sharding_for_output(dim_partition_dict)
+            gd.debuginfo(prj="mt", info=f'')
+
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict)
 
         # get communication actions
@@ -876,6 +951,7 @@ class BatchedMatMulStrategyGenerator(MatMulStrategyGenerator):
             communication_action_mapping["bias"] = bias_comm_action
             # for addbmm case, other is the third argument instead of second.
             communication_action_mapping["other"].arg_index += 1
+            gd.debuginfo(prj="mt", info=f'')
 
         return self.get_sharding_strategy(
             name=name,
@@ -886,6 +962,8 @@ class BatchedMatMulStrategyGenerator(MatMulStrategyGenerator):
     @ignore_sharding_exception
     def split_batch_dim_rhs_space(self, mesh_dim_0, mesh_dim_1):
         name = f"Sb{mesh_dim_0}Sj{mesh_dim_1} = Sb{mesh_dim_0}R x Sb{mesh_dim_0}Sj{mesh_dim_1}"
+        gd.debuginfo(prj="mt", info=f'name={name}')
+
         dim_partition_dict = {
             "input": {0: [mesh_dim_0]},
             "other": {0: [mesh_dim_0], 2: [mesh_dim_1]},
@@ -894,6 +972,8 @@ class BatchedMatMulStrategyGenerator(MatMulStrategyGenerator):
         }
         if self.squeeze_batch_dim:
             self._pop_batch_dim_sharding_for_output(dim_partition_dict)
+            gd.debuginfo(prj="mt", info=f'')
+
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict)
 
         # get communication actions
@@ -917,6 +997,7 @@ class BatchedMatMulStrategyGenerator(MatMulStrategyGenerator):
             communication_action_mapping["bias"] = bias_comm_action
             # for addbmm case, other is the second argument instead of first.
             communication_action_mapping["input"].arg_index += 1
+            gd.debuginfo(prj="mt", info=f'')
 
         return self.get_sharding_strategy(
             name=name,
@@ -927,6 +1008,7 @@ class BatchedMatMulStrategyGenerator(MatMulStrategyGenerator):
     @ignore_sharding_exception
     def split_batch_dim_both_contract(self, mesh_dim_0, mesh_dim_1):
         name = f"Sb{mesh_dim_0}R = Sb{mesh_dim_0}Sk{mesh_dim_1} x Sb{mesh_dim_0}Sk{mesh_dim_1}"
+        gd.debuginfo(prj="mt", info=f'name={name}')
         dim_partition_dict = {
             "input": {0: [mesh_dim_0], 2: [mesh_dim_1]},
             "other": {0: [mesh_dim_0], 1: [mesh_dim_1]},
@@ -937,6 +1019,8 @@ class BatchedMatMulStrategyGenerator(MatMulStrategyGenerator):
         }
         if self.squeeze_batch_dim:
             self._pop_batch_dim_sharding_for_output(dim_partition_dict)
+            gd.debuginfo(prj="mt", info=f'')
+
         sharding_spec_mapping = self.to_sharding_spec_mapping(dim_partition_dict)
 
         # get communication actions
@@ -958,6 +1042,7 @@ class BatchedMatMulStrategyGenerator(MatMulStrategyGenerator):
                 arg_index=0,
             )
             communication_action_mapping["bias"] = bias_comm_action
+            gd.debuginfo(prj="mt", info=f'')
 
         return self.get_sharding_strategy(
             name=name,
@@ -969,6 +1054,7 @@ class BatchedMatMulStrategyGenerator(MatMulStrategyGenerator):
         strategy_list = []
         device_mesh_is_1d = True
         if len(self.device_mesh.shape) == 2 and 1 not in self.device_mesh.shape:
+            gd.debuginfo(prj="mt", info=f'')
             device_mesh_is_1d = False
 
         if device_mesh_is_1d:
@@ -977,11 +1063,15 @@ class BatchedMatMulStrategyGenerator(MatMulStrategyGenerator):
             # can be None as it is only for 1D device mesh
             # only for 1D device mesh
             if len(self.device_mesh.shape) == 1:
+                gd.debuginfo(prj="mt", info=f'')
                 mesh_dim = 0
             else:
                 mesh_dim = self.device_mesh.shape.index(1)
+                gd.debuginfo(prj="mt", info=f'')
             strategy_list.append(self.split_one_batch_dim(mesh_dim))
         else:
+            gd.debuginfo(prj="mt", info=f'')
+
             # for 2D device mesh
             # split batch dim of two inputs and the i dim of the first tensor
             # SbSi = SbSi x Sb

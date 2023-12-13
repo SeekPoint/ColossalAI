@@ -22,12 +22,17 @@ class ADDMMFunctionHandler(NodeHandler):
 
     def _infer_op_data_type(self, tensor: torch.Tensor) -> OperationDataType:
         if isinstance(tensor, torch.nn.parameter.Parameter):
+            gd.debuginfo(prj="mt", info=f'')
             data_type = OperationDataType.PARAM
         else:
+            gd.debuginfo(prj="mt", info=f'')
             data_type = OperationDataType.ARG
+
         return data_type
 
     def get_operation_data_mapping(self) -> Dict[str, OperationData]:
+        gd.debuginfo(prj="mt", info=f'')
+
         # input operand
         input_data = self.node.args[1]._meta_data
         physical_input_operand = OperationData(
@@ -62,6 +67,7 @@ class ADDMMFunctionHandler(NodeHandler):
         return mapping
 
     def get_strategy_generator(self) -> List[StrategyGenerator]:
+        gd.debuginfo(prj="mt", info=f'')
         op_data_mapping = self.get_operation_data_mapping()
         generators = []
         generators.append(
@@ -70,6 +76,7 @@ class ADDMMFunctionHandler(NodeHandler):
         return generators
 
     def post_process(self, strategy: ShardingStrategy) -> Union[ShardingStrategy, List[ShardingStrategy]]:
+        gd.debuginfo(prj="mt", info=f'')
         # convert bias from its logical sharding spec to its physical sharding spec
         op_data_mapping = self.get_operation_data_mapping()
 
@@ -83,6 +90,7 @@ class ADDMMFunctionHandler(NodeHandler):
         strategy.sharding_specs[bias_op_data] = bias_sharding_spec
 
         if len(removed_dims) > 0:
+            gd.debuginfo(prj="mt", info=f'')
             comm_action = comm_actions_for_oprands(
                 node=self.node, removed_dims=removed_dims, op_data=bias_op_data, sharding_spec=bias_sharding_spec
             )
