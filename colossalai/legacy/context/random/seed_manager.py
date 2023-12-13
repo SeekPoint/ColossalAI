@@ -6,7 +6,7 @@ from torch import Tensor
 
 from colossalai.legacy.context.parallel_mode import ParallelMode
 
-
+from pydebug import gd, infoTensor
 class SeedManager:
     """This class is a manager of all random seeds involved in the system.
 
