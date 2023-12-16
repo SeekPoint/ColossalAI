@@ -19,7 +19,7 @@ class PyTorchProcessGroupDict(metaclass=SingletonMeta):
         str_list = ["Pytorch ProcessGroup Init:"]
         str_list.append(f"backend: {backend}")
         str_list.append(f"ranks: {rank_list}")
-        self.logger.info("\n\t".join(str_list), ranks=[0])
+        gd.debuginfo(prj="mt", info=f"\n\t".join(str_list), ranks=[0])
 
     def get(self, rank_list: List[int], backend: str = "nccl"):
         """Reuse Pytorch ProcessGroup when such a group is initialized"""

@@ -50,4 +50,4 @@ class SmoothquantBuilder(Builder):
         try:
             super().builder()
         except:
-            warnings.warn("build smoothquant lib not successful")
+            gd.debuginfo(prj="mt", info=f"build smoothquant lib not successful")

@@ -79,7 +79,7 @@ class Booster:
             gd.debuginfo(prj="mt", info=f'')
             self.accelerator = None
             if device is not None:
-                warnings.warn("The plugin will control the accelerator, so the device argument will be ignored.")
+                gd.debuginfo(prj="mt", info=f"The plugin will control the accelerator, so the device argument will be ignored.")
         else:
             gd.debuginfo(prj="mt", info=f'')
             device = device or "cuda"
@@ -88,7 +88,7 @@ class Booster:
         # set precision
         if self.plugin and self.plugin.control_precision():
             if mixed_precision is not None:
-                warnings.warn("The plugin will control the precision, so the mixed_precision argument will be ignored.")
+                gd.debuginfo(prj="mt", info=f"The plugin will control the precision, so the mixed_precision argument will be ignored.")
             self.mixed_precision = None
             gd.debuginfo(prj="mt", info=f'self.mixed_precision={self.mixed_precision}')
         elif mixed_precision is None:

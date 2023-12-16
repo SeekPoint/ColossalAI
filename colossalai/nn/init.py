@@ -103,7 +103,7 @@ def kaiming_uniform_(a=0, mode="fan_in", nonlinearity="leaky_relu"):
     def initializer(tensor: Tensor, fan_in: int = None, fan_out: int = None):
         gd.debuginfo(prj="mt", info=f'')
         if 0 in tensor.shape:
-            warnings.warn("Initializing zero-element tensors is a no-op")
+            gd.debuginfo(prj="mt", info=f"Initializing zero-element tensors is a no-op")
             return tensor
 
         if mode == "fan_in":
@@ -148,7 +148,7 @@ def kaiming_normal_(a=0, mode="fan_in", nonlinearity="leaky_relu"):
     def initializer(tensor: Tensor, fan_in: int = None, fan_out: int = None):
         gd.debuginfo(prj="mt", info=f'')
         if 0 in tensor.shape:
-            warnings.warn("Initializing zero-element tensors is a no-op")
+            gd.debuginfo(prj="mt", info=f"Initializing zero-element tensors is a no-op")
             return tensor
 
         if mode == "fan_in":

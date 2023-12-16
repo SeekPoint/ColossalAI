@@ -139,11 +139,11 @@ class ShardedModelV2(nn.Module):
 
         if "warmup_non_model_data_ratio" in kwargs:
             if tensor_placement_policy != "auto":
-                self.logger.warning("setting warmup_non_model_data_ratio is useless if not use auto placement")
+                gd.debuginfo(prj="mt", info=f"setting warmup_non_model_data_ratio is useless if not use auto placement")
             else:
                 ratio = kwargs["warmup_non_model_data_ratio"]
                 self._tensor_placement_policy._warmup_non_model_data_ratio = ratio
-                self.logger.info(f"setting warmup_non_model_data_ratio as {ratio} for auto placement")
+                gd.debuginfo(prj="mt", info=f"setting warmup_non_model_data_ratio as {ratio} for auto placement")
 
         self._stateful_tensor_mgr = StatefulTensorMgr(self._tensor_placement_policy)
         param_tensor_list = [p.colo_attr.sharded_data_tensor for p in module.parameters() if hasattr(p, "colo_attr")]
@@ -210,7 +210,7 @@ class ShardedModelV2(nn.Module):
             exit(0)
         """
         if self._use_memory_tracer:
-            self.logger.error(f"dump memory tracer collected information to a {filename}", ranks=[0])
+            gd.debuginfo(prj="mt", info=f"dump memory tracer collected information to a {filename}", ranks=[0])
             if gpc.get_global_rank() == 0:
                 with open(filename, "w+") as f:
                     f.write(f"cuda reserved {torch.cuda.memory_reserved(get_current_device()) / 1e9} GB\n")

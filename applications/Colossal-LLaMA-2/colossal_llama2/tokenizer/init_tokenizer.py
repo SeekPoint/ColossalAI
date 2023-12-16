@@ -34,7 +34,7 @@ def expand_vocab_tokenizer(
     source_spm = sp_pb2_model.ModelProto()
     source_spm.ParseFromString(source_sp_processor.serialized_model_proto())
 
-    logger.info(f"Source tokenizer size: {len(source_sp_processor)}")
+    gd.debuginfo(prj="mt", info=f"Source tokenizer size: {len(source_sp_processor)}")
 
     # Add new tokens to source tokenizer.
     source_spm_tokens = set([p.piece for p in source_spm.pieces])
@@ -47,7 +47,7 @@ def expand_vocab_tokenizer(
         new_p.piece = piece
         new_p.score = 0
         source_spm.pieces.append(new_p)
-    logger.info(f"Expand vocab from {len(source_spm_tokens)} to {len(source_spm.pieces)}")
+    gd.debuginfo(prj="mt", info=f"Expand vocab from {len(source_spm_tokens)} to {len(source_spm.pieces)}")
 
     # Save
     os.makedirs(target_tokenizer_dir)
@@ -57,7 +57,7 @@ def expand_vocab_tokenizer(
 
     target_tokenizer = LlamaTokenizer(vocab_file=target_tokenizer_model_path)
     target_tokenizer.save_pretrained(save_directory=target_tokenizer_dir)
-    logger.info(f"Successfully save expand tokenizer to {target_tokenizer_dir}")
+    gd.debuginfo(prj="mt", info=f"Successfully save expand tokenizer to {target_tokenizer_dir}")
 
 
 def main():

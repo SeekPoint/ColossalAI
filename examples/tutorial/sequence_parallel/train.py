@@ -62,7 +62,7 @@ def main():
         batch_size=BATCH_SIZE_PER_GPUS, vocab_size=VOCAB_SIZE, seq_length=gpc.config.SEQ_LENGTH
     )
 
-    logger.info("Dataloaders are built", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Dataloaders are built")
 
     # build model
     if hasattr(gpc.config, "fp16") and gpc.config.fp16.get("mode") == AMP_TYPE.NAIVE:
@@ -88,16 +88,16 @@ def main():
 
     model = model.half()
     model.reset_parameters()
-    logger.info(f"Model is built with softmax in fp32 = {is_naive_fp16}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Model is built with softmax in fp32 = {is_naive_fp16}")
 
     total_numel = 0
     for p in model.parameters():
         total_numel += p.numel()
-    logger.info(f"This model has {total_numel} parameters")
+    gd.debuginfo(prj="mt", info=f"This model has {total_numel} parameters")
 
     # build criterion
     criterion = BertLoss()
-    logger.info("Criterion is built", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Criterion is built")
 
     # layernorm and bias has no weight decay
     weight_decay_params = {"params": []}
@@ -113,14 +113,14 @@ def main():
                 [p for n, p in list(module_._parameters.items()) if p is not None and n == "bias"]
             )
 
-    logger.info(
-        f"without weight decay param: {len(no_weight_decay_params['params'])}, with weight decay param: {len(weight_decay_params['params'])}"
-    )
+    gd.debuginfo(prj="mt", info=f"without weight decay param: {len(no_weight_decay_params['params'])}, "
+                                f"with weight decay param: {len(weight_decay_params['params'])}")
+
     # optimizer
     optimizer = FusedAdam(
         (weight_decay_params, no_weight_decay_params), lr=gpc.config.LR, weight_decay=gpc.config.WEIGHT_DECAY
     )
-    logger.info("Optimizer is built", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Optimizer is built")
 
     # lr scheduler
     # follow Megatron-LM setting
@@ -133,7 +133,7 @@ def main():
         decay_steps=gpc.config.DECAY_ITERS,
         decay_style="linear",
     )
-    logger.info(f"LR Scheduler is built with {warmup_steps} warmup steps and {gpc.config.DECAY_ITERS} decay steps")
+    gd.debuginfo(prj="mt", info=f"LR Scheduler is built with {warmup_steps} warmup steps and {gpc.config.DECAY_ITERS} decay steps")
 
     # # init
     engine, *dummy = colossalai.initialize(model, optimizer, criterion, verbose=True)
@@ -151,7 +151,7 @@ def main():
         valid_data_iter = SequenceParallelDataIterator(validloader)
         engine.schedule.data_process_func = pipeline_data_process_func
 
-    logger.info("start training")
+    gd.debuginfo(prj="mt", info=f"start training")
 
     for step in range(1, gpc.config.TRAIN_ITERS + 1):
         timer.start("train-iterations")
@@ -215,14 +215,10 @@ def main():
                 ranks = [gpc.get_ranks_in_group(ParallelMode.PIPELINE)[-1]]
             else:
                 ranks = [0]
-            logger.info(
-                f"Step {step} / {gpc.config.TRAIN_ITERS} | Train Loss: {accumulated_train_loss.item():.5g} "
+            gd.debuginfo(prj="mt", info=f"Step {step} / {gpc.config.TRAIN_ITERS} | Train Loss: {accumulated_train_loss.item():.5g} "
                 + f"| Eval Loss: {accumulated_eval_loss.item():.5g} "
                 + f"| Loss Scale: {loss_scale}"
-                + f"| Learning rate: {lr} | "
-                + timer_string,
-                ranks=ranks,
-            )
+                + f"| Learning rate: {lr} | {timer_string}")
 
             for n, t in timer:
                 t.reset()

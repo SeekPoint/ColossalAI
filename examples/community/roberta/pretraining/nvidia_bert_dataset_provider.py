@@ -103,8 +103,9 @@ class NvidiaBertDatasetProvider(BertDatasetProviderInterface):
         self.data_file = None
         self.shuffle = True
 
-        if self.global_rank == 0:
-            self.logger.info(f"NvidiaBertDatasetProvider - Initialization: num_files = {self.num_files}")
+        # if self.global_rank == 0:
+        #     gd.debuginfo(prj="mt", info=f"NvidiaBertDatasetProvider - Initialization: num_files = {self.num_files}")
+        gd.debuginfo(prj="mt", info=f"NvidiaBertDatasetProvider - Initialization: num_files = {self.num_files}")
 
     def get_shard(self, index):
         start = time.time()
@@ -121,9 +122,7 @@ class NvidiaBertDatasetProvider(BertDatasetProviderInterface):
         else:
             self.train_dataloader, sample_count = self.dataset_future.result(timeout=None)
 
-        self.logger.info(
-            f"Data Loading Completed for Pretraining Data from {self.data_file} with {sample_count} samples took {time.time()-start:.2f}s."
-        )
+        gd.debuginfo(prj="mt", info=f"Data Loading Completed for Pretraining Data from {self.data_file} with {sample_count} samples took {time.time()-start:.2f}s.")
 
         return self.train_dataloader, sample_count
 

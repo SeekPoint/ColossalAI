@@ -305,7 +305,7 @@ def main():
     # If passed along, set the training seed now.
     if args.seed is not None:
         set_seed(args.seed)
-        logger.info(f"Rank {dist.get_rank()}: random seed is set to {args.seed}")
+        gd.debuginfo(prj="mt", info=f"Rank {dist.get_rank()}: random seed is set to {args.seed}")
 
     # Handle the repository creation
     with barrier_context():
@@ -321,7 +321,7 @@ def main():
     #
     # In distributed training, the load_dataset function guarantee that only one local process can concurrently
     # download the dataset.
-    logger.info("Start preparing dataset", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Start preparing dataset")
     if not args.synthetic:
         if args.dataset_name is not None:
             # Downloading and loading a dataset from the hub.
@@ -363,7 +363,7 @@ def main():
                     split=f"train[{args.validation_split_percentage}%:]",
                     **dataset_args,
                 )
-    logger.info("Dataset is prepared", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Dataset is prepared")
 
     # See more about loading any type of standard or custom dataset (from files, python dict, pandas DataFrame, etc) at
     # https://huggingface.co/docs/datasets/loading_datasets.html.
@@ -379,14 +379,14 @@ def main():
     else:
         config = CONFIG_MAPPING[args.model_type]()
         logger.warning("You are instantiating a new config instance from scratch.")
-    logger.info("Model config has been created", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Model config has been created")
 
     if args.model_name_or_path == "facebook/opt-13b":
         tokenizer = GPT2Tokenizer.from_pretrained(args.model_name_or_path)
     else:
         print(f"load model from {args.model_name_or_path}")
         tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path, use_fast=not args.use_slow_tokenizer)
-    logger.info(f"{tokenizer.__class__.__name__} has been created", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"{tokenizer.__class__.__name__} has been created")
 
     if args.init_in_cpu:
         init_dev = torch.device("cpu")
@@ -394,7 +394,7 @@ def main():
         init_dev = get_current_device()
 
     cai_version = colossalai.__version__
-    logger.info(f"using Colossal-AI version {cai_version}")
+    gd.debuginfo(prj="mt", info=f"using Colossal-AI version {cai_version}")
     # build model
     if version.parse(cai_version) >= version.parse("0.3.1"):
         from contextlib import nullcontext
@@ -413,11 +413,11 @@ def main():
     if args.model_name_or_path is None or args.model_name_or_path == "facebook/opt-13b":
         # currently, there has a bug in pretrained opt-13b
         # we can not import it until huggingface fix it
-        logger.info("Train a new model from scratch", ranks=[0])
+        gd.debuginfo(prj="mt", info=f"Train a new model from scratch")
         with ctx:
             model = OPTForCausalLM(config)
     else:
-        logger.info("Finetune a pre-trained model", ranks=[0])
+        gd.debuginfo(prj="mt", info=f"Finetune a pre-trained model")
         with ctx:
             model = OPTForCausalLM.from_pretrained(
                 args.model_name_or_path,
@@ -455,7 +455,7 @@ def main():
         gemini_manager = GeminiManager(PLACEMENT_POLICY, chunk_manager)
         model = ZeroDDP(model, gemini_manager)
 
-    logger.info(f"{model.__class__.__name__} has been created", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"{model.__class__.__name__} has been created")
 
     if not args.synthetic:
         # Preprocessing the datasets.
@@ -531,7 +531,7 @@ def main():
 
         # Log a few random samples from the training set:
         # for index in random.sample(range(len(train_dataset)), 3):
-        #     logger.info(f"Sample {index} of the training set: {train_dataset[index]}.")
+        #     gd.debuginfo(prj="mt", info=f"Sample {index} of the training set: {train_dataset[index]}.")
 
         # DataLoaders creation:
         train_dataloader = get_dataloader(
@@ -551,7 +551,7 @@ def main():
         eval_dataloader = DummyDataloader(
             10, args.per_device_train_batch_size, config.max_position_embeddings, config.vocab_size
         )
-    logger.info("Dataloaders have been created", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Dataloaders have been created")
 
     # Optimizer
     # Split weights in two groups, one with weight decay and the other not.
@@ -596,13 +596,13 @@ def main():
     num_train_samples = len(train_dataset) if not args.synthetic else 30 * total_batch_size
     num_eval_samples = len(eval_dataset) if not args.synthetic else 10 * total_batch_size
 
-    logger.info("***** Running training *****", ranks=[0])
-    logger.info(f"  Num examples = {num_train_samples}", ranks=[0])
-    logger.info(f"  Num Epochs = {args.num_train_epochs}", ranks=[0])
-    logger.info(f"  Instantaneous batch size per device = {args.per_device_train_batch_size}", ranks=[0])
-    logger.info(f"  Total train batch size (w. parallel, distributed & accumulation) = {total_batch_size}", ranks=[0])
-    logger.info(f"  Gradient Accumulation steps = {args.gradient_accumulation_steps}", ranks=[0])
-    logger.info(f"  Total optimization steps = {args.max_train_steps}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"***** Running training *****")
+    gd.debuginfo(prj="mt", info=f"  Num examples = {num_train_samples}")
+    gd.debuginfo(prj="mt", info=f"  Num Epochs = {args.num_train_epochs}")
+    gd.debuginfo(prj="mt", info=f"  Instantaneous batch size per device = {args.per_device_train_batch_size}")
+    gd.debuginfo(prj="mt", info=f"  Total train batch size (w. parallel, distributed & accumulation) = {total_batch_size}")
+    gd.debuginfo(prj="mt", info=f"  Gradient Accumulation steps = {args.gradient_accumulation_steps}")
+    gd.debuginfo(prj="mt", info=f"  Total optimization steps = {args.max_train_steps}")
 
     # Only show the progress bar once on each machine.
     progress_bar = tqdm(range(args.max_train_steps), disable=not is_main_process)
@@ -629,7 +629,7 @@ def main():
                 completed_steps += 1
 
             global_step += 1
-            logger.info("Global step {} finished".format(global_step + 1), ranks=[0])
+            gd.debuginfo(prj="mt", info=f"Global step {} finished".format(global_step + 1))
 
             if completed_steps >= args.max_train_steps:
                 break
@@ -652,7 +652,7 @@ def main():
         except OverflowError:
             perplexity = float("inf")
 
-        logger.info(f"Epoch {epoch}: perplexity: {perplexity} eval_loss: {eval_loss}", ranks=[0])
+        gd.debuginfo(prj="mt", info=f"Epoch {epoch}: perplexity: {perplexity} eval_loss: {eval_loss}")
 
     if args.output_dir is not None:
         model_state = model.state_dict()
@@ -662,7 +662,7 @@ def main():
         # load_state = torch.load(args.output_dir + '/epoch_{}_model.pth'.format(completed_steps))
         # model.load_state_dict(load_state, strict=False)
 
-    logger.info("Training finished", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Training finished")
 
 
 if __name__ == "__main__":

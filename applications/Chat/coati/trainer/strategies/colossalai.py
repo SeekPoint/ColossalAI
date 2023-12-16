@@ -154,13 +154,13 @@ class GeminiStrategy(DDPStrategy):
 
         # TODO(ver217): support shard_init when using from_pretrained()
         if shard_init:
-            warnings.warn(
+            gd.debuginfo(prj="mt", info=
                 f"Shard init is not supported model.from_pretrained() yet. "
                 "Please load weights after strategy.prepare()"
             )
         self.shard_init = shard_init
 
-        warnings.warn(f"Stage 3 only supports fp16. Precision is set to fp16.")
+        gd.debuginfo(prj="mt", info=f"Stage 3 only supports fp16. Precision is set to fp16.")
 
         # NOTE: dist should be initialized before calling get_current_device()
         plugin_initializer = lambda: GeminiPlugin(

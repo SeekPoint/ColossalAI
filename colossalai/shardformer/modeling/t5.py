@@ -327,7 +327,7 @@ class T5PipelineForwards:
         if head_mask is not None and decoder_head_mask is None:
             gd.debuginfo(prj="mt", info=f'')
             if self.config.num_layers == self.config.num_decoder_layers:
-                warnings.warn(__HEAD_MASK_WARNING_MSG, FutureWarning)
+                gd.debuginfo(prj="mt", info=__HEAD_MASK_WARNING_MSG, FutureWarning)
                 decoder_head_mask = head_mask
 
         in_decoder = stage_manager.stage >= decoder_starting_stage
@@ -475,7 +475,7 @@ class T5PipelineForwards:
         if head_mask is not None and decoder_head_mask is None:
             gd.debuginfo(prj="mt", info=f'')
             if self.config.num_layers == self.config.num_decoder_layers:
-                warnings.warn(__HEAD_MASK_WARNING_MSG, FutureWarning)
+                gd.debuginfo(prj="mt", info=__HEAD_MASK_WARNING_MSG, FutureWarning)
                 decoder_head_mask = head_mask
 
         in_decoder = stage_manager.stage >= decoder_starting_stage

@@ -121,7 +121,7 @@ class GradScaler(object):
 
     def __init__(self, init_scale=2.0**16, growth_factor=2.0, backoff_factor=0.5, growth_interval=2000, enabled=True):
         if enabled and not torch.cuda.is_available():
-            warnings.warn("torch.cuda.amp.GradScaler is enabled, but CUDA is not available.  Disabling.")
+            gd.debuginfo(prj="mt", info=f"torch.cuda.amp.GradScaler is enabled, but CUDA is not available.  Disabling.")
             self._enabled = False
         else:
             self._enabled = enabled
@@ -567,7 +567,7 @@ class GradScaler(object):
                 "of an iteration, or at the end after scaler.update()."
             )
             # Pickling _scale and _growth_tracker Tensors directly triggers
-            # "warnings.warn("pickle support for Storage will be removed in 1.5..."
+            # "gd.debuginfo(prj="mt", info=f"pickle support for Storage will be removed in 1.5..."
             # so instead, we set the unpickled instance up to reinitialize them lazily.
             state["_init_scale"] = self.get_scale()
             state["_init_growth_tracker"] = self._get_growth_tracker()

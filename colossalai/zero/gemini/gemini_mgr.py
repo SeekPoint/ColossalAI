@@ -161,19 +161,24 @@ class GeminiManager:
 
     @property
     def chunk_manager(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self._chunk_manager
 
     @property
     def cuda_margin_mem(self) -> Optional[float]:
+        gd.debuginfo(prj="mt", info=f'')
         if self._mem_stats_collector:
+            gd.debuginfo(prj="mt", info=f'')
             return self._mem_stats_collector.cuda_margin_mem
         return None
 
     @property
     def is_cuda_margin_mem_avail(self) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         return self._placement_policy.need_mem_stats
 
     def setup_grads_device(
         self, params: List[torch.Tensor], grads_device_map: Dict[torch.Tensor, torch.device]
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self._placement_policy.setup_grads_device(params, grads_device_map)

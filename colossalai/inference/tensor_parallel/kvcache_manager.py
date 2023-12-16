@@ -59,7 +59,7 @@ class MemoryManager:
         gd.debuginfo(prj="mt", info=f'')
         """allocate space of required_size by providing indexes representing available physical spaces"""
         if required_size > self.available_size:
-            self.logger.warning(f"No enough cache: required_size {required_size} " f"left_size {self.available_size}")
+            gd.debuginfo(prj="mt", info=f"No enough cache: required_size {required_size} " f"left_size {self.available_size}")
             return None
         torch.cumsum(self.mem_state, dim=0, dtype=torch.int32, out=self.mem_cum_sum)
         select_index = torch.logical_and(self.mem_cum_sum <= required_size, self.mem_state == 1)
@@ -73,7 +73,7 @@ class MemoryManager:
         gd.debuginfo(prj="mt", info=f'')
         """allocate contiguous space of required_size"""
         if required_size > self.available_size:
-            self.logger.warning(f"No enough cache: required_size {required_size} " f"left_size {self.available_size}")
+            gd.debuginfo(prj="mt", info=f"No enough cache: required_size {required_size} " f"left_size {self.available_size}")
             return None
         torch.cumsum(self.mem_state, dim=0, dtype=torch.int32, out=self.mem_cum_sum)
         sum_size = len(self.mem_cum_sum)
@@ -84,9 +84,7 @@ class MemoryManager:
         )
         can_used_loc = self.indexes[0 : sum_size - required_size + 1][loc_sums == required_size]
         if can_used_loc.shape[0] == 0:
-            self.logger.info(
-                f"No enough contiguous cache: required_size {required_size} " f"left_size {self.available_size}"
-            )
+            gd.debuginfo(prj="mt", info=f"No enough contiguous cache: required_size {required_size} " f"left_size {self.available_size}")
             return None
         start_loc = can_used_loc[0]
         select_index = self.indexes[start_loc : start_loc + required_size]
@@ -110,4 +108,4 @@ class MemoryManager:
         self.available_size = len(self.mem_state)
         self.mem_state[:] = 1
         self.max_len_in_batch = 0
-        self.logger.info("freed all space of memory manager")
+        gd.debuginfo(prj="mt", info=f"freed all space of memory manager")

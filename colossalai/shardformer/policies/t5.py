@@ -64,7 +64,7 @@ class T5BasePolicy(Policy):
 
         if self.shard_config.enable_sequence_parallelism:
             self.shard_config.enable_sequence_parallelism = False
-            warnings.warn("T5 dosen't support sequence parallelism now, will ignore the sequence parallelism flag.")
+            gd.debuginfo(prj="mt", info=f"T5 dosen't support sequence parallelism now, will ignore the sequence parallelism flag.")
 
         if self.shard_config.enable_tensor_parallelism:
             gd.debuginfo(prj="mt", info=f'')

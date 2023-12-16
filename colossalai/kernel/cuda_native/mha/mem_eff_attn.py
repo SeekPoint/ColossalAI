@@ -12,7 +12,7 @@ try:
 
     HAS_MEM_EFF_ATTN = True
 except ImportError:
-    warnings.warn("please install xformers from https://github.com/facebookresearch/xformers")
+    gd.debuginfo(prj="mt", info=f"please install xformers from https://github.com/facebookresearch/xformers")
     HAS_MEM_EFF_ATTN = False
 
 if HAS_MEM_EFF_ATTN:

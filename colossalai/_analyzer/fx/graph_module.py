@@ -249,7 +249,7 @@ class {module_name}(torch.nn.Module):
         init_file.write_text("from .module import *")
 
         if len(blobified_modules) > 0:
-            warnings.warn(
+            gd.debuginfo(prj="mt", info=
                 "Was not able to save the following children modules as reprs -"
                 f"saved as pickled files instead: {blobified_modules}"
             )

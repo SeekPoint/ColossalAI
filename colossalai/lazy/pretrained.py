@@ -90,7 +90,7 @@ def new_from_pretrained(
         gd.debuginfo(prj="mt", info=f'')
 
     if is_offline_mode() and not local_files_only:
-        logger.info("Offline mode: forcing local_files_only=True")
+        gd.debuginfo(prj="mt", info=f"Offline mode: forcing local_files_only=True")
         local_files_only = True
         gd.debuginfo(prj="mt", info=f'')
 
@@ -259,10 +259,10 @@ def new_from_pretrained(
                 )
 
         if is_local:
-            logger.info(f"loading weights file {archive_file}")
+            gd.debuginfo(prj="mt", info=f"loading weights file {archive_file}")
             resolved_archive_file = archive_file
         else:
-            logger.info(f"loading weights file {filename} from cache at {resolved_archive_file}")
+            gd.debuginfo(prj="mt", info=f"loading weights file {filename} from cache at {resolved_archive_file}")
     else:
         resolved_archive_file = None
 
@@ -314,7 +314,7 @@ def new_from_pretrained(
                 **kwargs,
             )
         except (OSError, TypeError):
-            logger.info("Generation config file not found, using a generation config created from the model config.")
+            gd.debuginfo(prj="mt", info=f"Generation config file not found, using a generation config created from the model config.")
 
     # set pretrained path
     if resolved_archive_file:

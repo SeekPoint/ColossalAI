@@ -48,7 +48,7 @@ def main():
 
     # get logger
     logger = get_dist_logger()
-    logger.info("initialized distributed environment", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"initialized distributed environment")
 
     if hasattr(gpc.config, "LOG_PATH"):
         if gpc.get_global_rank() == 0:
@@ -90,7 +90,7 @@ def main():
         pipeline_stage = 0
     else:
         pipeline_stage = gpc.get_local_rank(ParallelMode.PIPELINE)
-    logger.info(f"number of parameters: {total_numel} on pipeline stage {pipeline_stage}")
+    gd.debuginfo(prj="mt", info=f"number of parameters: {total_numel} on pipeline stage {pipeline_stage}")
 
     # use synthetic dataset
     # we train for 10 steps and eval for 5 steps per epoch
@@ -117,7 +117,7 @@ def main():
         test_dataloader=test_dataloader,
     )
 
-    logger.info("Engine is built", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Engine is built")
 
     for epoch in range(gpc.config.NUM_EPOCHS):
         # training

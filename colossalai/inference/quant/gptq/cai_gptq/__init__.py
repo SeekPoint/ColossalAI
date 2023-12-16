@@ -6,7 +6,7 @@ try:
 
     HAS_AUTO_GPTQ = True
 except ImportError:
-    warnings.warn("please install auto-gptq from https://github.com/PanQiWei/AutoGPTQ")
+    gd.debuginfo(prj="mt", info=f"please install auto-gptq from https://github.com/PanQiWei/AutoGPTQ")
     HAS_AUTO_GPTQ = False
 
 if HAS_AUTO_GPTQ:

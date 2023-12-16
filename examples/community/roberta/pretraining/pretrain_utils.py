@@ -61,7 +61,7 @@ def get_model(args, logger):
         model.load_state_dict(
             m_state_dict, strict=True
         )  # must insure that every process have identical parameters !!!!!!!
-        logger.info("load model success")
+        gd.debuginfo(prj="mt", info=f"load model success")
 
     numel = sum([p.numel() for p in model.parameters()])
     if args.checkpoint_activations:

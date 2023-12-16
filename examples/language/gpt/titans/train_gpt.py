@@ -42,14 +42,14 @@ def main():
     logger = get_dist_logger()
 
     data_path = None if args.use_dummy_dataset else os.environ["DATA"]
-    logger.info(f"Build data loader from path {data_path}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Build data loader from path {data_path}")
 
     train_ds = WebtextDataset(path=data_path, seq_len=gpc.config.SEQ_LEN)
     train_dataloader = utils.get_dataloader(
         train_ds, seed=42, batch_size=gpc.config.BATCH_SIZE, pin_memory=True, shuffle=True, drop_last=True
     )
 
-    logger.info("Build model", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Build model")
     use_pipeline = is_using_pp()
     use_interleaved = hasattr(gpc.config.model, "num_chunks")
     use_zero3 = hasattr(gpc.config, "zero")
@@ -85,7 +85,7 @@ def main():
         criterion = criterion.type()
     else:
         criterion = GPTLMLoss()
-    logger.info("Build optimizer", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Build optimizer")
     optimizer = gpc.config.optimizer.pop("type")(model.parameters(), **gpc.config.optimizer)
     lr_scheduler = LinearWarmupLR(optimizer, total_steps=gpc.config.NUM_EPOCHS, warmup_steps=5)
     engine, train_dataloader, _, lr_scheduler = colossalai.initialize(
@@ -94,7 +94,7 @@ def main():
     global_batch_size = (
         gpc.config.BATCH_SIZE * gpc.get_world_size(ParallelMode.DATA) * getattr(gpc.config, "gradient_accumulation", 1)
     )
-    logger.info(f"Init done, global batch size = {global_batch_size}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Init done, global batch size = {global_batch_size}")
     timier = MultiTimer()
     trainer = Trainer(engine=engine, logger=logger, timer=timier)
     hook_list = [

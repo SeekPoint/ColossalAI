@@ -100,11 +100,8 @@ def run_master(args):
     WARMUP_STEPS = 1
 
     disable_existing_loggers()
-    logger = get_dist_logger()
-    logger.info(
-        f"{args.model_type}, batch size {batch_size}, num stage {stage_num}, num microbatch {num_microbatches}",
-        ranks=[0],
-    )
+    # logger = get_dist_logger()
+    gd.debuginfo(prj="mt", info=f"{args.model_type}, batch size {batch_size}, num stage {stage_num}, num microbatch {num_microbatches}")
 
     torch.manual_seed(123)
 
@@ -116,9 +113,9 @@ def run_master(args):
     warmup_data_kwargs = {"input_ids": input_ids, "attention_mask": attn_mask}
 
     # create model
-    logger.info(f"start model_builder")
+    gd.debuginfo(prj="mt", info=f"start model_builder")
     model = model_builder(model_type)(checkpoint=False)
-    logger.info(f"end model_builder")
+    gd.debuginfo(prj="mt", info=f"end model_builder")
 
     # set 1f1b pipeline engine
     pp_engine = FillDrainPipelineEngine(
@@ -134,7 +131,7 @@ def run_master(args):
 
     partition_numels = pp_engine.remote_numels()
     for rank, numel in partition_numels.items():
-        logger.info(f"{rank=} numel in the partition:{numel}")
+        gd.debuginfo(prj="mt", info=f"{rank=} numel in the partition:{numel}")
 
     # build optim
     pp_engine.initialize_optimizer(torch.optim.Adam, lr=1e-3)
@@ -154,10 +151,9 @@ def run_master(args):
                 ranks_tflops[rank] = []
             step_tflops = get_tflops(numel, batch_size, SEQ_LEN, step_time)
 
-            logger.info(
-                f"Rank{rank} , [{n + 1}/{NUM_STEPS}] , Step time: {step_time:.3f}s, TFLOPS: {get_tflops(numel, batch_size, SEQ_LEN, step_time):.3f}",
-                ranks=[0],
-            )
+            gd.debuginfo(prj="mt", info=f"Rank{rank} , [{n + 1}/{NUM_STEPS}] , "
+                                        f"Step time: {step_time:.3f}s, "
+                                        f"TFLOPS: {get_tflops(numel, batch_size, SEQ_LEN, step_time):.3f}")
 
             if n >= WARMUP_STEPS:
                 ranks_tflops[rank].append(step_tflops)
@@ -167,10 +163,10 @@ def run_master(args):
     for rank, tflops_list in ranks_tflops.items():
         tflops_list.sort()
         gpu_tflops.append(tflops_list[median_index])
-        logger.info(f"GPU{rank} Median TFLOPS is {tflops_list[median_index]:.3f}")
+        gd.debuginfo(prj="mt", info=f"GPU{rank} Median TFLOPS is {tflops_list[median_index]:.3f}")
 
-    logger.info(f"Total TFLOPS is {sum(gpu_tflops):.3f}")
-    logger.info(f"Avg TFLOPS per GPU is {sum(gpu_tflops) / world_size:.3f}")
+    gd.debuginfo(prj="mt", info=f"Total TFLOPS is {sum(gpu_tflops):.3f}")
+    gd.debuginfo(prj="mt", info=f"Avg TFLOPS per GPU is {sum(gpu_tflops) / world_size:.3f}")
 
 
 if __name__ == "__main__":

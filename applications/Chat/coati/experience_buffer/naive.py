@@ -37,7 +37,7 @@ class NaiveExperienceBuffer(ExperienceBuffer):
         if self.limit > 0:
             samples_to_remove = len(self.items) - self.limit
             if samples_to_remove > 0:
-                warnings.warn(f"Experience buffer is full. Removing {samples_to_remove} samples.")
+                gd.debuginfo(prj="mt", info=f"Experience buffer is full. Removing {samples_to_remove} samples.")
                 self.items = self.items[samples_to_remove:]
 
     def clear(self) -> None:

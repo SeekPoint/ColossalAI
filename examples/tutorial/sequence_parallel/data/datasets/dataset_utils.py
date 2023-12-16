@@ -493,7 +493,7 @@ def _build_train_valid_test_datasets(
     splits = get_train_valid_test_split_(splits_string, total_num_of_documents)
 
     # Print stats about the splits.
-    logger.info("\n > dataset split:")
+    gd.debuginfo(prj="mt", info=f"\n > dataset split:")
 
     def print_split_stats(name, index):
         start_index = indexed_dataset.doc_idx[splits[index]]
@@ -573,7 +573,7 @@ def get_indexed_dataset_(data_prefix, data_impl, skip_warmup):
     start_time = time.time()
     indexed_dataset = make_indexed_dataset(data_prefix, data_impl, skip_warmup)
     assert indexed_dataset.sizes.shape[0] == indexed_dataset.doc_idx[-1]
-    logger.info("\n > building dataset index ...", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"\n > building dataset index ...")
     logger.info(
         "\n > finished creating indexed dataset in {:4f} " "seconds".format(time.time() - start_time), ranks=[0]
     )

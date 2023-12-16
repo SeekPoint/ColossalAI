@@ -133,7 +133,7 @@ def run_worker(rank, args, master_func):
     if _is_current_rpc_agent_set():
         rpc.shutdown()
     else:
-        warnings.warn("RPC has not been initialized")
+        gd.debuginfo(prj="mt", info=f"RPC has not been initialized")
 
 
 def rpc_run(args, master_func):

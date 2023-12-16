@@ -56,11 +56,11 @@ def rm_and_merge(world_size: int, save_path: str, model_names: List[str], datase
 
                 all_answers[category] = answers
 
-            logger.info(f"Save inference results of model {model_name} on dataset {dataset_name}.")
+            gd.debuginfo(prj="mt", info=f"Save inference results of model {model_name} on dataset {dataset_name}.")
             utils.jdump(all_answers, os.path.join(save_path, model_name, f"{dataset_name}_inference_results.json"))
 
-        logger.info(f"Save inference results of model {model_name} for all dataset.")
-    logger.info(f"Save inference results of all models for all dataset.")
+        gd.debuginfo(prj="mt", info=f"Save inference results of model {model_name} for all dataset.")
+    gd.debuginfo(prj="mt", info=f"Save inference results of all models for all dataset.")
 
 
 def main(args):
@@ -149,7 +149,7 @@ def main(args):
                     ),
                 )
 
-        logger.info(f"Rank {rank} peak CUDA mem: {torch.cuda.max_memory_allocated()/1024**3:.3f} GB")
+        gd.debuginfo(prj="mt", info=f"Rank {rank} peak CUDA mem: {torch.cuda.max_memory_allocated()/1024**3:.3f} GB")
 
         del model_
         torch.cuda.empty_cache()

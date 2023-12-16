@@ -95,7 +95,7 @@ def generate_resharding_costs(
                 # we need multiply the size of elem dtype to get correct communication cost
                 resharding_cost = total_resharding_cost["total"] * size_per_elem_bytes
             except AssertionError as e:
-                warnings.warn(f"{e}")
+                gd.debuginfo(prj="mt", info=f"{e}")
                 resharding_cost = INFINITY_COST
             resharding_costs[input_node].append(resharding_cost)
     return resharding_costs

@@ -124,7 +124,7 @@ class ClosedToConstantLengthSplicedDataset(IterableDataset):
                 except StopIteration:
                     if self.infinite is True:
                         iterator = iter(self.dataset)
-                        warnings.warn("The dataset reached end and the iterator is reset to the start.")
+                        gd.debuginfo(prj="mt", info=f"The dataset reached end and the iterator is reset to the start.")
                     else:
                         more_data_points = False
                         break
@@ -147,14 +147,14 @@ class ClosedToConstantLengthSplicedDataset(IterableDataset):
                                 f"with all label values as {IGNORE_INDEX}."
                             )
                         else:
-                            warnings.warn(f"Filter an error truncated data point (labels all {IGNORE_INDEX})")
+                            gd.debuginfo(prj="mt", info=f"Filter an error truncated data point (labels all {IGNORE_INDEX})")
                             continue  # Skip the current error data point.
                     spliced_data_point = {
                         self.input_ids_field: truncated_seq_input_ids,
                         self.labels_field: truncated_label_ids,
                     }
                     examples.append(spliced_data_point)
-                    warnings.warn("Find a data point to be truncated.")
+                    gd.debuginfo(prj="mt", info=f"Find a data point to be truncated.")
                     continue
 
                 # Pre action judgment.

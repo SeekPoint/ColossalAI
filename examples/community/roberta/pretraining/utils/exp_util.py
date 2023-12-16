@@ -107,9 +107,9 @@ def synchronize():
 
 
 def log_args(logger, args):
-    logger.info("--------args----------")
+    gd.debuginfo(prj="mt", info=f"--------args----------")
     message = "\n".join([f"{k:<30}: {v}" for k, v in vars(args).items()])
     message += "\n"
     message += "\n".join([f"{k:<30}: {v}" for k, v in gpc.config.items()])
     logger.info(message)
-    logger.info("--------args----------\n")
+    gd.debuginfo(prj="mt", info=f"--------args----------\n")

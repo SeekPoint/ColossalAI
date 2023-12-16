@@ -640,7 +640,7 @@ class BertPipelineForwards:
         gd.debuginfo(prj="mt", info=f'')
 
         if "next_sentence_label" in kwargs:
-            warnings.warn(
+            gd.debuginfo(prj="mt", info=
                 "The `next_sentence_label` argument is deprecated and will be removed in a future version, use"
                 " `labels` instead.",
                 FutureWarning,

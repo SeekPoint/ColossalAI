@@ -225,8 +225,8 @@ def flop_count(module: Union[torch.nn.Module, Callable] = None, *args, verbose: 
                 grad,
             )
 
-    if verbose:
-        display_flops()
+    # if verbose:
+    display_flops()
 
     return total_flop_count[Phase.FWD], total_flop_count[Phase.BWD]
 

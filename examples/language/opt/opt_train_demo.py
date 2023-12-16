@@ -84,7 +84,7 @@ def main():
     # Build OPT model
     config = AutoConfig.from_pretrained(args.model_name_or_path)
     model = OPTForCausalLM.from_pretrained(args.model_name_or_path, config=config)
-    logger.info(f"Finish loading model from {args.model_name_or_path}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Finish loading model from {args.model_name_or_path}")
 
     # Enable gradient checkpointing
     model.gradient_checkpointing_enable()
@@ -111,7 +111,7 @@ def main():
             initial_scale=1,
         )
 
-    logger.info(f"Set plugin as {args.plugin}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Set plugin as {args.plugin}")
 
     # Prepare tokenizer and dataloader
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
@@ -143,14 +143,14 @@ def main():
     )
 
     # Start finetuning
-    logger.info(f"Start finetuning", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Start finetuning")
     for epoch in range(args.num_epoch):
         train_epoch(epoch, model, optimizer, _criterion, lr_scheduler, dataloader, booster, coordinator)
 
     # Finish training and evaluate
-    logger.info(f"Finish finetuning", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Finish finetuning")
     booster.save_model(model, args.output_path, shard=True)
-    logger.info(f"Saving model checkpoint to {args.output_path}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Saving model checkpoint to {args.output_path}")
 
 
 if __name__ == "__main__":

@@ -28,10 +28,10 @@ def convert_to_zero_v2(
     gd.debuginfo(prj="mt", info=f'')
     logger = get_dist_logger("convert_to_zero_v2")
 
-    logger.info(f"optimizer_config is {optimizer_config}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"optimizer_config is {optimizer_config}")
     if optimizer_config is None:
         optimizer_config = dict()
-    logger.info(f"model_config is {model_config}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"model_config is {model_config}")
     if model_config is None:
         model_config = dict()
 

@@ -166,15 +166,12 @@ class FP16Optimizer(Optimizer):
 
         # log config
         self._logger = get_dist_logger()
-        if verbose:
-            self._logger.info(
-                f"\n=========  FP16 Optimizer Config =========\n"
+        # if verbose:
+        gd.debuginfo(prj="mt", info=f"\n=========  FP16 Optimizer Config =========\n"
                 f"Optimizer: {optimizer.__class__.__name__}\n"
                 f"clip_grad_norm = {clip_grad_norm}\n"
                 f"grad_scaler = {self._grad_scaler.__class__.__name__}"
-                f"==========================================",
-                ranks=[0],
-            )
+                f"==========================================")
 
     @property
     def max_norm(self):

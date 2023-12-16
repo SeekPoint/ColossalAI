@@ -253,7 +253,7 @@ def _build_generic_gpt_pipeline_1d(module_cls, num_layers, num_chunks, device=to
         kwargs["num_layers"] = end - start
         kwargs["first"] = start == 0
         kwargs["last"] = end == num_layers
-        logger.info(f"Rank{rank} build layer {start}-{end}, {end-start}/{num_layers} layers")
+        gd.debuginfo(prj="mt", info=f"Rank{rank} build layer {start}-{end}, {end-start}/{num_layers} layers")
         chunk = module_cls(**_filter_kwargs(module_cls.__init__, kwargs)).to(device)
 
         if wrapper is not None:
@@ -270,7 +270,7 @@ def _build_generic_gpt_pipeline_1d(module_cls, num_layers, num_chunks, device=to
     numel = 0
     for _, param in model.named_parameters(recurse=True):
         numel += param.numel()
-    logger.info(f"Rank{rank}/{pipeline_rank} model size = {numel * 2 / 1e9} GB")
+    gd.debuginfo(prj="mt", info=f"Rank{rank}/{pipeline_rank} model size = {numel * 2 / 1e9} GB")
     return model
 
 

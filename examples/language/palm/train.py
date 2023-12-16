@@ -157,7 +157,7 @@ if args.distplan == "colossalai":
         plugin = GeminiPlugin(offload_optim_frac=args.offload_optim_frac, initial_scale=2**5)
     elif args.plugin == "low_level_zero":
         plugin = LowLevelZeroPlugin(initial_scale=2**5)
-    logger.info(f"plugin: {plugin}")
+    gd.debuginfo(prj="mt", info=f"plugin: {plugin}")
     booster = Booster(plugin=plugin, **booster_kwargs)
 
     ctx = LazyInitContext(default_device=get_current_device()) if args.plugin == "gemini" else nullcontext()
@@ -205,10 +205,12 @@ for i in tqdm.tqdm(range(NUM_BATCHES), mininterval=10.0, desc="training"):
         step_time = time() - start
 
         step_tflops = get_tflops_func(step_time)
-        logger.info(
-            f"[{i + 1}/{NUM_BATCHES}] Loss:{loss.item():.3f}, Step time: {step_time:.3f}s, TFLOPS: {get_tflops_func(step_time):.3f}, FWD time: {fwd_time:.3f}s, BWD time: {bwd_time:.3f}s, OPTIM time: {optim_time:.3f}s",
-            ranks=[0],
-        )
+        gd.debuginfo(prj="mt", info=f"[{i + 1}/{NUM_BATCHES}] Loss:{loss.item():.3f}, "
+                                    f"Step time: {step_time:.3f}s, "
+                                    f"TFLOPS: {get_tflops_func(step_time):.3f}, "
+                                    f"FWD time: {fwd_time:.3f}s, "
+                                    f"BWD time: {bwd_time:.3f}s, "
+                                    f"OPTIM time: {optim_time:.3f}s")
         if i >= WARMUP_BATCHES:
             tflops_list.append(step_tflops)
 
@@ -224,7 +226,7 @@ for i in tqdm.tqdm(range(NUM_BATCHES), mininterval=10.0, desc="training"):
 
 tflops_list.sort()
 median_index = ((NUM_BATCHES - WARMUP_BATCHES) >> 1) + WARMUP_BATCHES
-logger.info(f"Median TFLOPS is {tflops_list[median_index]:.3f}")
+gd.debuginfo(prj="mt", info=f"Median TFLOPS is {tflops_list[median_index]:.3f}")
 
 # TODO
 # if i % VALIDATE_EVERY == 0:

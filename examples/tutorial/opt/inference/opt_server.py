@@ -41,7 +41,7 @@ async def generate(request: Request, body: GenerationTaskReq):
             raise MissCacheError()
         outputs = cache.get(key)
         output = random.choice(outputs)
-        logger.info("Cache hit")
+        gd.debuginfo(prj="mt", info=f"Cache hit")
     except MissCacheError:
         inputs = tokenizer(body.prompt, truncation=True, max_length=512)
         inputs["max_tokens"] = body.max_tokens

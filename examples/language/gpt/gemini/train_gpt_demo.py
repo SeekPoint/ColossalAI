@@ -138,7 +138,7 @@ def main():
     colossalai.launch_from_torch(config={})
 
     logger = get_dist_logger()
-    logger.info(f"{args.model_type}, {args.distplan}, batch size {BATCH_SIZE}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"{args.model_type}, {args.distplan}, batch size {BATCH_SIZE}")
 
     # build criterion
     criterion = GPTLMLoss()
@@ -172,7 +172,7 @@ def main():
         # build a highly optimized gpu/cpu optimizer
         optimizer = HybridAdam(model.parameters(), lr=1e-3)
 
-        logger.info(get_mem_info(prefix="After init optim, "), ranks=[0])
+        logger.info(get_mem_info(prefix="After init optim, "))
     elif args.distplan.startswith("Pytorch"):
         assert args.tp_degree == 1, "The degree of TP should be 1 for DDP examples."
         model = model_builder(args.model_type)(checkpoint=True).cuda()
@@ -192,8 +192,8 @@ def main():
 
     # model is shared after TP
     numel = get_model_size(model)
-    logger.info(f"the size of testing model size is {model_size_formatter(numel)}.")
-    logger.info(get_mem_info(prefix="After init model, "), ranks=[0])
+    gd.debuginfo(prj="mt", info=f"the size of testing model size is {model_size_formatter(numel)}.")
+    logger.info(get_mem_info(prefix="After init model, "))
 
     # Tflops_per_GPU = global_batch * global_numel * seq_len * 8 / #gpu
     # = (batch_per_DP_group * dp_degree) * (numel * tp_degree) * seq_len * 8 / (tp_degree * dp_degree)
@@ -215,19 +215,19 @@ def main():
         torch.cuda.synchronize()
         fwd_end = time()
         fwd_time = fwd_end - start
-        logger.info(get_mem_info(prefix=f"[{n + 1}/{NUM_STEPS}] Forward "), ranks=[0])
+        logger.info(get_mem_info(prefix=f"[{n + 1}/{NUM_STEPS}] Forward "))
         booster.backward(loss, optimizer)
 
         torch.cuda.synchronize()
         bwd_end = time()
         bwd_time = bwd_end - fwd_end
-        logger.info(get_mem_info(prefix=f"[{n + 1}/{NUM_STEPS}] Backward "), ranks=[0])
+        logger.info(get_mem_info(prefix=f"[{n + 1}/{NUM_STEPS}] Backward "))
 
         optimizer.step()
         torch.cuda.synchronize()
         optim_time = time() - bwd_end
         step_time = time() - start
-        logger.info(get_mem_info(prefix=f"[{n + 1}/{NUM_STEPS}] Optimizer step "), ranks=[0])
+        logger.info(get_mem_info(prefix=f"[{n + 1}/{NUM_STEPS}] Optimizer step "))
 
         step_tflops = get_tflops_func(step_time)
         logger.info(
@@ -248,7 +248,7 @@ def main():
 
     tflops_list.sort()
     median_index = ((NUM_STEPS - WARMUP_STEPS) >> 1) + WARMUP_STEPS
-    logger.info(f"Median TFLOPS is {tflops_list[median_index]:.3f}")
+    gd.debuginfo(prj="mt", info=f"Median TFLOPS is {tflops_list[median_index]:.3f}")
     torch.cuda.synchronize()
 
 

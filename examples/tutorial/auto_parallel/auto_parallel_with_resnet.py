@@ -86,10 +86,10 @@ def main():
             correct += torch.sum(pred == label)
             total += img.size(0)
 
-        logger.info(
-            f"Epoch {epoch} - train loss: {train_loss:.5}, test loss: {test_loss:.5}, acc: {correct / total:.5}, lr: {lr_scheduler.get_last_lr()[0]:.5g}",
-            ranks=[0],
-        )
+        gd.debuginfo(prj="mt", info=f"Epoch {epoch} - train loss: {train_loss:.5}, "
+                                    f"test loss: {test_loss:.5}, "
+                                    f"acc: {correct / total:.5}, "
+                                    f"lr: {lr_scheduler.get_last_lr()[0]:.5g}")
 
 
 if __name__ == "__main__":

@@ -21,7 +21,7 @@ def build_train_valid_test_data_iterators(
     (train_dataloader, valid_dataloader, test_dataloader) = (None, None, None)
 
     logger = get_dist_logger()
-    logger.info("> building train, validation, and test datasets ...", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"> building train, validation, and test datasets ...")
 
     # Backward compatibility, assume fixed batch size.
     # if iteration > 0 and consumed_train_samples == 0:
@@ -40,10 +40,10 @@ def build_train_valid_test_data_iterators(
         eval_iters_ = (train_iters // eval_interval + 1) * eval_iters
         test_iters = eval_iters
         train_val_test_num_samples = [train_samples, eval_iters_ * global_batch_size, test_iters * global_batch_size]
-        logger.info(" > datasets target sizes (minimum size):")
-        logger.info("    train:      {}".format(train_val_test_num_samples[0]), ranks=[0])
-        logger.info("    validation: {}".format(train_val_test_num_samples[1]), ranks=[0])
-        logger.info("    test:       {}".format(train_val_test_num_samples[2]), ranks=[0])
+        gd.debuginfo(prj="mt", info=f" > datasets target sizes (minimum size):")
+        gd.debuginfo(prj="mt", info=f"    train:      {}".format(train_val_test_num_samples[0]))
+        gd.debuginfo(prj="mt", info=f"    validation: {}".format(train_val_test_num_samples[1]))
+        gd.debuginfo(prj="mt", info=f"    test:       {}".format(train_val_test_num_samples[2]))
 
         # Build the datasets.
         train_ds, valid_ds, test_ds = build_train_valid_test_datasets(

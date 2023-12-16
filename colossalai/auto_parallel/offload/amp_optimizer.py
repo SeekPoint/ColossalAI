@@ -147,7 +147,7 @@ class AMPOptimizer(OptimizerWrapper):
             gd.debuginfo(prj="mt", info=f'')
             self.optim_state = OptimState.UNSCALED  # no need to unscale grad
             self.grad_scaler.update(found_inf)  # update gradient scaler
-            self._logger.info(f"Found overflow. Skip step")
+            gd.debuginfo(prj="mt", info=f"Found overflow. Skip step")
             self.zero_grad()  # reset all gradients
             self._update_fp16_params()
             return

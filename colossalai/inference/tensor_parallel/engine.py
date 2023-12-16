@@ -138,7 +138,7 @@ class TPInferEngine:
             gptq_cuda = GPTQBuilder().load()
             HAS_GPTQ_CUDA = True
         except ImportError:
-            warnings.warn("CUDA gptq is not installed")
+            gd.debuginfo(prj="mt", info=f"CUDA gptq is not installed")
             HAS_GPTQ_CUDA = False
 
         for name, submodule in model.named_modules():

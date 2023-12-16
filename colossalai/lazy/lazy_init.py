@@ -652,48 +652,45 @@ def _apply_to_lazy_module(
     module: nn.Module, apply_fn: Callable[[str, torch.Tensor], None], verbose: bool = False
 ) -> nn.Module:
     gd.debuginfo(prj="mt", info=f'')
-    if verbose:
+    # if verbose:
         # verbose info
-        param_cnt = 0
-        param_lazy_cnt = 0
-        buf_cnt = 0
-        buf_lazy_cnt = 0
-        total_numel = 0
-        non_lazy_numel = 0
+    param_cnt = 0
+    param_lazy_cnt = 0
+    buf_cnt = 0
+    buf_lazy_cnt = 0
+    total_numel = 0
+    non_lazy_numel = 0
 
     for name, p in module.named_parameters():
-        if verbose:
-            param_cnt += 1
-            total_numel += p.numel()
-            if getattr(p, "_materialized_data", False) is None:
-                # if no _materialized_data attr, the tensor is not lazy
-                param_lazy_cnt += 1
-            else:
-                non_lazy_numel += p.numel()
+        # if verbose:
+        param_cnt += 1
+        total_numel += p.numel()
+        if getattr(p, "_materialized_data", False) is None:
+            # if no _materialized_data attr, the tensor is not lazy
+            param_lazy_cnt += 1
+        else:
+            non_lazy_numel += p.numel()
         if isinstance(p, LazyTensor):
             apply_fn(name, p)
 
     for name, buf in module.named_buffers():
-        if verbose:
-            buf_cnt += 1
-            total_numel += buf.numel()
-            if getattr(buf, "_materialized_data", False) is None:
-                # if no _materialized_data attr, the tensor is not lazy
-                buf_lazy_cnt += 1
-            else:
-                non_lazy_numel += buf.numel()
+        # if verbose:
+        buf_cnt += 1
+        total_numel += buf.numel()
+        if getattr(buf, "_materialized_data", False) is None:
+            # if no _materialized_data attr, the tensor is not lazy
+            buf_lazy_cnt += 1
+        else:
+            non_lazy_numel += buf.numel()
         if isinstance(buf, LazyTensor):
             apply_fn(name, buf)
 
-    if verbose:
-        non_lazy_numel_ratio = non_lazy_numel / total_numel * 100 if non_lazy_numel != 0 else 0
-        logger = get_dist_logger()
-        logger.info(f"Param lazy rate: {param_lazy_cnt}/{param_cnt}", ranks=[0])
-        logger.info(f"Buffer lazy rate: {buf_lazy_cnt}/{buf_cnt}", ranks=[0])
-        logger.info(
-            f"Non lazy numel: {non_lazy_numel} ({non_lazy_numel/1024**2:.3f} M), ratio: {non_lazy_numel_ratio}%",
-            ranks=[0],
-        )
+    # if verbose:
+    non_lazy_numel_ratio = non_lazy_numel / total_numel * 100 if non_lazy_numel != 0 else 0
+    # logger = get_dist_logger()
+    gd.debuginfo(prj="mt", info=f"Param lazy rate: {param_lazy_cnt}/{param_cnt}")
+    gd.debuginfo(prj="mt", info=f"Buffer lazy rate: {buf_lazy_cnt}/{buf_cnt}")
+    gd.debuginfo(prj="mt", info=f"Non lazy numel: {non_lazy_numel} ({non_lazy_numel/1024**2:.3f} M), ratio: {non_lazy_numel_ratio}%")
 
     return module
 

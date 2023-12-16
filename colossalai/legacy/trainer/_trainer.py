@@ -305,7 +305,7 @@ class Trainer:
                     f"Using {hook.__class__.__name__} for training, priority = {hook.priority}",
                     ranks=[0],
                 )
-            self._logger.info("Lower value means higher priority for calling hook function", ranks=[0])
+            self._gd.debuginfo(prj="mt", info=f"Lower value means higher priority for calling hook function", ranks=[0])
         self._call_hooks("after_hook_is_attached")
 
         self._engine.train()
@@ -379,7 +379,7 @@ class Trainer:
                     f"Using {hook.__class__.__name__} for training, priority = {hook.priority}",
                     ranks=[0],
                 )
-            self._logger.info("Lower value means higher priority for calling hook function", ranks=[0])
+            self._gd.debuginfo(prj="mt", info=f"Lower value means higher priority for calling hook function", ranks=[0])
         self._call_hooks("after_hook_is_attached")
 
         # eval

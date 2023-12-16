@@ -21,7 +21,7 @@ try:
     gptq_cuda = GPTQBuilder().load()
     HAS_GPTQ_CUDA = True
 except ImportError:
-    warnings.warn('CUDA gptq is not installed')
+    gd.debuginfo(prj="mt", info='CUDA gptq is not installed')
     HAS_GPTQ_CUDA = False
 
 

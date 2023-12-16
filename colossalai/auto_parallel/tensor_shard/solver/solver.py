@@ -21,7 +21,7 @@ try:
     import pulp
     from pulp import LpMinimize, LpProblem, LpStatus, LpVariable, lpDot, lpSum
 except:
-    warnings.warn(f"please install the pulp")
+    gd.debuginfo(prj="mt", info=f"please install the pulp")
 
 __all___ = ["Solver"]
 
@@ -467,9 +467,9 @@ class Solver:
         status = prob.status
         objective = pulp.value(prob.objective)
         objective = float(objective) if objective is not None else -1.0
-        if verbose:
-            print(f"ILP Status: {LpStatus[status]}\tObjective: {objective}\t" f"Time: {time.time() - tic}")
-            print(f"#nodes: {num_nodes},  #edges: {num_edges}")
+        # if verbose:
+        gd.debuginfo(prj="mt", info=f"ILP Status: {LpStatus[status]}\tObjective: {objective}\t" f"Time: {time.time() - tic}")
+        gd.debuginfo(prj="mt", info=f"#nodes: {num_nodes},  #edges: {num_edges}")
 
         if prob.status in [pulp.LpStatusInfeasible]:
             raise RuntimeError(
@@ -496,7 +496,7 @@ class Solver:
         self.last_objective = objective
 
         if objective > INFINITY_COST:
-            warnings.warn("Detect unexpected behaviors in the auto-sharding pass.")
+            gd.debuginfo(prj="mt", info=f"Detect unexpected behaviors in the auto-sharding pass.")
 
         return self.last_s_val, e_val, self.last_objective, status
 

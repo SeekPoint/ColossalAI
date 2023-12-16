@@ -47,7 +47,7 @@ def train(args):
 
     # configure model
     if args.lora_rank > 0:
-        warnings.warn("Lora is not supported yet.")
+        gd.debuginfo(prj="mt", info=f"Lora is not supported yet.")
         args.lora_rank = 0
 
     with strategy.model_init_context():

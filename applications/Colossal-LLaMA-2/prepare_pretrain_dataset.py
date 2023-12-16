@@ -103,7 +103,7 @@ def main():
     )
     for index, dataset in enumerate(list_dataset):
         assert isinstance(dataset, dataset_dict.Dataset)
-        logger.info(f"Start to process part-{index}/{len(list_dataset)} of all original datasets.")
+        gd.debuginfo(prj="mt", info=f"Start to process part-{index}/{len(list_dataset)} of all original datasets.")
         dataset = dataset.map(
             function=supervised_tokenize,
             fn_kwargs={"tokenizer": tokenizer, "max_length": args.max_length},
@@ -126,7 +126,7 @@ def main():
             spliced_count = 0
             for spliced_data_point in spliced_dataset:
                 if spliced_count % 500 == 0:
-                    logger.info(f"processing {spliced_count} spliced data points for {fp_writer.name}")
+                    gd.debuginfo(prj="mt", info=f"processing {spliced_count} spliced data points for {fp_writer.name}")
                 spliced_count += 1
                 fp_writer.write(json.dumps(spliced_data_point, ensure_ascii=False) + "\n")
         logger.info(
@@ -139,7 +139,7 @@ def main():
 
         # Save each arrow spliced dataset
         output_arrow_path = os.path.join(args.data_arrow_output_dir, output_name)
-        logger.info(f"Start to save {output_arrow_path}")
+        gd.debuginfo(prj="mt", info=f"Start to save {output_arrow_path}")
         spliced_dataset = load_dataset(
             path="json",
             data_files=[output_jsonl_path],

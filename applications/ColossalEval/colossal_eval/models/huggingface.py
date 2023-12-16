@@ -93,7 +93,7 @@ class HuggingFaceModel(BaseModel):
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path if tokenizer_path else path, **tokenizer_kwargs)
 
         if self.tokenizer.pad_token_id is None:
-            self.logger.warning("pad_token_id is not set for the tokenizer. " "Using eos_token_id as pad_token_id.")
+            gd.debuginfo(prj="mt", info=f"pad_token_id is not set for the tokenizer. " "Using eos_token_id as pad_token_id.")
             if self.tokenizer.eos_token:
                 self.tokenizer.pad_token = self.tokenizer.eos_token
             elif hasattr(self.tokenizer, "eod_id"):
@@ -348,15 +348,13 @@ class HuggingFaceModel(BaseModel):
             )
 
             if is_rank_0() and debug and i == 0:
-                self.logger.info(
-                    f"Inference arguments for dataset {data[0]['dataset']} category {data[0]['category']} is:\n{inference_kwargs}"
-                )
-                self.logger.info("-" * 120)
-                self.logger.info("An example prompt and prompt with target is:")
-                self.logger.info("-" * 120)
-                self.logger.info(batch_prompt[0])
-                self.logger.info("-" * 120)
-                self.logger.info(batch_prompt[0] + batch_target[0][0])
+                gd.debuginfo(prj="mt", info=f"Inference arguments for dataset {data[0]['dataset']} category {data[0]['category']} is:\n{inference_kwargs}")
+                gd.debuginfo(prj="mt", info=f"-" * 120)
+                gd.debuginfo(prj="mt", info=f"An example prompt and prompt with target is:")
+                gd.debuginfo(prj="mt", info=f"-" * 120)
+                gd.debuginfo(prj="mt", info=f"batch_prompt[0]")
+                gd.debuginfo(prj="mt", info=f"-" * 120)
+                gd.debuginfo(prj="mt", info=f"batch_prompt[0] + batch_target[0][0])
 
             if not pretrain:
                 batch_decodes, scores = self.generate(batch_prompt, max_new_tokens)

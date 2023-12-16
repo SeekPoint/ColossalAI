@@ -101,7 +101,7 @@ def benchmark(
     params = measure_params(model)
     if _is_valid(params):
         results["params"] = format_num(params)
-        logger.info(f"Model parameters: {params} ({format_num(params)})")
+        gd.debuginfo(prj="mt", info=f"Model parameters: {params} ({format_num(params)})")
 
     # Measure Allocated Memory and Throughput
     memory = {}

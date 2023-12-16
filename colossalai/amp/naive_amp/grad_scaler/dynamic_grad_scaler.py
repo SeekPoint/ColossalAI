@@ -86,7 +86,7 @@ class DynamicGradScaler(BaseGradScaler):
             if self._hysteresis_step >= self._hysteresis:
                 gd.debuginfo(prj="mt", info=f'')
                 self._backoff_scale()
-                self.log(f"Overflow occurs, the loss scale is adjusted to {self.scale.item()}", ranks=[0])
+                gd.debuginfo(prj="mt", info=f"Overflow occurs, the loss scale is adjusted to {self.scale.item()}")
         else:
             gd.debuginfo(prj="mt", info=f'')
             self._growth_step += 1
@@ -94,7 +94,7 @@ class DynamicGradScaler(BaseGradScaler):
                 self._growth_step = 0
                 self._hysteresis_step = 0
                 self._grow_scale()
-                self.log(
+                gd.debuginfo(prj="mt", info=
                     f"No overflow for consecutive {self._growth_interval} steps, "
                     f"the loss scale is adjusted to {self.scale.item()}",
                     ranks=[0],

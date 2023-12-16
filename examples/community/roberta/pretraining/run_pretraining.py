@@ -108,12 +108,12 @@ def main():
 
     else:
         config, model, numel = get_model(args, logger)
-        logger.info("no_zero")
+        gd.debuginfo(prj="mt", info=f"no_zero")
 
     if torch.distributed.get_rank() == 0:
         os.mkdir(os.path.join(args.ckpt_path, launch_time))
 
-    logger.info(f"Model numel: {numel}")
+    gd.debuginfo(prj="mt", info=f"Model numel: {numel}")
 
     get_tflops_func = partial(get_tflops, numel, args.train_micro_batch_size_per_gpu, args.max_seq_length)
 
@@ -238,7 +238,7 @@ def main():
                     train_loss = 0
 
             logger.info(f'epoch {epoch} shard {shard} has cost {timers("shard_time").elapsed() / 60 :.3f} mins')
-            logger.info("*" * 100)
+            gd.debuginfo(prj="mt", info=f"*" * 100)
 
             eval_loss += evaluate(model, args, logger, global_step, criterion)
             save_ckpt(
@@ -256,7 +256,7 @@ def main():
             f'epoch {epoch} | shard_length {len(os.listdir(args.data_path_prefix))} | elapsed_time: {timers("epoch_time").elapsed() / 60 :.3f} mins'
             + f"eval_loss: {eval_loss} | ppl: {math.exp(eval_loss)}"
         )
-        logger.info("-" * 100)
+        gd.debuginfo(prj="mt", info=f"-" * 100)
         if args.wandb and torch.distributed.get_rank() == 0:
             tensorboard_log = get_tensorboard_writer()
             tensorboard_log.log_eval(
@@ -270,7 +270,7 @@ def main():
 
     pretrain_dataset_provider.release_shard()
 
-    logger.info("Congratulation, training has finished!!!")
+    gd.debuginfo(prj="mt", info=f"Congratulation, training has finished!!!")
 
 
 if __name__ == "__main__":

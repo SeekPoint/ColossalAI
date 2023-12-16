@@ -282,7 +282,7 @@ def build_pipeline_bert(num_layers, num_chunks, device=torch.device("cuda"), **k
         kwargs["end_idx"] = end
         kwargs["first_stage"] = start == 0
         kwargs["last_stage"] = end == num_layers
-        logger.info(f"Rank{rank} build layer {start}-{end}, {end-start}/{num_layers} layers")
+        gd.debuginfo(prj="mt", info=f"Rank{rank} build layer {start}-{end}, {end-start}/{num_layers} layers")
         chunk = PipelineBertForPretrain(**_filter_kwargs(PipelineBertForPretrain.__init__, kwargs)).to(device)
         if start == 0:
             wrapper.register_module(chunk.embedding.word_embeddings)

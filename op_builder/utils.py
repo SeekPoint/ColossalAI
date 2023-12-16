@@ -93,7 +93,7 @@ def check_system_pytorch_cuda_match(cuda_dir):
         )
 
     if bare_metal_minor != torch_cuda_minor:
-        warnings.warn(
+        gd.debuginfo(prj="mt", info=
             f"[extension] The CUDA version on the system ({bare_metal_major}.{bare_metal_minor}) does not match with the version ({torch_cuda_major}.{torch_cuda_minor}) torch was compiled with. "
             "The mismatch is found in the minor version. As the APIs are compatible, we will allow compilation to proceed. "
             "If you encounter any issue when using the built kernel, please try to build it again with fully matched CUDA versions"
@@ -160,7 +160,7 @@ def set_cuda_arch_list(cuda_dir):
 
     # we only need to set this when CUDA is not available for cross-compilation
     if not cuda_available:
-        warnings.warn(
+        gd.debuginfo(prj="mt", info=
             "\n[extension]  PyTorch did not find available GPUs on this system.\n"
             "If your intention is to cross-compile, this is not an error.\n"
             "By default, Colossal-AI will cross-compile for \n"

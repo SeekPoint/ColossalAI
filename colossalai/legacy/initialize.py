@@ -117,14 +117,11 @@ def launch(
 
     gpc.set_seed(seed)
 
-    if verbose:
-        logger = get_dist_logger()
-        logger.info(
-            f"Distributed environment is initialized, "
+    # if verbose:
+    #     logger = get_dist_logger()
+    gd.debuginfo(prj="mt", info=f"Distributed environment is initialized, "
             f"data parallel size: {gpc.data_parallel_size}, pipeline parallel size: {gpc.pipeline_parallel_size}, "
-            f"tensor parallel size: {gpc.tensor_parallel_size}",
-            ranks=[0],
-        )
+            f"tensor parallel size: {gpc.tensor_parallel_size}")
 
 
 def launch_from_slurm(
@@ -283,21 +280,18 @@ def initialize(
     config = gpc.config
 
     # print config
-    if verbose:
-        logger.info(
-            f"\n========== Your Config ========\n"
+    ## if verbose:
+    gd.debuginfo(prj="mt", info=f"\n========== Your Config ========\n"
             f"{pprint.pformat(gpc.config)}\n"
-            f"================================\n",
-            ranks=[0],
-        )
+            f"================================\n")
 
     # cudnn
     cudnn_benchmark = config.get("cudnn_benchmark", False)
     cudnn_deterministic = config.get("cudnn_deterministic", False)
     torch.backends.cudnn.benchmark = cudnn_benchmark
     torch.backends.cudnn.deterministic = cudnn_deterministic
-    if verbose:
-        logger.info(f"cuDNN benchmark = {cudnn_benchmark}, deterministic = {cudnn_deterministic}", ranks=[0])
+    # if verbose:
+    gd.debuginfo(prj="mt", info=f"cuDNN benchmark = {cudnn_benchmark}, deterministic = {cudnn_deterministic}")
 
     # zero
     use_zero = hasattr(gpc.config, "zero")
@@ -313,7 +307,7 @@ def initialize(
             model, optimizer, model_config=model_config, optimizer_config=optimizer_config
         )
 
-        logger.info("Initializing ZeRO model and optimizer finished!", ranks=[0])
+        gd.debuginfo(prj="mt", info=f"Initializing ZeRO model and optimizer finished!")
     else:
         if isinstance(model, nn.Module):
             # first sync model across dp ranks
@@ -377,20 +371,14 @@ def initialize(
         # 3. if using pipeline and dp size larger than 1, use data parallel grad handler
         if isinstance(optimizer, ShardedOptimizerV2):
             gradient_handler_cfg = [dict(type="ZeROGradientHandler")]
-            if verbose:
-                logger.info(
-                    "Training with zero is detected, ZeROGradientHandler is automatically "
-                    "added even though not specified in the configuration",
-                    ranks=[0],
-                )
+            # if verbose:
+            gd.debuginfo(prj="mt", info=f"Training with zero is detected, "
+                                        f"ZeROGradientHandler is automatically added even though not specified in the configuration")
         elif is_using_ddp() and MOE_CONTEXT.is_initialized:
             gradient_handler_cfg = [dict(type="MoeGradientHandler")]
-            if verbose:
-                logger.info(
-                    "Data parallel training is detected with moe parallel, MoeGradientHandler is automatically "
-                    "added even though not specified in the configuration",
-                    ranks=[0],
-                )
+            # if verbose:
+            gd.debuginfo(prj="mt", info=f"Data parallel training is detected with moe parallel, MoeGradientHandler is automatically "
+                    "added even though not specified in the configuration")
         elif is_using_sequence():
             model = DDP(
                 model,
@@ -398,10 +386,8 @@ def initialize(
                 device_ids=[torch.cuda.current_device()],
                 **torch_ddp_cfg,
             )
-            if verbose:
-                logger.info(
-                    "Model is using torch.nn.parallel.DistributedDataParallel for Sequence Parallelism", ranks=[0]
-                )
+            # if verbose:
+            gd.debuginfo(prj="mt", info=f"Model is using torch.nn.parallel.DistributedDataParallel for Sequence Parallelism")
         elif is_using_ddp() and not is_using_pp() and amp_mode != AMP_TYPE.NAIVE:
             model = DDP(
                 model,
@@ -409,17 +395,14 @@ def initialize(
                 device_ids=[torch.cuda.current_device()],
                 **torch_ddp_cfg,
             )
-            if verbose:
-                logger.info("Model is using torch.nn.parallel.DistributedDataParallel for Data Parallelism", ranks=[0])
+            # if verbose:
+            gd.debuginfo(prj="mt", info=f"Model is using torch.nn.parallel.DistributedDataParallel for Data Parallelism")
         elif is_using_ddp():
             gradient_handler_cfg = [dict(type="DataParallelGradientHandler")]
-            if verbose:
-                logger.info(
-                    "Data parallel training is detected when using pipeline parallel, "
+            # if verbose:
+            gd.debuginfo(prj="mt", info=f"Data parallel training is detected when using pipeline parallel, "
                     "DataParallelGradientHandler is automatically "
-                    "added even though not specified in the configuration",
-                    ranks=[0],
-                )
+                    "added even though not specified in the configuration")
         # add pipeline parallel gradient handler, if pipeline shared module is detected
         for param in model.parameters():
             if getattr(param, "pipeline_shared_module_pg", None) is not None:
@@ -427,12 +410,9 @@ def initialize(
                     gradient_handler_cfg = [dict(type="PipelineSharedModuleGradientHandler")]
                 else:
                     gradient_handler_cfg.append(dict(type="PipelineSharedModuleGradientHandler"))
-                if verbose:
-                    logger.info(
-                        "pipeline_shared_module is detected, PipelineSharedModuleGradientHandler is automatically "
-                        "added even though not specified in the configuration",
-                        ranks=[0],
-                    )
+                # if verbose:
+                gd.debuginfo(prj="mt", info=f"pipeline_shared_module is detected, PipelineSharedModuleGradientHandler is automatically "
+                        "added even though not specified in the configuration")
                 break
     else:
         if not isinstance(gradient_handler_cfg, list):

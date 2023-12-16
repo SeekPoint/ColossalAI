@@ -39,21 +39,14 @@ def _build_train_valid_test_datasets(
     logger = get_dist_logger()
 
     # Print stats about the splits.
-    logger.info("\n > dataset split:", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"\n > dataset split:")
 
     def print_split_stats(name, index):
         start_index = indexed_dataset.doc_idx[splits[index]]
         end_index = indexed_dataset.doc_idx[splits[index + 1]]
-        logger.info(
-            "\n    {}:".format(name)
-            + "\n     document indices in [{}, {}) total of {} documents".format(
-                splits[index], splits[index + 1], splits[index + 1] - splits[index]
-            )
-            + "\n     sentence indices in [{}, {}) total of {} sentences".format(
-                start_index, end_index, end_index - start_index
-            ),
-            ranks=[0],
-        )
+        gd.debuginfo(prj="mt", info=f"\n    {name}:"
+                                    f"\n document indices in [{splits[index]}, {splits[index + 1]}) total of {splits[index + 1] - splits[index]} documents "
+                                    f"\n sentence indices in [{start_index}, {end_index}) total of {end_index - start_index} sentences")
 
     print_split_stats("train", 0)
     print_split_stats("validation", 1)

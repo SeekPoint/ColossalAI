@@ -15,8 +15,8 @@ from colossalai.testing import free_port
 from pydebug import gd, infoTensor
 
 logger = logging.getLogger(__name__)
-logger.info("Transformers version %s", transformers.__version__)
-logger.info("ColossalAI version %s", colossalai.__version__)
+gd.debuginfo(prj="mt", info=f"Transformers version %s", transformers.__version__)
+gd.debuginfo(prj="mt", info=f"ColossalAI version %s", colossalai.__version__)
 
 
 class ColossalInferenceHandler(BaseHandler, ABC):
@@ -59,14 +59,14 @@ class ColossalInferenceHandler(BaseHandler, ABC):
         self.max_output_len = self.inference_config.get("max_output_len", 128)
 
         self.device = torch.device("cuda:" + str(gpu_id) if torch.cuda.is_available() and gpu_id >= 0 else "cpu")
-        logger.info(f"Device set to {self.device}")
-        logger.info(f"torch.cuda.device_count() {torch.cuda.device_count()}")
+        gd.debuginfo(prj="mt", info=f"Device set to {self.device}")
+        gd.debuginfo(prj="mt", info=f"torch.cuda.device_count() {torch.cuda.device_count()}")
 
         # Unpacking from model_dir
         model_dir_path = os.path.join(model_dir, "model")
         with zipfile.ZipFile(model_dir + "/model.zip", "r") as zip_ref:
             zip_ref.extractall(model_dir_path)
-        logger.info(f"Loading {self.inference_config['model_type']} pretrain model and tokenizer")
+        gd.debuginfo(prj="mt", info=f"Loading {self.inference_config['model_type']} pretrain model and tokenizer")
         if self.inference_config["model_type"] == "bloom":
             self.model = BloomForCausalLM.from_pretrained(
                 model_dir_path,
@@ -80,7 +80,7 @@ class ColossalInferenceHandler(BaseHandler, ABC):
         else:
             logger.warning(f"Model type {self.inference_config['model_type']} not supported yet.")
 
-        logger.info("Transformer model from path %s loaded successfully", model_dir)
+        gd.debuginfo(prj="mt", info=f"Transformer model from path %s loaded successfully", model_dir)
 
         # NOTE world_size, rank, host, port here are used to launch colossalai dist environment
         # This world_size is different from the world size of TorchServe
@@ -101,12 +101,12 @@ class ColossalInferenceHandler(BaseHandler, ABC):
         self.model.eval()
 
         colossalai.launch(config={}, rank=rank, world_size=world_size, host=host, port=port, backend="nccl")
-        logger.info("Initializing TPInferEngine ...")
+        gd.debuginfo(prj="mt", info=f"Initializing TPInferEngine ...")
         shard_config = ShardConfig(enable_tensor_parallelism=True if self.tp_size > 1 else False, inference_only=True)
         self.infer_engine = TPInferEngine(
             self.model, shard_config, self.max_batch_size, self.max_input_len, self.max_output_len
         )
-        logger.info("TPInferEngine initialized successfully")
+        gd.debuginfo(prj="mt", info=f"TPInferEngine initialized successfully")
 
         self.model = self.infer_engine.model
         self.initialized = True
@@ -119,7 +119,7 @@ class ColossalInferenceHandler(BaseHandler, ABC):
         Returns:
             list : The preprocess function returns a list of Tensor for the size of the word tokens.
         """
-        logger.info("Pre-processing requests")
+        gd.debuginfo(prj="mt", info=f"Pre-processing requests")
         input_ids_batch = None
         attention_mask_batch = None
         for idx, data in enumerate(requests):
@@ -129,7 +129,7 @@ class ColossalInferenceHandler(BaseHandler, ABC):
             if isinstance(input_text, (bytes, bytearray)):
                 input_text = input_text.decode("utf-8")
 
-            logger.info("Received text: '%s'", input_text)
+            gd.debuginfo(prj="mt", info=f"Received text: '%s'", input_text)
 
             inputs = self.tokenizer.encode_plus(
                 input_text,

@@ -98,14 +98,14 @@ class LogMetricByEpochHook(LogByEpochHook):
             msg = self._get_str(trainer=trainer, mode="train")
 
             if self._is_rank_to_log:
-                self.logger.info(f"[Epoch {trainer.cur_epoch} / Train]: {msg}")
+                gd.debuginfo(prj="mt", info=f"[Epoch {trainer.cur_epoch} / Train]: {msg}")
                 # f'Training - Epoch {trainer.cur_epoch} - {self.__class__.__name__}: {msg}')
 
     def after_test_epoch(self, trainer):
         if self._is_epoch_to_log(trainer):
             msg = self._get_str(trainer=trainer, mode="test")
             if self._is_rank_to_log:
-                self.logger.info(f"[Epoch {trainer.cur_epoch} / Test]: {msg}")
+                gd.debuginfo(prj="mt", info=f"[Epoch {trainer.cur_epoch} / Test]: {msg}")
                 # f'Testing - Epoch {trainer.cur_epoch} - {self.__class__.__name__}: {msg}')
 
 
@@ -257,13 +257,13 @@ class LogTimingByEpochHook(LogByEpochHook):
         """Writes log after finishing a training epoch."""
         if self._is_epoch_to_log(trainer) and self._is_rank_to_log:
             msg = self._get_message("Train")
-            self.logger.info(f"[Epoch {trainer.cur_epoch} / Train]: {msg} | #steps/epoch = {trainer.steps_per_epoch}")
+            gd.debuginfo(prj="mt", info=f"[Epoch {trainer.cur_epoch} / Train]: {msg} | #steps/epoch = {trainer.steps_per_epoch}")
 
     def after_test_epoch(self, trainer):
         """Writes log after finishing a testing epoch."""
         if self._is_epoch_to_log(trainer) and self._is_rank_to_log and self._log_eval:
             msg = self._get_message("Test")
-            self.logger.info(f"[Epoch {trainer.cur_epoch} / Test]: {msg}")
+            gd.debuginfo(prj="mt", info=f"[Epoch {trainer.cur_epoch} / Test]: {msg}")
 
 
 @HOOKS.register_module

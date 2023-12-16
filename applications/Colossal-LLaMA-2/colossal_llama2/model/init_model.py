@@ -71,7 +71,7 @@ def main():
     output_embeddings = source_output_embeddings.weight.cpu().detach().numpy()
     for i in range(len(source_vocab), len(target_vocab)):
         if i % 500 == 0:
-            logger.info(f"processing {i}/{len(target_vocab)} target tokens")
+            gd.debuginfo(prj="mt", info=f"processing {i}/{len(target_vocab)} target tokens")
         target_token = target_inverted_vocab[i]
         target_to_source_token_ids = torch.LongTensor(source_tokenizer([target_token])["input_ids"][0])
         target_to_source_token_ids = target_to_source_token_ids.to(gpu_device)

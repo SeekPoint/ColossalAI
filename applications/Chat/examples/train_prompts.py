@@ -35,11 +35,11 @@ def main(args):
         raise ValueError(f'Unsupported strategy "{args.strategy}"')
 
     if args.rm_path is not None:
-        warnings.warn("LoRA weights should be merged with the model weights")
+        gd.debuginfo(prj="mt", info=f"LoRA weights should be merged with the model weights")
         state_dict = torch.load(args.rm_path, map_location="cpu")
 
     if args.lora_rank > 0:
-        warnings.warn("Lora is not supported yet.")
+        gd.debuginfo(prj="mt", info=f"Lora is not supported yet.")
         args.lora_rank = 0
 
     with strategy.model_init_context():

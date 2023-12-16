@@ -128,7 +128,7 @@ class BloomPipelineForwards:
         gd.debuginfo(prj="mt", info=f'')
         if deprecated_arguments.pop("position_ids", False) is not False:
             # `position_ids` could have been `torch.Tensor` or `None` so defaulting pop to `False` allows to detect if users were passing explicitly `None`
-            warnings.warn(
+            gd.debuginfo(prj="mt", info=
                 "`position_ids` have no functionality in BLOOM and will be removed in v5.0.0. You can safely ignore"
                 " passing `position_ids`.",
                 FutureWarning,
@@ -358,7 +358,7 @@ class BloomPipelineForwards:
 
         if deprecated_arguments.pop("position_ids", False) is not False:
             # `position_ids` could have been `torch.Tensor` or `None` so defaulting pop to `False` allows to detect if users were passing explicitly `None`
-            warnings.warn(
+            gd.debuginfo(prj="mt", info=
                 "`position_ids` have no functionality in BLOOM and will be removed in v5.0.0. You can safely ignore"
                 " passing `position_ids`.",
                 FutureWarning,
@@ -459,7 +459,7 @@ class BloomPipelineForwards:
 
         if deprecated_arguments.pop("position_ids", False) is not False:
             # `position_ids` could have been `torch.Tensor` or `None` so defaulting pop to `False` allows to detect if users were passing explicitly `None`
-            warnings.warn(
+            gd.debuginfo(prj="mt", info=
                 "`position_ids` have no functionality in BLOOM and will be removed in v5.0.0. You can safely ignore"
                 " passing `position_ids`.",
                 FutureWarning,
@@ -598,7 +598,7 @@ class BloomPipelineForwards:
 
         if deprecated_arguments.pop("position_ids", False) is not False:
             # `position_ids` could have been `torch.Tensor` or `None` so defaulting pop to `False` allows to detect if users were passing explicitly `None`
-            warnings.warn(
+            gd.debuginfo(prj="mt", info=
                 "`position_ids` have no functionality in BLOOM and will be removed in v5.0.0. You can safely ignore"
                 " passing `position_ids`.",
                 FutureWarning,
@@ -1034,7 +1034,7 @@ def get_bloom_sequence_parallel_forward_fn(shard_config: ShardConfig):
         gd.debuginfo(prj="mt", info=f'')
         if deprecated_arguments.pop("position_ids", False) is not False:
             # `position_ids` could have been `torch.Tensor` or `None` so defaulting pop to `False` allows to detect if users were passing explicitly `None`
-            warnings.warn(
+            gd.debuginfo(prj="mt", info=
                 "`position_ids` have no functionality in BLOOM and will be removed in v5.0.0. You can safely ignore"
                 " passing `position_ids`.",
                 FutureWarning,

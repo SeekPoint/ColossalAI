@@ -85,8 +85,8 @@ class CheckpointSolverRotor(CheckpointSolverBase):
             gd.debuginfo(prj="mt", info=f'')
             self.cost_table, self.back_ptr = self._compute_table_c(chain, self.memory_slots)
 
-        if verbose:
-            self.print_chain()
+        # if verbose:
+        self.print_chain()
 
         # backtrack
         try:
@@ -100,8 +100,8 @@ class CheckpointSolverRotor(CheckpointSolverBase):
             logger.warning(f"Checkpoint solver failed: {e}")
             raise ValueError
 
-        if verbose:
-            self.print_sequence()
+        # if verbose:
+        self.print_sequence()
 
         return deepcopy(self.graph)
 
@@ -298,7 +298,7 @@ class CheckpointSolverRotor(CheckpointSolverBase):
             import sys
 
             logger = get_dist_logger()
-            logger.info("rotorc hasn't been built! Building library...", ranks=[0])
+            gd.debuginfo(prj="mt", info=f"rotorc hasn't been built! Building library...", ranks=[0])
             this_dir = os.path.dirname(os.path.abspath(__file__))
             result = subprocess.Popen(
                 [
@@ -311,7 +311,7 @@ class CheckpointSolverRotor(CheckpointSolverBase):
                 stderr=subprocess.PIPE,
             )
             if result.wait() == 0:
-                logger.info("rotorc has been built!", ranks=[0])
+                gd.debuginfo(prj="mt", info=f"rotorc has been built!", ranks=[0])
                 from .rotorc import compute_table
             else:
                 logger.warning("rotorc built failed! Using python version!", ranks=[0])

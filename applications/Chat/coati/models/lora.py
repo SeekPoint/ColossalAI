@@ -67,7 +67,7 @@ class LoraLinear(lora.LoRALayer, nn.Module):
         if LORA_MANAGER.merge_weights:
             if mode and self.merged:
                 gd.debuginfo(prj="mt", info=f'')
-                warnings.warn("Invoke module.train() would unmerge LoRA weights.")
+                gd.debuginfo(prj="mt", info=f"Invoke module.train() would unmerge LoRA weights.")
                 raise NotImplementedError("LoRA unmerge is not tested.")
                 # Make sure that the weights are not merged
                 if self.r > 0:
@@ -81,7 +81,7 @@ class LoraLinear(lora.LoRALayer, nn.Module):
                 self.merged = False
             elif not mode and not self.merged:
                 gd.debuginfo(prj="mt", info=f'')
-                warnings.warn("Invoke module.eval() would merge LoRA weights.")
+                gd.debuginfo(prj="mt", info=f"Invoke module.eval() would merge LoRA weights.")
                 # Merge the weights and mark it
                 if self.r > 0:
                     self.weight.data += T(self.lora_B @ self.lora_A) * self.scaling

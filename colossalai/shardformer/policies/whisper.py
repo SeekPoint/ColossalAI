@@ -59,14 +59,14 @@ class WhisperPolicy(Policy):
 
         if self.shard_config.enable_sequence_parallelism:
             self.shard_config.enable_sequence_parallelism = False
-            warnings.warn(
+            gd.debuginfo(prj="mt", info=
                 "Whisper dosen't support sequence parallelism now, will ignore the sequence parallelism flag."
             )
 
         # TODO using the jit fused add_and_dropout affect the accuracy
         if self.shard_config.enable_jit_fused:
             self.shard_config.enable_jit_fused = False
-            warnings.warn("Whisper dosen't support jit fused operator now, will ignore the jit fused operator flag.")
+            gd.debuginfo(prj="mt", info=f"Whisper dosen't support jit fused operator now, will ignore the jit fused operator flag.")
 
         if self.shard_config.enable_tensor_parallelism:
             gd.debuginfo(prj="mt", info=f'')

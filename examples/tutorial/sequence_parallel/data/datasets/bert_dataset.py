@@ -149,7 +149,7 @@ def get_samples_mapping_(
         # Build samples mapping
         verbose = torch.distributed.get_rank() == 0
         start_time = time.time()
-        logger.info("\n > building samples index mapping for {} ...".format(name), ranks=[0])
+        gd.debuginfo(prj="mt", info=f"\n > building samples index mapping for {} ...".format(name))
         # First compile and then import.
         samples_mapping = helpers.build_mapping(
             indexed_dataset.doc_idx,
@@ -162,14 +162,11 @@ def get_samples_mapping_(
             verbose,
             2 if binary_head else 1,
         )
-        logger.info("\n > done building samples index maping", ranks=[0])
+        gd.debuginfo(prj="mt", info=f"\n > done building samples index maping")
         np.save(indexmap_filename, samples_mapping, allow_pickle=True)
-        logger.info("\n > saved the index mapping in {}".format(indexmap_filename), ranks=[0])
+        gd.debuginfo(prj="mt", info=f"\n > saved the index mapping in {}".format(indexmap_filename))
         # Make sure all the ranks have built the mapping
-        logger.info(
-            "\n > elapsed time to build and save samples mapping " "(seconds): {:4f}".format(time.time() - start_time),
-            ranks=[0],
-        )
+        gd.debuginfo(prj="mt", info=f"\n > elapsed time to build and save samples mapping (seconds): {(time.time() - start_time):4f}")
     # This should be a barrier but nccl barrier assumes
     # device_index=rank which is not the case for model
     # parallel case

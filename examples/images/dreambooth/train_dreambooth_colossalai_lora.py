@@ -396,7 +396,7 @@ def main(args):
             pipeline.set_progress_bar_config(disable=True)
 
             num_new_images = args.num_class_images - cur_class_images
-            logger.info(f"Number of class images to sample: {num_new_images}.")
+            gd.debuginfo(prj="mt", info=f"Number of class images to sample: {num_new_images}.")
 
             sample_dataset = PromptDataset(args.class_prompt, num_new_images)
             sample_dataloader = torch.utils.data.DataLoader(sample_dataset, batch_size=args.sample_batch_size)
@@ -437,14 +437,14 @@ def main(args):
 
     # Load the tokenizer
     if args.tokenizer_name:
-        logger.info(f"Loading tokenizer from {args.tokenizer_name}", ranks=[0])
+        gd.debuginfo(prj="mt", info=f"Loading tokenizer from {args.tokenizer_name}")
         tokenizer = AutoTokenizer.from_pretrained(
             args.tokenizer_name,
             revision=args.revision,
             use_fast=False,
         )
     elif args.pretrained_model_name_or_path:
-        logger.info("Loading tokenizer from pretrained model", ranks=[0])
+        gd.debuginfo(prj="mt", info=f"Loading tokenizer from pretrained model")
         tokenizer = AutoTokenizer.from_pretrained(
             args.pretrained_model_name_or_path,
             subfolder="tokenizer",
@@ -456,7 +456,7 @@ def main(args):
 
     # Load models and create wrapper for stable diffusion
 
-    logger.info(f"Loading text_encoder from {args.pretrained_model_name_or_path}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Loading text_encoder from {args.pretrained_model_name_or_path}")
 
     text_encoder = text_encoder_cls.from_pretrained(
         args.pretrained_model_name_or_path,
@@ -464,7 +464,7 @@ def main(args):
         revision=args.revision,
     )
 
-    logger.info(f"Loading AutoencoderKL from {args.pretrained_model_name_or_path}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Loading AutoencoderKL from {args.pretrained_model_name_or_path}")
     vae = AutoencoderKL.from_pretrained(
         args.pretrained_model_name_or_path,
         subfolder="vae",
@@ -472,12 +472,12 @@ def main(args):
     )
 
     if args.externel_unet_path is None:
-        logger.info(f"Loading UNet2DConditionModel from {args.pretrained_model_name_or_path}", ranks=[0])
+        gd.debuginfo(prj="mt", info=f"Loading UNet2DConditionModel from {args.pretrained_model_name_or_path}")
         unet = UNet2DConditionModel.from_pretrained(
             args.pretrained_model_name_or_path, subfolder="unet", revision=args.revision, low_cpu_mem_usage=False
         )
     else:
-        logger.info(f"Loading UNet2DConditionModel from {args.externel_unet_path}", ranks=[0])
+        gd.debuginfo(prj="mt", info=f"Loading UNet2DConditionModel from {args.externel_unet_path}")
         unet = UNet2DConditionModel.from_pretrained(
             args.externel_unet_path, revision=args.revision, low_cpu_mem_usage=False
         )
@@ -536,7 +536,7 @@ def main(args):
     noise_scheduler = DDPMScheduler.from_pretrained(args.pretrained_model_name_or_path, subfolder="scheduler")
 
     # prepare dataset
-    logger.info(f"Prepare dataset from {args.instance_data_dir}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Prepare dataset from {args.instance_data_dir}")
     train_dataset = DreamBoothDataset(
         instance_data_root=args.instance_data_dir,
         instance_prompt=args.instance_prompt,
@@ -614,13 +614,13 @@ def main(args):
     # Train!
     total_batch_size = args.train_batch_size * world_size
 
-    logger.info("***** Running training *****", ranks=[0])
-    logger.info(f"  Num examples = {len(train_dataset)}", ranks=[0])
-    logger.info(f"  Num batches each epoch = {len(train_dataloader)}", ranks=[0])
-    logger.info(f"  Num Epochs = {args.num_train_epochs}", ranks=[0])
-    logger.info(f"  Instantaneous batch size per device = {args.train_batch_size}", ranks=[0])
-    logger.info(f"  Total train batch size (w. parallel, distributed & accumulation) = {total_batch_size}", ranks=[0])
-    logger.info(f"  Total optimization steps = {args.max_train_steps}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"***** Running training *****")
+    gd.debuginfo(prj="mt", info=f"  Num examples = {len(train_dataset)}")
+    gd.debuginfo(prj="mt", info=f"  Num batches each epoch = {len(train_dataloader)}")
+    gd.debuginfo(prj="mt", info=f"  Num Epochs = {args.num_train_epochs}")
+    gd.debuginfo(prj="mt", info=f"  Instantaneous batch size per device = {args.train_batch_size}")
+    gd.debuginfo(prj="mt", info=f"  Total train batch size (w. parallel, distributed & accumulation) = {total_batch_size}")
+    gd.debuginfo(prj="mt", info=f"  Total optimization steps = {args.max_train_steps}")
 
     # Only show the progress bar once on each machine.
     progress_bar = tqdm(range(args.max_train_steps), disable=not local_rank == 0)
@@ -687,7 +687,7 @@ def main(args):
 
             optimizer.step()
             lr_scheduler.step()
-            logger.info(f"max GPU_mem cost is {torch.cuda.max_memory_allocated()/2**20} MB", ranks=[0])
+            gd.debuginfo(prj="mt", info=f"max GPU_mem cost is {torch.cuda.max_memory_allocated()/2**20} MB")
             # Checks if the accelerator has performed an optimization step behind the scenes
             progress_bar.update(1)
             global_step += 1
@@ -704,13 +704,13 @@ def main(args):
                 if local_rank == 0:
                     if not os.path.exists(os.path.join(save_path, "config.json")):
                         shutil.copy(os.path.join(args.pretrained_model_name_or_path, "unet/config.json"), save_path)
-                    logger.info(f"Saving model checkpoint to {save_path}", ranks=[0])
+                    gd.debuginfo(prj="mt", info=f"Saving model checkpoint to {save_path}")
             if global_step >= args.max_train_steps:
                 break
     torch.cuda.synchronize()
 
     booster.save_model(unet, os.path.join(args.output_dir, "diffusion_pytorch_model.bin"))
-    logger.info(f"Saving model checkpoint to {args.output_dir} on rank {local_rank}")
+    gd.debuginfo(prj="mt", info=f"Saving model checkpoint to {args.output_dir} on rank {local_rank}")
     if local_rank == 0:
         if not os.path.exists(os.path.join(args.output_dir, "config.json")):
             shutil.copy(os.path.join(args.pretrained_model_name_or_path, "unet/config.json"), args.output_dir)

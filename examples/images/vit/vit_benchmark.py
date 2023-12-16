@@ -65,7 +65,7 @@ def main():
     # Build ViT model
     config = ViTConfig.from_pretrained(args.model_name_or_path)
     model = ViTForImageClassification(config)
-    logger.info(f"Finish loading model from {args.model_name_or_path}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Finish loading model from {args.model_name_or_path}")
 
     # Enable gradient checkpointing
     if args.grad_checkpoint:
@@ -91,7 +91,7 @@ def main():
             precision="fp16",
             initial_scale=1,
         )
-    logger.info(f"Set plugin as {args.plugin}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Set plugin as {args.plugin}")
 
     # Set optimizer
     optimizer = HybridAdam(model.parameters(), lr=(args.learning_rate * world_size))
@@ -105,7 +105,7 @@ def main():
     model, optimizer, criterion, _, _ = booster.boost(model, optimizer, criterion=criterion)
 
     # Start training.
-    logger.info(f"Start testing", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Start testing")
 
     torch.cuda.synchronize()
     model.train()

@@ -110,7 +110,7 @@ class SFTTrainer(SLTrainer):
                     num_seen += batch["input_ids"].size(0)
                 loss_mean = loss_sum / num_seen
                 if dist.get_rank() == 0:
-                    self.logger.info(f"Eval Epoch {epoch}/{self.max_epochs} loss {loss_mean}")
+                    gd.debuginfo(prj="mt", info=f"Eval Epoch {epoch}/{self.max_epochs} loss {loss_mean}")
                 if self.writer:
                     self.writer.add_scalar("eval/loss", loss_mean, self.num_eval_step)
                     self.num_eval_step += 1

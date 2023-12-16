@@ -234,7 +234,7 @@ class TorchFSDPPlugin(DPPluginBase):
         if optimizer is not None:
             gd.debuginfo(prj="mt", info=f'')
             if len(optimizer.param_groups) > 1:
-                warnings.warn(
+                gd.debuginfo(prj="mt", info=
                     "TorchFSDPPlugin does not support optimizer that use multi param groups. The results may not be as expected if used."
                 )
             optimizer.__init__(fsdp_model.parameters(), **optimizer.defaults)

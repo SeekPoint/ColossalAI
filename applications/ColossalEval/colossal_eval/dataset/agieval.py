@@ -94,7 +94,7 @@ def get_prompt(line: Dict, dataset_name: str, logger: DistributedLogger) -> Dict
         }, all_classes
 
     except NameError:
-        logger.info("Dataset not defined.")
+        gd.debuginfo(prj="mt", info=f"Dataset not defined.")
 
 
 # process few-shot raw_prompts

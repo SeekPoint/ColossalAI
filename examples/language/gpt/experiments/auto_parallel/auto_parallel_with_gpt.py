@@ -72,7 +72,7 @@ def main():
     criterion = GPTLMLoss()
 
     optimizer = torch.optim.Adam(gm.parameters(), lr=0.01)
-    logger.info(get_mem_info(prefix="After init model, "), ranks=[0])
+    logger.info(get_mem_info(prefix="After init model, "))
     get_tflops_func = partial(get_tflops, global_numel, BATCH_SIZE, SEQ_LENGTH)
     torch.cuda.synchronize()
     model.train()
@@ -88,10 +88,9 @@ def main():
         optimizer.step()
         torch.cuda.synchronize()
         step_time = time() - start
-        logger.info(
-            f"[{n+1}/{NUM_STEPS}] Loss:{loss.item():.3f}, Step time: {step_time:.3f}s, TFLOPS: {get_tflops_func(step_time):.3f}",
-            ranks=[0],
-        )
+        gd.debuginfo(prj="mt", info=f"[{n+1}/{NUM_STEPS}] Loss:{loss.item():.3f}, "
+                                    f"Step time: {step_time:.3f}s, "
+                                    f"TFLOPS: {get_tflops_func(step_time):.3f}")
     torch.cuda.synchronize()
 
 

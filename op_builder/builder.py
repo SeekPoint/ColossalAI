@@ -160,10 +160,8 @@ class Builder(ABC):
             # if the kernel has been pre-built during installation
             # we just directly import it
             op_module = self.import_op()
-            if verbose:
-                print_rank_0(
-                    f"[extension] OP {self.prebuilt_import_path} has been compiled ahead of time, skip building."
-                )
+            # if verbose:
+            gd.debuginfo(prj="mt", info=f"[extension] OP {self.prebuilt_import_path} has been compiled ahead of time, skip building.")
         except ImportError:
             # check environment
             self.check_runtime_build_environment()
@@ -183,8 +181,8 @@ class Builder(ABC):
             build_directory = os.path.join(home_directory, extension_directory)
             Path(build_directory).mkdir(parents=True, exist_ok=True)
 
-            if verbose:
-                print_rank_0(f"[extension] Compiling or loading the JIT-built {self.name} kernel during runtime now")
+            # if verbose:
+            gd.debuginfo(prj="mt", info=f"[extension] Compiling or loading the JIT-built {self.name} kernel during runtime now")
 
             # load the kernel
             op_module = load(
@@ -201,8 +199,8 @@ class Builder(ABC):
             build_duration = time.time() - start_build
 
             # log jit compilation time
-            if verbose:
-                print_rank_0(f"[extension] Time to compile or load {self.name} op: {build_duration} seconds")
+            # if verbose:
+            gd.debuginfo(prj="mt", info=f"[extension] Time to compile or load {self.name} op: {build_duration} seconds")
 
         # cache the built/loaded kernel
         self.cached_op_module = op_module

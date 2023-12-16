@@ -61,9 +61,7 @@ class SaveCheckpointHook(BaseHook):
             save_checkpoint(
                 self.checkpoint_dir, trainer.cur_epoch, self.model, trainer.engine.optimizer, self._lr_scheduler
             )
-            self.logger.info(
-                f"checkpoint for iteration {trainer.cur_step} is saved to {self.checkpoint_dir}", ranks=[0]
-            )
+            gd.debuginfo(prj="mt", info=f"checkpoint for iteration {trainer.cur_step} is saved to {self.checkpoint_dir}")
         else:
             pass
 
@@ -74,4 +72,4 @@ class SaveCheckpointHook(BaseHook):
             save_checkpoint(
                 self.checkpoint_dir, trainer.cur_epoch, self.model, trainer.engine.optimizer, self._lr_scheduler
             )
-            self.logger.info(f"checkpoint for epoch {trainer.cur_epoch} is saved to {self.checkpoint_dir}", ranks=[0])
+            gd.debuginfo(prj="mt", info=f"checkpoint for epoch {trainer.cur_epoch} is saved to {self.checkpoint_dir}", ranks=[0])

@@ -46,7 +46,7 @@ def launch(
     """
     gd.debuginfo(prj="mt", info=f'')
     if rank == 0:
-        warnings.warn("`config` is deprecated and will be removed soon.")
+        gd.debuginfo(prj="mt", info=f"`config` is deprecated and will be removed soon.")
 
     # init default process group
     init_method = f"tcp://[{host}]:{port}"
@@ -59,9 +59,9 @@ def launch(
 
     set_seed(seed)
 
-    if verbose:
-        logger = get_dist_logger()
-        logger.info(f"Distributed environment is initialized, world size: {dist.get_world_size()}", ranks=[0])
+    # if verbose:
+    #    logger = get_dist_logger()
+    gd.debuginfo(prj="mt", info=f"Distributed environment is initialized, world size: {dist.get_world_size()}")
 
 
 def launch_from_slurm(

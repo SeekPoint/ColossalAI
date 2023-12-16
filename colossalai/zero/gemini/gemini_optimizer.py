@@ -127,7 +127,7 @@ class GeminiOptimizer(OptimizerWrapper):
         for name, param in module.named_parameters():
             if is_ddp_ignored(param):
                 if param.requires_grad:
-                    warnings.warn(
+                    gd.debuginfo(prj="mt", info=
                         f"Parameter `{name}` is ignored by DDP but requires gradient! "
                         "You should handle its optimizer update by yourself!"
                     )
@@ -174,7 +174,7 @@ class GeminiOptimizer(OptimizerWrapper):
             and getattr(optim, "num_fp32_shards_per_param", 0) >= 2
         )
         if self.gpu_margin_mem_ratio > 0.0 and not self.gemini_manager.is_cuda_margin_mem_avail:
-            self._logger.warning(f'gpu_margin_mem_ratio is meaningless when placement_policy is not "auto"', ranks=[0])
+            self._logger.warning(f'gpu_margin_mem_ratio is meaningless when placement_policy is not "auto"')
 
         self._register_states = disposable(self._register_states_)
 
@@ -814,7 +814,7 @@ class GeminiOptimizer(OptimizerWrapper):
         *args,
         **kwargs,
     ) -> torch.Tensor:
-        warnings.warn(f"Gemini controls grad clipping by itself, so you should not use clip_grad_by_norm")
+        gd.debuginfo(prj="mt", info=f"Gemini controls grad clipping by itself, so you should not use clip_grad_by_norm")
 
 
 class GeminiAdamOptimizer(GeminiOptimizer):

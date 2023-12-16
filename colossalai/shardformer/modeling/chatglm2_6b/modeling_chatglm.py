@@ -1426,7 +1426,7 @@ class ChatGLMForConditionalGeneration(ChatGLMPreTrainedModel):
 
         has_default_max_length = kwargs.get("max_length") is None and generation_config.max_length is not None
         if has_default_max_length and generation_config.max_new_tokens is None:
-            warnings.warn(
+            gd.debuginfo(prj="mt", info=
                 f"Using `max_length`'s default ({generation_config.max_length}) to control the generation length. "
                 "This behaviour is deprecated and will be removed from the config in v5 of Transformers -- we"
                 " recommend using `max_new_tokens` to control the maximum length of the generation.",
@@ -1522,7 +1522,7 @@ class ChatGLMForConditionalGeneration(ChatGLMPreTrainedModel):
         from .quantization import quantize
 
         if self.quantized:
-            logger.info("Already quantized.")
+            gd.debuginfo(prj="mt", info=f"Already quantized.")
             return self
 
         self.quantized = True

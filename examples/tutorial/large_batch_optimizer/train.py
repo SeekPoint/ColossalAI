@@ -48,7 +48,7 @@ def main():
 
     # get logger
     logger = get_dist_logger()
-    logger.info("initialized distributed environment", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"initialized distributed environment")
 
     # create synthetic dataloaders
     train_dataloader = DummyDataloader(length=10, batch_size=gpc.config.BATCH_SIZE)
@@ -81,7 +81,7 @@ def main():
         test_dataloader=test_dataloader,
     )
 
-    logger.info("Engine is built", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Engine is built")
 
     for epoch in range(gpc.config.NUM_EPOCHS):
         # training

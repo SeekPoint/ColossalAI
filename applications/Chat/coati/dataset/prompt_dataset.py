@@ -24,12 +24,12 @@ class PromptDataset(Dataset):
         super(PromptDataset, self).__init__()
         self.keyed_prompt = defaultdict(list)
         self.logger = get_dist_logger()
-        self.logger.info("Loading data...")
+        gd.debuginfo(prj="mt", info=f"Loading data...")
         list_data_dict = jload(data_path)
-        self.logger.info(f"Loaded {len(list_data_dict)} examples.")
+        gd.debuginfo(prj="mt", info=f"Loaded {len(list_data_dict)} examples.")
 
         if max_datasets_size is not None:
-            self.logger.info(f"Limiting dataset to {max_datasets_size} examples.")
+            gd.debuginfo(prj="mt", info=f"Limiting dataset to {max_datasets_size} examples.")
             list_data_dict = list_data_dict[:max_datasets_size]
 
         instructions = [data_dict["instruction"] for data_dict in list_data_dict]

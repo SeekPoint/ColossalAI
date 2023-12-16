@@ -116,13 +116,13 @@ def load_tf_weights_in_bert(model, config, tf_checkpoint_path):
         )
         raise
     tf_path = os.path.abspath(tf_checkpoint_path)
-    logger.info(f"Converting TensorFlow checkpoint from {tf_path}")
+    gd.debuginfo(prj="mt", info=f"Converting TensorFlow checkpoint from {tf_path}")
     # Load weights from TF model
     init_vars = tf.train.list_variables(tf_path)
     names = []
     arrays = []
     for name, shape in init_vars:
-        logger.info(f"Loading TF weight {name} with shape {shape}")
+        gd.debuginfo(prj="mt", info=f"Loading TF weight {name} with shape {shape}")
         array = tf.train.load_variable(tf_path, name)
         names.append(name)
         arrays.append(array)
@@ -135,7 +135,7 @@ def load_tf_weights_in_bert(model, config, tf_checkpoint_path):
             n in ["adam_v", "adam_m", "AdamWeightDecayOptimizer", "AdamWeightDecayOptimizer_1", "global_step"]
             for n in name
         ):
-            logger.info(f"Skipping {'/'.join(name)}")
+            gd.debuginfo(prj="mt", info=f"Skipping {'/'.join(name)}")
             continue
         pointer = model
         for m_name in name:
@@ -155,7 +155,7 @@ def load_tf_weights_in_bert(model, config, tf_checkpoint_path):
                 try:
                     pointer = getattr(pointer, scope_names[0])
                 except AttributeError:
-                    logger.info(f"Skipping {'/'.join(name)}")
+                    gd.debuginfo(prj="mt", info=f"Skipping {'/'.join(name)}")
                     continue
             if len(scope_names) >= 2:
                 num = int(scope_names[1])
@@ -170,7 +170,7 @@ def load_tf_weights_in_bert(model, config, tf_checkpoint_path):
         except AssertionError as e:
             e.args += (pointer.shape, array.shape)
             raise
-        logger.info(f"Initialize PyTorch weight {name}")
+        gd.debuginfo(prj="mt", info=f"Initialize PyTorch weight {name}")
         pointer.data = torch.from_numpy(array)
     return model
 
@@ -1449,7 +1449,7 @@ class BertForNextSentencePrediction(BertPreTrainedModel):
         """
 
         if "next_sentence_label" in kwargs:
-            warnings.warn(
+            gd.debuginfo(prj="mt", info=
                 "The `next_sentence_label` argument is deprecated and will be removed in a future version, use"
                 " `labels` instead.",
                 FutureWarning,

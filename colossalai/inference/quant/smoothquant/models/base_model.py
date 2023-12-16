@@ -86,7 +86,7 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
         if batch_size * (max_len_in_batch + max_output_len) > self.max_total_token_num:
             gd.debuginfo(prj="mt", info=f'')
             max_total_token_num = batch_size * (max_len_in_batch + max_output_len)
-            warnings.warn(f"reset max tokens to {max_total_token_num}")
+            gd.debuginfo(prj="mt", info=f"reset max tokens to {max_total_token_num}")
             self.init_cache_manager(max_total_token_num)
 
         block_loc = torch.empty((batch_size, max_len_in_batch + max_output_len), dtype=torch.long, device="cuda")
@@ -287,7 +287,7 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
         **kwargs,
     ):
         """alias of save_quantized"""
-        warnings.warn("you are using save_pretrained, which will re-direct to save_quantized.")
+        gd.debuginfo(prj="mt", info=f"you are using save_pretrained, which will re-direct to save_quantized.")
         self.save_quantized(save_dir, use_safetensors, safetensors_metadata)
 
     # Adapted from AutoGPTQ: https://github.com/PanQiWei/AutoGPTQ/blob/main/auto_gptq/modeling/_base.py
@@ -383,7 +383,7 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
                     break
         else:
             gd.debuginfo(prj="mt", info=f'')
-            warnings.warn("can't get model's sequence length from model config, will set to 4096.")
+            gd.debuginfo(prj="mt", info=f"can't get model's sequence length from model config, will set to 4096.")
             model.seqlen = 4096
         model.eval()
 
@@ -506,7 +506,7 @@ class BaseSmoothForCausalLM(nn.Module, PushToHubMixin):
                     model.seqlen = model_config[key]
                     break
         else:
-            warnings.warn("can't get model's sequence length from model config, will set to 4096.")
+            gd.debuginfo(prj="mt", info=f"can't get model's sequence length from model config, will set to 4096.")
             model.seqlen = 4096
             gd.debuginfo(prj="mt", info=f'')
 

@@ -132,7 +132,7 @@ class SFTDataset(Dataset):
         sources = [data["prompt"] for data in dataset]
         targets = [data["completion"] + tokenizer.eos_token for data in tqdm(dataset, disable=not is_rank_0())]
 
-        logger.info("Tokenizing inputs... This may take some time...")
+        gd.debuginfo(prj="mt", info=f"Tokenizing inputs... This may take some time...")
         if isinstance(tokenizer, ChatGLMTokenizer):
             self.input_ids, self.labels, self.attention_mask = _preprocess_chatglm(
                 sources, targets, tokenizer, max_length
@@ -140,7 +140,7 @@ class SFTDataset(Dataset):
         else:
             self.input_ids, self.labels, self.attention_mask = _preprocess(sources, targets, tokenizer, max_length)
 
-        logger.info("Loaded dataset.")
+        gd.debuginfo(prj="mt", info=f"Loaded dataset.")
 
     def __len__(self):
         length = self.input_ids.shape[0]
@@ -165,15 +165,15 @@ class SupervisedDataset(Dataset):
     ):
         gd.debuginfo(prj="mt", info=f'')
         super().__init__()
-        logger.info("Loading data...")
+        gd.debuginfo(prj="mt", info=f"Loading data...")
         list_data_dict = jload(data_path)
-        logger.info(f"Loaded {len(list_data_dict)} examples.")
+        gd.debuginfo(prj="mt", info=f"Loaded {len(list_data_dict)} examples.")
 
         if max_datasets_size is not None:
-            logger.info(f"Limiting dataset to {max_datasets_size} examples.")
+            gd.debuginfo(prj="mt", info=f"Limiting dataset to {max_datasets_size} examples.")
             list_data_dict = list_data_dict[:max_datasets_size]
 
-        logger.info("Formatting inputs...")
+        gd.debuginfo(prj="mt", info=f"Formatting inputs...")
         prompt_input, prompt_no_input = PROMPT_DICT["prompt_input"], PROMPT_DICT["prompt_no_input"]
         sources = [
             prompt_input.format_map(example) if "input" in example else prompt_no_input.format_map(example)
@@ -181,7 +181,7 @@ class SupervisedDataset(Dataset):
         ]
         targets = [example["output"] + tokenizer.eos_token for example in list_data_dict]
 
-        logger.info("Tokenizing inputs... This may take some time...")
+        gd.debuginfo(prj="mt", info=f"Tokenizing inputs... This may take some time...")
         if isinstance(tokenizer, ChatGLMTokenizer):
             self.input_ids, self.labels, self.attention_mask = _preprocess_chatglm(
                 sources, targets, tokenizer, max_length
@@ -189,7 +189,7 @@ class SupervisedDataset(Dataset):
         else:
             self.input_ids, self.labels, self.attention_mask = _preprocess(sources, targets, tokenizer, max_length)
 
-        logger.info("Loaded dataset.")
+        gd.debuginfo(prj="mt", info=f"Loaded dataset.")
 
     def __len__(self):
         length = self.input_ids.shape[0]

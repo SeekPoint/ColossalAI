@@ -72,8 +72,8 @@ def evaluate(model, args, logger, global_step, criterion):
             )
 
             logger.info(eval_log_str)
-            logger.info("-" * 100)
-            logger.info("")
+            gd.debuginfo(prj="mt", info=f"-" * 100)
+            gd.debuginfo(prj="mt", info=f"")
 
     evaluate_dataset_provider.release_shard()
     model.train()

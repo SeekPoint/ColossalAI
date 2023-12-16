@@ -168,7 +168,7 @@ def main():
     model = ViTForImageClassification.from_pretrained(
         args.model_name_or_path, config=config, ignore_mismatched_sizes=True
     )
-    logger.info(f"Finish loading model from {args.model_name_or_path}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Finish loading model from {args.model_name_or_path}")
 
     # Enable gradient checkpointing
     if args.grad_checkpoint:
@@ -196,7 +196,7 @@ def main():
         )
     else:
         raise ValueError(f"Plugin with name {args.plugin} is not supported!")
-    logger.info(f"Set plugin as {args.plugin}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Set plugin as {args.plugin}")
 
     # Prepare dataloader
     train_dataloader = plugin.prepare_dataloader(
@@ -227,15 +227,15 @@ def main():
     )
 
     # Finetuning
-    logger.info(f"Start finetuning", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Start finetuning")
     for epoch in range(args.num_epoch):
         train_epoch(epoch, model, optimizer, criterion, lr_scheduler, train_dataloader, booster, coordinator)
         evaluate_model(epoch, model, criterion, eval_dataloader, booster, coordinator)
-    logger.info(f"Finish finetuning", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Finish finetuning")
 
     # Save the finetuned model
     booster.save_model(model, args.output_path, shard=True)
-    logger.info(f"Saving model checkpoint to {args.output_path}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Saving model checkpoint to {args.output_path}")
 
 
 if __name__ == "__main__":

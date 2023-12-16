@@ -65,7 +65,7 @@ def main():
     # Build OPT model
     config = AutoConfig.from_pretrained(args.model_name_or_path)
     model = OPTForCausalLM(config=config)
-    logger.info(f"Finish loading model from {args.model_name_or_path}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Finish loading model from {args.model_name_or_path}")
 
     # Enable gradient checkpointing
     model.gradient_checkpointing_enable()
@@ -80,7 +80,7 @@ def main():
         plugin = GeminiPlugin(offload_optim_frac=1.0, pin_memory=True, initial_scale=2**5)
     elif args.plugin == "low_level_zero":
         plugin = LowLevelZeroPlugin(initial_scale=2**5)
-    logger.info(f"Set plugin as {args.plugin}", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Set plugin as {args.plugin}")
 
     # Set optimizer
     optimizer = HybridAdam(model.parameters(), lr=args.learning_rate)
@@ -93,7 +93,7 @@ def main():
     VOCAB_SIZE = 50257
 
     # Start training.
-    logger.info(f"Start testing", ranks=[0])
+    gd.debuginfo(prj="mt", info=f"Start testing")
     progress_bar = tqdm.tqdm(total=args.max_train_steps, desc="Training Step", disable=not coordinator.is_master())
 
     torch.cuda.synchronize()

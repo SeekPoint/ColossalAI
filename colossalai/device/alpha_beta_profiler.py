@@ -121,9 +121,8 @@ class AlphaBetaProfiler:
             elif self.ctype == "b":
                 bus_band = alg_band
 
-            logger.info(
-                f"GPU:{rank}, Bytes: {nbytes} B,Time: {round(avg_time_s * 1e6,2)} us, Bus bandwidth: {round(bus_band / GB,2)} GB/s"
-            )
+            gd.debuginfo(prj="mt", info=f"GPU:{rank}, Bytes: {nbytes} B,Time: {round(avg_time_s * 1e6,2)} us, Bus bandwidth: {round(bus_band / GB,2)} GB/s")
+
             return (avg_time_s, alg_band)
         else:
             gd.debuginfo(prj="mt", info=f'')

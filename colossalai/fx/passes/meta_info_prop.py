@@ -372,8 +372,8 @@ def metainfo_trace(gm: torch.fx.GraphModule, *args, verbose: bool = False, unit:
         args = tree_map(lambda x: MetaTensor(x, fake_device=device), args)
         kwargs = tree_map(lambda x: MetaTensor(x, fake_device=device), kwargs)
     interp.propagate(*args, **kwargs)
-    if verbose:
-        interp.summary(unit)
+    # if verbose:
+    interp.summary(unit)
     gm.to("cpu")
     del interp
     return gm

@@ -20,14 +20,14 @@ HAS_FLASH_ATTN = False
 # if is_ampere_or_better_gpu():
 #     HAS_FLASH_ATTN = True
 # else:
-#     warnings.warn("FlashAttention only supports Ampere GPUs or newer.")
+#     gd.debuginfo(prj="mt", info=f"FlashAttention only supports Ampere GPUs or newer.")
 #     HAS_FLASH_ATTN = False
 # try:
 #     from flash_attn.flash_attn_interface import flash_attn_func, flash_attn_varlen_func
 #
 #     HAS_FLASH_ATTN = True
 # except ImportError:
-#     warnings.warn("please install flash_attn from https://github.com/HazyResearch/flash-attention")
+#     gd.debuginfo(prj="mt", info=f"please install flash_attn from https://github.com/HazyResearch/flash-attention")
 #     HAS_FLASH_ATTN = False
 
 if HAS_FLASH_ATTN:
