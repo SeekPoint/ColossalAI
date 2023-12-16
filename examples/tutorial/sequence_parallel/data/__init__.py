@@ -41,9 +41,9 @@ def build_train_valid_test_data_iterators(
         test_iters = eval_iters
         train_val_test_num_samples = [train_samples, eval_iters_ * global_batch_size, test_iters * global_batch_size]
         gd.debuginfo(prj="mt", info=f" > datasets target sizes (minimum size):")
-        gd.debuginfo(prj="mt", info=f"    train:      {}".format(train_val_test_num_samples[0]))
-        gd.debuginfo(prj="mt", info=f"    validation: {}".format(train_val_test_num_samples[1]))
-        gd.debuginfo(prj="mt", info=f"    test:       {}".format(train_val_test_num_samples[2]))
+        gd.debuginfo(prj="mt", info=f"    train:      {train_val_test_num_samples[0]}")
+        gd.debuginfo(prj="mt", info=f"    validation: {train_val_test_num_samples[1]}")
+        gd.debuginfo(prj="mt", info=f"    test:       {train_val_test_num_samples[2]}")
 
         # Build the datasets.
         train_ds, valid_ds, test_ds = build_train_valid_test_datasets(
