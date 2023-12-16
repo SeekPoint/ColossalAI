@@ -65,9 +65,9 @@ class LowLevelZeroModel(ModelWrapper, AMPModelMixin):
     def forward(self, *args, **kwargs):
         gd.debuginfo(prj="mt", info=f'')
         if self.convert_fn is not None:
-            gd.debuginfo(prj="mt", info=f'')
             args = tree_map(self.convert_fn, args)
             kwargs = tree_map(self.convert_fn, kwargs)
+            gd.debuginfo(prj="mt", info=f'arg={args}, kwargs={kwargs}')
         return super().forward(*args, **kwargs)
 
 

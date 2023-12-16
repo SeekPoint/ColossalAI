@@ -51,36 +51,54 @@ class SFTTrainer(SLTrainer):
         self.num_eval_step = 0
 
     def _train(self, epoch: int):
+        gd.debuginfo(prj="mt", info=f'')
         self.model.train()
         step_bar = tqdm.trange(
             len(self.train_dataloader) // self.accumulation_steps,
             desc=f"Epoch {epoch + 1}/{self.max_epochs}",
             disable=not is_rank_0(),
         )
-        gd.debuginfo(prj="mt", info=f'')
+
+        gd.debuginfo(prj="mt", info=f'step_bar={step_bar}')
+
         for i, batch in enumerate(self.train_dataloader):
             batch = to_device(batch, torch.cuda.current_device())
+            gd.debuginfo(prj="mt", info=f'batch[{i}]={batch}')
             outputs = self.model(batch["input_ids"], attention_mask=batch["attention_mask"], labels=batch["labels"])
             loss = outputs.loss / self.accumulation_steps
+            gd.debuginfo(prj="mt", info=f'outputs={outputs}')
+            gd.debuginfo(prj="mt", info=f'loss={loss}')
+
             self.total_loss += loss.item()
+            gd.debuginfo(prj="mt", info=f'self.total_loss={self.total_loss}')
+
             self.strategy.backward(loss, self.model, self.optimizer)
+            gd.debuginfo(prj="mt", info=f'')
+
             # gradient accumulation
             if (i + 1) % self.accumulation_steps == 0:
+                gd.debuginfo(prj="mt", info=f'')
                 self.strategy.optimizer_step(self.optimizer)
+                gd.debuginfo(prj="mt", info=f'')
                 self.optimizer.zero_grad()
+                gd.debuginfo(prj="mt", info=f'')
                 self.scheduler.step()
+                gd.debuginfo(prj="mt", info=f'')
                 if self.writer:
                     self.writer.add_scalar("train/loss", self.total_loss, self.num_train_step)
                     self.writer.add_scalar("train/lr", self.scheduler.get_last_lr()[0], self.num_train_step)
                     self.num_train_step += 1
                 self.total_loss = 0
                 step_bar.update()
+        gd.debuginfo(prj="mt", info=f'')
         step_bar.close()
 
     def _eval(self, epoch: int):
         gd.debuginfo(prj="mt", info=f'')
         if self.eval_dataloader is not None:
+            gd.debuginfo(prj="mt", info=f'')
             self.model.eval()
+            gd.debuginfo(prj="mt", info=f'')
             with torch.no_grad():
                 loss_sum, num_seen = 0, 0
                 for batch in self.eval_dataloader:

@@ -87,23 +87,23 @@ class Booster:
 
         # set precision
         if self.plugin and self.plugin.control_precision():
-            gd.debuginfo(prj="mt", info=f'')
             if mixed_precision is not None:
                 warnings.warn("The plugin will control the precision, so the mixed_precision argument will be ignored.")
             self.mixed_precision = None
+            gd.debuginfo(prj="mt", info=f'self.mixed_precision={self.mixed_precision}')
         elif mixed_precision is None:
-            gd.debuginfo(prj="mt", info=f'')
             self.mixed_precision = None
+            gd.debuginfo(prj="mt", info=f'self.mixed_precision={self.mixed_precision}')
         else:
             # validate and set precision
             if isinstance(mixed_precision, str):
-                gd.debuginfo(prj="mt", info=f'')
                 # the user will take the default arguments for amp training
                 self.mixed_precision = mixed_precision_factory(mixed_precision)
+                gd.debuginfo(prj="mt", info=f'self.mixed_precision={self.mixed_precision}')
             elif isinstance(mixed_precision, MixedPrecision):
-                gd.debuginfo(prj="mt", info=f'')
                 # the user can customize the arguments by passing the precision object
                 self.mixed_precision = mixed_precision
+                gd.debuginfo(prj="mt", info=f'self.mixed_precision={self.mixed_precision}')
             else:
                 raise ValueError(
                     f"Expected the argument mixed_precision to be a string or an instance of Precision, but got {type(mixed_precision)}."
@@ -180,6 +180,7 @@ class Booster:
         gd.debuginfo(prj="mt", info=f'')
         # TODO(frank lee): implement this method with plugin
         optimizer.backward(loss)
+        gd.debuginfo(prj="mt", info=f'')
 
     def execute_pipeline(
         self,

@@ -2,7 +2,7 @@ import argparse
 import warnings
 import sys
 sys.path.append('./')
-
+import os
 import torch
 import torch.distributed as dist
 from coati.dataset import PromptDataset, SupervisedDataset
@@ -246,6 +246,16 @@ def main(args):
 
 
 if __name__ == "__main__":
+    gd.debuginfo(prj='mt', info=f'=================') # 不被计入
+
+    gd.prjenable('ALL')  #打开项目flag
+
+    logpath = f'/workspace/yk_repo/ColossalAI/_log_tmps_chat_PROMPTS_/'
+    if not os.path.exists(logpath):
+        os.makedirs(logpath)
+
+    gd.emb_mode(path=logpath, embedded_mode=True)
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--prompt_dataset", type=str, default=None, help="path to the prompt dataset")
     parser.add_argument("--pretrain_dataset", type=str, default=None, help="path to the pretrained dataset")
@@ -280,4 +290,9 @@ if __name__ == "__main__":
     parser.add_argument("--log_dir", default="logs", type=str)
     parser.add_argument("--use_wandb", default=False, action="store_true")
     args = parser.parse_args()
+
+    gd.debuginfo(prj="mt", info=f'args={args}')
+
     main(args)
+
+    gd.emb_mode(embedded_mode=False)

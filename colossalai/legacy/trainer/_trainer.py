@@ -275,7 +275,7 @@ class Trainer:
             hooks (list[BaseHook], optional): A list of hooks used in training.
             display_progress (bool, optional): If True, a progress bar will be displayed.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         # set epochs and steps, consider gradient accumulation
         self._steps_per_epoch = len(train_dataloader)
         self._max_steps = max_steps

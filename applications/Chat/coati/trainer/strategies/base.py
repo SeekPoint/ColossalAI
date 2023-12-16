@@ -37,7 +37,9 @@ class Strategy(ABC):
         pass
 
     def backward(self, loss: torch.Tensor, model: nn.Module, optimizer: Optimizer, **kwargs) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.booster.backward(loss, optimizer)
+        gd.debuginfo(prj="mt", info=f'')
 
     def optimizer_step(self, optimizer: Optimizer, **kwargs) -> None:
         optimizer.step()

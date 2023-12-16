@@ -154,4 +154,17 @@ def main():
 
 
 if __name__ == "__main__":
+    gd.debuginfo(prj='mt', info=f'=================') # 不被计入
+
+    gd.prjenable('ALL')  #打开项目flag
+
+    logpath = f'/workspace/yk_repo/ColossalAI/_log_tmps_OPT_/'
+
+    if not os.path.exists(logpath):
+        os.makedirs(logpath)
+
+    gd.emb_mode(path=logpath, embedded_mode=True)
+
     main()
+
+    gd.emb_mode(embedded_mode=False)

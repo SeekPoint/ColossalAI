@@ -70,10 +70,10 @@ class NVMeOptimizer(torch.optim.Optimizer):
         ):
             self.is_on_nvme[param] = True
             self.offloaded_numel += numel
-            gd.debuginfo(prj="mt", info=f'')
+            gd.debuginfo(prj="mt", info=f'param={infoTensor(param)}')
         else:
             self.is_on_nvme[param] = False
-            gd.debuginfo(prj="mt", info=f'')
+            gd.debuginfo(prj="mt", info=f'param={infoTensor(param)}')
 
     def _setup_prefetch_params(self) -> List[Parameter]:
         gd.debuginfo(prj="mt", info=f'')

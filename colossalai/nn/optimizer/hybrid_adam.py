@@ -99,14 +99,16 @@ class HybridAdam(CPUAdam):
                 loss = closure()
 
         self._pre_step("exp_avg", "exp_avg_sq")
-        for _, group in enumerate(self.param_groups):
+        for pgi, group in enumerate(self.param_groups):
             g_l, p_l, m_l, v_l = [], [], [], []
             group_step = 0
-            for _, p in enumerate(group["params"]):
+            for pi, p in enumerate(group["params"]):
                 if p.grad is None:
                     continue
 
                 state = self.state[p]
+
+                gd.debuginfo(prj="mt", info=f'pgi={pgi},pi={pi}, state={state}')
 
                 target_device = p.device
                 if len(state) == 0:
@@ -143,7 +145,7 @@ class HybridAdam(CPUAdam):
                             bias_correction2,
                             self.adamw_mode,
                         )
-                        gd.debuginfo(prj="mt", info=f'')
+                        gd.debuginfo(prj="mt", info=f'pgi={pgi},pi={pi}')
                     else:
                         self.cpu_adam_op.step(
                             state["step"],
@@ -159,7 +161,7 @@ class HybridAdam(CPUAdam):
                             state["exp_avg_sq"],
                             div_scale,
                         )
-                        gd.debuginfo(prj="mt", info=f'')
+                        gd.debuginfo(prj="mt", info=f'pgi={pgi},pi={pi}')
                     self._post_update(p, "exp_avg", "exp_avg_sq")
 
                 elif target_device.type == "cuda":
@@ -171,7 +173,7 @@ class HybridAdam(CPUAdam):
                     p_l.append(p.data)
                     m_l.append(state["exp_avg"])
                     v_l.append(state["exp_avg_sq"])
-                    gd.debuginfo(prj="mt", info=f'')
+                    gd.debuginfo(prj="mt", info=f'pgi={pgi},pi={pi}')
 
                 else:
                     raise RuntimeError

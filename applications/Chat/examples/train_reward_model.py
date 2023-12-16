@@ -2,7 +2,7 @@ import argparse
 import warnings
 import sys
 sys.path.append('./')
-
+import os
 import torch
 import torch.distributed as dist
 from coati.dataset import HhRlhfDataset, RmStaticDataset
@@ -212,6 +212,16 @@ def train(args):
 
 
 if __name__ == "__main__":
+    gd.debuginfo(prj='mt', info=f'=================') # 不被计入
+
+    gd.prjenable('ALL')  #打开项目flag
+
+    logpath = f'/workspace/yk_repo/ColossalAI/_log_tmps_chat_RM_/'
+    if not os.path.exists(logpath):
+        os.makedirs(logpath)
+
+    gd.emb_mode(path=logpath, embedded_mode=True)
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--strategy", choices=["ddp", "colossalai_gemini", "colossalai_zero2"], default="colossalai_zero2"
@@ -237,4 +247,8 @@ if __name__ == "__main__":
     parser.add_argument("--log_dir", default="logs", type=str)
     parser.add_argument("--use_wandb", default=False, action="store_true")
     args = parser.parse_args()
+    gd.debuginfo(prj="mt", info=f'args={args}')
+
     train(args)
+
+    gd.emb_mode(embedded_mode=False)

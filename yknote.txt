@@ -39,7 +39,7 @@ root@83dccafe7db4:/workspace/yk_repo/ColossalAI/examples/language/gpt/hybridpara
 ---修改若干参数后可以到达
     out, q, k, v, out_padded, softmax_lse, S_dmask, rng_state = flash_attn_cuda.fwd(
 RuntimeError: FlashAttention only supports Ampere GPUs or newer.
-----只能暂时强制屏蔽！
+----只能暂时强制屏蔽FlashAttention！
 
 
 ====================================================================================================
@@ -93,21 +93,30 @@ https://zhuanlan.zhihu.com/p/636605130
 root@83dccafe7db4:/workspace/yk_repo/ColossalAI/applications/Chat# pip install -e .
 
 root@83dccafe7db4:/workspace/yk_repo/ColossalAI/applications/Chat#
-torchrun --standalone --nproc_per_node=3 /workspace/yk_repo/ColossalAI/applications/Chat/examples/train_sft.py --pretrain "/share/hf_model/bloomz-560m/" --model 'bloom' --strategy colossalai_zero2 --save_path Coati-bloom-560m-sft --dataset /share/hf_model/instinwild_ch.json --batch_size 8 --accumulation_steps 8 --lr 2e-5 --max_datasets_size 512 --max_epochs 3
+torchrun --standalone --nproc_per_node=3 /workspace/yk_repo/ColossalAI/applications/Chat/examples/train_sft.py \
+--pretrain "/share/hf_model/bloomz-560m/" --model 'bloom' --strategy colossalai_zero2 --save_path Coati-bloom-560m-sft \
+--dataset /share/hf_model/instinwild_ch.json --batch_size 8 --accumulation_steps 8 --lr 2e-5 --max_datasets_size 512 --max_epochs 3
 passed
 root@83dccafe7db4:/workspace/yk_repo/ColossalAI/applications/Chat#
-torchrun --standalone --nproc_per_node=3 /workspace/yk_repo/ColossalAI/applications/Chat/examples/train_sft.py     --pretrain "/share/hf_model/llama-7b-hf"     --model 'llama'     --strategy colossalai_zero2_cpu     --save_path  /workspace/ColossalAI/Saved/Coati-llama-7b-sft     --dataset /share/hf_model/instinwild_ch.json     --batch_size 1     --accumulation_steps 2     --lr 2e-5     --max_datasets_size 50     --max_epochs 2
+torchrun --standalone --nproc_per_node=3 /workspace/yk_repo/ColossalAI/applications/Chat/examples/train_sft.py --pretrain "/share/hf_model/llama-7b-hf" --model 'llama' --strategy colossalai_zero2_cpu --save_path /workspace/ColossalAI/Saved/Coati-llama-7b-sft --dataset /share/hf_model/instinwild_ch.json --batch_size 1 --accumulation_steps 2 --lr 2e-5 --max_datasets_size 50 --max_epochs 2
 ---OOM
 
 root@83dccafe7db4:/workspace/yk_repo/ColossalAI/applications/Chat#
 torchrun --standalone --nproc_per_node=3 /workspace/yk_repo/ColossalAI/applications/Chat/examples/train_reward_model.py --pretrain Coati-bloom-560m-sft --model 'bloom' --strategy colossalai_zero2 --loss_fn 'log_exp' --save_path Coati-bloom-560m-rw.pt --dataset 'Dahoas/rm-static'
-torchrun --standalone --nproc_per_node=3 /workspace/yk_repo/ColossalAI/applications/Chat/examples/train_reward_model.py --pretrain Coati-bloom-560m-sft --model 'bloom' --strategy colossalai_zero2 --loss_fn 'log_exp' --save_path Coati-bloom-560m-rw.pt --dataset 'Anthropic/hh-rlhf'
+
+torchrun --standalone --nproc_per_node=3 /workspace/yk_repo/ColossalAI/applications/Chat/examples/train_reward_model.py \
+--pretrain Coati-bloom-560m-sft --model 'bloom' --strategy colossalai_zero2 --loss_fn 'log_exp' \
+--save_path Coati-bloom-560m-rw.pt --dataset 'Anthropic/hh-rlhf'
+
 数据集比较大，训练一次很长时间，可以通过
     parser.add_argument("--max_datasets_size", type=int, default=3000)
 缩短训练数据！
 
 root@83dccafe7db4:/workspace/yk_repo/ColossalAI/applications/Chat#
-torchrun --standalone --nproc_per_node=3 /workspace/yk_repo/ColossalAI/applications/Chat/examples/train_prompts.py     --prompt_dataset /share/hf_model/instinwild_ch.json     --pretrain_dataset /share/hf_model/instinwild_ch.json     --strategy colossalai_zero2     --pretrain Coati-bloom-560m-sft     --save_path Coati-bloom-560m-rl     --model 'bloom'     --rm_pretrain Coati-bloom-560m-sft     --rm_path Coati-bloom-560m-rw.pt     --max_datasets_size 500     --num_episodes 1
+torchrun --standalone --nproc_per_node=3 /workspace/yk_repo/ColossalAI/applications/Chat/examples/train_prompts.py \
+--prompt_dataset /share/hf_model/instinwild_ch.json     --pretrain_dataset /share/hf_model/instinwild_ch.json \
+--strategy colossalai_zero2 --pretrain Coati-bloom-560m-sft --save_path Coati-bloom-560m-rl --model 'bloom' \
+--rm_pretrain Coati-bloom-560m-sft --rm_path Coati-bloom-560m-rw.pt --max_datasets_size 500 --num_episodes 1
 
 
 

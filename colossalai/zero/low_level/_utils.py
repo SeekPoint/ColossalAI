@@ -162,7 +162,7 @@ def reduce_tensor_dp_group(
 
 
 def has_inf_or_nan(tensor):
-    gd.debuginfo(prj="mt", info=f'')
+    # gd.debuginfo(prj="mt", info=f'')
     try:
         # if tensor is half, the .float() incurs an additional deep copy, but it's necessary if
         # Pytorch's .sum() creates a one-element tensor of the same type as tensor

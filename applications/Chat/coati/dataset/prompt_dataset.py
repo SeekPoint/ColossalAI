@@ -39,7 +39,8 @@ class PromptDataset(Dataset):
         for k, tensor in tokens.items():
             tmp = tensor.to(torch.cuda.current_device()).unbind()
             self.keyed_prompt[k] = tmp
-            gd.debuginfo(prj="mt", info=f'self.keyed_prompt[{k}]={infoTensor(tmp)}')
+            for i , v in enumerate(tmp):
+                gd.debuginfo(prj="mt", info=f'self.keyed_prompt[{k}][i]={infoTensor(v)}')
 
     def __len__(self):
         return len(self.keyed_prompt["input_ids"])

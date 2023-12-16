@@ -50,6 +50,7 @@ class SLTrainer(ABC):
         raise NotImplementedError()
 
     def fit(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         self._before_fit(*args, **kwargs)
         for epoch in tqdm.trange(self.max_epochs, desc="Epochs", disable=not is_rank_0()):
             self._train(epoch)
