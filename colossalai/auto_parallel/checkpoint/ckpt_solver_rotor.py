@@ -298,7 +298,7 @@ class CheckpointSolverRotor(CheckpointSolverBase):
             import sys
 
             logger = get_dist_logger()
-            gd.debuginfo(prj="mt", info=f"rotorc hasn't been built! Building library...", ranks=[0])
+            gd.debuginfo(prj="mt", info=f"rotorc hasn't been built! Building library...")
             this_dir = os.path.dirname(os.path.abspath(__file__))
             result = subprocess.Popen(
                 [
@@ -311,10 +311,10 @@ class CheckpointSolverRotor(CheckpointSolverBase):
                 stderr=subprocess.PIPE,
             )
             if result.wait() == 0:
-                gd.debuginfo(prj="mt", info=f"rotorc has been built!", ranks=[0])
+                gd.debuginfo(prj="mt", info=f"rotorc has been built!")
                 from .rotorc import compute_table
             else:
-                logger.warning("rotorc built failed! Using python version!", ranks=[0])
+                gd.debuginfo(prj="mt", info=f"rotorc built failed! Using python version!")
                 return CheckpointSolverRotor._compute_table(chain, mmax)
         return compute_table(chain, mmax)
 

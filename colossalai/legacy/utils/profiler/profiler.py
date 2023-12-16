@@ -149,7 +149,7 @@ class profile(torch_profile):
         self.extentions: List[ProfilerExtension] = []
         if profile_stateful_tensor_memory:
             if engine is None:
-                self._logger.warning('Ignore "profile_model_data" since engine is None', ranks=[0])
+                gd.debuginfo(prj="mt", info=f'Ignore "profile_model_data" since engine is None')
             else:
                 self.extentions.append(StatefulTensorMemoryProfilerExtention(engine))
 

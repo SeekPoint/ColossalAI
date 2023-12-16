@@ -348,13 +348,15 @@ class HuggingFaceModel(BaseModel):
             )
 
             if is_rank_0() and debug and i == 0:
-                gd.debuginfo(prj="mt", info=f"Inference arguments for dataset {data[0]['dataset']} category {data[0]['category']} is:\n{inference_kwargs}")
+                gd.debuginfo(prj="mt", info=f"Inference arguments for dataset {data[0]['dataset']} "
+                                            f"category {data[0]['category']} is:"
+                                            f"\n{inference_kwargs}")
                 gd.debuginfo(prj="mt", info=f"-" * 120)
                 gd.debuginfo(prj="mt", info=f"An example prompt and prompt with target is:")
                 gd.debuginfo(prj="mt", info=f"-" * 120)
-                gd.debuginfo(prj="mt", info=f"batch_prompt[0]")
+                gd.debuginfo(prj="mt", info=f"batch_prompt[0]={batch_prompt[0]}")
                 gd.debuginfo(prj="mt", info=f"-" * 120)
-                gd.debuginfo(prj="mt", info=f"batch_prompt[0] + batch_target[0][0])
+                gd.debuginfo(prj="mt", info=f"batch_prompt[0] + batch_target[0][0]={batch_prompt[0] + batch_target[0][0]}")
 
             if not pretrain:
                 batch_decodes, scores = self.generate(batch_prompt, max_new_tokens)

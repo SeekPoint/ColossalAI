@@ -134,14 +134,10 @@ class ShardedOptimizerV2(OptimizerWrapper):
         if self.gpu_margin_mem_ratio != 0.0 and not isinstance(
             sharded_model._tensor_placement_policy, AutoTensorPlacementPolicy
         ):
-            self._logger.warning(
-                f'gpu_margin_mem_ratio is meaningless when tensor_placement_policy is not "auto"', ranks=[0]
-            )
+            gd.debuginfo(prj="mt", info=f'gpu_margin_mem_ratio is meaningless when tensor_placement_policy is not "auto"')
 
-        if self._verbose:
-            self._logger.debug(
-                f"After init ShardedOptimizerV2 consumes {self.get_memory_usage()[0] / 1e6} MB CUDA Memory!", ranks=[0]
-            )
+        # if self._verbose:
+        gd.debuginfo(prj="mt", info=f"After init ShardedOptimizerV2 consumes {self.get_memory_usage()[0] / 1e6} MB CUDA Memory!")
 
         self._use_memory_tracer = self.model.use_memory_tracer
 
@@ -214,7 +210,7 @@ class ShardedOptimizerV2(OptimizerWrapper):
             self.grad_scaler.update(found_inf)
 
             if found_inf:
-                self._logger.warning("found inf during ShardedOptimV2 step")
+                gd.debuginfo(prj="mt", info=f"found inf during ShardedOptimV2 step")
                 self._zero_grad(recover_data=True)
                 return
 
@@ -400,7 +396,7 @@ class ShardedOptimizerV2(OptimizerWrapper):
 
     def load_state_dict(self, *args, **kwargs):
         if "scaler" not in args[0]:
-            self._logger.warning("Missing scaler when loading optimizer state dict", ranks=[0])
+            gd.debuginfo(prj="mt", info=f"Missing scaler when loading optimizer state dict")
         else:
             scaler_state_dict = args[0].pop("scaler")
             self.grad_scaler.load_state_dict(scaler_state_dict)

@@ -15,8 +15,8 @@ from colossalai.testing import free_port
 from pydebug import gd, infoTensor
 
 logger = logging.getLogger(__name__)
-gd.debuginfo(prj="mt", info=f"Transformers version %s", transformers.__version__)
-gd.debuginfo(prj="mt", info=f"ColossalAI version %s", colossalai.__version__)
+gd.debuginfo(prj="mt", info=f"Transformers version {transformers.__version__}")
+gd.debuginfo(prj="mt", info=f"ColossalAI version {colossalai.__version__}")
 
 
 class ColossalInferenceHandler(BaseHandler, ABC):
@@ -80,7 +80,7 @@ class ColossalInferenceHandler(BaseHandler, ABC):
         else:
             logger.warning(f"Model type {self.inference_config['model_type']} not supported yet.")
 
-        gd.debuginfo(prj="mt", info=f"Transformer model from path %s loaded successfully", model_dir)
+        gd.debuginfo(prj="mt", info=f"Transformer model from path {model_dir} loaded successfully")
 
         # NOTE world_size, rank, host, port here are used to launch colossalai dist environment
         # This world_size is different from the world size of TorchServe
@@ -129,7 +129,7 @@ class ColossalInferenceHandler(BaseHandler, ABC):
             if isinstance(input_text, (bytes, bytearray)):
                 input_text = input_text.decode("utf-8")
 
-            gd.debuginfo(prj="mt", info=f"Received text: '%s'", input_text)
+            gd.debuginfo(prj="mt", info=f"Received text: {input_text}")
 
             inputs = self.tokenizer.encode_plus(
                 input_text,

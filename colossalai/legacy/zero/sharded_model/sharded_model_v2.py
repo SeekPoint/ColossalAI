@@ -210,7 +210,7 @@ class ShardedModelV2(nn.Module):
             exit(0)
         """
         if self._use_memory_tracer:
-            gd.debuginfo(prj="mt", info=f"dump memory tracer collected information to a {filename}", ranks=[0])
+            gd.debuginfo(prj="mt", info=f"dump memory tracer collected information to a {filename}")
             if gpc.get_global_rank() == 0:
                 with open(filename, "w+") as f:
                     f.write(f"cuda reserved {torch.cuda.memory_reserved(get_current_device()) / 1e9} GB\n")

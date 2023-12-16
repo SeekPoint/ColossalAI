@@ -629,7 +629,7 @@ def main():
                 completed_steps += 1
 
             global_step += 1
-            gd.debuginfo(prj="mt", info=f"Global step {} finished".format(global_step + 1))
+            gd.debuginfo(prj="mt", info=f"Global step {global_step + 1} finished")
 
             if completed_steps >= args.max_train_steps:
                 break

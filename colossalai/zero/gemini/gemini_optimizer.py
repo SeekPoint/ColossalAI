@@ -174,7 +174,7 @@ class GeminiOptimizer(OptimizerWrapper):
             and getattr(optim, "num_fp32_shards_per_param", 0) >= 2
         )
         if self.gpu_margin_mem_ratio > 0.0 and not self.gemini_manager.is_cuda_margin_mem_avail:
-            self._logger.warning(f'gpu_margin_mem_ratio is meaningless when placement_policy is not "auto"')
+            gd.debuginfo(prj="mt", info=f'gpu_margin_mem_ratio is meaningless when placement_policy is not "auto"')
 
         self._register_states = disposable(self._register_states_)
 

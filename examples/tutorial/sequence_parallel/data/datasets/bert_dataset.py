@@ -149,7 +149,7 @@ def get_samples_mapping_(
         # Build samples mapping
         verbose = torch.distributed.get_rank() == 0
         start_time = time.time()
-        gd.debuginfo(prj="mt", info=f"\n > building samples index mapping for {} ...".format(name))
+        gd.debuginfo(prj="mt", info=f"\n > building samples index mapping for {name} ...")
         # First compile and then import.
         samples_mapping = helpers.build_mapping(
             indexed_dataset.doc_idx,
@@ -164,7 +164,7 @@ def get_samples_mapping_(
         )
         gd.debuginfo(prj="mt", info=f"\n > done building samples index maping")
         np.save(indexmap_filename, samples_mapping, allow_pickle=True)
-        gd.debuginfo(prj="mt", info=f"\n > saved the index mapping in {}".format(indexmap_filename))
+        gd.debuginfo(prj="mt", info=f"\n > saved the index mapping in {indexmap_filename}")
         # Make sure all the ranks have built the mapping
         gd.debuginfo(prj="mt", info=f"\n > elapsed time to build and save samples mapping (seconds): {(time.time() - start_time):4f}")
     # This should be a barrier but nccl barrier assumes

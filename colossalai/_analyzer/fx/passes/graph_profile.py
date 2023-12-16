@@ -364,5 +364,5 @@ def graph_profile_pass(module: GraphModule, *args, verbose=False) -> GraphModule
         profiler.propagate(*args, device=_current_device(module))
 
     # if verbose:
-    gd.debuginfo(prj="mt", info=f"{profiler.summary()})
+    gd.debuginfo(prj="mt", info=f"profiler.summary()=\n{profiler.summary()}")
     return module

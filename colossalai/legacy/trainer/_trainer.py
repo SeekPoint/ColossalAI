@@ -299,13 +299,10 @@ class Trainer:
             hooks = []
         self.hooks = hooks
         self.hooks.sort(key=lambda hook: hook.priority)
-        if self._verbose:
-            for hook in self.hooks:
-                self._logger.info(
-                    f"Using {hook.__class__.__name__} for training, priority = {hook.priority}",
-                    ranks=[0],
-                )
-            self._gd.debuginfo(prj="mt", info=f"Lower value means higher priority for calling hook function", ranks=[0])
+        #if self._verbose:
+        for hook in self.hooks:
+            gd.debuginfo(prj="mt", info=f"Using {hook.__class__.__name__} for training, priority = {hook.priority}")
+        gd.debuginfo(prj="mt", info=f"Lower value means higher priority for calling hook function")
         self._call_hooks("after_hook_is_attached")
 
         self._engine.train()
@@ -373,13 +370,10 @@ class Trainer:
             hooks = []
         self.hooks = hooks
         self.hooks.sort(key=lambda hook: hook.priority)
-        if self._verbose:
-            for hook in self.hooks:
-                self._logger.info(
-                    f"Using {hook.__class__.__name__} for training, priority = {hook.priority}",
-                    ranks=[0],
-                )
-            self._gd.debuginfo(prj="mt", info=f"Lower value means higher priority for calling hook function", ranks=[0])
+        # if self._verbose:
+        for hook in self.hooks:
+            gd.debuginfo(prj="mt", info=f"Using {hook.__class__.__name__} for training, priority = {hook.priority}")
+        gd.debuginfo(prj="mt", info=f"Lower value means higher priority for calling hook function")
         self._call_hooks("after_hook_is_attached")
 
         # eval
