@@ -10,7 +10,7 @@ ALLGATHER_COST = 20
 SHARD_COST = 5
 STEP_PENALTY = 6
 NAN = "nan"
-
+from pydebug import gd, infoTensor
 
 class DimSpec:
     """

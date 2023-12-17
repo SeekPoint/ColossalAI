@@ -6,7 +6,7 @@ from data import NetflixDataset, netflix_collator
 from tqdm import tqdm
 from transformers import AutoConfig, AutoTokenizer, OPTForCausalLM, get_linear_schedule_with_warmup
 from transformers.utils.versions import require_version
-
+import os
 import colossalai
 from colossalai.booster import Booster
 from colossalai.booster.plugin import GeminiPlugin, HybridParallelPlugin, LowLevelZeroPlugin, TorchDDPPlugin

@@ -1,8 +1,8 @@
 import torch
-
+# from pydebug import gd, infoTensor
 
 def bias_dropout_add(x, bias, residual, prob, training):
-    gd.debuginfo(prj="mt", info=f'')
+    # gd.debuginfo(prj="mt", info=f'') 不能用在这里！！！
     # type: (Tensor, Tensor, Tensor, float, bool) -> Tensor
     out = torch.nn.functional.dropout(x + bias, p=prob, training=training)
     out = residual + out

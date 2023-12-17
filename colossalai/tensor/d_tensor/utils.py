@@ -4,7 +4,7 @@ from typing import Dict
 
 from colossalai.tensor.d_tensor.comm_spec import CollectiveCommPattern, CommSpec
 from colossalai.tensor.d_tensor.layout import Layout
-
+from pydebug import gd, infoTensor
 
 def get_comm_cost(layout: Layout, comm_spec: CommSpec, forward_only: bool = False) -> Dict[str, float]:
     """
