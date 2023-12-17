@@ -80,7 +80,7 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
     ):
         super(LowLevelZeroOptimizer, self).__init__(optim=optimizer)
         self._dtype = self.optim.param_groups[0]["params"][0].dtype
-        self._logger = get_dist_logger()
+        # self._logger = get_dist_logger()
         self._verbose = verbose
 
         # stage 2
@@ -399,8 +399,8 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
 
         if self.mixed_precision_mixin is not None and self.mixed_precision_mixin.should_skip_step():
             self._grad_store.reset_all_gradients()
-            if self._verbose:
-                self._logger.info(f"Found overflow. Skip step")
+            #if self._verbose:
+            gd.debuginfo(prj="mt", info=f"Found overflow. Skip step")
             self.zero_grad()
             return
 

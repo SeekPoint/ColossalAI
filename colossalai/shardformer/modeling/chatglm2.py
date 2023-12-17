@@ -158,22 +158,25 @@ class ChatGLMPipelineForwards:
         stage_index: Optional[List[int]] = None,
         shard_config: ShardConfig = None,
     ):
-        gd.debuginfo(prj="mt", info=f'')
-        logger = logging.get_logger(__name__)
+        # logger = logging.get_logger(__name__)
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
+        gd.debuginfo(prj="mt", info=f'output_hidden_states={output_hidden_states}')
+
         use_cache = use_cache if use_cache is not None else self.config.use_cache
+        gd.debuginfo(prj="mt", info=f'use_cache={use_cache}')
+
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
         # TODO(jianghai): left the recording kv-value tensors as () or None type, this feature may be added in the future.
         if past_key_values:
-            logger.warning_once("Non-empty past_key_values is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"Non-empty past_key_values is not supported for pipeline models at the moment.")
             past_key_values = None
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
         if use_cache:
-            logger.warning_once("use_cache=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"use_cache=True is not supported for pipeline models at the moment.")
             use_cache = False
         if stage_manager.is_first_stage():
 
@@ -224,11 +227,9 @@ class ChatGLMPipelineForwards:
         presents = () if use_cache else None
         if self.encoder.gradient_checkpointing and self.encoder.training:
             if use_cache:
-                logger.warning_once(
-                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
-                )
+                gd.debuginfo(prj="mt", info=f"`use_cache=True` is incompatible with gradient checkpointing. "
+                                            f"Setting `use_cache=False`...")
                 use_cache = False
-                gd.debuginfo(prj="mt", info=f'')
 
         all_self_attentions = None
         all_hidden_states = () if output_hidden_states else None

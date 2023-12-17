@@ -165,7 +165,7 @@ class FP16Optimizer(Optimizer):
         self._optimizer.load_state_dict(self._optimizer.state_dict())
 
         # log config
-        self._logger = get_dist_logger()
+        # self._logger = get_dist_logger()
         # if verbose:
         gd.debuginfo(prj="mt", info=f"\n=========  FP16 Optimizer Config =========\n"
                 f"Optimizer: {optimizer.__class__.__name__}\n"

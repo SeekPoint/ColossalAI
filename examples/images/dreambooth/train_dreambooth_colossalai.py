@@ -27,7 +27,7 @@ from colossalai.nn.optimizer import HybridAdam
 from colossalai.utils import get_current_device
 
 disable_existing_loggers()
-logger = get_dist_logger()
+# logger = get_dist_logger()
 
 
 def import_model_class_from_model_name_or_path(pretrained_model_name_or_path: str):

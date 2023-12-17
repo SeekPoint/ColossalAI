@@ -96,8 +96,8 @@ class CheckpointSolverRotor(CheckpointSolverBase):
             self._annotate_from_sequence(self.sequence, self.node_list)
         except ValueError as e:
             # using logger to annonce that the solver is failed
-            logger = get_dist_logger()
-            logger.warning(f"Checkpoint solver failed: {e}")
+            # logger = get_dist_logger()
+            gd.debuginfo(prj="mt", info=f"Checkpoint solver failed: {e}")
             raise ValueError
 
         # if verbose:
@@ -297,7 +297,7 @@ class CheckpointSolverRotor(CheckpointSolverBase):
             import subprocess
             import sys
 
-            logger = get_dist_logger()
+            # logger = get_dist_logger()
             gd.debuginfo(prj="mt", info=f"rotorc hasn't been built! Building library...")
             this_dir = os.path.dirname(os.path.abspath(__file__))
             result = subprocess.Popen(

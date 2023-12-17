@@ -76,10 +76,10 @@ def ViTModel_pipeline_forward(stage_manager: PipelineStageManager, stage_index: 
 
         # Preprocess passed in arguments
         if output_attentions:
-            logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
 
         # Prepare head mask if needed

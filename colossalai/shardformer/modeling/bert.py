@@ -126,13 +126,13 @@ class BertPipelineForwards:
 
         # TODO(jianghai): left the recording kv-value tensors as () or None type, this feature may be added in the future.
         if output_attentions:
-            logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
         if use_cache:
-            logger.warning_once("use_cache=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"use_cache=True is not supported for pipeline models at the moment.")
             use_cache = False
 
         # past_key_values_length
@@ -187,9 +187,8 @@ class BertPipelineForwards:
         if self.encoder.gradient_checkpointing and self.encoder.training:
             gd.debuginfo(prj="mt", info=f'')
             if use_cache:
-                logger.warning_once(
-                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
-                )
+                gd.debuginfo(prj="mt", info=f"`use_cache=True` is incompatible with gradient checkpointing. "
+                                            f"Setting `use_cache=False`...")
                 use_cache = False
                 gd.debuginfo(prj="mt", info=f'')
         next_decoder_cache = () if use_cache else None
@@ -330,10 +329,10 @@ class BertPipelineForwards:
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
         # TODO(jianghai) left the recording kv-value tensors as () or None type, this feature may be added in the future.
         if output_attentions:
-            logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
 
         outputs = BertPipelineForwards.bert_model_forward(
@@ -442,10 +441,10 @@ class BertPipelineForwards:
             gd.debuginfo(prj="mt", info=f'')
 
         if output_attentions:
-            logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
 
         outputs = BertPipelineForwards.bert_model_forward(
@@ -530,16 +529,16 @@ class BertPipelineForwards:
             config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are ignored (masked), the
             loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`
         """
-        logger = logging.get_logger(__name__)
+        # logger = logging.get_logger(__name__)
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'return_dict={return_dict}')
 
         if output_attentions:
-            logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
 
         outputs = BertPipelineForwards.bert_model_forward(
@@ -636,24 +635,21 @@ class BertPipelineForwards:
         >>> assert logits[0, 0] < logits[0, 1]  # next sentence was random
         ```
         """
-        logger = logging.get_logger(__name__)
+        # logger = logging.get_logger(__name__)
         gd.debuginfo(prj="mt", info=f'')
 
         if "next_sentence_label" in kwargs:
-            gd.debuginfo(prj="mt", info=
-                "The `next_sentence_label` argument is deprecated and will be removed in a future version, use"
-                " `labels` instead.",
-                FutureWarning,
-            )
+            gd.debuginfo(prj="mt", info=f"The `next_sentence_label` argument is "
+                                        f"deprecated and will be removed in a future version, use`labels` instead.")
             labels = kwargs.pop("next_sentence_label")
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         if output_attentions:
-            logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
 
         outputs = BertPipelineForwards.bert_model_forward(
@@ -732,10 +728,10 @@ class BertPipelineForwards:
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         if output_attentions:
-            logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
 
         outputs = BertPipelineForwards.bert_model_forward(
@@ -835,10 +831,10 @@ class BertPipelineForwards:
         gd.debuginfo(prj="mt", info=f'')
 
         if output_attentions:
-            logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
 
         outputs = BertPipelineForwards.bert_model_forward(
@@ -917,10 +913,10 @@ class BertPipelineForwards:
         gd.debuginfo(prj="mt", info=f'')
 
         if output_attentions:
-            logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
 
         # in our pipeline design,input ids are copied for every stage and shouldn't be none
@@ -1021,10 +1017,10 @@ class BertPipelineForwards:
         gd.debuginfo(prj="mt", info=f'')
 
         if output_attentions:
-            logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
 
         outputs = BertPipelineForwards.bert_model_forward(

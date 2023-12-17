@@ -47,7 +47,7 @@ def main():
     colossalai.launch_from_torch(config=args.config)
 
     # get logger
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
     gd.debuginfo(prj="mt", info=f"initialized distributed environment")
 
     if hasattr(gpc.config, "LOG_PATH"):

@@ -176,7 +176,7 @@ class PerformanceEvaluator(Callback):
         make_experience_time_per_sample = divide(avg_make_experience_duration, num_effective_samples)
         learn_time_per_sample = divide(avg_learn_duration, num_effective_samples)
 
-        print_rank_0(
+        gd.debuginfo(prj="mt", info=
             f"Performance summary:\n"
             + f"Generate {self.make_experience_num_samples * self.world_size} samples, throughput: {avg_make_experience_throughput:.2f} samples/s, TFLOPS per GPU: {avg_make_experience_tflops:.2f}\n"
             + f"Train {self.learn_num_samples * self.world_size} samples, throughput: {avg_learn_throughput:.2f} samples/s, TFLOPS per GPU: {avg_learn_tflops:.2f}\n"

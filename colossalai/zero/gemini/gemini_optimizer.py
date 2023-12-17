@@ -161,7 +161,7 @@ class GeminiOptimizer(OptimizerWrapper):
         else:
             raise RuntimeError(f"Unsupported mixed precision type: {module.mixed_precision}")
 
-        self._logger = get_dist_logger()
+        # self._logger = get_dist_logger()
 
         self.gpu_margin_mem_ratio: float = float(gpu_margin_mem_ratio)
         assert 0.0 <= self.gpu_margin_mem_ratio <= 1.0, f"gpu_margin_mem_ratio must >=0.0 and <=1.0"
@@ -265,9 +265,8 @@ class GeminiOptimizer(OptimizerWrapper):
         self._set_grad_ptr()
 
         if self.mix_precision_mixin.should_skip_step():
-            gd.debuginfo(prj="mt", info=f'')
-            if self.verbose:
-                self._logger.info(f"Found overflow. Skip step")
+            #if self.verbose:
+            gd.debuginfo(prj="mt", info=f"Found overflow. Skip step")
             self._clear_global_norm()  # clear recorded norm
             self.zero_grad()  # reset all gradients
             if self.module.reuse_fp16_chunk:

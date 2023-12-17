@@ -218,18 +218,12 @@ class ShardedOptimizerV2(OptimizerWrapper):
 
         if self._verbose:
             gpu_mem, cpu_mem = self.get_memory_usage()
-            self._logger.debug(
-                f"Before step ShardedOptimizerV2 consumes {gpu_mem / 1e6} MB CUDA Memory, {cpu_mem / 1e6} MB CUDA Memory!",
-                ranks=[0],
-            )
+            gd.debuginfo(prj="mt", info=f"Before step ShardedOptimizerV2 consumes {gpu_mem / 1e6} MB CUDA Memory, {cpu_mem / 1e6} MB CUDA Memory!")
         ret = self.optim.step(*args, **kwargs)
 
         if self._verbose:
             gpu_mem, cpu_mem = self.get_memory_usage()
-            self._logger.debug(
-                f"After step ShardedOptimizerV2 consumes {gpu_mem / 1e6} MB CUDA Memory, {cpu_mem / 1e6} MB CUDA Memory!",
-                ranks=[0],
-            )
+            gd.debuginfo(prj="mt", info=f"After step ShardedOptimizerV2 consumes {gpu_mem / 1e6} MB CUDA Memory, {cpu_mem / 1e6} MB CUDA Memory!")
 
         self._copy_master_model_to_model_fp16()
         return ret

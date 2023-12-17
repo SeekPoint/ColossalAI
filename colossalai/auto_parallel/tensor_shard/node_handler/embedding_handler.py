@@ -42,7 +42,7 @@ def _convert_logical_sharding_to_physical_sharding_spec_for_embedding(
     last_physical_output_dims = output_op_data.data.dim() - 1
 
     # get logger for debug message
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
 
     # For the input of the embedding operation, it can be multi-dimensional. The sharding spec is only generated for
     # logical 1D non-matrix dimension, the logical non-matrix dimension can belong to the 0th to Nth dimension of the
@@ -82,9 +82,8 @@ def _convert_logical_sharding_to_physical_sharding_spec_for_embedding(
                 sharding_strategies.append(strategy_copy)
 
             except ShardingNotDivisibleError as e:
-                logger.debug(
-                    f"Errored occurred when converting the logical sharding spec to the physical one. Error details: {e}"
-                )
+                gd.debuginfo(prj="mt", info=f"Errored occurred when converting the logical sharding spec to the physical one. "
+                                            f"Error details: {e}")
     else:
         gd.debuginfo(prj="mt", info=f'')
         # the generated sharding strategy does not shard the non-matrix dimension,

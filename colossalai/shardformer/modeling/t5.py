@@ -48,29 +48,28 @@ class T5PipelineForwards:
         # Please refer to original code of transformers for more details.
         gd.debuginfo(prj="mt", info=f'')
 
-        logger = logging.get_logger(__name__)
+        # logger = logging.get_logger(__name__)
 
         # TODO(baizhou): left the recording kv-value tensors as () or None type, this feature may be added in the future.
         if past_key_values:
-            logger.warning_once("Non-empty past_key_values is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"Non-empty past_key_values is not supported for pipeline models at the moment.")
             past_key_values = None
         if output_attentions:
-            logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
         if use_cache:
-            logger.warning_once("use_cache=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"use_cache=True is not supported for pipeline models at the moment.")
             use_cache = False
         if use_cache is True:
             if not in_decoder:
                 raise ValueError(f"`use_cache` can only be set to `True` if {self} is used as a decoder")
         if self.gradient_checkpointing and self.training:
             if use_cache:
-                logger.warning_once(
-                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
-                )
+                gd.debuginfo(prj="mt", info=f"`use_cache=True` is incompatible with gradient checkpointing. "
+                                            f"Setting `use_cache=False`...")
                 use_cache = False
 
         stage = stage_manager.stage
@@ -311,23 +310,23 @@ class T5PipelineForwards:
 
         # TODO(baizhou): left the recording kv-value tensors as () or None type, this feature may be added in the future.
         if past_key_values:
-            logger.warning_once("Non-empty past_key_values is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"Non-empty past_key_values is not supported for pipeline models at the moment.")
             past_key_values = None
         if output_attentions:
-            logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
         if use_cache:
-            logger.warning_once("use_cache=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"use_cache=True is not supported for pipeline models at the moment.")
             use_cache = False
 
         # FutureWarning: head_mask was separated into two input args - head_mask, decoder_head_mask
         if head_mask is not None and decoder_head_mask is None:
             gd.debuginfo(prj="mt", info=f'')
             if self.config.num_layers == self.config.num_decoder_layers:
-                gd.debuginfo(prj="mt", info=__HEAD_MASK_WARNING_MSG, FutureWarning)
+                gd.debuginfo(prj="mt", info=f"{__HEAD_MASK_WARNING_MSG}")
                 decoder_head_mask = head_mask
 
         in_decoder = stage_manager.stage >= decoder_starting_stage
@@ -459,23 +458,23 @@ class T5PipelineForwards:
 
         # TODO(baizhou): left the recording kv-value tensors as () or None type, this feature may be added in the future.
         if past_key_values:
-            logger.warning_once("Non-empty past_key_values is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"Non-empty past_key_values is not supported for pipeline models at the moment.")
             past_key_values = None
         if output_attentions:
-            logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
         if use_cache:
-            logger.warning_once("use_cache=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"use_cache=True is not supported for pipeline models at the moment.")
             use_cache = False
 
         # FutureWarning: head_mask was separated into two input args - head_mask, decoder_head_mask
         if head_mask is not None and decoder_head_mask is None:
             gd.debuginfo(prj="mt", info=f'')
             if self.config.num_layers == self.config.num_decoder_layers:
-                gd.debuginfo(prj="mt", info=__HEAD_MASK_WARNING_MSG, FutureWarning)
+                gd.debuginfo(prj="mt", info=f"{__HEAD_MASK_WARNING_MSG}")
                 decoder_head_mask = head_mask
 
         in_decoder = stage_manager.stage >= decoder_starting_stage

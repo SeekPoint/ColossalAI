@@ -86,11 +86,8 @@ class BloomInferenceForwards:
         gd.debuginfo(prj="mt", info=f'')
         if deprecated_arguments.pop("position_ids", False) is not False:
             # `position_ids` could have been `torch.Tensor` or `None` so defaulting pop to `False` allows to detect if users were passing explicitly `None`
-            gd.debuginfo(prj="mt", info=
-                "`position_ids` have no functionality in BLOOM and will be removed in v5.0.0. You can safely ignore"
-                " passing `position_ids`.",
-                FutureWarning,
-            )
+            gd.debuginfo(prj="mt", info=f"`position_ids` have no functionality in BLOOM and will be removed in v5.0.0. "
+                                        f"You can safely ignore passing `position_ids`.")
         if len(deprecated_arguments) > 0:
             raise ValueError(f"Got unexpected arguments: {deprecated_arguments}")
 
@@ -135,9 +132,8 @@ class BloomInferenceForwards:
 
         if self.gradient_checkpointing and self.training:
             if use_cache:
-                logger.warning_once(
-                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
-                )
+                gd.debuginfo(prj="mt", info=f"`use_cache=True` is incompatible with gradient checkpointing. "
+                                            f"Setting `use_cache=False`...")
                 use_cache = False
 
         # NOTE determine if BatchInferState is passed in via arg
@@ -310,11 +306,8 @@ class BloomInferenceForwards:
 
         if deprecated_arguments.pop("position_ids", False) is not False:
             # `position_ids` could have been `torch.Tensor` or `None` so defaulting pop to `False` allows to detect if users were passing explicitly `None`
-            gd.debuginfo(prj="mt", info=
-                "`position_ids` have no functionality in BLOOM and will be removed in v5.0.0. You can safely ignore"
-                " passing `position_ids`.",
-                FutureWarning,
-            )
+            gd.debuginfo(prj="mt", info=f"`position_ids` have no functionality in BLOOM and will be removed in v5.0.0. "
+                                        f"You can safely ignore passing `position_ids`.")
         if len(deprecated_arguments) > 0:
             raise ValueError(f"Got unexpected arguments: {deprecated_arguments}")
 

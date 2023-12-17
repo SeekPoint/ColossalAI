@@ -111,5 +111,5 @@ def log_args(logger, args):
     message = "\n".join([f"{k:<30}: {v}" for k, v in vars(args).items()])
     message += "\n"
     message += "\n".join([f"{k:<30}: {v}" for k, v in gpc.config.items()])
-    logger.info(message)
+    gd.debuginfo(prj="mt", info=f"{message}")
     gd.debuginfo(prj="mt", info=f"--------args----------\n")

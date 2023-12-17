@@ -24,18 +24,19 @@ except:
 
 
 def print_rank_0(msg: str, logger=None):
-    """Print messages and save logs(optional). This is executed only if you are the rank-0 gpu.
-
-    Args:
-        msg (str): A string message to output.
-        logger (:class:`colossalai.logging.DistributedLogger`, optional):
-            The logger to record the message, defaults to None.
-    """
-    if gpc.get_global_rank() == 0:
-        if logger is None:
-            print(msg, flush=True)
-        else:
-            logger.info(msg)
+    pass
+#     """Print messages and save logs(optional). This is executed only if you are the rank-0 gpu.
+#
+#     Args:
+#         msg (str): A string message to output.
+#         logger (:class:`colossalai.logging.DistributedLogger`, optional):
+#             The logger to record the message, defaults to None.
+#     """
+#     if gpc.get_global_rank() == 0:
+#         if logger is None:
+#             print(msg, flush=True)
+#         else:
+#             logger.info(msg)
 
 
 def sync_model_param(model, parallel_mode):

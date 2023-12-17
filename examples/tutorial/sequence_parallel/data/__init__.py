@@ -20,7 +20,7 @@ def build_train_valid_test_data_iterators(
 ):
     (train_dataloader, valid_dataloader, test_dataloader) = (None, None, None)
 
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
     gd.debuginfo(prj="mt", info=f"> building train, validation, and test datasets ...")
 
     # Backward compatibility, assume fixed batch size.

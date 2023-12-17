@@ -83,7 +83,7 @@ def _convert_logical_sharding_to_physical_sharding_spec_for_linear(
         gd.debuginfo(prj="mt", info=f'')
 
     # get logger for debug message
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
 
     # for the input of the linear operation, it can be multi-dimensional. The sharding spec generated is only
     # 2D, where the first dimension is non-matrix dimension and the last dimension is the matrix dimension.
@@ -122,9 +122,8 @@ def _convert_logical_sharding_to_physical_sharding_spec_for_linear(
                 strategy_copy.name = f"{strategy.name}_{i}"
                 sharding_strategies.append(strategy_copy)
             except ShardingNotDivisibleError as e:
-                logger.debug(
-                    f"Errored occurred when converting the logical sharding spec to the physical one. Error details: {e}"
-                )
+                gd.debuginfo(prj="mt", info=f"Errored occurred when converting the logical sharding spec to the physical one. "
+                                            f"Error details: {e}")
     else:
         gd.debuginfo(prj="mt", info=f'')
         # the generated sharding strategy does not shard the non-matrix dimension,

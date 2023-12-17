@@ -273,7 +273,7 @@ def initialize(
     """
     gd.debuginfo(prj="mt", info=f'')
     # get logger
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
     gpc.verbose = verbose
 
     # get config from gpc
@@ -318,7 +318,7 @@ def initialize(
         # optimizer maybe a optimizer_cls
         if isinstance(optimizer, Callable):
             optimizer = optimizer(model.parameters())
-            logger.warning("Initializing an non ZeRO model with optimizer class")
+            gd.debuginfo(prj="mt", info=f"Initializing an non ZeRO model with optimizer class")
 
     if not use_zero:
         if is_using_sequence():
@@ -328,11 +328,8 @@ def initialize(
         elif is_using_ddp():
             sync_model_param(model, ParallelMode.DATA)
     else:
-        logger.warning(
-            "The parameters of models is not automatically synchronized.\n"
-            "Please make sure that all parameters are the same in data parallel group.",
-            ranks=[0],
-        )
+        gd.debuginfo(prj="mt", info=f"The parameters of models is not automatically synchronized.\n"
+                                    f"Please make sure that all parameters are the same in data parallel group.")
 
     # check amp and zero
     fp16_cfg = gpc.config.get("fp16", None)
@@ -452,11 +449,8 @@ def initialize(
     if gradient_handler_cfg is None:
         gradient_handlers = None
         if verbose and not isinstance(model, DDP):
-            logger.warning(
-                "No PyTorch DDP or gradient handler is set up, please make sure you do not need "
-                "to all-reduce the gradients after a training step.",
-                ranks=[0],
-            )
+            gd.debuginfo(prj="mt", info=f"No PyTorch DDP or gradient handler is set up, "
+                                        f"please make sure you do not need to all-reduce the gradients after a training step.")
     else:
         gradient_handlers = [build_gradient_handler(cfg, model, optimizer) for cfg in gradient_handler_cfg]
 

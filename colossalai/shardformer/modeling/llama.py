@@ -74,13 +74,13 @@ class LlamaPipelineForwards:
 
         # TODO(jianghai): left the recording kv-value tensors as () or None type, this feature may be added in the future.
         if output_attentions:
-            logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
         if use_cache:
-            logger.warning_once("use_cache=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"use_cache=True is not supported for pipeline models at the moment.")
             use_cache = False
 
         if past_key_values is not None:
@@ -107,9 +107,8 @@ class LlamaPipelineForwards:
 
         if self.gradient_checkpointing and self.training:
             if use_cache:
-                logger.warning_once(
-                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
-                )
+                gd.debuginfo(prj="mt", info=f"`use_cache=True` is incompatible with gradient checkpointing. "
+                                            f"Setting `use_cache=False`...")
                 use_cache = False
 
         # decoder layers
@@ -233,10 +232,10 @@ class LlamaPipelineForwards:
 
         # TODO(jianghai): left the recording kv-value tensors as () or None type, this feature may be added in the future.
         if output_attentions:
-            logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
@@ -314,15 +313,15 @@ class LlamaPipelineForwards:
             config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
             `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
         """
-        logger = logging.get_logger(__name__)
+        # logger = logging.get_logger(__name__)
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
         # TODO(jianghai): left the recording kv-value tensors as () or None type, this feature may be added in the future.
         if output_attentions:
-            logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
 
         transformer_outputs = LlamaPipelineForwards.llama_model_forward(

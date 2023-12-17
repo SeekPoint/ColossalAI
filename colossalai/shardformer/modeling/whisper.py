@@ -549,9 +549,8 @@ class WhisperPipelineForwards:
 
             if self.gradient_checkpointing and self.training:
                 if use_cache:
-                    logger.warning_once(
-                        "`use_cache = True` is incompatible with gradient checkpointing. Setting `use_cache = False`..."
-                    )
+                    gd.debuginfo(prj="mt", info=f"`use_cache = True` is incompatible with gradient checkpointing. "
+                                                f"Setting `use_cache = False`...")
                     use_cache = False
 
         else:
@@ -700,16 +699,16 @@ class WhisperPipelineForwards:
          ```"""
         # TODO: left the recording kv-value tensors as () or None type, this feature may be added in the future.
         if past_key_values:
-            logger.warning_once("Non-empty past_key_values is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"Non-empty past_key_values is not supported for pipeline models at the moment.")
             past_key_values = None
         if output_attentions:
-            logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
         if use_cache:
-            logger.warning_once("use_cache=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"use_cache=True is not supported for pipeline models at the moment.")
             use_cache = False
 
         logging.get_logger(__name__)

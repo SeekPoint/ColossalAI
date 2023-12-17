@@ -17,7 +17,7 @@ from colossalai.logging import get_dist_logger
 from pydebug import gd, infoTensor
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
-logger = get_dist_logger()
+# logger = get_dist_logger()
 
 
 def expand_vocab_tokenizer(
@@ -29,7 +29,7 @@ def expand_vocab_tokenizer(
         raise RuntimeError(f"Find existed directory {target_tokenizer_dir}")
 
     source_tokenizer = LlamaTokenizer.from_pretrained(source_tokenizer_dir)
-    logger.info(source_tokenizer)
+    gd.debuginfo(prj="mt", info=f'{source_tokenizer}')
     source_sp_processor = source_tokenizer.sp_model
     source_spm = sp_pb2_model.ModelProto()
     source_spm.ParseFromString(source_sp_processor.serialized_model_proto())

@@ -6,7 +6,7 @@ from colossalai.logging import get_dist_logger
 
 NON_COMPUTE_OP = ["placeholder", "get_attr", "output"]
 NON_COMPUTE_NAME = ["getattr", "eq", "_assert_is_none", "_assert", "finfo", "size"]
-logger = get_dist_logger()
+# logger = get_dist_logger()
 
 
 class NodeMgr(object):

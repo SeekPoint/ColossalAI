@@ -42,7 +42,7 @@ class ColossalInferenceHandler(BaseHandler, ABC):
             pertaining to the model artefacts parameters.
         """
         if ctx is not None or not hasattr(ctx, "model_yaml_config"):
-            logger.error("Context ctx and model-config are not appropriately passed in.")
+            gd.debuginfo(prj='mt', info=f"Context ctx and model-config are not appropriately passed in.")
 
         self.manifest = ctx.manifest
         gpu_id = ctx.system_properties.get("gpu_id", -1)
@@ -51,7 +51,7 @@ class ColossalInferenceHandler(BaseHandler, ABC):
         # Inference configs are collected together in model yaml config for handler use
         inference_config = ctx.model_yaml_config["handler"]
         self.inference_config = inference_config
-        logger.info(self.inference_config)
+        gd.debuginfo(prj='mt', info=f"{self.inference_config}")
 
         self.tp_size = self.inference_config.get("tp_size", 1)
         self.max_batch_size = self.inference_config.get("max_batch_size", 4)
@@ -91,9 +91,11 @@ class ColossalInferenceHandler(BaseHandler, ABC):
         host = os.getenv("MASTER_ADDR", "localhost")
         port = os.getenv("MASTER_PORT", free_port())  # use a random free port
 
-        logger.info(
-            f"  world_size {world_size}" f"  local_rank {local_rank}" f"  rank {rank}" f"  host {host}" f"  port {port}"
-        )
+        gd.debuginfo(prj="mt", info=f" world_size {world_size},"
+                                    f" local_rank {local_rank}, "
+                                    f" rank {rank}, "
+                                    f" host {host},"
+                                    f" port {port}")
 
         torch.cuda.set_device(self.device)
         self.model.half()
@@ -179,9 +181,7 @@ class ColossalInferenceHandler(BaseHandler, ABC):
             inferences.append(self.tokenizer.decode(outputs[i], skip_special_tokens=True))
 
         # For testing only
-        logger.info(
-            f"Generated text: {inferences}",
-        )
+        gd.debuginfo(prj="mt", info=f"Generated text: {inferences}")
 
         return inferences
 

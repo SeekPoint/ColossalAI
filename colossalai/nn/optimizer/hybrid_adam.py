@@ -108,7 +108,8 @@ class HybridAdam(CPUAdam):
 
                 state = self.state[p]
 
-                gd.debuginfo(prj="mt", info=f'pgi={pgi},pi={pi}, state={state}')
+                for k, v in state.items():
+                    gd.debuginfo(prj="mt", info=f'pgi={pgi},pi={pi}, state[{k}]={infoTensor(v)}')
 
                 target_device = p.device
                 if len(state) == 0:

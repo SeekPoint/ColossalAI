@@ -36,7 +36,7 @@ def _build_train_valid_test_datasets(
     total_num_of_documents = indexed_dataset.doc_idx.shape[0] - 1
     splits = get_train_valid_test_split_(splits_string, total_num_of_documents)
 
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
 
     # Print stats about the splits.
     gd.debuginfo(prj="mt", info=f"\n > dataset split:")

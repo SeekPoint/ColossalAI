@@ -42,7 +42,7 @@ def main():
     else:
         colossalai.launch_from_torch(config={})  # args.colossal_config
         args.local_rank = int(os.environ["LOCAL_RANK"])
-        logger.info(
+        gd.debuginfo(prj="mt", info=
             f"launch_from_torch, world size: {torch.distributed.get_world_size()} | "
             + f"ParallelMode.MODEL: {ParallelMode.MODEL} | ParallelMode.DATA: {ParallelMode.DATA} | ParallelMode.TENSOR: {ParallelMode.TENSOR}"
         )
@@ -104,7 +104,7 @@ def main():
         model = zero_model_wrapper(model, zero_stage, gemini_config)
         optimizer = zero_optim_wrapper(model, optimizer, optim_config=optim_config)
 
-        logger.info(get_mem_info(prefix="After init optim, "))
+        gd.debuginfo(prj="mt", info=f'{get_mem_info(prefix="After init optim, ")}')
 
     else:
         config, model, numel = get_model(args, logger)
@@ -152,16 +152,17 @@ def main():
         start_epoch = o_l_state_dict["epoch"]
         start_shard = o_l_state_dict["shard"] + 1
         # global_step = o_l_state_dict['global_step'] + 1
-        logger.info(
-            f"resume from epoch {start_epoch} shard {start_shard} step {lr_scheduler.last_epoch} lr {lr_scheduler.get_last_lr()[0]}"
-        )
+        gd.debuginfo(prj="mt", info=f"resume from epoch {start_epoch} "
+                                    f"shard {start_shard} "
+                                    f"step {lr_scheduler.last_epoch} "
+                                    f"lr {lr_scheduler.get_last_lr()[0]}")
 
     criterion = LossForPretraining(config.vocab_size)
 
     # build dataloader
     pretrain_dataset_provider = NvidiaBertDatasetProvider(args)
 
-    logger.info(get_mem_info(prefix="After init model, "))
+    gd.debuginfo(prj="mt", info=f"{get_mem_info(prefix='After init model')}")
 
     eval_loss = 0
     train_loss = 0
@@ -221,7 +222,7 @@ def main():
                         f"| epoch: {epoch} | shard: {shard} | step: {global_step} | lr {current_lr:.7f} | elapsed_time: {elapsed_time / 60 :.3f} minutes "
                         + f"| mins/batch: {elapsed_time_per_iteration :.3f} seconds | loss: {cur_loss:.7f} | ppl: {math.exp(cur_loss):.3f} | TFLOPS: {get_tflops_func(elapsed_time_per_iteration):.3f} or {tflops:.3f}"
                     )
-                    logger.info(log_str, print_=False)
+                    gd.debuginfo(prj="mt", info=f"log_str")
 
                     if args.wandb:
                         tensorboard_log = get_tensorboard_writer()
@@ -237,7 +238,8 @@ def main():
 
                     train_loss = 0
 
-            logger.info(f'epoch {epoch} shard {shard} has cost {timers("shard_time").elapsed() / 60 :.3f} mins')
+            gd.debuginfo(prj="mt", info=f"epoch {epoch} shard {shard} "
+                                        f"has cost {timers('shard_time').elapsed() / 60 :.3f} mins")
             gd.debuginfo(prj="mt", info=f"*" * 100)
 
             eval_loss += evaluate(model, args, logger, global_step, criterion)
@@ -252,10 +254,9 @@ def main():
             )
 
         eval_loss /= len(os.listdir(args.data_path_prefix))
-        logger.info(
-            f'epoch {epoch} | shard_length {len(os.listdir(args.data_path_prefix))} | elapsed_time: {timers("epoch_time").elapsed() / 60 :.3f} mins'
-            + f"eval_loss: {eval_loss} | ppl: {math.exp(eval_loss)}"
-        )
+        gd.debuginfo(prj="mt", info=f"epoch {epoch} | shard_length {len(os.listdir(args.data_path_prefix))} | "
+                                    f"elapsed_time: {timers('epoch_time').elapsed() / 60 :.3f} "
+                                    f"mins eval_loss: {eval_loss} | ppl: {math.exp(eval_loss)}")
         gd.debuginfo(prj="mt", info=f"-" * 100)
         if args.wandb and torch.distributed.get_rank() == 0:
             tensorboard_log = get_tensorboard_writer()

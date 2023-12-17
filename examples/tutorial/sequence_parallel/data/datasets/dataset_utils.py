@@ -474,7 +474,7 @@ def _build_train_valid_test_datasets(
     binary_head,
     dataset_type="standard_bert",
 ):
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
 
     if dataset_type not in DSET_TYPES:
         raise ValueError("Invalid dataset_type: ", dataset_type)
@@ -498,16 +498,10 @@ def _build_train_valid_test_datasets(
     def print_split_stats(name, index):
         start_index = indexed_dataset.doc_idx[splits[index]]
         end_index = indexed_dataset.doc_idx[splits[index + 1]]
-        logger.info(
-            "\n    {}:".format(name)
-            + "\n     document indices in [{}, {}) total of {} documents".format(
-                splits[index], splits[index + 1], splits[index + 1] - splits[index]
-            )
-            + "\n     sentence indices in [{}, {}) total of {} sentences".format(
-                start_index, end_index, end_index - start_index
-            ),
-            ranks=[0],
-        )
+        gd.debuginfo(prj="mt",
+                     info=f"\n {name}:"
+                          f"\n document indices in [{splits[index]}, {splits[index + 1]}) total of {splits[index + 1] - splits[index]} documents"
+                          f"\n sentence indices in [{start_index}, {end_index}) total of {end_index - start_index} sentences")
 
     print_split_stats("train", 0)
     print_split_stats("validation", 1)
@@ -569,20 +563,15 @@ def _build_train_valid_test_datasets(
 
 
 def get_indexed_dataset_(data_prefix, data_impl, skip_warmup):
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
     start_time = time.time()
     indexed_dataset = make_indexed_dataset(data_prefix, data_impl, skip_warmup)
     assert indexed_dataset.sizes.shape[0] == indexed_dataset.doc_idx[-1]
     gd.debuginfo(prj="mt", info=f"\n > building dataset index ...")
-    logger.info(
-        "\n > finished creating indexed dataset in {:4f} " "seconds".format(time.time() - start_time), ranks=[0]
-    )
-    logger.info(
-        "\n > indexed dataset stats:"
-        + "\n    number of documents: {}".format(indexed_dataset.doc_idx.shape[0] - 1)
-        + "\n    number of sentences: {}".format(indexed_dataset.sizes.shape[0]),
-        ranks=[0],
-    )
+    gd.debuginfo(prj="mt", info=f"\n > finished creating indexed dataset in {time.time() - start_time:4f} seconds")
+    gd.debuginfo(prj="mt", info=f"\n > indexed dataset stats: "
+                                f"\n number of documents: {indexed_dataset.doc_idx.shape[0] - 1}+"
+                                f"\n number of sentences: {indexed_dataset.sizes.shape[0]}")
 
     return indexed_dataset
 

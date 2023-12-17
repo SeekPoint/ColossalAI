@@ -221,7 +221,7 @@ def train(args):
 
     gd.debuginfo(prj="mt", info=f'trainer={trainer}')
 
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
     trainer.fit(
         train_dataloader=train_dataloader,
         eval_dataloader=eval_dataloader,

@@ -76,7 +76,7 @@ class Engine:
         self._criterion = criterion
         self._clip_grad_norm = clip_grad_norm
         self._verbose = verbose
-        self._logger = get_dist_logger()
+        # self._logger = get_dist_logger()
 
         # state
         self.training = True  # default
@@ -143,15 +143,15 @@ class Engine:
         # whether this hook exist
         for h in self._ophook_list:
             if type(h) == type(ophook):
-                logger = get_dist_logger()
-                logger.warning(f"duplicate hooks, at least two instance of {type(ophook)}")
+                # logger = get_dist_logger()
+                gd.debuginfo(prj="mt", info=f"duplicate hooks, at least two instance of {type(ophook)}")
         self._ophook_list.append(ophook)
         register_ophooks_recursively(self._model, self._ophook_list)
 
     def remove_hook(self, ophook: Type[BaseOpHook]) -> None:
         """remove hook"""
-        logger = get_dist_logger()
-        logger.warning(f"removing hooks is currently not supported")
+        # logger = get_dist_logger()
+        gd.debuginfo(prj="mt", info=f"removing hooks is currently not supported")
 
     def zero_grad(self):
         """Set the gradient of parameters to zero"""

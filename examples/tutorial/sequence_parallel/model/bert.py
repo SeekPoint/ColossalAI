@@ -269,7 +269,7 @@ def _filter_kwargs(func, kwargs):
 
 
 def build_pipeline_bert(num_layers, num_chunks, device=torch.device("cuda"), **kwargs):
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
     pipeline_size = gpc.get_world_size(ParallelMode.PIPELINE)
     pipeline_rank = gpc.get_local_rank(ParallelMode.PIPELINE)
     rank = gpc.get_global_rank()

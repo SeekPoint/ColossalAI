@@ -48,7 +48,7 @@ def get_data(batch_size, seq_len, vocab_size):
 def main():
     disable_existing_loggers()
     launch_from_torch(config={})
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
     config = transformers.GPT2Config(n_position=SEQ_LENGTH, n_layer=NUM_LAYERS, n_head=NUM_HEADS, n_embd=HIDDEN_DIM)
     if FP16:
         model = GPT2LMHeadModel(config=config).half().to("cuda")
@@ -72,7 +72,7 @@ def main():
     criterion = GPTLMLoss()
 
     optimizer = torch.optim.Adam(gm.parameters(), lr=0.01)
-    logger.info(get_mem_info(prefix="After init model, "))
+    gd.debuginfo(prj="mt", info=f'{get_mem_info(prefix="After init model, ")}')
     get_tflops_func = partial(get_tflops, global_numel, BATCH_SIZE, SEQ_LENGTH)
     torch.cuda.synchronize()
     model.train()

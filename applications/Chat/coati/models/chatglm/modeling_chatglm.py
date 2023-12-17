@@ -971,9 +971,8 @@ class ChatGLMModel(ChatGLMPreTrainedModel):
 
         if self.gradient_checkpointing and self.training:
             if use_cache:
-                logger.warning_once(
-                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
-                )
+                gd.debuginfo(prj="mt", info=f"`use_cache=True` is incompatible with gradient checkpointing. "
+                                            f"Setting `use_cache=False`...")
                 use_cache = False
 
         if input_ids is not None and inputs_embeds is not None:
@@ -1231,7 +1230,7 @@ class ChatGLMForConditionalGeneration(ChatGLMPreTrainedModel):
             }
         else:
             if attention_mask is not None and attention_mask.dtype != torch.bool:
-                logger.warning_once(f"The dtype of attention mask ({attention_mask.dtype}) is not bool")
+                gd.debuginfo(prj="mt", info=f"The dtype of attention mask ({attention_mask.dtype}) is not bool")
                 attention_mask = None
             if attention_mask is None:
                 attention_mask = self.get_masks(input_ids, device=input_ids.device)
@@ -1464,9 +1463,7 @@ class ChatGLMForConditionalGeneration(ChatGLMPreTrainedModel):
             gd.debuginfo(prj="mt", info=
                 f"Using `max_length`'s default ({generation_config.max_length}) to control the generation length. "
                 "This behaviour is deprecated and will be removed from the config in v5 of Transformers -- we"
-                " recommend using `max_new_tokens` to control the maximum length of the generation.",
-                UserWarning,
-            )
+                " recommend using `max_new_tokens` to control the maximum length of the generation.")
         elif generation_config.max_new_tokens is not None:
             generation_config.max_length = generation_config.max_new_tokens + input_ids_seq_length
             if not has_default_max_length:
@@ -1480,11 +1477,10 @@ class ChatGLMForConditionalGeneration(ChatGLMPreTrainedModel):
 
         if input_ids_seq_length >= generation_config.max_length:
             input_ids_string = "decoder_input_ids" if self.config.is_encoder_decoder else "input_ids"
-            logger.warning(
-                f"Input length of {input_ids_string} is {input_ids_seq_length}, but `max_length` is set to"
-                f" {generation_config.max_length}. This can lead to unexpected behavior. You should consider"
-                " increasing `max_new_tokens`."
-            )
+            gd.debuginfo(prj="mt", info=f"Input length of {input_ids_string} is {input_ids_seq_length}, "
+                                        f"but `max_length` is set to {generation_config.max_length}. "
+                                        f"This can lead to unexpected behavior. "
+                                        f"You should consider increasing `max_new_tokens`.")
 
         # 2. Set generation parameters if not already defined
         logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList()

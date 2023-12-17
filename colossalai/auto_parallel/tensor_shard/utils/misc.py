@@ -25,11 +25,11 @@ def ignore_sharding_exception(func):
     def wrapper(*args, **kwargs):
         gd.debuginfo(prj="mt", info=f'')
         try:
-            logger = get_dist_logger()
+            # logger = get_dist_logger()
             rst = func(*args, **kwargs)
             return rst
         except ShardingSpecException as e:
-            logger.debug(e)
+            gd.debuginfo(prj="mt", info=f"{e}")
             return None
 
     return wrapper

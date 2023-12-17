@@ -89,7 +89,7 @@ def train(args):
     else:
         optim = Adam(model.parameters(), lr=args.lr)
 
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
     logger.set_level("WARNING")
 
     # configure dataset

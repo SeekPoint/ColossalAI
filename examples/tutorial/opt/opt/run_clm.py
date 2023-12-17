@@ -289,7 +289,7 @@ def main():
     args = parse_args()
     disable_existing_loggers()
     colossalai.launch_from_torch(config=dict())
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
     is_main_process = dist.get_rank() == 0
 
     if is_main_process:

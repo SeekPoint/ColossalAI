@@ -36,11 +36,16 @@ def train_epoch(epoch, model, optimizer, _criterion, lr_scheduler, dataloader, b
     model.train()
     optimizer.zero_grad()
     dataloader = iter(dataloader)
-    with tqdm(
-        range(total_step), desc=f"Epoch [{epoch + 1}]", disable=not (coordinator.is_master() or is_pp_last_stage)
-    ) as pbar:
+    with tqdm(range(total_step),
+              desc=f"Epoch [{epoch + 1}]",
+              disable=not (coordinator.is_master() or is_pp_last_stage)) \
+            as pbar:
         # Forward pass
-        for _ in pbar:
+        for step in pbar:
+            if step > 10:
+                break
+            logf = f'Training_epoch{epoch:02}_{step:05}'
+            gd.emb_start(info=logf)
             if use_pipeline:
                 outputs = booster.execute_pipeline(
                     dataloader, model, _criterion, optimizer, return_loss=True, return_outputs=True
@@ -62,44 +67,63 @@ def train_epoch(epoch, model, optimizer, _criterion, lr_scheduler, dataloader, b
             optimizer.zero_grad()
             lr_scheduler.step()
 
+            gd.emb_end(info=logf)
+
 
 def main():
     args = parse_demo_args()
+    gd.debuginfo(prj="mt", info=f'args={args}')
 
     # Launch ColossalAI
     colossalai.launch_from_torch(config={}, seed=args.seed)
     coordinator = DistCoordinator()
     world_size = coordinator.world_size
+    gd.debuginfo(prj="mt", info=f'coordinator={coordinator}')
+    gd.debuginfo(prj="mt", info=f'world_size={world_size}')
 
     # Manage loggers
     disable_existing_loggers()
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
     if coordinator.is_master():
+        gd.debuginfo(prj="mt", info=f'')
         datasets.utils.logging.set_verbosity_warning()
         transformers.utils.logging.set_verbosity_info()
     else:
+        gd.debuginfo(prj="mt", info=f'')
         datasets.utils.logging.set_verbosity_error()
         transformers.utils.logging.set_verbosity_error()
+
+    logf = f'Initialize_OPT'
+    gd.emb_start(info=logf)
 
     # Build OPT model
     config = AutoConfig.from_pretrained(args.model_name_or_path)
     model = OPTForCausalLM.from_pretrained(args.model_name_or_path, config=config)
+    gd.debuginfo(prj="mt", info=f'config={config}')
+    gd.debuginfo(prj="mt", info=f'model={model}')
+
     gd.debuginfo(prj="mt", info=f"Finish loading model from {args.model_name_or_path}")
 
     # Enable gradient checkpointing
     model.gradient_checkpointing_enable()
+    gd.debuginfo(prj="mt", info=f'======================OPT 1=======================')
 
     # Set plugin
     booster_kwargs = {}
     if args.plugin == "torch_ddp_fp16":
+        gd.debuginfo(prj="mt", info=f'')
         booster_kwargs["mixed_precision"] = "fp16"
     if args.plugin.startswith("torch_ddp"):
+        gd.debuginfo(prj="mt", info=f'')
         plugin = TorchDDPPlugin()
     elif args.plugin == "gemini":
+        gd.debuginfo(prj="mt", info=f'')
         plugin = GeminiPlugin(offload_optim_frac=1.0, pin_memory=True, initial_scale=2**5)
     elif args.plugin == "low_level_zero":
+        gd.debuginfo(prj="mt", info=f'')
         plugin = LowLevelZeroPlugin(initial_scale=2**5)
     elif args.plugin == "hybrid_parallel":
+        gd.debuginfo(prj="mt", info=f'')
         # modify the param accordingly for finetuning test cases
         plugin = HybridParallelPlugin(
             tp_size=2,
@@ -115,20 +139,31 @@ def main():
 
     # Prepare tokenizer and dataloader
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
+    gd.debuginfo(prj="mt", info=f"tokenizer={tokenizer}")
+
     dataset = NetflixDataset(tokenizer)
+    gd.debuginfo(prj="mt", info=f"dataset={dataset}")
+
     dataloader = plugin.prepare_dataloader(
         dataset, batch_size=args.batch_size, shuffle=True, drop_last=True, collate_fn=netflix_collator
     )
+    gd.debuginfo(prj="mt", info=f"dataloader={dataloader}")
+
 
     # Set optimizer
     optimizer = HybridAdam(model.parameters(), lr=(args.learning_rate * world_size), weight_decay=args.weight_decay)
+    gd.debuginfo(prj="mt", info=f"optimizer={optimizer}")
 
     # Set lr scheduler
     total_steps = len(dataloader) * args.num_epoch
     num_warmup_steps = int(args.warmup_ratio * total_steps)
+    gd.debuginfo(prj="mt", info=f"total_steps={total_steps}")
+    gd.debuginfo(prj="mt", info=f"num_warmup_steps={num_warmup_steps}")
+
     lr_scheduler = get_linear_schedule_with_warmup(
         optimizer, num_warmup_steps=num_warmup_steps, num_training_steps=len(dataloader) * args.num_epoch
     )
+    gd.debuginfo(prj="mt", info=f"lr_scheduler={lr_scheduler}")
 
     # Define criterion
     def _criterion(outputs, inputs):
@@ -138,9 +173,20 @@ def main():
 
     # Set booster
     booster = Booster(plugin=plugin, **booster_kwargs)
+    gd.debuginfo(prj="mt", info=f"booster={booster}")
+
     model, optimizer, _criterion, dataloader, lr_scheduler = booster.boost(
         model=model, optimizer=optimizer, dataloader=dataloader, criterion=_criterion, lr_scheduler=lr_scheduler
     )
+
+    gd.debuginfo(prj="mt", info=f"model={model}")
+    gd.debuginfo(prj="mt", info=f"optimizer={optimizer}")
+    gd.debuginfo(prj="mt", info=f"_criterion={_criterion}")
+    gd.debuginfo(prj="mt", info=f"dataloader={dataloader}")
+    gd.debuginfo(prj="mt", info=f"lr_scheduler={lr_scheduler}")
+
+    gd.emb_end(info=logf)
+
 
     # Start finetuning
     gd.debuginfo(prj="mt", info=f"Start finetuning")
@@ -149,8 +195,12 @@ def main():
 
     # Finish training and evaluate
     gd.debuginfo(prj="mt", info=f"Finish finetuning")
+
     booster.save_model(model, args.output_path, shard=True)
+
     gd.debuginfo(prj="mt", info=f"Saving model checkpoint to {args.output_path}")
+
+    gd.emb_end(info=logf)
 
 
 if __name__ == "__main__":

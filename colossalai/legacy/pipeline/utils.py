@@ -120,7 +120,7 @@ def partition_uniform(num_items, pipeline_parallel_size, num_chunks):
         num_items % num_chunks == 0
     ), "Layer length should be divided by the number of chunks, otherwise parameter method is recommended"
 
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
     parts = [[] for _ in range(pipeline_parallel_size)]
     partition_items = num_items // num_chunks
     for idx in range(num_chunks):
@@ -128,7 +128,7 @@ def partition_uniform(num_items, pipeline_parallel_size, num_chunks):
         chunk_size = partition_items // pipeline_parallel_size
         left = pipeline_parallel_size - partition_items % pipeline_parallel_size
         if chunk_size == 0:
-            logger.warning("Some nodes in Pipeline have no requests")
+            gd.debuginfo(prj="mt", info=f"Some nodes in Pipeline have no requests")
 
         for p in range(pipeline_parallel_size):
             st = base_idx

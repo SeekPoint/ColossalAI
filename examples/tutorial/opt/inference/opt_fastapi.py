@@ -29,7 +29,7 @@ app = FastAPI()
 
 @app.post("/generation")
 async def generate(data: GenerationTaskReq, request: Request):
-    logger.info(f'{request.client.host}:{request.client.port} - "{request.method} {request.url.path}" - {data}')
+    gd.debuginfo(prj="mt", info=f'{request.client.host}:{request.client.port} - "{request.method} {request.url.path}" - {data}')
     key = (data.prompt, data.max_tokens)
     try:
         if cache is None:

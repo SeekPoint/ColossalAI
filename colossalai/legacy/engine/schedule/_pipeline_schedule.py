@@ -132,7 +132,7 @@ class PipelineSchedule(BaseSchedule):
         self.scatter_gather_tensors = False
         if gpc.is_initialized(ParallelMode.PARALLEL_1D) and gpc.get_world_size(ParallelMode.PARALLEL_1D) > 1:
             self.scatter_gather_tensors = scatter_gather_tensors
-        self._logger = get_dist_logger()
+        # self._logger = get_dist_logger()
 
         # cache for the batch data
         self.batch_data = None
@@ -274,9 +274,10 @@ class PipelineSchedule(BaseSchedule):
                 return output_obj
         else:
             if isinstance(output_obj, torch.Tensor):
-                self._logger.debug(
-                    f"Global rank {gpc.get_global_rank()}, pipeline rank {gpc.get_local_rank(ParallelMode.PIPELINE)} forward output tensor {output_obj.shape}, dtype {output_obj.dtype}"
-                )
+                gd.debuginfo(prj="mt", info=f"Global rank {gpc.get_global_rank()}, "
+                                            f"pipeline rank {gpc.get_local_rank(ParallelMode.PIPELINE)} "
+                                            f"forward output tensor {output_obj.shape}, "
+                                            f"dtype {output_obj.dtype}")
             return output_obj
 
     def _backward_step(self, engine, input_obj, output_obj, output_obj_grad):
@@ -556,9 +557,10 @@ class InterleavedPipelineSchedule(PipelineSchedule):
                 return output_obj
         else:
             if isinstance(output_obj, torch.Tensor):
-                self._logger.debug(
-                    f"Global rank {gpc.get_global_rank()}, pipeline rank {gpc.get_local_rank(ParallelMode.PIPELINE)} forward output tensor {output_obj.shape}, dtype {output_obj.dtype}"
-                )
+                gd.debuginfo(prj="mt", info=f"Global rank {gpc.get_global_rank()}, "
+                                            f"pipeline rank {gpc.get_local_rank(ParallelMode.PIPELINE)} "
+                                            f"forward output tensor {output_obj.shape}, "
+                                            f"dtype {output_obj.dtype}")
             return output_obj
 
     def forward_backward_step(self, engine, data_iter, forward_only=False, return_loss=True, return_output_label=True):

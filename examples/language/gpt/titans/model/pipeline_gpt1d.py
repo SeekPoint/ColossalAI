@@ -233,7 +233,7 @@ def _filter_kwargs(func, kwargs):
 
 
 def _build_generic_gpt_pipeline_1d(module_cls, num_layers, num_chunks, device=torch.device("cuda"), **kwargs):
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
 
     if gpc.is_initialized(ParallelMode.PIPELINE):
         pipeline_size = gpc.get_world_size(ParallelMode.PIPELINE)

@@ -136,12 +136,15 @@ def benchmark(
         "cuda_max_training_bytes": format_num(max_mem, bytes=True),
         "cuda_post_training_bytes": format_num(post_mem, bytes=True),
     }
-    logger.info(fmt({f"Memory results (batch_size={batch_size})": memory[f"batch_size_{batch_size}"]}))
+    #logger.info(fmt({f"Memory results (batch_size={batch_size})": memory[f"batch_size_{batch_size}"]}))
+    gd.debuginfo(prj="mt", info=f'tmp')
 
     throughput[f"batch_size_{batch_size}"] = {
         "throughput:": "{:.1f}".format(all_sample * DistCoordinator().world_size / (end_time - start_time))
     }
-    logger.info(fmt({f"Throughput results (batch_size={batch_size})": throughput[f"batch_size_{batch_size}"]}))
+    # logger.info(fmt({f"Throughput results (batch_size={batch_size})": throughput[f"batch_size_{batch_size}"]}))
+    tmp = fmt({f"Throughput results (batch_size={batch_size})": throughput[f"batch_size_{batch_size}"]})
+    gd.debuginfo(prj="mt", info=f'tmp')
 
     results["throughput"] = throughput
     results["memory"] = memory

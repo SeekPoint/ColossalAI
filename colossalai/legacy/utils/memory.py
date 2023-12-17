@@ -90,9 +90,9 @@ def report_memory_usage(message, logger=None, report_cpu=False):
         vm_used = _bytes_to_MB(vm_stats.total - vm_stats.available)
         full_log += f", CPU Virtual Memory: used = {vm_used} MB, percent = {vm_stats.percent}%"
 
-    if logger is None:
-        logger = get_dist_logger()
-    logger.info(full_log)
+    # if logger is None:
+    #     logger = get_dist_logger()
+    gd.debuginfo(prj="mt", info=f'{full_log}')
 
     # get the peak memory to report correct data, so reset the counter for the next call
     if hasattr(torch.cuda, "reset_peak_memory_stats"):  # pytorch 1.4+
@@ -153,8 +153,8 @@ def colo_set_process_memory_fraction(ratio: float) -> None:
     """
     gd.debuginfo(prj="mt", info=f'')
     if version.parse(torch.__version__) < version.parse("1.8"):
-        logger = get_dist_logger("colo_set_process_memory_fraction")
-        logger.warning("colo_set_process_memory_fraction failed because torch version is less than 1.8")
+        # logger = get_dist_logger("colo_set_process_memory_fraction")
+        gd.debuginfo(prj="mt", info=f"colo_set_process_memory_fraction failed because torch version is less than 1.8")
         return
     global _GLOBAL_CUDA_MEM_FRACTION
     _GLOBAL_CUDA_MEM_FRACTION = ratio

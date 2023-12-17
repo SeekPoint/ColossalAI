@@ -63,10 +63,11 @@ class SFTTrainer(SLTrainer):
 
         for i, batch in enumerate(self.train_dataloader):
             batch = to_device(batch, torch.cuda.current_device())
-            gd.debuginfo(prj="mt", info=f'batch[{i}]={batch}')
+            for k, v in batch.items():
+                gd.debuginfo(prj="mt", info=f'The {i} th batch[{k}]={infoTensor(batch[k])}')
             outputs = self.model(batch["input_ids"], attention_mask=batch["attention_mask"], labels=batch["labels"])
             loss = outputs.loss / self.accumulation_steps
-            gd.debuginfo(prj="mt", info=f'outputs={outputs}')
+            # gd.debuginfo(prj="mt", info=f'outputs={outputs}') # 会引起cuda OOM
             gd.debuginfo(prj="mt", info=f'loss={loss}')
 
             self.total_loss += loss.item()

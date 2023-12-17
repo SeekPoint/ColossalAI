@@ -26,8 +26,8 @@ class BaseGradScaler(ABC):
         self._scale = torch.cuda.FloatTensor([initial_scale])
         self._verbose = verbose
 
-        if self._verbose:
-            self._logger = get_dist_logger()
+        # if self._verbose:
+        #     self._logger = get_dist_logger()
 
     @property
     def scale(self) -> Tensor:

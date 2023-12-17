@@ -18,6 +18,7 @@ class PretrainedManager:
         except ImportError:
             return
         # recover bound method to plain function
+        gd.debuginfo(prj="mt", info=f'')
         PretrainedManager.old_from_pretrained = PreTrainedModel.from_pretrained.__func__
         PreTrainedModel.from_pretrained = new_from_pretrained
 
@@ -29,6 +30,7 @@ class PretrainedManager:
         except ImportError:
             return
         # convert plain function to class method
+        gd.debuginfo(prj="mt", info=f'')
         PreTrainedModel.from_pretrained = classmethod(PretrainedManager.old_from_pretrained)
         PretrainedManager.old_from_pretrained = None
 
@@ -80,7 +82,7 @@ def new_from_pretrained(
     use_safetensors = kwargs.pop("use_safetensors", None if is_safetensors_available() else False)
 
     if len(kwargs) > 0:
-        logger.warning(f"Below kwargs may be ignored: {list(kwargs.keys())}")
+        gd.debuginfo(prj="mt", info=f"Below kwargs may be ignored: {list(kwargs.keys())}")
 
     from_pt = True
 

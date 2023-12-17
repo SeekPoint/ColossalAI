@@ -335,10 +335,8 @@ class Trainer:
 
             # check for termination
             if self._exceed_max_step():
-                self._logger.info(
-                    f"Max number of steps {max_steps} has been reached, training is stopped automatically",
-                    ranks=[0],
-                )
+                gd.debuginfo(prj="mt",
+                             info=f"Max number of steps {max_steps} has been reached, training is stopped automatically")
                 break
         self._call_hooks("after_train")
         self._call_timer("reset", "Train-epoch")

@@ -6,21 +6,22 @@ from typing import List
 from pydebug import gd, infoTensor
 
 def print_rank_0(message: str) -> None:
-    """
-    Print on only one process to avoid spamming.
-    """
-    try:
-        import torch.distributed as dist
-
-        if not dist.is_initialized():
-            is_main_rank = True
-        else:
-            is_main_rank = dist.get_rank() == 0
-    except ImportError:
-        is_main_rank = True
-
-    if is_main_rank:
-        print(message)
+    pass
+#     """
+#     Print on only one process to avoid spamming.
+#     """
+#     try:
+#         import torch.distributed as dist
+#
+#         if not dist.is_initialized():
+#             is_main_rank = True
+#         else:
+#             is_main_rank = dist.get_rank() == 0
+#     except ImportError:
+#         is_main_rank = True
+#
+#     if is_main_rank:
+#         print(message)
 
 
 def get_cuda_version_in_pytorch() -> List[int]:

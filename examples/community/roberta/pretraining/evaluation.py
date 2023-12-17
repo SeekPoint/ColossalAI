@@ -71,7 +71,7 @@ def evaluate(model, args, logger, global_step, criterion):
                 + f"| mins/batch: {elapsed_time_per_iteration :.3f} seconds | loss: {cur_loss:.7f} | ppl: {ppl:.7f}"
             )
 
-            logger.info(eval_log_str)
+            gd.debuginfo(prj="mt", info=f'{eval_log_str}')
             gd.debuginfo(prj="mt", info=f"-" * 100)
             gd.debuginfo(prj="mt", info=f"")
 

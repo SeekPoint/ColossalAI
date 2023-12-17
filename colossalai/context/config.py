@@ -96,8 +96,9 @@ class Config(dict):
             else:
                 config._add_item(k, v)
 
-        logger = get_dist_logger()
-        logger.debug("variables which starts with __, is a module or class declaration are omitted in config file")
+        # logger = get_dist_logger()
+        gd.debuginfo(prj="mt", info=f"variables which starts with __, "
+                                    f"is a module or class declaration are omitted in config file")
 
         # remove module
         del sys.modules[module_name]

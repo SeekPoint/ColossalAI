@@ -50,7 +50,8 @@ def print_model_numel(model_dict: dict) -> None:
             outputs += f"{numel / K:.2f} K\n"
         else:
             outputs += f"{numel}\n"
-    print_rank_0(outputs)
+    # print_rank_0(outputs)
+    gd.debuginfo(prj='mt', info=f"{outputs}")
 
 
 def get_gpt_config(model_name: str) -> OPTConfig:
@@ -175,7 +176,7 @@ def main(args):
         num_collect_steps=args.num_collect_steps,
     )
 
-    print_rank_0(f"Peak CUDA mem: {torch.cuda.max_memory_allocated()/1024**3:.2f} GB")
+    gd.debuginfo(prj="mt", info=f"Peak CUDA mem: {torch.cuda.max_memory_allocated()/1024**3:.2f} GB")
 
 
 if __name__ == "__main__":

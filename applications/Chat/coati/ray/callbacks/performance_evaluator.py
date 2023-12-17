@@ -15,6 +15,7 @@ def get_world_size() -> int:
 
 
 def print_rank_0(*args, **kwargs) -> None:
+    pass
     if not dist.is_initialized() or dist.get_rank() == 0:
         print(*args, **kwargs)
 

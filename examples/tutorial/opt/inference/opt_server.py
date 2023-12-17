@@ -34,7 +34,7 @@ app = Sanic("opt")
 @openapi.body(GenerationTaskReq)
 @validate(json=GenerationTaskReq)
 async def generate(request: Request, body: GenerationTaskReq):
-    logger.info(f'{request.ip}:{request.port} - "{request.method} {request.path}" - {body}')
+    gd.debuginfo(prj="mt", info=f'{request.ip}:{request.port} - "{request.method} {request.path}" - {body}')
     key = (body.prompt, body.max_tokens)
     try:
         if cache is None:

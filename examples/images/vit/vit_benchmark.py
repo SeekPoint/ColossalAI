@@ -52,7 +52,7 @@ def main():
 
     # Manage loggers
     disable_existing_loggers()
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
     if coordinator.is_master():
         transformers.utils.logging.set_verbosity_info()
     else:
@@ -137,14 +137,11 @@ def main():
     throughput = "{:.4f}".format((world_size * args.max_train_steps * args.batch_size) / (end_time - start_time))
     max_mem = format_num(torch.cuda.max_memory_allocated(device=torch.cuda.current_device()), bytes=True)
 
-    logger.info(
-        f"Testing finished, "
+    gd.debuginfo(prj="mt", info=f"Testing finished, "
         f"batch size per gpu: {args.batch_size}, "
         f"plugin: {args.plugin}, "
         f"throughput: {throughput}, "
-        f"maximum memory usage per gpu: {max_mem}.",
-        ranks=[0],
-    )
+        f"maximum memory usage per gpu: {max_mem}.")
 
     torch.cuda.empty_cache()
 

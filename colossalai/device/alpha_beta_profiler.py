@@ -82,7 +82,7 @@ class AlphaBetaProfiler:
 
     def _profile(self, process_group, pg_handler, nbytes):
         gd.debuginfo(prj="mt", info=f'')
-        logger = get_dist_logger()
+        # logger = get_dist_logger()
         rank = dist.get_rank()
         src_device_num = process_group[0]
         world_size = len(process_group)

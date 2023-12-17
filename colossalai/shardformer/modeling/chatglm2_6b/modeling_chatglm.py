@@ -783,13 +783,12 @@ class GLMTransformer(torch.nn.Module):
         if not kv_caches:
             kv_caches = [None for _ in range(self.num_layers)]
             gd.debuginfo(prj="mt", info=f'')
+
         presents = () if use_cache else None
         if self.gradient_checkpointing and self.training:
             gd.debuginfo(prj="mt", info=f'')
             if use_cache:
-                logger.warning_once(
-                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
-                )
+                gd.debuginfo(prj="mt", info=f"`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`...")
                 use_cache = False
 
         all_self_attentions = None

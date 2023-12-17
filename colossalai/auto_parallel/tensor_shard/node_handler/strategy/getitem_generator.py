@@ -73,7 +73,7 @@ class TensorStrategyGenerator(GetItemStrategyGenerator):
         gd.debuginfo(prj="mt", info=f'')
         for index, strategy in enumerate(self.predecessor_node.strategies_vector):
             try:
-                logger = get_dist_logger()
+                # logger = get_dist_logger()
                 dim_partition_dict_mapping = {}
                 communication_action_mapping = {}
                 dim_partition_dict_for_input = copy.deepcopy(
@@ -127,7 +127,7 @@ class TensorStrategyGenerator(GetItemStrategyGenerator):
                     communication_action_mapping=communication_action_mapping,
                 )
             except ShardingSpecException as e:
-                logger.debug(e)
+                gd.debuginfo(prj="mt", info=f"{e}")
                 continue
             strategy_list.append(strategy)
 

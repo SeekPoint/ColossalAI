@@ -143,7 +143,7 @@ def main():
 
     # Manage loggers
     disable_existing_loggers()
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
     if coordinator.is_master():
         transformers.utils.logging.set_verbosity_info()
     else:

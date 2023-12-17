@@ -26,7 +26,7 @@ from pydebug import gd, infoTensor
 # ==============================
 
 MODEL_CONFIGS = {
-    "7b": LlamaConfig(max_position_embeddings=4096),
+    "7b": LlamaConfig(max_position_embeddings=1024),
     "13b": LlamaConfig(
         hidden_size=5120,
         intermediate_size=13824,

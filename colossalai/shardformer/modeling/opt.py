@@ -168,23 +168,22 @@ class OPTPipelineForwards:
 
         if decoder.gradient_checkpointing and decoder.training:
             if use_cache:
-                logger.warning_once(
-                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
-                )
+                gd.debuginfo(prj="mt", info=f"`use_cache=True` is incompatible with gradient checkpointing. "
+                                            f"Setting `use_cache=False`...")
                 use_cache = False
 
         # TODO(baizhou): left the recording kv-value tensors as () or None type, this feature may be added in the future.
         if past_key_values:
-            logger.warning_once("Non-empty past_key_values is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"Non-empty past_key_values is not supported for pipeline models at the moment.")
             past_key_values = None
         if output_attentions:
-            logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
         if use_cache:
-            logger.warning_once("use_cache=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"use_cache=True is not supported for pipeline models at the moment.")
             use_cache = False
 
         # decoder layers
@@ -426,10 +425,8 @@ class OPTPipelineForwards:
                     gd.debuginfo(prj="mt", info=f'')
                 else:
                     sequence_lengths = -1
-                    logger.warning(
-                        f"{self.__class__.__name__} will not detect padding tokens in `inputs_embeds`. Results may be "
-                        "unexpected if using padding tokens in conjunction with `inputs_embeds.`"
-                    )
+                    gd.debuginfo(prj="mt", info=f"{self.__class__.__name__} will not detect padding tokens in `inputs_embeds`. "
+                                                f"Results may be unexpected if using padding tokens in conjunction with `inputs_embeds.`")
 
             pooled_logits = logits[torch.arange(batch_size, device=logits.device), sequence_lengths]
 

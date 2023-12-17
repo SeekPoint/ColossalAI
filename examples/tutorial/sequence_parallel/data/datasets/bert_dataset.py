@@ -115,7 +115,7 @@ class BertDataset(Dataset):
 def get_samples_mapping_(
     indexed_dataset, data_prefix, num_epochs, max_num_samples, max_seq_length, short_seq_prob, seed, name, binary_head
 ):
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
     if not num_epochs:
         if not max_num_samples:
             raise ValueError("Need to specify either max_num_samples " "or num_epochs")
@@ -182,12 +182,9 @@ def get_samples_mapping_(
     # Load indexed dataset.
     start_time = time.time()
     samples_mapping = np.load(indexmap_filename, allow_pickle=True, mmap_mode="r")
-    logger.info(
-        "\n > loading indexed mapping from {}".format(indexmap_filename)
-        + "\n    loaded indexed file in {:3.3f} seconds".format(time.time() - start_time)
-        + "\n    total number of samples: {}".format(samples_mapping.shape[0]),
-        ranks=[0],
-    )
+    gd.debuginfo(prj="mt", info=f"\n > loading indexed mapping from {indexmap_filename} \n "
+                                f" loaded indexed file in {(time.time() - start_time):3.3f} "
+                                f" seconds total number of samples: {samples_mapping.shape[0]}")
 
     return samples_mapping
 

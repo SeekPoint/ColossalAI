@@ -129,7 +129,7 @@ class GeminiDDP(ModelWrapper):
             self.reuse_fp16_chunk = False
         self.accumulating_grads = False  # Whether model is accumulating gradients
 
-        self._logger = get_dist_logger()
+        # self._logger = get_dist_logger()
 
         if self.gemini_manager._premade_memstats_:
             # build chunk in param runtime visited order.
@@ -337,9 +337,11 @@ class GeminiDDP(ModelWrapper):
             self.accumulating_grads = True  # Turn on the state of gradient accumulation.
             gd.debuginfo(prj="mt", info=f'')
 
-        self._logger.debug(
-            f"comp cuda demand time: {self.gemini_manager._comp_cuda_demand_time}, layout time: {self.gemini_manager._layout_time}, evict time: {self.gemini_manager._evict_time}, CPU->CUDA vol: {self.gemini_manager._h2d_volume}B, CUDA->CPU vol: {self.gemini_manager._d2h_volume}"
-        )
+        gd.debuginfo(prj="mt", info=f"comp cuda demand time: {self.gemini_manager._comp_cuda_demand_time}, "
+                                    f"layout time: {self.gemini_manager._layout_time}, "
+                                    f"evict time: {self.gemini_manager._evict_time}, "
+                                    f"CPU->CUDA vol: {self.gemini_manager._h2d_volume}B, "
+                                    f"CUDA->CPU vol: {self.gemini_manager._d2h_volume}")
         self.gemini_manager.post_iter()
 
     def backward(self, loss: torch.Tensor):

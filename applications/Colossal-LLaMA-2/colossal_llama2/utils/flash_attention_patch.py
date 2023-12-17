@@ -21,7 +21,7 @@ from transformers.models.llama.modeling_llama import (
 
 from colossalai.logging import get_dist_logger
 from pydebug import gd, infoTensor
-logger = get_dist_logger()
+# logger = get_dist_logger()
 
 
 def _prepare_decoder_attention_mask(
@@ -66,10 +66,9 @@ def attention_forward(
     Re-define LLaMA-2 `LlamaAttention` forward method using flash-attention.
     """
     if output_attentions:
-        logger.warning(
-            "Argument `output_attentions` is not supported for flash-attention patched `LlamaAttention`, "
-            "return `None` instead."
-        )
+        gd.debuginfo(prj="mt", info=f"Argument `output_attentions` "
+                                    f"is not supported for flash-attention patched `LlamaAttention`, "
+                                    f"return `None` instead.")
 
     bsz, q_len, _ = hidden_states.size()
 

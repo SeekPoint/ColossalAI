@@ -94,11 +94,8 @@ class DynamicGradScaler(BaseGradScaler):
                 self._growth_step = 0
                 self._hysteresis_step = 0
                 self._grow_scale()
-                gd.debuginfo(prj="mt", info=
-                    f"No overflow for consecutive {self._growth_interval} steps, "
-                    f"the loss scale is adjusted to {self.scale.item()}",
-                    ranks=[0],
-                )
+                gd.debuginfo(prj="mt", info=f"No overflow for consecutive {self._growth_interval} steps, "
+                                            f"the loss scale is adjusted to {self.scale.item()}")
 
     def _backoff_scale(self) -> None:
         gd.debuginfo(prj="mt", info=f'')

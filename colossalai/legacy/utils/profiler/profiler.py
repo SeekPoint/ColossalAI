@@ -145,7 +145,7 @@ class profile(torch_profile):
             with_flops=with_flops,
             with_modules=with_modules,
         )
-        self._logger = get_dist_logger()
+        # self._logger = get_dist_logger()
         self.extentions: List[ProfilerExtension] = []
         if profile_stateful_tensor_memory:
             if engine is None:

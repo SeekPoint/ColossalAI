@@ -50,7 +50,7 @@ def main():
     parse_args()
     colossalai.launch_from_torch(config="./config.py", seed=1234, backend="nccl")
 
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
 
     # build synthetic dataloader
     BATCH_SIZE_PER_GPUS = gpc.config.GLOBAL_BATCH_SIZE // gpc.get_world_size(ParallelMode.DATA)

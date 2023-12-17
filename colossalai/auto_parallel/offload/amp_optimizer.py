@@ -82,7 +82,7 @@ class AMPOptimizer(OptimizerWrapper):
             max_scale=max_scale,
         )
         self._found_overflow: torch.Tensor = torch.zeros(1, dtype=torch.int64, device=get_current_device())
-        self._logger = get_dist_logger()
+        # self._logger = get_dist_logger()
 
     def _set_grad_ptr(self):
         gd.debuginfo(prj="mt", info=f'')

@@ -163,3 +163,7 @@ coverage.xml
 
 examples/language/llama2/checkpoint/
 examples/language/llama2/tb_logs/
+applications/Chat/Coati-bloom-560m-rl/
+applications/Chat/Coati-bloom-560m-sft/
+applications/Chat/_log_tmps_chat_PROMPTS_/
+applications/Chat/logs/

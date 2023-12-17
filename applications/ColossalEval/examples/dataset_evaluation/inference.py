@@ -10,7 +10,7 @@ from colossal_eval import dataset, models, utils
 import colossalai
 from colossalai.logging import get_dist_logger
 
-logger = get_dist_logger()
+# logger = get_dist_logger()
 
 
 def rm_and_merge(world_size: int, save_path: str, model_names: List[str], dataset_names: Dict[str, List]) -> None:

@@ -34,7 +34,7 @@ def mixed_precision_factory(mixed_precision_type: str) -> MixedPrecision:
     """
 
     if mixed_precision_type in _mixed_precision_mapping:
-        # gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'')
         return _mixed_precision_mapping[mixed_precision_type]()
     else:
         raise ValueError(

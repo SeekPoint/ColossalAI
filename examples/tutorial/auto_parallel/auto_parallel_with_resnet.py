@@ -19,7 +19,7 @@ def synthesize_data():
 def main():
     colossalai.launch_from_torch(config="./config.py")
 
-    logger = get_dist_logger()
+    # logger = get_dist_logger()
 
     # trace the model with meta data
     model = resnet50(num_classes=10).cuda()

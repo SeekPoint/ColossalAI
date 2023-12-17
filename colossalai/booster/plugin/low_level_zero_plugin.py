@@ -67,7 +67,30 @@ class LowLevelZeroModel(ModelWrapper, AMPModelMixin):
         if self.convert_fn is not None:
             args = tree_map(self.convert_fn, args)
             kwargs = tree_map(self.convert_fn, kwargs)
-            gd.debuginfo(prj="mt", info=f'arg={args}, kwargs={kwargs}')
+
+            gd.debuginfo(prj="mt", info=f"kwargs={kwargs}")
+            for i, v in enumerate(args):
+                gd.debuginfo(prj="mt", info=f'arg[{i}]={infoTensor(v)}')
+
+            for k, v in kwargs.items():
+                if k == 'past_key_values':
+                    gd.debuginfo(prj="mt", info=f'ignore details of kwargs[{k}]')
+                else:
+                    gd.debuginfo(prj="mt", info=f'kwargs[{k}]={infoTensor(v)}')
+
+            # 似乎不同的阶段sft/rm/prompt，字段名不一样，同一阶段也可能有时候有时候没有
+            # if kwargs.__contains__('attention_mask'):
+            #     gd.debuginfo(prj="mt", info=f"kwargs['attention_mask']={infoTensor(kwargs['attention_mask'])}")
+            #
+            # if kwargs.__contains__('input_ids'):
+            #     gd.debuginfo(prj="mt", info=f"kwargs['input_ids']={infoTensor(kwargs['input_ids'])}")
+            #
+            # # if kwargs.__contains__('past_key_values'): 太大
+            # #     gd.debuginfo(prj="mt", info=f"kwargs['past_key_values']={infoTensor(kwargs['past_key_values'])}")
+            #
+            # #if kwargs.has_key('labels'): # python3 不支持has_key
+            # if kwargs.__contains__('labels'):
+            #     gd.debuginfo(prj="mt", info=f"kwargs['labels']={infoTensor(kwargs['labels'])}")
         return super().forward(*args, **kwargs)
 
 

@@ -52,27 +52,28 @@ class GPT2PipelineForwards:
         stage_index: Optional[List[int]] = None,
         shard_config: ShardConfig = None,
     ) -> Union[Dict, Tuple, BaseModelOutputWithPastAndCrossAttentions]:
-        gd.debuginfo(prj="mt", info=f'')
+
         # This function is modified on the basis of transformers.models.gpt2.modeling_gpt2.GPT2Model.forward.
         # Please refer to original code of transformers for more details.
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        gd.debuginfo(prj="mt", info=f"return_dict={return_dict}")
 
-        logger = logging.get_logger(__name__)
+        # logger = logging.get_logger(__name__)
 
         # Preprocess passed in arguments
         # TODO(baizhou): left the recording kv-value tensors as () or None type, this feature may be added in the future.
         if past_key_values:
-            logger.warning_once("Non-empty past_key_values is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"Non-empty past_key_values is not supported for pipeline models at the moment.")
             past_key_values = None
         if output_attentions:
-            logger.warning_once("output_attentions=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_attentions=True is not supported for pipeline models at the moment.")
             output_attentions = False
         if output_hidden_states:
-            logger.warning_once("output_hidden_states=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"output_hidden_states=True is not supported for pipeline models at the moment.")
             output_hidden_states = False
         if use_cache:
-            logger.warning_once("use_cache=True is not supported for pipeline models at the moment.")
+            gd.debuginfo(prj="mt", info=f"use_cache=True is not supported for pipeline models at the moment.")
             use_cache = False
 
         if stage_manager.is_first_stage():
@@ -172,9 +173,8 @@ class GPT2PipelineForwards:
         if self.gradient_checkpointing and self.training:
             gd.debuginfo(prj="mt", info=f'')
             if use_cache:
-                logger.warning_once(
-                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
-                )
+                gd.debuginfo(prj="mt", info=f"`use_cache=True` is incompatible with gradient checkpointing. "
+                                            f"Setting `use_cache=False`...")
                 use_cache = False
         presents = () if use_cache else None
         all_self_attentions = () if output_attentions else None
@@ -743,10 +743,8 @@ class GPT2PipelineForwards:
                 gd.debuginfo(prj="mt", info=f'')
             else:
                 sequence_lengths = -1
-                logger.warning_once(
-                    f"{self.__class__.__name__} will not detect padding tokens in `inputs_embeds`. Results may be "
-                    "unexpected if using padding tokens in conjunction with `inputs_embeds.`"
-                )
+                gd.debuginfo(prj="mt", info=f"{self.__class__.__name__} will not detect padding tokens in `inputs_embeds`. "
+                                            f"Results may be unexpected if using padding tokens in conjunction with `inputs_embeds.`")
 
         pooled_logits = logits[torch.arange(batch_size, device=logits.device), sequence_lengths]
 
@@ -1010,10 +1008,9 @@ def gpt2_sequence_parallel_forward_fn(shard_config: ShardConfig):
 
         if self.gradient_checkpointing and self.training:
             if use_cache:
-                logger = logging.get_logger(__name__)
-                logger.warning_once(
-                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
-                )
+                # logger = logging.get_logger(__name__)
+                gd.debuginfo(prj="mt", info=f"`use_cache=True` is incompatible with gradient checkpointing. "
+                                            f"Setting `use_cache=False`...")
                 use_cache = False
 
         presents = () if use_cache else None
