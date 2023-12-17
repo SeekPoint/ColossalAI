@@ -1,6 +1,6 @@
 import argparse
 from typing import Callable, List, Union
-
+import os
 import evaluate
 import torch
 import torch.distributed as dist
@@ -132,36 +132,63 @@ def train_epoch(
     is_pp_last_stage = use_pipeline and booster.plugin.stage_manager.is_last_stage()
     total_step = len(train_dataloader)
 
+    gd.debuginfo(prj="mt", info=f'use_pipeline={use_pipeline}')
+    gd.debuginfo(prj="mt", info=f'is_pp_last_stage={is_pp_last_stage}')
+    gd.debuginfo(prj="mt", info=f'total_step={total_step}')
+
+
     model.train()
+    gd.debuginfo(prj="mt", info=f'=================GPT HP 2==============================')
+
     optimizer.zero_grad()
+    gd.debuginfo(prj="mt", info=f'=================GPT HP 3==============================')
+
     train_dataloader_iter = iter(train_dataloader)
+    gd.debuginfo(prj="mt", info=f'train_dataloader_iter={train_dataloader_iter}')
+
     with tqdm(
         range(total_step),
         desc=f"Epoch [{epoch + 1}/{NUM_EPOCHS}]",
         disable=not (coordinator.is_master() or is_pp_last_stage),
     ) as pbar:
         # Forward pass
-        for _ in pbar:
+        for step in pbar:
+            if step > 10:
+                break
+            logf = f'Train_OPT_epoch={epoch:02}+step={step:03}'
+            gd.emb_start(info=logf)
             if use_pipeline:
                 outputs = booster.execute_pipeline(
                     train_dataloader_iter, model, _criterion, optimizer, return_loss=True, return_outputs=True
                 )
+                gd.debuginfo(prj="mt", info=f'outputs={outputs}')
                 # Backward and optimize
                 if is_pp_last_stage:
                     loss = outputs["loss"]
                     pbar.set_postfix({"loss": loss.item()})
             else:
                 data = next(train_dataloader_iter)
+                gd.debuginfo(prj="mt", info=f'data-1={data}')
                 data = move_to_cuda(data)
+                gd.debuginfo(prj="mt", info=f'data-2={data}')
+
                 outputs = model(**data)
+                gd.debuginfo(prj="mt", info=f'outputs={outputs}')
+
                 loss = _criterion(outputs, None)
+                gd.debuginfo(prj="mt", info=f'loss={loss}')
                 # Backward
                 booster.backward(loss, optimizer)
+                gd.debuginfo(prj="mt", info=f'=================GPT HP 4==============================')
                 pbar.set_postfix({"loss": loss.item()})
 
+            gd.debuginfo(prj="mt", info=f'=================GPT HP 5==============================')
             optimizer.step()
+            gd.debuginfo(prj="mt", info=f'=================GPT HP 6==============================')
             optimizer.zero_grad()
+            gd.debuginfo(prj="mt", info=f'=================GPT HP 7==============================')
             lr_scheduler.step()
+            gd.emb_end(info=logf)
 
 
 def main():
@@ -187,6 +214,7 @@ def main():
     parser.add_argument("--target_f1", type=float, default=None, help="target f1 score. Raise exception if not reached")
     parser.add_argument("--use_lazy_init", type=bool, default=False, help="for initiating lazy init context")
     args = parser.parse_args()
+    gd.debuginfo(prj="mt", info=f'args={args}')
 
     if args.model_type == "gpt2":
         model_name = "/share/hf_model/gpt2"
@@ -196,24 +224,34 @@ def main():
     # Launch Distributed Environment
     # ==============================
     colossalai.launch_from_torch(config={}, seed=42)
+    gd.debuginfo(prj="mt", info=f'=================GPT HP 1==============================')
+
     coordinator = DistCoordinator()
+    gd.debuginfo(prj="mt", info=f'coordinator={coordinator}')
 
     # local_batch_size = BATCH_SIZE // coordinator.world_size
     lr = LEARNING_RATE * coordinator.world_size
+    gd.debuginfo(prj="mt", info=f'lr={lr}')
+
 
     # ==============================
     # Instantiate Plugin and Booster
     # ==============================
     booster_kwargs = {}
     if args.plugin == "torch_ddp_fp16":
+        gd.debuginfo(prj="mt", info=f'')
         booster_kwargs["mixed_precision"] = "fp16"
     if args.plugin.startswith("torch_ddp"):
+        gd.debuginfo(prj="mt", info=f'')
         plugin = TorchDDPPlugin()
     elif args.plugin == "gemini":
+        gd.debuginfo(prj="mt", info=f'')
         plugin = GeminiPlugin(initial_scale=2**5)
     elif args.plugin == "low_level_zero":
+        gd.debuginfo(prj="mt", info=f'')
         plugin = LowLevelZeroPlugin(initial_scale=2**5)
     elif args.plugin == "hybrid_parallel":
+        gd.debuginfo(prj="mt", info=f'')
         # modify the param accordingly for finetuning test cases
         plugin = HybridParallelPlugin(
             tp_size=1,
@@ -225,8 +263,10 @@ def main():
             precision="fp16",
             initial_scale=1,
         )
+    gd.debuginfo(prj="mt", info=f'plugin={plugin}')
 
     booster = Booster(plugin=plugin, **booster_kwargs)
+    gd.debuginfo(prj="mt", info=f'booster={booster}')
 
     # ==============================
     # Prepare Dataloader
@@ -234,8 +274,13 @@ def main():
     data_builder = GLUEDataBuilder(
         model_name, plugin, args.task, train_batch_size=BATCH_SIZE, eval_batch_size=BATCH_SIZE
     )
+    gd.debuginfo(prj="mt", info=f'data_builder={data_builder}')
+
     train_dataloader = data_builder.train_dataloader()
+    gd.debuginfo(prj="mt", info=f'train_dataloader={train_dataloader}')
+
     test_dataloader = data_builder.test_dataloader()
+    gd.debuginfo(prj="mt", info=f'test_dataloader={test_dataloader}')
 
     # ====================================
     # Prepare model, optimizer
@@ -244,14 +289,18 @@ def main():
 
     cfg = AutoConfig.from_pretrained(model_name, num_labels=data_builder.num_labels)
 
+
     # https://stackoverflow.com/questions/68084302/assertionerror-cannot-handle-batch-sizes-1-if-no-padding-token-is-defined
     # "AssertionError: Cannot handle batch sizes > 1 if no padding token is > defined" and pad_token = eos_token
     cfg.pad_token_id = cfg.eos_token_id
+    gd.debuginfo(prj="mt", info=f'cfg={cfg}')
 
     if model_name == "/share/hf_model/gpt2":
         model = GPT2ForSequenceClassification.from_pretrained(model_name, config=cfg).cuda()
     else:
         raise RuntimeError
+
+    gd.debuginfo(prj="mt", info=f'model={model}')
 
     # optimizer
     no_decay = ["bias", "LayerNorm.weight"]
@@ -268,6 +317,8 @@ def main():
 
     optimizer = HybridAdam(optimizer_grouped_parameters, lr=lr, eps=1e-8)
 
+    gd.debuginfo(prj="mt", info=f'optimizer={optimizer}')
+
     # lr scheduler
     total_steps = len(train_dataloader) * NUM_EPOCHS
     num_warmup_steps = int(WARMUP_FRACTION * total_steps)
@@ -276,6 +327,10 @@ def main():
         num_warmup_steps=num_warmup_steps,
         num_training_steps=total_steps,
     )
+
+    gd.debuginfo(prj="mt", info=f'total_steps={total_steps}')
+    gd.debuginfo(prj="mt", info=f'num_warmup_steps={num_warmup_steps}')
+    gd.debuginfo(prj="mt", info=f'lr_scheduler={lr_scheduler}')
 
     def _criterion(outputs, inputs):
         outputs = output_transform_fn(outputs)
@@ -288,6 +343,10 @@ def main():
     model, optimizer, _criterion, _, lr_scheduler = booster.boost(
         model, optimizer, criterion=_criterion, lr_scheduler=lr_scheduler
     )
+    gd.debuginfo(prj="mt", info=f'model={model}')
+    gd.debuginfo(prj="mt", info=f'optimizer={optimizer}')
+    gd.debuginfo(prj="mt", info=f'_criterion={_criterion}')
+    gd.debuginfo(prj="mt", info=f'lr_scheduler={lr_scheduler}')
 
     # ==============================
     # Train model
@@ -305,12 +364,24 @@ def main():
         booster,
         coordinator,
     )
+    gd.debuginfo(prj="mt", info=f'results={results}')
 
     if coordinator.is_master():
-        print(results)
+        # print(results)
         if args.target_f1 is not None and "f1" in results:
             assert results["f1"] >= args.target_f1, f'f1 score {results["f1"]} is lower than target {args.target_f1}'
 
 
 if __name__ == "__main__":
+    gd.debuginfo(prj='mt', info=f'=================')  # 不被计入
+
+    gd.prjenable('ALL')  # 打开项目flag
+
+    logpath = f'/workspace/yk_repo/ColossalAI/_log_tmps_GPT_hybirdParallel_/'
+
+    if not os.path.exists(logpath):
+        os.makedirs(logpath)
+
+    gd.emb_mode(path=logpath, embedded_mode=True)
+
     main()

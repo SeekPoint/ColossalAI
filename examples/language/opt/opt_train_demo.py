@@ -200,8 +200,6 @@ def main():
 
     gd.debuginfo(prj="mt", info=f"Saving model checkpoint to {args.output_path}")
 
-    gd.emb_end(info=logf)
-
 
 if __name__ == "__main__":
     gd.debuginfo(prj='mt', info=f'=================') # 不被计入

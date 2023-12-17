@@ -181,11 +181,11 @@ class NVMeOptimizer(torch.optim.Optimizer):
         super().load_state_dict(state_dict)
 
     def __del__(self) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'self.offload_dir={self.offload_dir}')
         if getattr(self, "offloader", None) is not None:
             del self.offloader
             if os.path.exists(self.offload_dir):
                 try:
                     os.rmdir(self.offload_dir)
-                except OSError:
-                    pass
+                except OSError as e:
+                    gd.debuginfo(prj="mt", info=f'expception={e}')

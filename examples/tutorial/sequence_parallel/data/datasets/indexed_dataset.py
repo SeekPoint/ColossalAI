@@ -149,6 +149,7 @@ class IndexedDataset(torch.utils.data.Dataset):
             raise IndexError("index out of range")
 
     def __del__(self):
+        gd.debuginfo(prj="mt", info=f'self.data_file={self.data_file}')
         if self.data_file:
             self.data_file.close()
 
