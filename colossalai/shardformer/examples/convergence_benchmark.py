@@ -131,7 +131,7 @@ def evaluate_model(
     eval_splits: List[str],
     coordinator: DistCoordinator,
 ):
-    metric = evaluate.load("glue", task_name, process_id=coordinator.rank, num_process=coordinator.world_size)
+    metric = evaluate.load("/share/hf_eval/glue", task_name, process_id=coordinator.rank, num_process=coordinator.world_size)
     model.eval()
 
     def evaluate_subset(dataloader: DataLoader):

@@ -53,7 +53,9 @@ def evaluate_model(
     booster: Booster,
     coordinator: DistCoordinator,
 ):
-    metric = evaluate.load("glue", task_name, process_id=coordinator.rank, num_process=coordinator.world_size)
+    # 因为已经有dataset的glue,所以不能放到/share/hf_model下
+    # 同时如果改名 glue_xxx, 那么相应下面的文件也要改名glue_xxx/glue_xxx.py，可能引起其他错误
+    metric = evaluate.load("/share/hf_eval/glue", task_name, process_id=coordinator.rank, num_process=coordinator.world_size)
     model.eval()
 
     def evaluate_subset(dataloader: DataLoader):

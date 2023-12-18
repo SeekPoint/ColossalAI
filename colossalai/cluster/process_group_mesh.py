@@ -60,8 +60,9 @@ class ProcessGroupMesh:
         """
         gd.debuginfo(prj="mt", info=f'')
         for group in self._ranks_to_group.values():
+            gd.debuginfo(prj="mt", info=f'group={group}')
             dist.destroy_process_group(group)
-
+        gd.debuginfo(prj="mt", info=f'')
         # Manually clear all process groups to save memory
         gc.collect()
 

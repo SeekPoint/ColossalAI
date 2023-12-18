@@ -48,16 +48,26 @@ def evaluate_model(
     booster: Booster,
     coordinator: DistCoordinator,
 ):
-    metric = evaluate.load("glue", task_name, process_id=coordinator.rank, num_process=coordinator.world_size)
+    metric = evaluate.load("/share/hf_eval/glue", task_name, process_id=coordinator.rank, num_process=coordinator.world_size)
+    gd.debuginfo(prj="mt", info=f'metric={metric}')
+
     model.eval()
+
+    gd.debuginfo(prj="mt", info=f'=======================================')
 
     def evaluate_subset(dataloader: DataLoader):
         use_pipeline = isinstance(booster.plugin, HybridParallelPlugin) and booster.plugin.pp_size > 1
         is_pp_last_stage = use_pipeline and booster.plugin.stage_manager.is_last_stage()
 
+        gd.debuginfo(prj="mt", info=f'use_pipeline={use_pipeline}')
+        gd.debuginfo(prj="mt", info=f'is_pp_last_stage={is_pp_last_stage}')
+
         accum_loss = torch.zeros(1, device=get_current_device())
-        for batch in dataloader:
+        gd.debuginfo(prj="mt", info=f'accum_loss={accum_loss}')
+
+        for i, batch in enumerate(dataloader):
             batch = move_to_cuda(batch)
+            gd.debuginfo(prj="mt", info=f'The {i}th batch={batch}')
             labels = batch["labels"]
             if use_pipeline:
                 pg_mesh = booster.plugin.pg_mesh
@@ -66,24 +76,37 @@ def evaluate_model(
                 current_rank = dist.get_rank()
                 batch = iter([batch])
                 outputs = booster.execute_pipeline(batch, model, criterion, return_loss=True, return_outputs=True)
+                gd.debuginfo(prj="mt", info=f'pg_mesh={pg_mesh}')
+                gd.debuginfo(prj="mt", info=f'pp_group={pp_group}')
+                gd.debuginfo(prj="mt", info=f'current_pp_group_ranks={current_pp_group_ranks}')
+                gd.debuginfo(prj="mt", info=f'current_rank={current_rank}')
+                gd.debuginfo(prj="mt", info=f'batch={batch}')
+                gd.debuginfo(prj="mt", info=f'outputs={outputs}')
 
                 if is_pp_last_stage:
                     logits = outputs["outputs"]["logits"]
+                    gd.debuginfo(prj="mt", info=f'logits={logits}')
+
                     val_loss = outputs["loss"]
+                    gd.debuginfo(prj="mt", info=f'val_loss={val_loss}')
+
                     accum_loss.add_(val_loss)
 
                     if num_labels > 1:
                         preds = torch.argmax(logits, axis=1)
+                        gd.debuginfo(prj="mt", info=f'preds={preds}')
                     elif num_labels == 1:
                         preds = logits.squeeze()
+                        gd.debuginfo(prj="mt", info=f'preds={preds}')
 
                     dist.broadcast_object_list([preds, val_loss], src=current_pp_group_ranks[-1], group=pp_group)
 
                     metric.add_batch(predictions=preds, references=labels)
                 elif current_rank in current_pp_group_ranks:
+                    gd.debuginfo(prj="mt", info=f'---------------------------')
                     object_list = [None, None]
                     dist.broadcast_object_list(object_list, src=current_pp_group_ranks[-1], group=pp_group)
-
+                    gd.debuginfo(prj="mt", info=f'--------------------------')
                     metric.add_batch(predictions=object_list[0].to(get_current_device()), references=labels)
                     accum_loss.add_(object_list[1].to(get_current_device()))
 
@@ -93,26 +116,37 @@ def evaluate_model(
                 val_loss, logits = outputs[:2]
                 accum_loss.add_(val_loss)
 
+                gd.debuginfo(prj="mt", info=f'val_loss={val_loss}')
+                gd.debuginfo(prj="mt", info=f'logits={logits}')
+                gd.debuginfo(prj="mt", info=f'outputs={outputs}')
+
+
                 if num_labels > 1:
                     preds = torch.argmax(logits, axis=1)
+                    gd.debuginfo(prj="mt", info=f'preds={preds}')
                 elif num_labels == 1:
                     preds = logits.squeeze()
+                    gd.debuginfo(prj="mt", info=f'preds={preds}')
 
                 metric.add_batch(predictions=preds, references=labels)
 
         results = metric.compute()
         dist.all_reduce(accum_loss.div_(len(dataloader)))
+        gd.debuginfo(prj="mt", info=f'+++++++++++++++++++++++++++++++++++++++++++')
         if coordinator.is_master() and results is not None:
+            gd.debuginfo(prj="mt", info=f'')
             results["loss"] = accum_loss.item() / coordinator.world_size
 
         return results
 
     if isinstance(test_dataloader, DataLoader):
+        gd.debuginfo(prj="mt", info=f'')
         return evaluate_subset(test_dataloader)
     else:
         assert len(test_dataloader) == len(eval_splits)
         final_results = {}
         for split, sub_loader in zip(eval_splits, test_dataloader):
+            gd.debuginfo(prj="mt", info=f'split={split}, sub_loader={sub_loader}')
             results = evaluate_subset(sub_loader)
             final_results.update({f"{k}_{split}": v for k, v in results.items()})
         return final_results
@@ -354,6 +388,8 @@ def main():
     for epoch in range(NUM_EPOCHS):
         train_epoch(epoch, model, optimizer, _criterion, lr_scheduler, train_dataloader, booster, coordinator)
 
+    logf = f'evaluate_model_OPT_epoch'
+    gd.emb_start(info=logf)
     results = evaluate_model(
         model,
         _criterion,
@@ -365,6 +401,7 @@ def main():
         coordinator,
     )
     gd.debuginfo(prj="mt", info=f'results={results}')
+    gd.emb_end(info=logf)
 
     if coordinator.is_master():
         # print(results)
