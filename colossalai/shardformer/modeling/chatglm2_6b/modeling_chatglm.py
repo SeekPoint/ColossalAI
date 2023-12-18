@@ -63,7 +63,7 @@ if sys.platform != "darwin":
     torch._C._jit_override_can_fuse_on_cpu(True)
     torch._C._jit_override_can_fuse_on_gpu(True)
 
-logger = logging.get_logger(__name__)
+# logger = logging.get_logger(__name__)
 
 _CHECKPOINT_FOR_DOC = "THUDM/ChatGLM2-6B"
 _CONFIG_FOR_DOC = "ChatGLM6BConfig"
@@ -1428,9 +1428,7 @@ class ChatGLMForConditionalGeneration(ChatGLMPreTrainedModel):
             gd.debuginfo(prj="mt", info=
                 f"Using `max_length`'s default ({generation_config.max_length}) to control the generation length. "
                 "This behaviour is deprecated and will be removed from the config in v5 of Transformers -- we"
-                " recommend using `max_new_tokens` to control the maximum length of the generation.",
-                UserWarning,
-            )
+                " recommend using `max_new_tokens` to control the maximum length of the generation.")
         elif generation_config.max_new_tokens is not None:
             gd.debuginfo(prj="mt", info=f'')
             generation_config.max_length = generation_config.max_new_tokens + input_ids_seq_length

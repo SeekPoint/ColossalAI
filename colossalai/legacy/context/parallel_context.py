@@ -587,3 +587,4 @@ class ParallelContext(metaclass=SingletonMeta):
 
 
 global_context = ParallelContext()
+gd.debuginfo(prj="mt", info=f"global_context={global_context}")

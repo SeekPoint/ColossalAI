@@ -47,7 +47,7 @@ class DimSpec:
         Argument:
             str_spec(str): dim spec in str type.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        # gd.debuginfo(prj="mt", info=f'')
         if str_spec == "R":
             return []
         if str_spec == "S0":
@@ -116,7 +116,7 @@ class DimSpec:
                 else:
                     difference = NAN
                 difference_dict[spec_pair] = difference
-
+        gd.debuginfo(prj="mt", info=f'difference_dict={difference_dict}')
         self.difference_dict = difference_dict
 
     def dim_diff(self, other):

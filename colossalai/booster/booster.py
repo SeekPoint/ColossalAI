@@ -27,7 +27,7 @@ class Booster:
 
 
     ```python
-    # Following is pseudocode
+    # Following is pseudocode  按照一下模式
 
     colossalai.launch(...)
     plugin = GeminiPlugin(...)
@@ -139,10 +139,11 @@ class Booster:
         Returns:
             List[Union[nn.Module, Optimizer, LRScheduler, DataLoader]]: The list of boosted input arguments.
         """
-        gd.debuginfo(prj="mt", info=f'')
         # TODO(FrankLeeeee): consider multi-model and multi-optimizer case
         # TODO(FrankLeeeee): consider multi-dataloader case
         pretrained_path = pretrained_utils.get_pretrained_path(model)
+        gd.debuginfo(prj="mt", info=f'pretrained_path={pretrained_path}')
+
         # transform model for mixed precision
         if self.plugin:
             gd.debuginfo(prj="mt", info=f'')
@@ -166,6 +167,8 @@ class Booster:
             self.load_model(model, pretrained_path)
             # clear pretrained path attr
             orig_model = model.unwrap() if isinstance(model, ModelWrapper) else model
+            gd.debuginfo(prj="mt", info=f'orig_model={orig_model}')
+
             pretrained_utils.set_pretrained_path(orig_model, None)
 
         return model, optimizer, criterion, dataloader, lr_scheduler
@@ -177,10 +180,11 @@ class Booster:
             loss (torch.Tensor): The loss for backpropagation.
             optimizer (Optimizer): The optimizer to be updated.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        logf = f'boost_backward'
+        gd.emb_start(info=logf)
         # TODO(frank lee): implement this method with plugin
         optimizer.backward(loss)
-        gd.debuginfo(prj="mt", info=f'')
+        gd.emb_end(info=logf)
 
     def execute_pipeline(
         self,

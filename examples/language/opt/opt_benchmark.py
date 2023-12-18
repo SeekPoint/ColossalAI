@@ -39,7 +39,7 @@ def colo_memory_cap(size_in_GB):
     cuda_capacity = colo_device_memory_capacity(get_current_device())
     if size_in_GB * (1024**3) < cuda_capacity:
         colo_set_process_memory_fraction(size_in_GB * (1024**3) / cuda_capacity)
-        print(f"Limiting GPU memory usage to {size_in_GB} GB")
+        gd.debuginfo(prj="mt", info=f"Limiting GPU memory usage to {size_in_GB} GB")
 
 
 def main():

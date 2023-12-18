@@ -98,7 +98,7 @@ class GeneralCheckpointIO(CheckpointIO):
         """
         gd.debuginfo(prj="mt", info=f'')
         if os.path.isfile(checkpoint):
-            logging.error(f"Provided path ({checkpoint}) should be a directory, not a file")
+            gd.debuginfo(prj="mt", info=f"Provided path ({checkpoint}) should be a directory, not a file")
             return
 
         Path(checkpoint).mkdir(parents=True, exist_ok=True)
@@ -130,11 +130,9 @@ class GeneralCheckpointIO(CheckpointIO):
         # Wrap up index file.
         index_file.append_meta_data("total_size", total_size)
         index_file.write_index_file(save_index_file)
-        logging.info(
-            f"The optimizer is going to be split to checkpoint shards. "
+        gd.debuginfo(prj="mt", info=f"The optimizer is going to be split to checkpoint shards. "
             f"You can find where each parameters has been saved in the "
-            f"index located at {save_index_file}."
-        )
+            f"index located at {save_index_file}.")
 
     def load_unsharded_optimizer(self, optimizer: Optimizer, checkpoint: Path):
         gd.debuginfo(prj="mt", info=f'')
@@ -164,9 +162,11 @@ class GeneralCheckpointIO(CheckpointIO):
         implement this method as it can be supported by Huggingface model,
         save shard model, save model to multiple files
         """
-        gd.debuginfo(prj="mt", info=f'')
+        logf = f'gc_save_sharded_model'
+        gd.emb_start(info=logf)
+
         if os.path.isfile(checkpoint_path):
-            logging.error(f"Provided path ({checkpoint_path}) should be a directory, not a file")
+            gd.debuginfo(prj="mt", info=f"Provided path ({checkpoint_path}) should be a directory, not a file")
             return
 
         Path(checkpoint_path).mkdir(parents=True, exist_ok=True)
@@ -191,11 +191,11 @@ class GeneralCheckpointIO(CheckpointIO):
         index_file.append_meta_data("total_size", total_size)
         index_file.write_index_file(save_index_file)
         save_config_file(model, checkpoint_path, is_master=True)
-        logging.info(
-            f"The model is going to be split to checkpoint shards. "
+        gd.debuginfo(prj="mt", info=f"The model is going to be split to checkpoint shards. "
             f"You can find where each parameters has been saved in the "
-            f"index located at {save_index_file}."
-        )
+            f"index located at {save_index_file}.")
+
+        gd.emb_end(info=logf)
 
     def load_sharded_model(
         self,
@@ -208,7 +208,9 @@ class GeneralCheckpointIO(CheckpointIO):
         """
         load shard model, load model from multiple files
         """
-        gd.debuginfo(prj="mt", info=f'')
+        logf = f'gc_load_sharded_model'
+        gd.emb_start(info=logf)
+
         use_safetensors = False
         if "safetensors" in checkpoint_index_file.name:
             gd.debuginfo(prj="mt", info=f'')
@@ -240,3 +242,5 @@ class GeneralCheckpointIO(CheckpointIO):
                         self.__class__.__name__, "\n\t".join(error_msgs)
                     )
                 )
+
+        gd.emb_end(info=logf)

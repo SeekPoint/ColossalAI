@@ -112,8 +112,8 @@ def generate_dataset(dummy_data: bool = False):
             X = np.fromstring(file.read(int(95e6)), dtype=np.uint8)
             trX, vaX = np.split(X, [int(90e6)])
             data_train, data_val = torch.from_numpy(trX), torch.from_numpy(vaX)
-            # print(f"data_train {data_train.shape} {data_train.dtype} {max(data_train)} {min(data_train)}")
-            # print(f"data_val {data_val.shape} {data_val.dtype}  {max(data_val)} {min(data_val)}")
+            # gd.debuginfo(prj="mt", info=f"data_train {data_train.shape} {data_train.dtype} {max(data_train)} {min(data_train)}")
+            # gd.debuginfo(prj="mt", info=f"data_val {data_val.shape} {data_val.dtype}  {max(data_val)} {min(data_val)}")
             return data_train, data_val
     else:
         return torch.randint(0, 100, (90000000,)), torch.randint(0, 100, (5000000,))
@@ -196,7 +196,7 @@ for i in tqdm.tqdm(range(NUM_BATCHES), mininterval=10.0, desc="training"):
         bwd_end = time()
         bwd_time = bwd_end - fwd_end
 
-        # print(f"training loss: {loss.item()}")
+        # gd.debuginfo(prj="mt", info=f"training loss: {loss.item()}")
         torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
         # optim.step()
         # optim.zero_grad()
@@ -219,7 +219,7 @@ for i in tqdm.tqdm(range(NUM_BATCHES), mininterval=10.0, desc="training"):
             loss = model(next(train_loader))
             loss.backward()
 
-        print(f"training loss: {loss.item()}")
+        gd.debuginfo(prj="mt", info=f"training loss: {loss.item()}")
         torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
         optim.step()
         optim.zero_grad()
@@ -233,13 +233,13 @@ gd.debuginfo(prj="mt", info=f"Median TFLOPS is {tflops_list[median_index]:.3f}")
 #     model.eval()
 #     with torch.no_grad():
 #         loss = model(next(val_loader))
-#         print(f"validation loss: {loss.item()}")
+#         gd.debuginfo(prj="mt", info=f"validation loss: {loss.item()}")
 
 # if i % GENERATE_EVERY == 0:
 #     model.eval()
 #     inp = random.choice(val_dataset)[:-1]
 #     prime = decode_tokens(inp)
-#     print(f"%s \n\n %s", (prime, "*" * 100))
+#     gd.debuginfo(prj="mt", info=f"%s \n\n %s", (prime, "*" * 100))
 
 #     sample = model.generate(inp[None, ...], GENERATE_LENGTH)
 #     output_str = decode_tokens(sample[0])

@@ -107,7 +107,7 @@ def set_cpu_maximum_parallelism():
     inter_str = conf_str.split("hardware_concurrency() : ")[1]
     max_concurrency = inter_str.split("\n")[0]
     os.environ["OMP_NUM_THREADS"] = max_concurrency
-    print(f"environmental variable OMP_NUM_THREADS is set to {max_concurrency}.")
+    gd.debuginfo(prj="mt", info=f"environmental variable OMP_NUM_THREADS is set to {max_concurrency}.")
 
 
 def main():
@@ -211,9 +211,15 @@ def main():
     gd.debuginfo(prj="mt", info=f'booster={booster}')
 
     model, optimizer, criterion, _, _ = booster.boost(model, optimizer, criterion)
+
+    logf = f'gpt_gemini_model'
+    gd.emb_start(info=logf)
+
     gd.debuginfo(prj="mt", info=f'model={model}')
     gd.debuginfo(prj="mt", info=f'optimizer={optimizer}')
     gd.debuginfo(prj="mt", info=f'criterion={criterion}')
+
+    gd.emb_end(info=logf)
 
 
     # model is shared after TP

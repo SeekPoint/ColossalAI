@@ -33,7 +33,7 @@ def convert(flat_dir: str, output_dir: str, part: int):
     output_path = os.path.join(output_dir, f"reshard-model_part-{part}.pt")
     flat_meta = load_json(os.path.join(flat_dir, "flat-meta.json"))
     flat_sd = torch.load(flat_path)
-    print(f"Loaded flat state dict from {flat_path}")
+    gd.debuginfo(prj="mt", info=f"Loaded flat state dict from {flat_path}")
     output_sd = {}
     for flat_key, param_meta in flat_meta.items():
         flat_param = flat_sd["model"][flat_key]
@@ -46,7 +46,7 @@ def convert(flat_dir: str, output_dir: str, part: int):
             output_sd[name] = param.view(shape)
 
     torch.save(output_sd, output_path)
-    print(f"Saved unflat state dict to {output_path}")
+    gd.debuginfo(prj="mt", info=f"Saved unflat state dict to {output_path}")
 
 
 if __name__ == "__main__":

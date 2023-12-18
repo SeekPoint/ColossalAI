@@ -43,7 +43,7 @@ def _benchmark(rank, world_size, port):
     # print results
     print("===============benchmark summary================")
     for batch_size, peak_mem, through_put in zip(batch_sizes, peak_mems, through_puts):
-        print(f"batch_size: {int(batch_size)}, peak memory: {peak_mem:.3f} MB, through put: {through_put:.3f} images/s")
+        gd.debuginfo(prj="mt", info=f"batch_size: {int(batch_size)}, peak memory: {peak_mem:.3f} MB, through put: {through_put:.3f} images/s")
 
 
 def auto_activation_checkpoint_batchsize_benchmark():

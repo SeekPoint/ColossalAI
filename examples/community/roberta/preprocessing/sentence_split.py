@@ -114,7 +114,7 @@ def get_start_end(real_shard, base=0, server_num=10, server_name="GPU"):
 
     fin_list = real_shard[server_num * base + host - 1]
     print(fin_list)
-    print(f"I am server {host}, process {server_num * base + host - 1}, len {len(fin_list)}")
+    gd.debuginfo(prj="mt", info=f"I am server {host}, process {server_num * base + host - 1}, len {len(fin_list)}")
     return fin_list, host
 
 

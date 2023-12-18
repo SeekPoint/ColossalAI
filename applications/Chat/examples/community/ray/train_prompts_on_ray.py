@@ -221,7 +221,7 @@ class RayPPOActor(TrainablePPORole):
         self._strategy.backward(actor_loss, self._model, self._optimizer)
         self._strategy.optimizer_step(self._optimizer)
         self._optimizer.zero_grad()
-        logging.info("actor_loss: {}".format(actor_loss))
+        gd.debuginfo(prj="mt", info=f"actor_loss: {actor_loss}")
 
     def save_checkpoint(self, save_path, should_save_optimizer: bool):
         if self._rank == 0:
@@ -261,7 +261,7 @@ class RayPPOCritic(TrainablePPORole):
         self._strategy.backward(critic_loss, self._model, self._optimizer)
         self._strategy.optimizer_step(self._optimizer)
         self._optimizer.zero_grad()
-        logging.info("critic_loss: {}".format(critic_loss))
+        gd.debuginfo(prj="mt", info=f"critic_loss: {critic_loss}")
 
     @torch.no_grad()
     def calculate_value(self, sequence_attention_action_mask):
@@ -455,13 +455,13 @@ def main(args):
     else:
         raise ValueError(f'Unsupported model "{args.model}"')
 
-    logging.info("Start creating actors")
+    gd.debuginfo(prj="mt", info=f"Start creating actors")
     # Initialize 4 models (actor, critic, initial_model and reward_model)
     actor_group = PPOActorRayActorGroup(num_nodes=args.num_actor_nodes, num_gpus_per_node=args.num_gpus_per_node)
     critic_group = PPOCriticRayActorGroup(num_nodes=args.num_critic_nodes, num_gpus_per_node=args.num_gpus_per_node)
     initial_group = PPOInitialRayActorGroup(num_nodes=args.num_initial_nodes, num_gpus_per_node=args.num_gpus_per_node)
     reward_group = PPORewardRayActorGroup(num_nodes=args.num_reward_nodes, num_gpus_per_node=args.num_gpus_per_node)
-    logging.info("Actors created")
+    gd.debuginfo(prj="mt", info=f"Actors created")
 
     # Prepare model for training
     generate_kwargs = {"max_length": 128, "do_sample": True, "temperature": 1.0, "top_k": 50}
@@ -472,7 +472,7 @@ def main(args):
         + reward_group.async_init_model_from_pretrained(args.strategy, critic_model_class, args.pretrain, False)
         + actor_group.async_prepare_for_sequence_generation(args.model, args.pretrain, generate_kwargs)
     )
-    logging.info("Models prepared for training")
+    gd.debuginfo(prj="mt", info=f"Models prepared for training")
 
     # Prepare models for training
     actor_group.load_csv_prompt_file_from_url_to_sampler(args.prompt_csv_url)
@@ -484,7 +484,7 @@ def main(args):
     update_timesteps = args.update_timesteps
     experience_batch_size = args.experience_batch_size
     # Start training
-    logging.info("Training start")
+    gd.debuginfo(prj="mt", info=f"Training start")
     # Set all models to eval and add experience maker
     all_ray_actors = (
         actor_group._actor_handlers
@@ -499,7 +499,7 @@ def main(args):
     experience_composition_refs = []
     time = 0
     for episode in range(num_episodes):
-        logging.info("episode {} started".format(episode))
+        gd.debuginfo(prj="mt", info=f"episode {episode} started")
         for _ in range(max_timesteps):
             time += 1
             # Experience queueing stage
@@ -541,7 +541,7 @@ def main(args):
                 )
                 # clear refs queue
                 experience_composition_refs.clear()
-    logging.info("Training finished")
+    gd.debuginfo(prj="mt", info=f"Training finished")
     # Save checkpoint
     actor_group.save_checkpoint(args.save_path, args.need_optim_ckpt)
 

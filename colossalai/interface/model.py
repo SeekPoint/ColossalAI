@@ -25,6 +25,7 @@ class ModelWrapper(nn.Module):
         return self.module
 
     def forward(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         return self.module(*args, **kwargs)
 
 

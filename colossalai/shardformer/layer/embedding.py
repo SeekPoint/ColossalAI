@@ -162,11 +162,11 @@ class Embedding1D(ParallelModule):
                 self.weight[self.padding_idx].fill_(0)
 
     def forward(self, input_: Tensor) -> Tensor:
-        gd.debuginfo(prj="mt", info=f'')
         output_parallel = F.embedding(input_, self.weight, self.padding_idx, *self.embed_args, **self.embed_kwargs)
+        gd.debuginfo(prj="mt", info=f'output_parallel={output_parallel}')
         if self.gather_output:
-            gd.debuginfo(prj="mt", info=f'')
             output = gather_forward_split_backward(output_parallel, dim=-1, process_group=self.process_group)
+            gd.debuginfo(prj="mt", info=f'output={output}')
             return output
         else:
             gd.debuginfo(prj="mt", info=f'')
@@ -322,19 +322,31 @@ class VocabParallelEmbedding1D(ParallelModule):
             return None
 
     def forward(self, input_: Tensor) -> Tensor:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         # Build the mask.
         input_mask = (input_ < self.vocab_start_index) | (input_ >= self.vocab_end_index)
+        gd.debuginfo(prj="mt", info=f'input_mask={input_mask}')
+
         # Mask the input.
         masked_input = input_.clone() - self.vocab_start_index
+        gd.debuginfo(prj="mt", info=f'masked_input={masked_input}')
+
         masked_input[input_mask] = 0
 
         output_parallel = F.embedding(
             masked_input, self.weight, self.padding_idx, *self.embed_args, **self.embed_kwargs
         )
 
+        gd.debuginfo(prj="mt", info=f'output_parallel={output_parallel}')
+
         # Mask the output embedding.
         output_parallel[input_mask, :] = 0.0
+
         # Reduce across all the model parallel GPUs.
         output = reduce_forward(output_parallel, self.process_group)
+        gd.debuginfo(prj="mt", info=f'output={output}')
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return output

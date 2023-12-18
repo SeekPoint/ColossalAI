@@ -691,7 +691,7 @@ class GPT2PipelineForwards:
         """
         gd.debuginfo(prj="mt", info=f'')
 
-        logger = logging.get_logger(__name__)
+        # logger = logging.get_logger(__name__)
 
         if input_ids is not None:
             batch_size, _ = input_ids.shape[:2]

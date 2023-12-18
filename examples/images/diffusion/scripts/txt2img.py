@@ -35,10 +35,10 @@ def chunk(it, size):
 
 
 def load_model_from_config(config, ckpt, verbose=False):
-    print(f"Loading model from {ckpt}")
+    gd.debuginfo(prj="mt", info=f"Loading model from {ckpt}")
     pl_sd = torch.load(ckpt, map_location="cpu")
     if "global_step" in pl_sd:
-        print(f"Global Step: {pl_sd['global_step']}")
+        gd.debuginfo(prj="mt", info=f"Global Step: {pl_sd['global_step']}")
     sd = pl_sd["state_dict"]
     model = instantiate_from_config(config.model)
     m, u = model.load_state_dict(sd, strict=False)
@@ -228,7 +228,7 @@ def main(opt):
         data = [batch_size * [prompt]]
 
     else:
-        print(f"reading prompts from {opt.from_file}")
+        gd.debuginfo(prj="mt", info=f"reading prompts from {opt.from_file}")
         with open(opt.from_file, "r") as f:
             data = f.read().splitlines()
             data = [p for p in data for i in range(opt.repeat)]
@@ -293,7 +293,7 @@ def main(opt):
         grid.save(os.path.join(outpath, f"grid-{grid_count:04}.png"))
         grid_count += 1
 
-    print(f"Your samples are ready and waiting for you here: \n{outpath} \n" f" \nEnjoy.")
+    gd.debuginfo(prj="mt", info=f"Your samples are ready and waiting for you here: \n{outpath} \n" f" \nEnjoy.")
 
 
 if __name__ == "__main__":

@@ -65,12 +65,21 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
         self.dp_group = dp_group
         self.pp_group = pp_group
         self.tp_group = tp_group
+
         self.dp_rank = dist.get_rank(self.dp_group)
         self.tp_rank = dist.get_rank(self.tp_group)
         self.pp_rank = dist.get_rank(self.pp_group)
+        gd.debuginfo(prj="mt", info=f'self.dp_rank={self.dp_rank}')
+        gd.debuginfo(prj="mt", info=f'self.tp_rank={self.tp_rank}')
+        gd.debuginfo(prj="mt", info=f'self.pp_rank={self.pp_rank}')
+
         self.dp_size = dist.get_world_size(dp_group)
         self.pp_size = dist.get_world_size(pp_group)
         self.tp_size = dist.get_world_size(tp_group)
+        gd.debuginfo(prj="mt", info=f'self.dp_size={self.dp_size}')
+        gd.debuginfo(prj="mt", info=f'self.pp_size={self.pp_size}')
+        gd.debuginfo(prj="mt", info=f'self.tp_size={self.tp_size}')
+
         self.use_zero = zero_stage > 0
         self.verbose = verbose
         self.coordinator = DistCoordinator()
@@ -83,6 +92,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
         # An internel method that breaks state_dict of model into shards within limited size.
 
         state_dict_sharder = StateDictSharder(size_per_shard)
+        gd.debuginfo(prj="mt", info=f'state_dict_sharder={state_dict_sharder}')
 
         # Save parameters.
         for name, param in model.named_parameters():
@@ -90,15 +100,20 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
                 continue
             # Gather tensor pieces when using tensor parallel.
             param_ = gather_distributed_param(param, keep_vars=False)
+            gd.debuginfo(prj="mt", info=f'name={name}, param_={infoTensor(param_)}')
+
             block, block_size = state_dict_sharder.append_param(prefix + name, param_)
+            gd.debuginfo(prj="mt", info=f'block={block}, block_size={block_size}')
             if block is not None:
                 yield block, block_size
 
         # Save buffers.
         for name, buf in model.named_buffers():
+            gd.debuginfo(prj="mt", info=f'name={name}, buf={buf}')
             if buf is not None and name not in model._non_persistent_buffers_set:
                 buffer = buf if keep_vars else buf.detach()
                 block, block_size = state_dict_sharder.append_param(prefix + name, buffer)
+                gd.debuginfo(prj="mt", info=f'block={block}, block_size={block_size}')
                 if block is not None:
                     yield block, block_size
 
@@ -108,9 +123,11 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             getattr(model.__class__, "get_extra_state", torch.nn.Module.get_extra_state)
             is not torch.nn.Module.get_extra_state
         ):
-            gd.debuginfo(prj="mt", info=f'')
             extra_state = model.get_extra_state()
+            gd.debuginfo(prj="mt", info=f'extra_state={extra_state}')
             block, block_size = state_dict_sharder.append_param(extra_state_key, extra_state)
+            gd.debuginfo(prj="mt", info=f'block={block}, block_size={block_size}')
+
             if block is not None:
                 yield block, block_size
 
@@ -185,15 +202,23 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             size_per_shard (int, optional): Size per shard in MB. Defaults to 1024.
             use_safetensors (bool, optional): Whether to use safe tensors. Defaults to False.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        logf = f'Hybrid_Parallel_save_sharded_model'
+        gd.emb_start(info=logf)
+
+        gd.debuginfo(prj="mt", info=f'checkpoint={checkpoint}')  # opt
         assert isinstance(model, ModelWrapper), "Please boost the model before saving!"
+
+        gd.debuginfo(prj="mt", info=f'model={model}')
         model = model.unwrap()
+        gd.debuginfo(prj="mt", info=f'unwrap model={model}')
 
         if os.path.isfile(checkpoint):
-            logging.error(f"Provided path ({checkpoint}) should be a directory, not a file")
+            gd.debuginfo(prj="mt", info=f"Provided path ({checkpoint}) should be a directory, not a file")
             return
 
         Path(checkpoint).mkdir(parents=True, exist_ok=True)
+
+        gd.debuginfo(prj="mt", info=f'------------------1------------------------------')
 
         # Devices along the same dp_group share the same copies of model.
         # So only let the device with dp_rank == 0 save the model.
@@ -204,8 +229,15 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
         # Then collect the sharded parameters & buffers along tp_group.
         # Only devices with tp_rank == 0 are responsible for model saving.
         state_dict_shard = HybridParallelCheckpointIO._model_sharder(model, size_per_shard=size_per_shard)
+        gd.debuginfo(prj="mt", info=f'state_dict_shard={state_dict_shard}')
+
         weights_name, save_index_file = get_model_base_filenames(prefix, use_safetensors)
+        gd.debuginfo(prj="mt", info=f'1-save_index_file={save_index_file}')
+        gd.debuginfo(prj="mt", info=f'1-weights_name={weights_name}')
+
         index_file = CheckpointIndexFile(checkpoint)
+        gd.debuginfo(prj="mt", info=f'index_file={index_file}')
+
         control_saving = self.tp_rank == 0
 
         if self.pp_size == 1:
@@ -219,20 +251,20 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
                 is_master=control_saving,
                 use_safetensors=use_safetensors,
             )
+            gd.debuginfo(prj="mt", info=f'total_size={total_size}')
+
             if control_saving:
                 gd.debuginfo(prj="mt", info=f'')
                 index_file.append_meta_data("total_size", total_size)
                 index_file.write_index_file(save_index_file)
                 save_config_file(model, checkpoint)
                 if self.verbose and self.coordinator.is_master():
-                    logging.info(
-                        f"The model is split into checkpoint shards. "
+                    gd.debuginfo(prj="mt", info=f"The model is split into checkpoint shards. "
                         f"You can find where each parameters has been saved in the "
-                        f"index located at {save_index_file}."
-                    )
+                        f"index located at {save_index_file}.")
 
         else:
-            gd.debuginfo(prj="mt", info=f'')
+            gd.debuginfo(prj="mt", info=f'self.pp_size={self.pp_size}')
             # When pipeline is used, each stage produces its own shard files and index files.
             # Index files belonging to each stage are saved under a temporary folder ./tmp_index_files/
             # After all the state_dicts have been saved, the master rank integrates all the index files into one final index file and deletes the tmp folder.
@@ -240,12 +272,21 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             final_index_file_path = copy.deepcopy(save_index_file)
             tmp_index_file_folder = os.path.join(checkpoint, "tmp_index_files")
             Path(tmp_index_file_folder).mkdir(parents=True, exist_ok=True)
+            gd.debuginfo(prj="mt", info=f'final_index_file_path={final_index_file_path}')
+            gd.debuginfo(prj="mt", info=f'tmp_index_file_folder={tmp_index_file_folder}')
 
             # Manage filenames of sharded weights and index file for each pipeline stage.
             weights_name = weights_name.replace(".bin", f"-stage-{self.pp_rank+1:05d}-shard.bin")
+            gd.debuginfo(prj="mt", info=f'2-weights_name={weights_name}')
+
             weights_name = weights_name.replace(".safetensors", f"-stage-{self.pp_rank+1:05d}-shard.safetensors")
+            gd.debuginfo(prj="mt", info=f'3-weights_name={weights_name}')
+
             save_index_file = save_index_file.replace(".json", f"-stage-{self.pp_rank+1:05d}.json")
+            gd.debuginfo(prj="mt", info=f'2-save_index_file={save_index_file}')
+
             save_index_file = os.path.join("tmp_index_files", save_index_file)
+            gd.debuginfo(prj="mt", info=f'3-save_index_file={save_index_file}')
 
             total_size = save_state_dict_shards(
                 sharded_state_dict=state_dict_shard,
@@ -256,6 +297,7 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
                 use_safetensors=use_safetensors,
                 use_pp_format=True,
             )
+            gd.debuginfo(prj="mt", info=f'total_size={total_size}')
             if control_saving:
                 gd.debuginfo(prj="mt", info=f'')
                 assert (
@@ -283,12 +325,12 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
                 final_index_file.write_index_file(final_index_file_path)
                 save_config_file(model, checkpoint)
                 rmtree(tmp_index_file_folder)
-                if self.verbose and self.coordinator.is_master():
-                    logging.info(
-                        f"The model is split into checkpoint shards. "
+                # if self.verbose and self.coordinator.is_master():
+                gd.debuginfo(prj="mt", info=f"The model is split into checkpoint shards. "
                         f"You can find where each parameters has been saved in the "
-                        f"index located at {final_index_file_path}."
-                    )
+                        f"index located at {final_index_file_path}.")
+
+        gd.emb_end(info=logf)
 
     def load_sharded_model(self, model: ModelWrapper, checkpoint_index_file: Path, strict: bool = False):
         """
@@ -300,7 +342,9 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             strict (bool, optional): For name matching during loading state_dict. Defaults to False.
                                      This argument should be manually set to False since params on same device might be stored in different files.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        logf = f'Hybrid_Parallel_load_sharded_model'
+        gd.emb_start(info=logf)
+
         assert isinstance(model, ModelWrapper), "Please boost the model before loading!"
         model_before_wrapping = model  # backup for model before wrapping
         model = model.unwrap()
@@ -367,8 +411,10 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
         # Update master params if mixed-precision training is enabled.
         model_before_wrapping.update_master_params()
 
-        if self.verbose and self.coordinator.is_master():
-            logging.info(f"The model has been successfully loaded from sharded checkpoint: {ckpt_root_path}.")
+        # if self.verbose and self.coordinator.is_master():
+        gd.debuginfo(prj="mt", info=f"The model has been successfully loaded from sharded checkpoint: {ckpt_root_path}.")
+
+        gd.emb_end(info=logf)
 
     def save_sharded_optimizer(
         self,
@@ -394,10 +440,10 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             prefix (str): Perfix of file to save
             size_per_shard (int): Max file size of each file shard that store state tensors
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'checkpoint={checkpoint}')
         assert isinstance(optimizer, OptimizerWrapper), "Please boost the optimizer before saving!"
         if os.path.isfile(checkpoint):
-            logging.error(f"Provided path ({checkpoint}) should be a directory, not a file")
+            gd.debuginfo(prj="mt", info="Provided path ({checkpoint}) should be a directory, not a file")
             return
 
         Path(checkpoint).mkdir(parents=True, exist_ok=True)
@@ -444,12 +490,10 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
                 # Store index file.
                 index_file.append_meta_data("total_size", total_size)
                 index_file.write_index_file(save_index_file)
-                if self.verbose and self.coordinator.is_master():
-                    logging.info(
-                        f"The optimizer is going to be split to checkpoint shards. "
+                # if self.verbose and self.coordinator.is_master():
+                gd.debuginfo(prj="mt", info=f"The optimizer is going to be split to checkpoint shards. "
                         f"You can find where each parameters has been saved in the "
-                        f"index located at {save_index_file}."
-                    )
+                        f"index located at {save_index_file}.")
 
         else:
             gd.debuginfo(prj="mt", info=f'')
@@ -508,12 +552,10 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
                 final_index_file.write_index_file(final_index_file_path)
                 rmtree(tmp_index_file_folder)
 
-                if self.verbose and self.coordinator.is_master():
-                    logging.info(
-                        f"The model is split into checkpoint shards. "
+                # if self.verbose and self.coordinator.is_master():
+                gd.debuginfo(prj="mt", info=f"The model is split into checkpoint shards. "
                         f"You can find where each parameters has been saved in the "
-                        f"index located at {final_index_file_path}."
-                    )
+                        f"index located at {final_index_file_path}.")
 
     def load_sharded_optimizer(self, optimizer: OptimizerWrapper, checkpoint_index_file: str, prefix: str = ""):
         """
@@ -606,8 +648,8 @@ class HybridParallelCheckpointIO(GeneralCheckpointIO):
             optimizer.optim.state[param] = sharded_state
 
         sharded_optimizer_loading_epilogue(optimizer.optim)
-        if self.verbose and self.coordinator.is_master():
-            logging.info(f"The optimizer has been successfully loaded from sharded checkpoint: {ckpt_root_path}.")
+        # if self.verbose and self.coordinator.is_master():
+        gd.debuginfo(prj="mt", info=f"The optimizer has been successfully loaded from sharded checkpoint: {ckpt_root_path}.")
 
     def save_unsharded_model(self, model: ModelWrapper, checkpoint: str, gather_dtensor: bool, use_safetensors: bool):
         """

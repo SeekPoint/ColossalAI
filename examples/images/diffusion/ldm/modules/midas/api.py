@@ -112,7 +112,7 @@ def load_model(model_type):
         normalization = NormalizeImage(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
     else:
-        print(f"model_type '{model_type}' not implemented, use: --model_type large")
+        gd.debuginfo(prj="mt", info=f"model_type '{model_type}' not implemented, use: --model_type large")
         assert False
 
     transform = Compose(

@@ -44,7 +44,7 @@ class AutoencoderKL(pl.LightningModule):
             self.ema_decay = ema_decay
             assert 0.0 < ema_decay < 1.0
             self.model_ema = LitEma(self, decay=ema_decay)
-            print(f"Keeping EMAs of {len(list(self.model_ema.buffers()))}.")
+            gd.debuginfo(prj="mt", info=f"Keeping EMAs of {len(list(self.model_ema.buffers()))}.")
 
         if ckpt_path is not None:
             self.init_from_ckpt(ckpt_path, ignore_keys=ignore_keys)
@@ -58,7 +58,7 @@ class AutoencoderKL(pl.LightningModule):
                     print("Deleting key {} from state_dict.".format(k))
                     del sd[k]
         self.load_state_dict(sd, strict=False)
-        print(f"Restored from {path}")
+        gd.debuginfo(prj="mt", info=f"Restored from {path}")
 
     @contextmanager
     def ema_scope(self, context=None):
@@ -66,14 +66,14 @@ class AutoencoderKL(pl.LightningModule):
             self.model_ema.store(self.parameters())
             self.model_ema.copy_to(self)
             if context is not None:
-                print(f"{context}: Switched to EMA weights")
+                gd.debuginfo(prj="mt", info=f"{context}: Switched to EMA weights")
         try:
             yield None
         finally:
             if self.use_ema:
                 self.model_ema.restore(self.parameters())
                 if context is not None:
-                    print(f"{context}: Restored training weights")
+                    gd.debuginfo(prj="mt", info=f"{context}: Restored training weights")
 
     def on_train_batch_end(self, *args, **kwargs):
         if self.use_ema:
@@ -184,7 +184,7 @@ class AutoencoderKL(pl.LightningModule):
             + list(self.post_quant_conv.parameters())
         )
         if self.learn_logvar:
-            print(f"{self.__class__.__name__}: Learning logvar")
+            gd.debuginfo(prj="mt", info=f"{self.__class__.__name__}: Learning logvar")
             ae_params_list.append(self.loss.logvar)
         opt_ae = torch.optim.Adam(ae_params_list, lr=lr, betas=(0.5, 0.9))
         opt_disc = torch.optim.Adam(self.loss.discriminator.parameters(), lr=lr, betas=(0.5, 0.9))

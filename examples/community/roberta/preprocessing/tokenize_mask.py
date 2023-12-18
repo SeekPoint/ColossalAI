@@ -120,7 +120,7 @@ def split_numpy_chunk(path, tokenizer, pretrain_data, host):
 
 def split_numpy_chunk_pool(input_path, output_path, pretrain_data, worker, dupe_factor, seq_len, file_name):
     if os.path.exists(os.path.join(output_path, f"{file_name}.h5")):
-        print(f"{file_name}.h5 exists")
+        gd.debuginfo(prj="mt", info=f"{file_name}.h5 exists")
         return
 
     documents = []
@@ -138,7 +138,7 @@ def split_numpy_chunk_pool(input_path, output_path, pretrain_data, worker, dupe_
                 document.append(line)
         if len(document) > 0:
             documents.append(document)
-    print(f"read_file cost {time.time() - s}, length is {len(documents)}")
+    gd.debuginfo(prj="mt", info=f"read_file cost {time.time() - s}, length is {len(documents)}")
 
     ans = []
     s = time.time()

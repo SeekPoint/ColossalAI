@@ -19,7 +19,7 @@ class LambdaWarmUpCosineScheduler:
     def schedule(self, n, **kwargs):
         if self.verbosity_interval > 0:
             if n % self.verbosity_interval == 0:
-                print(f"current step: {n}, recent lr-multiplier: {self.last_lr}")
+                gd.debuginfo(prj="mt", info=f"current step: {n}, recent lr-multiplier: {self.last_lr}")
         if n < self.lr_warm_up_steps:
             lr = (self.lr_max - self.lr_start) / self.lr_warm_up_steps * n + self.lr_start
             self.last_lr = lr
@@ -65,7 +65,9 @@ class LambdaWarmUpCosineScheduler2:
         n = n - self.cum_cycles[cycle]
         if self.verbosity_interval > 0:
             if n % self.verbosity_interval == 0:
-                print(f"current step: {n}, recent lr-multiplier: {self.last_f}, " f"current cycle {cycle}")
+                gd.debuginfo(prj="mt", info=f"current step: {n}, "
+                                            f"recent lr-multiplier: {self.last_f}, "
+                                            f"" f"current cycle {cycle}")
         if n < self.lr_warm_up_steps[cycle]:
             f = (self.f_max[cycle] - self.f_start[cycle]) / self.lr_warm_up_steps[cycle] * n + self.f_start[cycle]
             self.last_f = f
@@ -87,7 +89,9 @@ class LambdaLinearScheduler(LambdaWarmUpCosineScheduler2):
         n = n - self.cum_cycles[cycle]
         if self.verbosity_interval > 0:
             if n % self.verbosity_interval == 0:
-                print(f"current step: {n}, recent lr-multiplier: {self.last_f}, " f"current cycle {cycle}")
+                gd.debuginfo(prj="mt", info=f"current step: {n}, "
+                                            f"recent lr-multiplier: {self.last_f}, "
+                                            f"" f"current cycle {cycle}")
 
         if n < self.lr_warm_up_steps[cycle]:
             f = (self.f_max[cycle] - self.f_start[cycle]) / self.lr_warm_up_steps[cycle] * n + self.f_start[cycle]

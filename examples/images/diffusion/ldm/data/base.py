@@ -32,7 +32,7 @@ class Txt2ImgIterableBaseDataset(IterableDataset):
         self.num_records = self.end - self.start
         self.valid_ids = [i for i in range(self.end)]
 
-        print(f"{self.__class__.__name__} dataset contains {self.__len__()} examples.")
+        gd.debuginfo(prj="mt", info=f"{self.__class__.__name__} dataset contains {self.__len__()} examples.")
 
     def __len__(self):
         # return self.iter_end - self.iter_start

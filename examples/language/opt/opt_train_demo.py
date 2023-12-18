@@ -44,27 +44,38 @@ def train_epoch(epoch, model, optimizer, _criterion, lr_scheduler, dataloader, b
         for step in pbar:
             if step > 10:
                 break
-            logf = f'Training_epoch{epoch:02}_{step:05}'
+            logf = f'Training_epoch{epoch:02}_{step:04}'
             gd.emb_start(info=logf)
             if use_pipeline:
+                gd.debuginfo(prj="mt", info=f'')
                 outputs = booster.execute_pipeline(
                     dataloader, model, _criterion, optimizer, return_loss=True, return_outputs=True
                 )
+                gd.debuginfo(prj="mt", info=f'outputs={outputs}')
                 # Backward and optimize
                 if is_pp_last_stage:
                     loss = outputs["loss"]
+                    gd.debuginfo(prj="mt", info=f'loss={loss}')
                     pbar.set_postfix({"loss": loss.item()})
             else:
                 data = next(dataloader)
                 data = move_to_cuda(data, device='cuda')
+                gd.debuginfo(prj="mt", info=f'data={data}')
                 outputs = model(**data)
+                gd.debuginfo(prj="mt", info=f'outputs={outputs}')
+
                 loss = _criterion(outputs, None)
+                gd.debuginfo(prj="mt", info=f'loss={loss}')
+
                 # Backward
                 booster.backward(loss, optimizer)
                 pbar.set_postfix({"loss": loss.item()})
 
+            gd.debuginfo(prj="mt", info=f'------------opt 1-----------------')
             optimizer.step()
+            gd.debuginfo(prj="mt", info=f'------------opt 2-----------------')
             optimizer.zero_grad()
+            gd.debuginfo(prj="mt", info=f'------------opt 3-----------------')
             lr_scheduler.step()
 
             gd.emb_end(info=logf)
@@ -196,7 +207,10 @@ def main():
     # Finish training and evaluate
     gd.debuginfo(prj="mt", info=f"Finish finetuning")
 
+    logf = f'OPT_Save_model'
+    gd.emb_start(info=logf)
     booster.save_model(model, args.output_path, shard=True)
+    gd.emb_end(info=logf)
 
     gd.debuginfo(prj="mt", info=f"Saving model checkpoint to {args.output_path}")
 

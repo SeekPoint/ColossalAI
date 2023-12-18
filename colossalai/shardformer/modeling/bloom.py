@@ -26,7 +26,7 @@ from colossalai.pipeline.stage_manager import PipelineStageManager
 from colossalai.shardformer.layer._operation import gather_forward_split_backward, split_forward_gather_backward
 from colossalai.shardformer.shard import ShardConfig
 
-logger = logging.get_logger(__name__)
+# logger = logging.get_logger(__name__)
 
 
 def build_bloom_alibi_tensor_fn(process_group: ProcessGroup) -> torch.Tensor:

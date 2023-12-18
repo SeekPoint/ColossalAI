@@ -206,9 +206,14 @@ def train(args):
     optim = strategy_dict["optimizer"]
     lr_scheduler = strategy_dict["lr_scheduler"]
 
+    logf = f'sft_model'
+    gd.emb_start(info=logf)
+
     gd.debuginfo(prj="mt", info=f'model={model}')
     gd.debuginfo(prj="mt", info=f'optim={optim}')
     gd.debuginfo(prj="mt", info=f'lr_scheduler={lr_scheduler}')
+
+    gd.emb_end(info=logf)
 
     trainer = SFTTrainer(
         model=model,

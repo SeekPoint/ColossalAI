@@ -287,9 +287,10 @@ class DeviceMesh:
         return self._ranks_in_the_process_group[global_rank][axis]
 
     def __deepcopy__(self, memo) -> "DeviceMesh":
-        gd.debuginfo(prj="mt", info=f'')
         cls = self.__class__
+        gd.debuginfo(prj="mt", info=f'cls={cls}')
         result = cls.__new__(cls)
+        gd.debuginfo(prj="mt", info=f'result={result}')
         memo[id(self)] = result
         for k, v in self.__dict__.items():
             if k != "_process_group_dict":

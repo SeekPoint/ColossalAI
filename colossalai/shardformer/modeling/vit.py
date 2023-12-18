@@ -72,7 +72,7 @@ def ViTModel_pipeline_forward(stage_manager: PipelineStageManager, stage_index: 
         """
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
-        logger = logging.get_logger(__name__)
+        # logger = logging.get_logger(__name__)
 
         # Preprocess passed in arguments
         if output_attentions:

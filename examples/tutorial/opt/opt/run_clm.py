@@ -384,7 +384,7 @@ def main():
     if args.model_name_or_path == "facebook/opt-13b":
         tokenizer = GPT2Tokenizer.from_pretrained(args.model_name_or_path)
     else:
-        print(f"load model from {args.model_name_or_path}")
+        gd.debuginfo(prj="mt", info=f"load model from {args.model_name_or_path}")
         tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path, use_fast=not args.use_slow_tokenizer)
     gd.debuginfo(prj="mt", info=f"{tokenizer.__class__.__name__} has been created")
 

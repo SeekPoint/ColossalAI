@@ -63,7 +63,7 @@ class LowLevelZeroModel(ModelWrapper, AMPModelMixin):
             self.convert_fn = partial(_convert_floating_point, dtype=self.dtype)
 
     def forward(self, *args, **kwargs):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.convert_fn is not None:
             args = tree_map(self.convert_fn, args)
             kwargs = tree_map(self.convert_fn, kwargs)
@@ -91,6 +91,7 @@ class LowLevelZeroModel(ModelWrapper, AMPModelMixin):
             # #if kwargs.has_key('labels'): # python3 不支持has_key
             # if kwargs.__contains__('labels'):
             #     gd.debuginfo(prj="mt", info=f"kwargs['labels']={infoTensor(kwargs['labels'])}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return super().forward(*args, **kwargs)
 
 
@@ -135,10 +136,11 @@ class LowLevelZeroCheckpointIO(TorchDDPCheckpointIO):
             prefix (str): Perfix of file to save
             size_per_shard (int): Max file size of each file that store state tensors
         """
-        gd.debuginfo(prj="mt", info=f'')
+        logf = f'low_level_zero_save_sharded_model'
+        gd.emb_start(info=logf)
         assert isinstance(optimizer, LowLevelZeroOptimizer), "Please boost the optimizer before saving!"
         if os.path.isfile(checkpoint):
-            logging.error(f"Provided path ({checkpoint}) should be a directory, not a file")
+            gd.debuginfo(prj="mt", info=f"Provided path ({checkpoint}) should be a directory, not a file")
             return
 
         Path(checkpoint).mkdir(parents=True, exist_ok=True)
@@ -177,11 +179,12 @@ class LowLevelZeroCheckpointIO(TorchDDPCheckpointIO):
         if self.coordinator.is_master():
             gd.debuginfo(prj="mt", info=f'')
             index_file.write_index_file(save_index_file)
-        logging.info(
-            f"The optimizer is going to be split to checkpoint shards. "
+
+        gd.debuginfo(prj="mt", info=f"The optimizer is going to be split to checkpoint shards. "
             f"You can find where each parameters has been saved in the "
-            f"index located at {save_index_file}."
-        )
+            f"index located at {save_index_file}.")
+
+        gd.emb_end(info=logf)
 
     def load_sharded_optimizer(self, optimizer: OptimizerWrapper, index_file_path: str, prefix: str):
         """Load sharded optimizer with the given path to index file.
@@ -241,10 +244,12 @@ class LowLevelZeroCheckpointIO(TorchDDPCheckpointIO):
         use_safetensors: bool = False,
         load_sub_module: bool = True,
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        logf = f'low_level_zero_load_sharded_model'
+        gd.emb_start(info=logf)
         assert isinstance(model, LowLevelZeroModel), "Please boost the model before loading!"
         super().load_sharded_model(model, checkpoint_index_file, strict, use_safetensors, load_sub_module)
         model.update_master_params()
+        gd.emb_end(info=logf)
 
 
 class LowLevelZeroPlugin(DPPluginBase):

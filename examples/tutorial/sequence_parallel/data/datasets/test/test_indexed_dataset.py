@@ -29,7 +29,7 @@ def test_indexed_dataset(args):
         start = ds.doc_idx[i]
         end = ds.doc_idx[i + 1]
         ids = ds[start:end]
-        print(f"Document {i}:")
+        gd.debuginfo(prj="mt", info=f"Document {i}:")
         print("--------------")
         for s in ids:
             assert len(s) > 0
@@ -43,7 +43,7 @@ def test_indexed_dataset_get(args):
     ds = indexed_dataset.make_dataset(args.data, args.dataset_impl)
     build_tokenizer(args)
     size = ds.sizes[0]
-    print(f"size: {size}")
+    gd.debuginfo(prj="mt", info=f"size: {size}")
     full = ds.get(0)
     print(full)
     # print(tokenizer.detokenize(full.data.tolist()))

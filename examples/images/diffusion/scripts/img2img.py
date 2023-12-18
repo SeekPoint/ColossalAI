@@ -33,10 +33,10 @@ def chunk(it, size):
 
 
 def load_model_from_config(config, ckpt, verbose=False):
-    print(f"Loading model from {ckpt}")
+    gd.debuginfo(prj="mt", info=f"Loading model from {ckpt}")
     pl_sd = torch.load(ckpt, map_location="cpu")
     if "global_step" in pl_sd:
-        print(f"Global Step: {pl_sd['global_step']}")
+        gd.debuginfo(prj="mt", info=f"Global Step: {pl_sd['global_step']}")
     sd = pl_sd["state_dict"]
     model = instantiate_from_config(config.model)
     m, u = model.load_state_dict(sd, strict=False)
@@ -54,7 +54,7 @@ def load_model_from_config(config, ckpt, verbose=False):
 def load_img(path):
     image = Image.open(path).convert("RGB")
     w, h = image.size
-    print(f"loaded input image of size ({w}, {h}) from {path}")
+    gd.debuginfo(prj="mt", info=f"loaded input image of size ({w}, {h}) from {path}")
     w, h = map(lambda x: x - x % 64, (w, h))  # resize to integer multiple of 64
     image = image.resize((w, h), resample=PIL.Image.LANCZOS)
     image = np.array(image).astype(np.float32) / 255.0
@@ -212,7 +212,7 @@ def main():
         data = [batch_size * [prompt]]
 
     else:
-        print(f"reading prompts from {opt.from_file}")
+        gd.debuginfo(prj="mt", info=f"reading prompts from {opt.from_file}")
         with open(opt.from_file, "r") as f:
             data = f.read().splitlines()
             data = list(chunk(data, batch_size))
@@ -231,7 +231,7 @@ def main():
 
     assert 0.0 <= opt.strength <= 1.0, "can only work with strength in [0.0, 1.0]"
     t_enc = int(opt.strength * opt.ddim_steps)
-    print(f"target t_enc is {t_enc} steps")
+    gd.debuginfo(prj="mt", info=f"target t_enc is {t_enc} steps")
 
     precision_scope = autocast if opt.precision == "autocast" else nullcontext
     with torch.no_grad():
@@ -281,7 +281,7 @@ def main():
                 grid.save(os.path.join(outpath, f"grid-{grid_count:04}.png"))
                 grid_count += 1
 
-    print(f"Your samples are ready and waiting for you here: \n{outpath} \nEnjoy.")
+    gd.debuginfo(prj="mt", info=f"Your samples are ready and waiting for you here: \n{outpath} \nEnjoy.")
 
 
 if __name__ == "__main__":

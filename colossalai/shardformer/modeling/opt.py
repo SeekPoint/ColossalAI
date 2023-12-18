@@ -95,7 +95,7 @@ class OPTPipelineForwards:
         from transformers.modeling_outputs import BaseModelOutputWithPast
         from transformers.utils import logging
 
-        logger = logging.get_logger(__name__)
+        # logger = logging.get_logger(__name__)
 
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
@@ -388,9 +388,10 @@ class OPTPipelineForwards:
         Please refer to original code of transformers for more details.
         """
 
-        logger = logging.get_logger(__name__)
+        # logger = logging.get_logger(__name__)
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        gd.debuginfo(prj="mt", info=f'return_dict={return_dict}')
 
         transformer_outputs = OPTPipelineForwards.opt_model_forward(
             self.model,
@@ -407,14 +408,16 @@ class OPTPipelineForwards:
             hidden_states=hidden_states,
             stage_index=stage_index,
         )
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'transformer_outputs={transformer_outputs}')
 
         if stage_manager.is_last_stage():
-            gd.debuginfo(prj="mt", info=f'')
             hidden_states = transformer_outputs[0]
             logits = self.score(hidden_states)
+            gd.debuginfo(prj="mt", info=f'hidden_states={hidden_states}')
+            gd.debuginfo(prj="mt", info=f'logits={logits}')
 
             batch_size = input_ids.shape[0] if input_ids is not None else hidden_states.shape[0]
+            gd.debuginfo(prj="mt", info=f'batch_size={batch_size}')
 
             if self.config.pad_token_id is None:
                 sequence_lengths = -1
@@ -422,13 +425,14 @@ class OPTPipelineForwards:
             else:
                 if input_ids is not None:
                     sequence_lengths = (torch.ne(input_ids, self.config.pad_token_id).sum(-1) - 1).to(logits.device)
-                    gd.debuginfo(prj="mt", info=f'')
+                    gd.debuginfo(prj="mt", info=f'sequence_lengths={sequence_lengths}')
                 else:
                     sequence_lengths = -1
                     gd.debuginfo(prj="mt", info=f"{self.__class__.__name__} will not detect padding tokens in `inputs_embeds`. "
                                                 f"Results may be unexpected if using padding tokens in conjunction with `inputs_embeds.`")
 
             pooled_logits = logits[torch.arange(batch_size, device=logits.device), sequence_lengths]
+            gd.debuginfo(prj="mt", info=f'pooled_logits={pooled_logits}')
 
             loss = None
             if labels is not None:
@@ -688,13 +692,13 @@ def get_jit_fused_opt_decoder_layer_forward():
                 (see `past_key_values`).
             past_key_value (`Tuple(torch.FloatTensor)`, *optional*): cached past key and value projection states
         """
-        gd.debuginfo(prj="mt", info=f'')
         residual = hidden_states
+        gd.debuginfo(prj="mt", info=f'residual={residual}')
 
         # 125m, 1.7B, ..., 175B applies layer norm BEFORE attention
         if self.do_layer_norm_before:
             hidden_states = self.self_attn_layer_norm(hidden_states)
-            gd.debuginfo(prj="mt", info=f'')
+            gd.debuginfo(prj="mt", info=f'hidden_states={hidden_states}')
 
         # Self Attention
         hidden_states, self_attn_weights, present_key_value = self.self_attn(
@@ -704,34 +708,45 @@ def get_jit_fused_opt_decoder_layer_forward():
             layer_head_mask=layer_head_mask,
             output_attentions=output_attentions,
         )
+        gd.debuginfo(prj="mt", info=f'hidden_states={hidden_states}')
+        gd.debuginfo(prj="mt", info=f'self_attn_weights={self_attn_weights}')
+        gd.debuginfo(prj="mt", info=f'present_key_value={present_key_value}')
 
         hidden_states = self.dropout_add(hidden_states, residual, self.dropout, self.training)
+        gd.debuginfo(prj="mt", info=f'hidden_states={hidden_states}')
 
         # 350m applies layer norm AFTER attention
         if not self.do_layer_norm_before:
             hidden_states = self.self_attn_layer_norm(hidden_states)
-            gd.debuginfo(prj="mt", info=f'')
+            gd.debuginfo(prj="mt", info=f'hidden_states={hidden_states}')
 
         # Fully Connected
         hidden_states_shape = hidden_states.shape
         hidden_states = hidden_states.reshape(-1, hidden_states.size(-1))
+        gd.debuginfo(prj="mt", info=f'hidden_states={hidden_states}')
         residual = hidden_states
 
         # 125m, 1.7B, ..., 175B applies layer norm BEFORE attention
         if self.do_layer_norm_before:
             hidden_states = self.final_layer_norm(hidden_states)
-            gd.debuginfo(prj="mt", info=f'')
+            gd.debuginfo(prj="mt", info=f'hidden_states={hidden_states}')
 
         hidden_states = self.fc1(hidden_states)
+        gd.debuginfo(prj="mt", info=f'hidden_states={hidden_states}')
+
         hidden_states = self.activation_fn(hidden_states)
+        gd.debuginfo(prj="mt", info=f'hidden_states={hidden_states}')
 
         hidden_states = self.fc2(hidden_states)
+        gd.debuginfo(prj="mt", info=f'hidden_states={hidden_states}')
 
         hidden_states = self.dropout_add(hidden_states, residual, self.dropout, self.training).view(hidden_states_shape)
+        gd.debuginfo(prj="mt", info=f'hidden_states={hidden_states}')
 
         # 350m applies layer norm AFTER attention
         if not self.do_layer_norm_before:
             hidden_states = self.final_layer_norm(hidden_states)
+            gd.debuginfo(prj="mt", info=f'hidden_states={hidden_states}')
 
         outputs = (hidden_states,)
 
@@ -742,6 +757,8 @@ def get_jit_fused_opt_decoder_layer_forward():
         if use_cache:
             outputs += (present_key_value,)
             gd.debuginfo(prj="mt", info=f'')
+
+        gd.debuginfo(prj="mt", info=f'outputs={outputs}')
 
         return outputs
 

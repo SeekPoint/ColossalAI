@@ -47,7 +47,7 @@ def logs2pil(logs, keys=["sample"]):
             elif len(logs[k].shape) == 3:
                 img = custom_to_pil(logs[k])
             else:
-                print(f"Unknown format for key {k}. ")
+                gd.debuginfo(prj="mt", info=f"Unknown format for key {k}. ")
                 img = None
         except:
             img = None
@@ -115,9 +115,9 @@ def make_convolutional_sample(
 
 def run(model, logdir, batch_size=50, vanilla=False, custom_steps=None, eta=None, n_samples=50000, nplog=None):
     if vanilla:
-        print(f"Using Vanilla DDPM sampling with {model.num_timesteps} sampling steps.")
+        gd.debuginfo(prj="mt", info=f"Using Vanilla DDPM sampling with {model.num_timesteps} sampling steps.")
     else:
-        print(f"Using DDIM sampling with {custom_steps} sampling steps and eta={eta}")
+        gd.debuginfo(prj="mt", info=f"Using DDIM sampling with {custom_steps} sampling steps and eta={eta}")
 
     tstart = time.time()
     n_saved = len(glob.glob(os.path.join(logdir, "*.png"))) - 1
@@ -125,7 +125,7 @@ def run(model, logdir, batch_size=50, vanilla=False, custom_steps=None, eta=None
     if model.cond_stage_model is None:
         all_images = []
 
-        print(f"Running unconditional sampling for {n_samples} samples")
+        gd.debuginfo(prj="mt", info=f"Running unconditional sampling for {n_samples} samples")
         for _ in trange(n_samples // batch_size, desc="Sampling Batches (unconditional)"):
             logs = make_convolutional_sample(
                 model, batch_size=batch_size, vanilla=vanilla, custom_steps=custom_steps, eta=eta
@@ -133,7 +133,7 @@ def run(model, logdir, batch_size=50, vanilla=False, custom_steps=None, eta=None
             n_saved = save_logs(logs, logdir, n_saved=n_saved, key="sample")
             all_images.extend([custom_to_np(logs["sample"])])
             if n_saved >= n_samples:
-                print(f"Finish after generating {n_saved} samples")
+                gd.debuginfo(prj="mt", info=f"Finish after generating {n_saved} samples")
                 break
         all_img = np.concatenate(all_images, axis=0)
         all_img = all_img[:n_samples]
@@ -144,7 +144,7 @@ def run(model, logdir, batch_size=50, vanilla=False, custom_steps=None, eta=None
     else:
         raise NotImplementedError("Currently only sampling for unconditional models supported.")
 
-    print(f"sampling of {n_saved} images finished in {(time.time() - tstart) / 60.:.2f} minutes.")
+    gd.debuginfo(prj="mt", info=f"sampling of {n_saved} images finished in {(time.time() - tstart) / 60.:.2f} minutes.")
 
 
 def save_logs(logs, path, n_saved=0, key="sample", np_path=None):
@@ -209,7 +209,7 @@ def load_model_from_config(config, sd):
 
 def load_model(config, ckpt, gpu, eval_mode):
     if ckpt:
-        print(f"Loading model from {ckpt}")
+        gd.debuginfo(prj="mt", info=f"Loading model from {ckpt}")
         pl_sd = torch.load(ckpt, map_location="cpu")
         global_step = pl_sd["global_step"]
     else:
@@ -236,7 +236,7 @@ if __name__ == "__main__":
         try:
             logdir = "/".join(opt.resume.split("/")[:-1])
             # idx = len(paths)-paths[::-1].index("logs")+1
-            print(f"Logdir is {logdir}")
+            gd.debuginfo(prj="mt", info=f"Logdir is {logdir}")
         except ValueError:
             paths = opt.resume.split("/")
             idx = -2  # take a guess: path/to/logdir/checkpoints/model.ckpt
@@ -261,13 +261,13 @@ if __name__ == "__main__":
         locallog = logdir.split(os.sep)[-1]
         if locallog == "":
             locallog = logdir.split(os.sep)[-2]
-        print(f"Switching logdir from '{logdir}' to '{os.path.join(opt.logdir, locallog)}'")
+        gd.debuginfo(prj="mt", info=f"Switching logdir from '{logdir}' to '{os.path.join(opt.logdir, locallog)}'")
         logdir = os.path.join(opt.logdir, locallog)
 
     print(config)
 
     model, global_step = load_model(config, ckpt, gpu, eval_mode)
-    print(f"global step: {global_step}")
+    gd.debuginfo(prj="mt", info=f"global step: {global_step}")
     print(75 * "=")
     print("logging to:")
     logdir = os.path.join(logdir, "samples", f"{global_step:08}", now)

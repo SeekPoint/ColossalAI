@@ -865,7 +865,7 @@ if __name__ == "__main__":
                 melk()
                 raise
         # Print the maximum GPU memory allocated during training
-        print(f"GPU memory usage: {torch.cuda.max_memory_allocated() / 1024**2:.0f} MB")
+        gd.debuginfo(prj="mt", info=f"GPU memory usage: {torch.cuda.max_memory_allocated() / 1024**2:.0f} MB")
         # if not opt.no_test and not trainer.interrupted:
         #     trainer.test(model, data)
     except Exception:

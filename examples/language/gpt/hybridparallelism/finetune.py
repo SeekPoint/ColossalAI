@@ -334,7 +334,12 @@ def main():
     else:
         raise RuntimeError
 
+    logf = f'GPT2ForSequenceClassification_model'
+    gd.emb_start(info=logf)
+
     gd.debuginfo(prj="mt", info=f'model={model}')
+
+    gd.emb_end(info=logf)
 
     # optimizer
     no_decay = ["bias", "LayerNorm.weight"]
@@ -377,10 +382,16 @@ def main():
     model, optimizer, _criterion, _, lr_scheduler = booster.boost(
         model, optimizer, criterion=_criterion, lr_scheduler=lr_scheduler
     )
+
+    logf = f'gpt_hybirdparallel_model'
+    gd.emb_start(info=logf)
+
     gd.debuginfo(prj="mt", info=f'model={model}')
     gd.debuginfo(prj="mt", info=f'optimizer={optimizer}')
     gd.debuginfo(prj="mt", info=f'_criterion={_criterion}')
     gd.debuginfo(prj="mt", info=f'lr_scheduler={lr_scheduler}')
+
+    gd.emb_end(info=logf)
 
     # ==============================
     # Train model

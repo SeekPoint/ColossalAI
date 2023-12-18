@@ -64,6 +64,7 @@ class LinearWithAsyncCommunication(torch.autograd.Function):
 
         output = torch.matmul(input_, weight.t())
         if bias is not None:
+            gd.debuginfo(prj="mt", info=f'')
             output = output + bias
         return output
 

@@ -61,7 +61,7 @@ def new_from_pretrained(
         logging,
     )
 
-    logger = logging.get_logger(__name__)
+    # logger = logging.get_logger(__name__)
 
     config = kwargs.pop("config", None)
     cache_dir = kwargs.pop("cache_dir", None)

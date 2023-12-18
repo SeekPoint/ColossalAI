@@ -81,7 +81,7 @@ class BertPipelineForwards:
             If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding (see
             `past_key_values`).
         """
-        logger = logging.get_logger(__name__)
+        # logger = logging.get_logger(__name__)
         gd.debuginfo(prj="mt", info=f'')
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
@@ -323,7 +323,7 @@ class BertPipelineForwards:
         stage_index: Optional[List[int]] = None,
         shard_config: ShardConfig = None,
     ):
-        logger = logging.get_logger(__name__)
+        # logger = logging.get_logger(__name__)
         gd.debuginfo(prj="mt", info=f'')
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
@@ -432,7 +432,7 @@ class BertPipelineForwards:
             If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding (see
             `past_key_values`).
         """
-        logger = logging.get_logger(__name__)
+        # logger = logging.get_logger(__name__)
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
         gd.debuginfo(prj="mt", info=f'')
 

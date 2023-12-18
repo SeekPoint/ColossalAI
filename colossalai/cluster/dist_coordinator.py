@@ -112,9 +112,10 @@ class DistCoordinator(metaclass=SingletonMeta):
             msg (str): message to print
             process_group (ProcessGroup, optional): process group to use for the rank 0 check. Defaults to None, which refers to the default process group.
         """
-        rank = dist.get_rank(group=process_group)
-        if rank == 0:
-            print(msg)
+        # rank = dist.get_rank(group=process_group)
+        # if rank == 0:
+        #     print(msg)
+        gd.debuginfo(prj="mt", info=msg)
 
     def print_on_node_master(self, msg: str):
         """
@@ -123,9 +124,10 @@ class DistCoordinator(metaclass=SingletonMeta):
         Args:
             msg (str): message to print
         """
-        self._assert_local_rank_set()
-        if self.local_rank == 0:
-            print(msg)
+        # self._assert_local_rank_set()
+        # if self.local_rank == 0:
+        #     print(msg)
+        gd.debuginfo(prj="mt", info=msg)
 
     @contextmanager
     def priority_execution(self, executor_rank: int = 0, process_group: ProcessGroup = None):

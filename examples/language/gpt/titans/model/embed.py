@@ -32,6 +32,7 @@ class VocabParallelEmbedding(torch.nn.Module):
     def __init__(
         self, hidden_size, vocab_size, max_sequence_length, embedding_dropout_prob, num_tokentypes=0, dtype=torch.float
     ):
+        gd.debuginfo(prj='mt', info=f"")
         super(VocabParallelEmbedding, self).__init__()
 
         self.hidden_size = hidden_size
@@ -53,16 +54,19 @@ class VocabParallelEmbedding(torch.nn.Module):
         # token types and add them as needed.
         self._tokentype_embeddings_key = "tokentype_embeddings"
         if self.num_tokentypes > 0:
+            gd.debuginfo(prj='mt', info=f"")
             self.tokentype_embeddings = torch.nn.Embedding(self.num_tokentypes, self.hidden_size, dtype=dtype)
             # Initialize the token-type embeddings.
             # self.init_method(self.tokentype_embeddings.weight)
         else:
+            gd.debuginfo(prj='mt', info=f"")
             self.tokentype_embeddings = None
 
         # Embeddings dropout
         self.embedding_dropout = torch.nn.Dropout(embedding_dropout_prob)
 
     def zero_parameters(self):
+        gd.debuginfo(prj='mt', info=f"")
         """Zero out all parameters in embedding."""
         self.word_embeddings.weight.data.fill_(0)
         self.word_embeddings.weight.shared = True
@@ -234,6 +238,7 @@ class vocab_parallel_cross_entropy(nn.Module):
 
     def forward(self, vocab_parallel_logits, target):
         """Helper function for the cross entropy."""
+        gd.debuginfo(prj='mt', info=f"")
         vocab_parallel_logits = vocab_parallel_logits[..., :-1, :].contiguous()
         target = target[..., 1:].contiguous()
         return _VocabParallelCrossEntropy.apply(
@@ -244,6 +249,7 @@ class vocab_parallel_cross_entropy(nn.Module):
 class _VocabParallelCrossEntropy(torch.autograd.Function):
     @staticmethod
     def forward(ctx, vocab_parallel_logits, target):
+        gd.debuginfo(prj='mt', info=f"")
         # Maximum value along vocab dimension across all GPUs.
         logits_max = torch.max(vocab_parallel_logits, dim=-1)[0]
         torch.distributed.all_reduce(

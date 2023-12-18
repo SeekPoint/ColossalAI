@@ -489,7 +489,7 @@ class WhisperPipelineForwards:
         """
         gd.debuginfo(prj="mt", info=f'')
 
-        logger = logging.get_logger(__name__)
+        # logger = logging.get_logger(__name__)
         stage = stage_manager.stage
         at_first_stage = stage == decoder_starting_stage
         at_last_stage = stage == stage_manager.num_stages - 1

@@ -66,7 +66,7 @@ class MemStatsCollector:
         # self._step_total = len(self._sampling_time)
         self._step_total = len(self._memstats.non_model_data_list("cuda"))
         self._start_flag = False
-        print(f"finish_collection {self._step_total}")
+        gd.debuginfo(prj="mt", info=f"finish_collection {self._step_total}")
 
     # deprecated
     def record_model_data_volume(self) -> None:

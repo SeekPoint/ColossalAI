@@ -52,7 +52,8 @@ class HybridParallelModule(ModelWrapper):
         ddp_config: dict,
         custom_policy: Policy,
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        logf = f'OPT_HybridParallelModule_init'
+        gd.emb_start(info=logf)
         self.stage_manager = shard_config.pipeline_stage_manager
         self.dp_group = dp_group
 
@@ -98,9 +99,14 @@ class HybridParallelModule(ModelWrapper):
 
         super().__init__(module)
 
+        gd.emb_end(info=logf)
+
     def sync_shared_params(self):
         gd.debuginfo(prj="mt", info=f'')
         for shared_param, group in zip(self.shared_params, self.shared_param_process_groups):
+            gd.debuginfo(prj="mt", info=f'shared_param={shared_param}')
+            gd.debuginfo(prj="mt", info=f'group={group}')
+            gd.debuginfo(prj="mt", info=f'self.stage_manager.stage={self.stage_manager.stage}')
             if self.stage_manager.stage in shared_param:
                 param = shared_param[self.stage_manager.stage]
                 dist.all_reduce(param.grad, group=group)
@@ -122,18 +128,25 @@ class HybridParallelModule(ModelWrapper):
                 p.grad.div_(self.dp_group.size())
 
     def forward(self, *args, **kwargs):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'_FUNC_IN_OUT_ , self.convert_fn={self.convert_fn}')
         if self.convert_fn is not None:
+            gd.debuginfo(prj="mt", info=f'1-args={args}')
             args = tree_map(self.convert_fn, args)
+            gd.debuginfo(prj="mt", info=f'2-args={args}')
+
+            gd.debuginfo(prj="mt", info=f'1-kwargs={kwargs}')
             kwargs = tree_map(self.convert_fn, kwargs)
+            gd.debuginfo(prj="mt", info=f'2-kwargs={kwargs}')
+
+        gd.debuginfo(prj="mt", info=f'_FUNC_IN_OUT_')
         return super().forward(*args, **kwargs)
 
     def unwrap(self):
-        gd.debuginfo(prj="mt", info=f'')
         module = super().unwrap()
+        gd.debuginfo(prj="mt", info=f'module={module}')
         if isinstance(module, DDP):
-            gd.debuginfo(prj="mt", info=f'')
             module = module.module
+            gd.debuginfo(prj="mt", info=f'module={module}')
         return module
 
 
@@ -187,7 +200,9 @@ class HybridParallelNaiveOptimizer(OptimizerWrapper):
         tp_process_group: Optional[ProcessGroup] = None,  # if using tp
         pp_process_group: Optional[ProcessGroup] = None,  # if using pp
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        logf = f'OPT_HybridParallelNaiveOptimizer_init'
+        gd.emb_start(info=logf)
+
         self.param_info = param_info
         if use_pipeline:
             gd.debuginfo(prj="mt", info=f'')
@@ -198,6 +213,7 @@ class HybridParallelNaiveOptimizer(OptimizerWrapper):
         self.tp_pg = tp_process_group
         self.pp_pg = pp_process_group
         super().__init__(optim)
+        gd.emb_end(info=logf)
 
     def step(self, *args, **kwargs):
         r"""
@@ -354,15 +370,19 @@ class HybridParallelAMPOptimizer(MixedPrecisionOptimizer):
         tp_process_group: Optional[ProcessGroup] = None,  # if using tp
         pp_process_group: Optional[ProcessGroup] = None,  # if using pp
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        logf = f'OPT_HybridParallelAMPOptimizer_init'
+        gd.emb_start(info=logf)
+
         self.param_info = param_info
         self.stage_manager = model.stage_manager
         self.shared_params = model.shared_params
         self.tp_pg = tp_process_group
         self.pp_pg = pp_process_group
+
         if use_pipeline:
             gd.debuginfo(prj="mt", info=f'')
             init_pipeline_optimizer(optim, model)
+
         super().__init__(
             optim,
             precision=precision,
@@ -375,6 +395,8 @@ class HybridParallelAMPOptimizer(MixedPrecisionOptimizer):
             max_scale=max_scale,
             max_norm=max_norm,
         )
+
+        gd.emb_end(info=logf)
 
     def _compute_grad_norm(self, param_gradient_pairs: List[Tuple[Tensor]], norm_type: int = 2) -> int:
         r"""
@@ -489,7 +511,9 @@ class HybridParallelZeroOptimizer(LowLevelZeroOptimizer):
         pp_process_group: Optional[ProcessGroup] = None,  # if using pp
         forced_dtype: Optional[torch.dtype] = None,
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        logf = f'OPT_HybridParallelZeroOptimizer_init'
+        gd.emb_start(info=logf)
+
         self.param_info = param_info
         self.stage_manager = model.stage_manager
         self.shared_params = model.shared_params
@@ -518,6 +542,8 @@ class HybridParallelZeroOptimizer(LowLevelZeroOptimizer):
             dp_process_group=dp_process_group,
             forced_dtype=forced_dtype,
         )
+
+        gd.emb_end(info=logf)
 
     def _compute_grad_norm(self, gradients: List[Tensor], norm_type: int = 2) -> float:
         r"""
@@ -702,7 +728,9 @@ class HybridParallelPlugin(PipelinePluginBase):
         overlap_communication: bool = True,
         custom_policy: Policy = None,
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        logf = f'OPT_HybridParallelPlugin_init'
+        gd.emb_start(info=logf)
+
         super().__init__()
         assert (
             dist.get_world_size() % (tp_size * pp_size) == 0
@@ -780,6 +808,8 @@ class HybridParallelPlugin(PipelinePluginBase):
 
         self.max_norm = max_norm
 
+        gd.emb_end(info=logf)
+
     @property
     def enable_pipeline_parallelism(self) -> bool:
         return self.pp_size > 1
@@ -810,18 +840,20 @@ class HybridParallelPlugin(PipelinePluginBase):
         dataloader: Optional[DataLoader] = None,
         lr_scheduler: Optional[LRScheduler] = None,
     ) -> Tuple[Module, OptimizerWrapper, Callable, DataLoader, LRScheduler]:
-        gd.debuginfo(prj="mt", info=f'')
         param_info = get_param_info(optimizer)
+        gd.debuginfo(prj="mt", info=f'param_info={param_info}')
+
         if not isinstance(model, ModelWrapper):
-            gd.debuginfo(prj="mt", info=f'')
             use_ddp = self.dp_size > 1 and self.pp_size == 1 and self.zero_stage == 0
+            gd.debuginfo(prj="mt", info=f'use_ddp={use_ddp}')
             model = HybridParallelModule(
                 model, self.precision, self.shard_config, self.dp_group, use_ddp, self.ddp_config, self.custom_policy
             )
+            gd.debuginfo(prj="mt", info=f'model={model}')
+
         if optimizer is not None and not isinstance(optimizer, OptimizerWrapper):
             if self.zero_stage == 0:
                 if self.precision in ["fp16", "bf16"]:
-                    gd.debuginfo(prj="mt", info=f'')
                     optimizer = HybridParallelAMPOptimizer(
                         optimizer,
                         model,
@@ -833,8 +865,8 @@ class HybridParallelPlugin(PipelinePluginBase):
                         tp_process_group=self.tp_group,
                         **self.amp_config,
                     )
+                    gd.debuginfo(prj="mt", info=f'optimizer={optimizer}')
                 else:
-                    gd.debuginfo(prj="mt", info=f'')
                     optimizer = HybridParallelNaiveOptimizer(
                         optimizer,
                         model,
@@ -844,8 +876,8 @@ class HybridParallelPlugin(PipelinePluginBase):
                         pp_process_group=self.pp_group,
                         tp_process_group=self.tp_group,
                     )
+                    gd.debuginfo(prj="mt", info=f'optimizer={optimizer}')
             else:
-                gd.debuginfo(prj="mt", info=f'')
                 assert self.dp_size > 1, "Please use Zero when data parallel size is greater than 1."
                 assert self.precision != "fp32", "Please set precision to 'fp16' or 'bf16' when using ZeRO."
                 optimizer = HybridParallelZeroOptimizer(
@@ -861,6 +893,8 @@ class HybridParallelPlugin(PipelinePluginBase):
                     **self.zero_config,
                     **self.amp_config,
                 )
+                gd.debuginfo(prj="mt", info=f'optimizer={optimizer}')
+
             # inject update_master_params
             model.update_master_params = MethodType(optimizer.update_master_params, model)
         return model, optimizer, criterion, dataloader, lr_scheduler
@@ -880,11 +914,15 @@ class HybridParallelPlugin(PipelinePluginBase):
         assert self.enable_pipeline_parallelism, "pipeline parallelism is not enabled"
         # return loss or outputs if needed
         ctx = optimizer.no_sync() if isinstance(optimizer, HybridParallelZeroOptimizer) else model.no_sync()
+        gd.debuginfo(prj="mt", info=f'ctx={ctx}')
+
         with ctx:
             outputs = self.schedule.forward_backward_step(
-                model, data_iter, criterion, optimizer, return_loss, return_outputs
-            )
+                model, data_iter, criterion, optimizer, return_loss, return_outputs)
+            gd.debuginfo(prj="mt", info=f'outputs={outputs}')
+
         model.sync_shared_params()
+
         if isinstance(optimizer, HybridParallelZeroOptimizer):
             gd.debuginfo(prj="mt", info=f'')
             optimizer.sync_grad()

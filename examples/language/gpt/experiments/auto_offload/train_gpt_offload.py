@@ -50,7 +50,7 @@ def train_gpt(args):
     model.train()
     param_size = parameter_size(model) / 1024**2 / 2
     init_time = time.time() - start_time
-    print(f"init_param_size={param_size:.3f} MB | init_model_time={init_time:.3f} s")
+    gd.debuginfo(prj="mt", info=f"init_param_size={param_size:.3f} MB | init_model_time={init_time:.3f} s")
 
     data_args = data_gen(device="cpu")
     wrap_fn = lambda x: x.to(dtype=torch.half) if isinstance(x, torch.Tensor) and torch.is_floating_point(x) else x
@@ -58,7 +58,7 @@ def train_gpt(args):
     start_time = time.time()
     model = memory_optimize(model, data_args, memory_budget, solver_type)
     solver_time = time.time() - start_time
-    print(f"solver_time={solver_time:.3f} s")
+    gd.debuginfo(prj="mt", info=f"solver_time={solver_time:.3f} s")
 
     hybrid_optimizer = HybridAdam(model.model.parameters(), lr=1e-3)
     optim = AMPOptimizer(hybrid_optimizer, model)
@@ -85,7 +85,7 @@ def train_gpt(args):
     exec_time = sum(sorted(time_list)[:5]) / 5
     runtime_peak_mem_alc = torch.cuda.max_memory_allocated() / 1024**2
     runtime_peak_mem_res = torch.cuda.max_memory_reserved() / 1024**2
-    print(f"solver_type: {solver_type} | model_type: {model_type}")
+    gd.debuginfo(prj="mt", info=f"solver_type: {solver_type} | model_type: {model_type}")
     print(
         f"| exec_time={exec_time:.3f} s | param_size={param_size:.3f} MB "
         f"| runtime_peak_mem_alc={runtime_peak_mem_alc:.3f} MB| runtime_peak_mem_res={runtime_peak_mem_res:.3f} MB|"

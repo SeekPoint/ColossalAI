@@ -86,7 +86,7 @@ def evaluate(model: nn.Module, test_dataloader: DataLoader, coordinator: DistCoo
     dist.all_reduce(total)
     accuracy = correct.item() / total.item()
     if coordinator.is_master():
-        print(f"Accuracy of the model on the test images: {accuracy * 100:.2f} %")
+        gd.debuginfo(prj="mt", info=f"Accuracy of the model on the test images: {accuracy * 100:.2f} %")
     return accuracy
 
 

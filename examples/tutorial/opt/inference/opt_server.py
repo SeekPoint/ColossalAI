@@ -75,7 +75,7 @@ def get_model_fn(model_name: str):
 def print_args(args: argparse.Namespace):
     print("\n==> Args:")
     for k, v in args.__dict__.items():
-        print(f"{k} = {v}")
+        gd.debuginfo(prj="mt", info=f"{k} = {v}")
 
 
 FIXED_CACHE_KEYS = [

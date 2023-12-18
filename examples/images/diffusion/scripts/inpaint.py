@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     masks = sorted(glob.glob(os.path.join(opt.indir, "*_mask.png")))
     images = [x.replace("_mask.png", ".png") for x in masks]
-    print(f"Found {len(masks)} inputs.")
+    gd.debuginfo(prj="mt", info=f"Found {len(masks)} inputs.")
 
     config = OmegaConf.load("models/ldm/inpainting_big/config.yaml")
     model = instantiate_from_config(config.model)

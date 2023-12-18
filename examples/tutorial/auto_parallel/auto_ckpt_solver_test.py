@@ -43,7 +43,7 @@ def _benchmark(rank, world_size, port, args):
     # print summary
     print("==============benchmark summary==============")
     for budget, peak, step in zip(budgets, peak_hist, step_hist):
-        print(f"memory budget: {budget:.3f} MB, peak memory: {peak:.3f} MB, step time: {step:.3f} MS")
+        gd.debuginfo(prj="mt", info=f"memory budget: {budget:.3f} MB, peak memory: {peak:.3f} MB, step time: {step:.3f} MS")
 
     # plot valid results
     fig, axs = plt.subplots(1, 2, figsize=(16, 8))

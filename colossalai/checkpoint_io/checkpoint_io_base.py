@@ -134,7 +134,7 @@ class CheckpointIO(ABC):
         """
 
         if shard:
-            gd.debuginfo(prj="mt", info=f'')
+            gd.debuginfo(prj="mt", info=f'')  # opt
             self.save_sharded_model(model, checkpoint, gather_dtensor, prefix, size_per_shard, use_safetensors)
         else:
             gd.debuginfo(prj="mt", info=f'')

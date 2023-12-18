@@ -2,7 +2,7 @@ import torch
 from diffusers import DiffusionPipeline
 from pydebug import gd, infoTensor
 model_id = "<Your Model Path>"
-print(f"Loading model... from{model_id}")
+gd.debuginfo(prj="mt", info=f"Loading model... from{model_id}")
 
 pipe = DiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16).to("cuda")
 

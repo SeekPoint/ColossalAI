@@ -50,16 +50,16 @@ class DPMSolverSampler(object):
             if isinstance(conditioning, dict):
                 cbs = conditioning[list(conditioning.keys())[0]].shape[0]
                 if cbs != batch_size:
-                    print(f"Warning: Got {cbs} conditionings but batch-size is {batch_size}")
+                    gd.debuginfo(prj="mt", info=f"Warning: Got {cbs} conditionings but batch-size is {batch_size}")
             else:
                 if conditioning.shape[0] != batch_size:
-                    print(f"Warning: Got {conditioning.shape[0]} conditionings but batch-size is {batch_size}")
+                    gd.debuginfo(prj="mt", info=f"Warning: Got {conditioning.shape[0]} conditionings but batch-size is {batch_size}")
 
         # sampling
         C, H, W = shape
         size = (batch_size, C, H, W)
 
-        print(f"Data shape for DPM-Solver sampling is {size}, sampling steps {S}")
+        gd.debuginfo(prj="mt", info=f"Data shape for DPM-Solver sampling is {size}, sampling steps {S}")
 
         device = self.model.betas.device
         if x_T is None:

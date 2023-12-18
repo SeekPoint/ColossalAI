@@ -508,15 +508,16 @@ def _reduce(input_, process_group):
 
 
 def _split(input_, dim=-1, process_group=None):
-    gd.debuginfo(prj="mt", info=f'')
     # skip if only one rank involved
     world_size = dist.get_world_size(process_group)
+    gd.debuginfo(prj="mt", info=f'world_size={world_size}')
     if world_size == 1:
         gd.debuginfo(prj="mt", info=f'')
         return input_
 
     # Split along last dimension.
     dim_size = input_.size(dim)
+    gd.debuginfo(prj="mt", info=f'dim_size={dim_size}')
     assert dim_size % world_size == 0, (
         f"The dimension to split ({dim_size}) is not a multiple of world size ({world_size}), "
         f"cannot split tensor evenly"
@@ -608,7 +609,6 @@ def matmul_gather_forward_reducescatter_backward(
     return _MatmulWithGatherForwardReduceScatterBackward.apply(
         input_, weight, bias, process_group, async_grad_reduce_scatter, dim, overlap
     )
-
 
 def gather_forward_split_backward(input_, dim, process_group):
     gd.debuginfo(prj="mt", info=f'')

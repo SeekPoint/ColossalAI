@@ -96,22 +96,22 @@ class DDIMSampler(object):
                     ctmp = ctmp[0]
                 cbs = ctmp.shape[0]
                 if cbs != batch_size:
-                    print(f"Warning: Got {cbs} conditionings but batch-size is {batch_size}")
+                    gd.debuginfo(prj="mt", info=f"Warning: Got {cbs} conditionings but batch-size is {batch_size}")
 
             elif isinstance(conditioning, list):
                 for ctmp in conditioning:
                     if ctmp.shape[0] != batch_size:
-                        print(f"Warning: Got {cbs} conditionings but batch-size is {batch_size}")
+                        gd.debuginfo(prj="mt", info=f"Warning: Got {cbs} conditionings but batch-size is {batch_size}")
 
             else:
                 if conditioning.shape[0] != batch_size:
-                    print(f"Warning: Got {conditioning.shape[0]} conditionings but batch-size is {batch_size}")
+                    gd.debuginfo(prj="mt", info=f"Warning: Got {conditioning.shape[0]} conditionings but batch-size is {batch_size}")
 
         self.make_schedule(ddim_num_steps=S, ddim_eta=eta, verbose=verbose)
         # sampling
         C, H, W = shape
         size = (batch_size, C, H, W)
-        print(f"Data shape for DDIM sampling is {size}, eta {eta}")
+        gd.debuginfo(prj="mt", info=f"Data shape for DDIM sampling is {size}, eta {eta}")
 
         samples, intermediates = self.ddim_sampling(
             conditioning,
@@ -174,7 +174,7 @@ class DDIMSampler(object):
         intermediates = {"x_inter": [img], "pred_x0": [img]}
         time_range = reversed(range(0, timesteps)) if ddim_use_original_steps else np.flip(timesteps)
         total_steps = timesteps if ddim_use_original_steps else timesteps.shape[0]
-        print(f"Running DDIM Sampling with {total_steps} timesteps")
+        gd.debuginfo(prj="mt", info=f"Running DDIM Sampling with {total_steps} timesteps")
 
         iterator = tqdm(time_range, desc="DDIM Sampler", total=total_steps)
 
@@ -396,7 +396,7 @@ class DDIMSampler(object):
 
         time_range = np.flip(timesteps)
         total_steps = timesteps.shape[0]
-        print(f"Running DDIM Sampling with {total_steps} timesteps")
+        gd.debuginfo(prj="mt", info=f"Running DDIM Sampling with {total_steps} timesteps")
 
         iterator = tqdm(time_range, desc="Decoding image", total=total_steps)
         x_dec = x_latent

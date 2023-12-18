@@ -250,14 +250,19 @@ def save_state_dict_shards(
     shard_filenames = []
     for idx, shard_pair in enumerate(sharded_state_dict):
         shard, current_size = shard_pair
+        gd.debuginfo(prj="mt", info=f'idx={idx}, shard={shard}, current_size={current_size}')
         if not is_master:
             del shard
             continue
         shard_file = get_shard_filename(base_filename, idx)
         total_size = total_size + current_size
+        gd.debuginfo(prj="mt", info=f'shard_file={shard_file}, total_size={total_size}')
+
         for key in shard.keys():
+            gd.debuginfo(prj="mt", info=f'key={key}')
             index_file.append_weight_map(key, shard_file)
         checkpoint_file_path = os.path.join(checkpoint, shard_file)
+        gd.debuginfo(prj="mt", info=f'checkpoint_file_path={checkpoint_file_path}')
 
         # Only save on master rank.
         save_state_dict(shard, checkpoint_file_path, use_safetensors=use_safetensors)

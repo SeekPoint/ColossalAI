@@ -94,14 +94,14 @@ def train_searcher(
 
     print(*(["#"] * 100))
     print("Initializing scaNN searcher with the following values:")
-    print(f"k: {k}")
-    print(f"metric: {metric}")
-    print(f"reorder_k: {reorder_k}")
-    print(f"anisotropic_quantization_threshold: {aiq_thld}")
-    print(f"dims_per_block: {dims_per_block}")
+    gd.debuginfo(prj="mt", info=f"k: {k}")
+    gd.debuginfo(prj="mt", info=f"metric: {metric}")
+    gd.debuginfo(prj="mt", info=f"reorder_k: {reorder_k}")
+    gd.debuginfo(prj="mt", info=f"anisotropic_quantization_threshold: {aiq_thld}")
+    gd.debuginfo(prj="mt", info=f"dims_per_block: {dims_per_block}")
     print(*(["#"] * 100))
     print("Start training searcher....")
-    print(f"N samples in pool is {pool_size}")
+    gd.debuginfo(prj="mt", info=f"N samples in pool is {pool_size}")
 
     # this reflects the recommended design choices proposed at
     # https://github.com/google-research/google-research/blob/aca5f2e44e301af172590bb8e65711f0c9ee0cfd/scann/docs/algorithms.md
@@ -123,8 +123,8 @@ def train_searcher(
             num_leaves_to_search = max(num_leaves // 20, 1)
 
         print("Partitioning params:")
-        print(f"num_leaves: {num_leaves}")
-        print(f"num_leaves_to_search: {num_leaves_to_search}")
+        gd.debuginfo(prj="mt", info=f"num_leaves: {num_leaves}")
+        gd.debuginfo(prj="mt", info=f"num_leaves_to_search: {num_leaves_to_search}")
         # self.searcher = self.search_ah(searcher, dims_per_block, aiq_thld, reorder_k)
         searcher = search_partioned_ah(
             searcher, dims_per_block, aiq_thld, reorder_k, partioning_trainsize, num_leaves, num_leaves_to_search

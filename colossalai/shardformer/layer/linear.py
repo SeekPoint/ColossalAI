@@ -209,26 +209,28 @@ class Linear1D_Col(ParallelModule):
         # Set up backprop all-reduce.
         input_parallel = input_
 
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'input_parallel={input_parallel}')
 
         # Matrix multiply.
         bias = self.bias if not self.skip_bias_add else None
+        gd.debuginfo(prj="mt", info=f'bias={bias}')
+
         if self.seq_parallel:
             output_parallel = linear_gather_forward_reducescatter_backward(
                 input_parallel, self.weight, bias, self.process_group, True, self.seq_parallel_dim, self.overlap
             )
-            gd.debuginfo(prj="mt", info=f'')
+            gd.debuginfo(prj="mt", info=f'output_parallel={output_parallel}')
         else:
             output_parallel = linear_with_async_comm(input_parallel, self.weight, bias, self.process_group, True)
-            gd.debuginfo(prj="mt", info=f'')
+            gd.debuginfo(prj="mt", info=f'output_parallel={output_parallel}')
 
         if self.gather_output:
             # All-gather across the partitions.
             output = gather_forward_split_backward(output_parallel, dim=-1, process_group=self.process_group)
-            gd.debuginfo(prj="mt", info=f'')
+            gd.debuginfo(prj="mt", info=f'output={output}')
         else:
             output = output_parallel
-            gd.debuginfo(prj="mt", info=f'')
+            gd.debuginfo(prj="mt", info=f'output={output}')
 
         if self.skip_bias_add:
             gd.debuginfo(prj="mt", info=f'')

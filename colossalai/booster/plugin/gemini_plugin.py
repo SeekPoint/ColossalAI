@@ -97,7 +97,9 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
         Save sharded model.
         As there is communication when getting state dict, model.state_dict() must be called on all processes.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        logf = f'gemini_save_sharded_model'
+        gd.emb_start(info=logf)
+
         assert isinstance(model, GeminiDDP), "Please boost the model before saving!"
         if os.path.isfile(checkpoint_path):
             logging.error(f"Provided path ({checkpoint_path}) should be a directory, not a file")
@@ -126,11 +128,11 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
             index_file.append_meta_data("total_size", total_size)
             index_file.write_index_file(save_index_file)
             save_config_file(model.unwrap(), checkpoint_path)
-            logging.info(
-                f"The model is split into checkpoint shards. "
+            gd.debuginfo(prj="mt", info=f"The model is split into checkpoint shards. "
                 f"You can find where each parameters has been saved in the "
-                f"index located at {save_index_file}."
-            )
+                f"index located at {save_index_file}.")
+
+        gd.emb_end(info=logf)
 
     def load_sharded_model(self,
                            model: GeminiDDP,
@@ -140,9 +142,11 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
         """
         Load shard model, load model from multiple files.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        logf = f'gemini_load_sharded_model'
+        gd.emb_start(info=logf)
         assert isinstance(model, GeminiDDP), "Please boost the model before loading!"
         return super().load_sharded_model(model, checkpoint_index_file, strict, use_safetensors, load_sub_module=False)
+        gd.emb_end(info=logf)
 
     def save_sharded_optimizer(
         self, optimizer: GeminiOptimizer, checkpoint: Path, gather_dtensor: bool, prefix: str, size_per_shard: int
@@ -155,7 +159,7 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
         assert isinstance(optimizer, GeminiOptimizer), "Please boost the optimizer before saving!"
 
         if os.path.isfile(checkpoint):
-            logging.error(f"Provided path ({checkpoint}) should be a directory, not a file")
+            gd.debuginfo(prj="mt", info=f"Provided path ({checkpoint}) should be a directory, not a file")
             return
 
         Path(checkpoint).mkdir(parents=True, exist_ok=True)
@@ -189,11 +193,9 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
             gd.debuginfo(prj="mt", info=f'')
             index_file.append_meta_data("total_size", total_size)
             index_file.write_index_file(save_index_file)
-            logging.info(
-                f"The optimizer is going to be split to checkpoint shards. "
+            gd.debuginfo(prj="mt", info=f"The optimizer is going to be split to checkpoint shards. "
                 f"You can find where each parameters has been saved in the "
-                f"index located at {save_index_file}."
-            )
+                f"index located at {save_index_file}.")
 
     def load_sharded_optimizer(self, optimizer: GeminiOptimizer, checkpoint_index_file: Path, prefix: str):
         """
@@ -203,7 +205,7 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
         gd.debuginfo(prj="mt", info=f'')
         assert isinstance(optimizer, GeminiOptimizer), "Please boost the optimizer before loading!"
         if not os.path.isfile(checkpoint_index_file):
-            logging.error(f"Provided path ({checkpoint_index_file}) should be a file")
+            gd.debuginfo(prj="mt", info=f"Provided path ({checkpoint_index_file}) should be a file")
 
         assert isinstance(optimizer, GeminiOptimizer)
 

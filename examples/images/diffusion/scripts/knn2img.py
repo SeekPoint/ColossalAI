@@ -39,10 +39,10 @@ def chunk(it, size):
 
 
 def load_model_from_config(config, ckpt, verbose=False):
-    print(f"Loading model from {ckpt}")
+    gd.debuginfo(prj="mt", info=f"Loading model from {ckpt}")
     pl_sd = torch.load(ckpt, map_location="cpu")
     if "global_step" in pl_sd:
-        print(f"Global Step: {pl_sd['global_step']}")
+        gd.debuginfo(prj="mt", info=f"Global Step: {pl_sd['global_step']}")
     sd = pl_sd["state_dict"]
     model = instantiate_from_config(config.model)
     m, u = model.load_state_dict(sd, strict=False)
@@ -128,7 +128,7 @@ class Searcher(object):
         return model
 
     def load_searcher(self):
-        print(f"load searcher for database {self.database_name} from {self.searcher_savedir}")
+        gd.debuginfo(prj="mt", info=f"load searcher for database {self.database_name} from {self.searcher_savedir}")
         self.searcher = scann.scann_ops_pybind.load_searcher(self.searcher_savedir)
         print("Finished loading searcher.")
 
@@ -328,7 +328,7 @@ if __name__ == "__main__":
         data = [batch_size * [prompt]]
 
     else:
-        print(f"reading prompts from {opt.from_file}")
+        gd.debuginfo(prj="mt", info=f"reading prompts from {opt.from_file}")
         with open(opt.from_file, "r") as f:
             data = f.read().splitlines()
             data = list(chunk(data, batch_size))
@@ -338,7 +338,7 @@ if __name__ == "__main__":
     base_count = len(os.listdir(sample_path))
     grid_count = len(os.listdir(outpath)) - 1
 
-    print(f"sampling scale for cfg is {opt.scale:.2f}")
+    gd.debuginfo(prj="mt", info=f"sampling scale for cfg is {opt.scale:.2f}")
 
     searcher = None
     if opt.use_neighbors:
@@ -395,4 +395,4 @@ if __name__ == "__main__":
                     Image.fromarray(grid.astype(np.uint8)).save(os.path.join(outpath, f"grid-{grid_count:04}.png"))
                     grid_count += 1
 
-    print(f"Your samples are ready and waiting for you here: \n{outpath} \nEnjoy.")
+    gd.debuginfo(prj="mt", info=f"Your samples are ready and waiting for you here: \n{outpath} \nEnjoy.")

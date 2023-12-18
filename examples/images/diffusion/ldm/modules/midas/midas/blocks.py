@@ -42,7 +42,7 @@ def _make_encoder(
         pretrained = _make_pretrained_efficientnet_lite3(use_pretrained, exportable=exportable)
         scratch = _make_scratch([32, 48, 136, 384], features, groups=groups, expand=expand)  # efficientnet_lite3
     else:
-        print(f"Backbone '{backbone}' not implemented")
+        gd.debuginfo(prj="mt", info=f"Backbone '{backbone}' not implemented")
         assert False
 
     return pretrained, scratch
