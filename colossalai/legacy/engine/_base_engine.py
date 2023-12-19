@@ -158,10 +158,11 @@ class Engine:
         self.optimizer.zero_grad()
 
     def step(self):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         """Execute parameter update"""
         self._all_reduce_gradients()
         self.optimizer.clip_grad_by_norm(self._clip_grad_norm)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return self.optimizer.step()
 
     def backward(self, loss: Tensor):
@@ -170,9 +171,11 @@ class Engine:
         Args:
             loss (:class:`torch.Tensor`): Loss value computed by a loss function.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         ret = self.optimizer.backward(loss)
         for ophook in self._ophook_list:
             ophook.post_iter()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return ret
 
     def backward_by_grad(self, tensor, grad):
@@ -182,9 +185,11 @@ class Engine:
             tensor (:class:`torch.Tensor`): Output tensor.
             grad (:class:`torch.Tensor`): Gradient passed back to the output.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         ret = self.optimizer.backward_by_grad(tensor, grad)
         for ophook in self._ophook_list:
             ophook.post_iter()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return ret
 
     def __call__(self, *args, **kwargs):
@@ -193,12 +198,15 @@ class Engine:
         Returns:
             Tuple[:class:`torch.Tensor`] or :class:`torch.Tensor`: Output of the model.
         """
+        gd.debuginfo(prj="mt", info=f'')
         return self.model(*args, **kwargs)
 
     def _all_reduce_gradients(self):
         """Handles all-reduce operations of gradients across different parallel groups."""
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         for handler in self._gradient_handlers:
             handler.handle_gradient()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def execute_schedule(self, data_iter: Iterable, **kwargs):
         """Run the forward, loss computation, and backward for the model.
@@ -207,15 +215,20 @@ class Engine:
         Returns:
             Tuple[:class:`torch.Tensor`]: A tuple of (output, label, loss).
         """
+        gd.debuginfo(prj="mt", info=f'')
         output, label, loss = self._schedule.forward_backward_step(self, data_iter, **kwargs)
         return output, label, loss
 
     def train(self):
         """Sets the model to training mode."""
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.training = True
         self._model.train()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def eval(self):
         """Sets the model to evaluation mode."""
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.training = False
         self._model.eval()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')

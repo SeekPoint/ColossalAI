@@ -44,8 +44,9 @@ class GradAccumOptimizer(OptimizerWrapper):
             *args: positional arguments for the optimizer wrapped
             **kwargs: keyword arguments for the optimizer wrapped
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         if self.accumulate_step == 0:
+            gd.debuginfo(prj="mt", info=f'')
             self.optim.zero_grad(*args, **kwargs)
 
     def step(self, *args, **kwargs) -> None:
@@ -58,10 +59,13 @@ class GradAccumOptimizer(OptimizerWrapper):
         """
 
         if self.accumulate_step < self.accumulate_size:
+            gd.debuginfo(prj="mt", info=f'')
             return None
         else:
             self.accumulate_step = 0
+            gd.debuginfo(prj="mt", info=f'')
             return self.optim.step(*args, **kwargs)
+
 
     def clip_grad_norm(self, model: nn.Module, max_norm: float) -> None:
         """
@@ -73,8 +77,10 @@ class GradAccumOptimizer(OptimizerWrapper):
         """
 
         if self.accumulate_step < self.accumulate_size:
+            gd.debuginfo(prj="mt", info=f'')
             pass
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.optim.clip_grad_by_norm(max_norm)
 
     def backward(self, loss: Tensor) -> None:
@@ -83,17 +89,20 @@ class GradAccumOptimizer(OptimizerWrapper):
         Args:
             loss (:class:`torch.Tensor`): the loss value.
         """
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.accumulate_step += 1
 
         if self.is_torch_ddp:
+            gd.debuginfo(prj="mt", info=f'')
             no_sync = self.accumulate_step < self.accumulate_size
             with conditional_context(self.model.no_sync(), enable=no_sync):
                 scaled_loss = loss / self.accumulate_size
                 self.optim.backward(scaled_loss)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             scaled_loss = loss / self.accumulate_size
             self.optim.backward(scaled_loss)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def backward_by_grad(self, tensor: Tensor, grad: Tensor) -> None:
         """Execute backward pass given the gradients of the output.
@@ -102,15 +111,18 @@ class GradAccumOptimizer(OptimizerWrapper):
             loss (:class:`torch.Tensor`): the loss value.
             grad (:class:`torch.Tensor`): the output gradient.
         """
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.accumulate_step += 1
         no_sync = self.is_torch_ddp and self.accumulate_step < self.accumulate_size
 
         if no_sync:
             with self.model.no_sync():
+                gd.debuginfo(prj="mt", info=f'')
                 self.optim.backward_by_grad(tensor, grad)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.optim.backward_by_grad(tensor, grad)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
 
 class GradAccumDataloader:
@@ -129,9 +141,11 @@ class GradAccumDataloader:
     """
 
     def __init__(self, dataloader: Iterable, accumulate_size: int) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.dataloader = dataloader
         self.consume_remain_data = not isinstance(dataloader, DataLoader)
         self.steps_per_epoch = len(dataloader) - len(dataloader) % accumulate_size
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def __getattr__(self, __name: str) -> Any:
         return getattr(self.dataloader, __name)
@@ -173,9 +187,11 @@ class GradAccumLrSchedulerByStep(_LRScheduler):
     """
 
     def __init__(self, lr_scheduler: _LRScheduler, accumulate_size: int) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.lr_scheduler = lr_scheduler
         self.accumulate_size = accumulate_size
         self.accumulate_step = 0
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @staticmethod
     def compute_effective_steps_per_epoch(dataloader: Iterable, accumulate_size: int) -> int:
@@ -189,6 +205,7 @@ class GradAccumLrSchedulerByStep(_LRScheduler):
             accumulate_size (int): The number of steps to accumulate gradients.
 
         """
+        gd.debuginfo(prj="mt", info=f'')
         return len(dataloader) // accumulate_size
 
     def __getattr__(self, __name: str) -> Any:
@@ -202,12 +219,15 @@ class GradAccumLrSchedulerByStep(_LRScheduler):
             *args: positional arguments for the lr scheduler wrapped.
             **kwargs: keyword arguments for the lr scheduler wrapped.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.accumulate_step += 1
         if self.accumulate_step < self.accumulate_size:
             pass
         else:
             self.accumulate_step = 0
             self.lr_scheduler.step(*args, **kwargs)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def get_lr(self) -> Tensor:
         """
@@ -216,7 +236,7 @@ class GradAccumLrSchedulerByStep(_LRScheduler):
         Returns:
             Tensor: the upcoming learning rate.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         return self.lr_scheduler.get_lr()
 
     def get_last_lr(self) -> Tensor:
@@ -226,7 +246,7 @@ class GradAccumLrSchedulerByStep(_LRScheduler):
         Returns:
             Tensor: the current learning rate.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         return self.lr_scheduler.get_last_lr()
 
     def print_lr(self, *args, **kwargs) -> None:
@@ -237,6 +257,7 @@ class GradAccumLrSchedulerByStep(_LRScheduler):
             *args: positional arguments for the lr scheduler wrapped.
             **kwargs: keyword arguments for the lr scheduler wrapped.
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.lr_scheduler.print_lr(*args, **kwargs)
 
     def state_dict(self) -> dict:
@@ -246,6 +267,7 @@ class GradAccumLrSchedulerByStep(_LRScheduler):
         Returns:
             dict: the states of the lr scheduler.
         """
+        gd.debuginfo(prj="mt", info=f'')
         return self.lr_scheduler.state_dict()
 
     def load_state_dict(self, state_dict: dict) -> None:
@@ -255,6 +277,7 @@ class GradAccumLrSchedulerByStep(_LRScheduler):
         Returns:
             dict: the states of the lr scheduler.
         """
+        gd.debuginfo(prj="mt", info=f'')
         self.lr_scheduler.load_state_dict(state_dict)
 
 
@@ -273,18 +296,20 @@ class GradAccumGradientHandler:
     """
 
     def __init__(self, grad_handler: BaseGradientHandler, accumulate_size: int) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert isinstance(
             grad_handler, BaseGradientHandler
         ), f"expected grad_handler to be type BaseGradientHandler, but got {type(grad_handler)}"
         self.grad_handler = grad_handler
         self.accumulate_size = accumulate_size
         self.accumulate_step = 0
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def handle_gradient(self) -> None:
         """
         Handle gradients reduction only in the last gradient accumulation step.
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         self.accumulate_step += 1
         if self.accumulate_step < self.accumulate_size:
             pass

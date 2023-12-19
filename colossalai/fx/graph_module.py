@@ -30,11 +30,12 @@ if COLOGM:
             class_name: str = "GraphModule",
             ckpt_codegen: bool = True,
         ):
-            gd.debuginfo(prj="mt", info=f'')
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             if ckpt_codegen:
                 gd.debuginfo(prj="mt", info=f'')
                 graph.set_codegen(ActivationCheckpointCodeGen())
             super().__init__(root, graph, class_name)
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
         def bind(self, ckpt_def, globals):
             """Bind function needed for correctly execute gm forward
@@ -62,7 +63,7 @@ if COLOGM:
             called after editing the contained ``graph``, otherwise the generated
             code of this ``GraphModule`` will be out of date.
             """
-            gd.debuginfo(prj="mt", info=f'')
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             if isinstance(self._graph._codegen, _PyTreeCodeGen):
                 gd.debuginfo(prj="mt", info=f'')
                 self._in_spec = self._graph._codegen.pytree_info.in_spec
@@ -102,6 +103,8 @@ if COLOGM:
 
             # reset self._code to original src, otherwise to_folder will be wrong
             self._code = python_code.src
+
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return python_code
 
         def to_folder(self, folder: Union[str, os.PathLike], module_name: str = "FxModule"):
@@ -191,5 +194,6 @@ else:
     gd.debuginfo(prj="mt", info=f'')
     class ColoGraphModule(GraphModule):
         def __init__(self, root: Union[torch.nn.Module, Dict[str, Any]], graph: Graph, class_name: str = "GraphModule"):
-            gd.debuginfo(prj="mt", info=f'')
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             super().__init__(root, graph, class_name)
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')

@@ -296,6 +296,7 @@ class Classifier1D(ParallelLayer):
         destination.update(local_state)
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # Set up backprop all-reduce.
         if self.parallel_input:
             assert (
@@ -316,6 +317,7 @@ class Classifier1D(ParallelLayer):
         output = reduce_input(output_parallel, ParallelMode.PARALLEL_1D)
         if self.bias is not None:
             output = output + self.bias
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output
 
 
@@ -349,7 +351,7 @@ class VocabParallelClassifier1D(ParallelLayer):
         weight_initializer: Callable = init.kaiming_uniform_(a=math.sqrt(5)),
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.in_features = in_features
         self.num_classes = num_classes
@@ -377,22 +379,28 @@ class VocabParallelClassifier1D(ParallelLayer):
         self._set_tensor_parallel_attributes()
         set_parallel_input(False)
         env.vocab_parallel = True
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def reset_parameters(self, weight_initializer, bias_initializer) -> None:
         fan_in, fan_out = self.in_features, self.num_classes
         if self.has_weight:
+            gd.debuginfo(prj="mt", info=f'')
             weight_initializer(self.weight, fan_in=fan_in, fan_out=fan_out)
         if self.bias is not None:
+            gd.debuginfo(prj="mt", info=f'')
             bias_initializer(self.bias, fan_in=fan_in)
 
     def _set_tensor_parallel_attributes(self):
         num_partition = gpc.get_world_size(ParallelMode.TENSOR)
         if self.has_weight:
+            gd.debuginfo(prj="mt", info=f'')
             set_tensor_parallel_attribute_by_partition(self.weight, num_partition)
         if self.bias is not None:
+            gd.debuginfo(prj="mt", info=f'')
             set_tensor_parallel_attribute_by_partition(self.bias, num_partition)
 
     def _load_from_global_state_dict(self, state_dict, prefix, *args):
+        gd.debuginfo(prj="mt", info=f'')
         local_state = OrderedDict()
         weight_key = prefix + "weight"
         bias_key = prefix + "bias"
@@ -417,6 +425,7 @@ class VocabParallelClassifier1D(ParallelLayer):
         super()._load_from_global_state_dict(local_state, prefix, *args)
 
     def _save_to_global_state_dict(self, destination, prefix, keep_vars):
+        gd.debuginfo(prj="mt", info=f'')
         weight_key = prefix + "weight"
         bias_key = prefix + "bias"
         local_state = OrderedDict()
@@ -434,6 +443,7 @@ class VocabParallelClassifier1D(ParallelLayer):
         destination.update(local_state)
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert (
             input_.shape[-1] == self.weight.shape[-1]
         ), "Invalid shapes in VocabParallelClassifier1D forward: input={}, weight={}. Expected last dim of input {}.".format(
@@ -448,6 +458,7 @@ class VocabParallelClassifier1D(ParallelLayer):
             output = gather_forward_split_backward(output_parallel, ParallelMode.PARALLEL_1D, dim=-1)
         else:
             output = output_parallel
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output
 
 
@@ -568,6 +579,8 @@ class Linear1D_Col(ParallelLayer):
         destination.update(local_state)
 
     def forward(self, input_: Tensor) -> Tuple[Tensor, Tensor]:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         assert (
             input_.shape[-1] == self.weight.shape[-1]
         ), "Invalid shapes in Linear1D_Col forward: input={}, weight={}. Expected last dim of input {}.".format(
@@ -587,8 +600,10 @@ class Linear1D_Col(ParallelLayer):
             output = output_parallel
 
         if self.skip_bias_add:
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return output, self.bias
         else:
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return output
 
 
@@ -712,6 +727,7 @@ class Linear1D_Row(ParallelLayer):
         destination.update(local_state)
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # Set up backprop all-reduce.
         if self.parallel_input:
             assert (
@@ -751,8 +767,10 @@ class Linear1D_Row(ParallelLayer):
         if not self.skip_bias_add:
             if self.bias is not None:
                 output = output + self.bias
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return output
         else:
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return output, self.bias
 
 
@@ -857,6 +875,7 @@ class Embedding1D(ParallelLayer):
         destination.update(local_state)
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         output_parallel = F.embedding(input_, self.weight, self.padding_idx, *self.embed_args, **self.embed_kwargs)
 
         output = gather_forward_split_backward(output_parallel, ParallelMode.PARALLEL_1D, dim=-1)
@@ -947,6 +966,7 @@ class VocabParallelEmbedding1D(ParallelLayer):
                 self.weight[self.padding_idx - self.vocab_start_index].fill_(0)
 
     def _load_from_global_state_dict(self, state_dict, prefix, *args):
+        gd.debuginfo(prj="mt", info=f'')
         local_state = OrderedDict()
         weight_key = prefix + "weight"
         if gpc.get_local_rank(ParallelMode.TENSOR) == 0:
@@ -961,6 +981,7 @@ class VocabParallelEmbedding1D(ParallelLayer):
         super()._load_from_global_state_dict(local_state, prefix, *args)
 
     def _save_to_global_state_dict(self, destination, prefix, keep_vars):
+        gd.debuginfo(prj="mt", info=f'')
         weight_key = prefix + "weight"
         local_state = OrderedDict({weight_key: self.weight})
         local_state = gather_tensor_parallel_state_dict(
@@ -973,6 +994,7 @@ class VocabParallelEmbedding1D(ParallelLayer):
         destination.update(local_state)
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # Build the mask.
         input_mask = (input_ < self.vocab_start_index) | (input_ >= self.vocab_end_index)
         # Mask the input.
@@ -987,6 +1009,7 @@ class VocabParallelEmbedding1D(ParallelLayer):
         output_parallel[input_mask, :] = 0.0
         # Reduce across all the model parallel GPUs.
         output = reduce_input(output_parallel, ParallelMode.PARALLEL_1D)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output
 
 
@@ -1010,8 +1033,10 @@ class Dropout1D(ParallelLayer):
         if self.parallel_input:
             with seed(ParallelMode.TENSOR):
                 output = F.dropout(input_, self.p, self.training, self.inplace)
+                gd.debuginfo(prj="mt", info=f'')
         else:
             output = F.dropout(input_, self.p, self.training, self.inplace)
+            gd.debuginfo(prj="mt", info=f'')
         return output
 
 

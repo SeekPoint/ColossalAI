@@ -18,8 +18,9 @@ class LambdaLR(_LambdaLR):
     """
 
     def __init__(self, optimizer, total_steps, lr_lambda=None, last_epoch: int = -1) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(optimizer, lr_lambda, last_epoch=last_epoch)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
 
 class MultiplicativeLR(_MultiplicativeLR):
@@ -36,8 +37,9 @@ class MultiplicativeLR(_MultiplicativeLR):
     """
 
     def __init__(self, optimizer, total_steps, lr_lambda=None, last_epoch: int = -1) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(optimizer, lr_lambda, last_epoch=last_epoch)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
 
 class StepLR(_StepLR):
@@ -55,8 +57,9 @@ class StepLR(_StepLR):
     """
 
     def __init__(self, optimizer, total_steps, step_size: int = 1, gamma: float = 0.1, last_epoch: int = -1) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(optimizer, step_size, gamma=gamma, last_epoch=last_epoch)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
 
 class ExponentialLR(_ExponentialLR):
@@ -71,5 +74,6 @@ class ExponentialLR(_ExponentialLR):
     """
 
     def __init__(self, optimizer, total_steps, gamma: float = 1.0, last_epoch: int = -1) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(optimizer, gamma, last_epoch=last_epoch)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')

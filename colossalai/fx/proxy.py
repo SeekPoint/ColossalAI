@@ -22,9 +22,10 @@ class ColoProxy(Proxy):
     """
 
     def __init__(self, *args, **kwargs):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(*args, **kwargs)
         self.node._meta_data = None
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @property
     def meta_data(self):
@@ -98,11 +99,12 @@ def extract_meta(*args, **kwargs):
 
 class ColoAttribute(ColoProxy):
     def __init__(self, root, attr: str):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.root = root
         self.attr = attr
         self.tracer = root.tracer
         self._node = None
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @property
     def node(self):

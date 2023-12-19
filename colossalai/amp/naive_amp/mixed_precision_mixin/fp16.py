@@ -29,7 +29,7 @@ class FP16MixedPrecisionMixin(MixedPrecisionMixin):
         hysteresis: int = 2,
         max_scale: float = 2**32,
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.grad_scaler = DynamicGradScaler(
             initial_scale=initial_scale,
@@ -42,6 +42,7 @@ class FP16MixedPrecisionMixin(MixedPrecisionMixin):
         )
         self.optim_state = OptimState.UNSCALED
         self.found_overflow = torch.zeros(1, dtype=torch.float, device=get_current_device())
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @property
     def loss_scale(self) -> float:
@@ -77,11 +78,13 @@ class FP16MixedPrecisionMixin(MixedPrecisionMixin):
         return grad
 
     def should_skip_step(self) -> bool:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         found_inf = self.check_overflow()
         self.grad_scaler.update(found_inf)
         if found_inf:
             gd.debuginfo(prj="mt", info=f'')
             self.optim_state = OptimState.UNSCALED
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return found_inf
 
     def pre_zero_grad(self) -> None:

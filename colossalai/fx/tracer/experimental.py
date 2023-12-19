@@ -63,9 +63,10 @@ def default_device():
 @compatibility(is_backward_compatible=False)
 class ColoProxy(Proxy):
     def __init__(self, *args, data=None, **kwargs):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(*args, **kwargs)
         self._meta_data = data
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @property
     def meta_data(self):
@@ -164,12 +165,13 @@ class ColoProxy(Proxy):
 @compatibility(is_backward_compatible=False)
 class ColoAttribute(ColoProxy):
     def __init__(self, root, attr: str, data=None):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.root = root
         self.attr = attr
         self.tracer = root.tracer
         self._meta_data = data
         self._node: Optional[Node] = None
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @property
     def node(self):
@@ -190,7 +192,7 @@ class ColoAttribute(ColoProxy):
 @compatibility(is_backward_compatible=False)
 class ColoTracer(Tracer):
     def __init__(self, trace_act_ckpt: bool = False, *args, **kwargs):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(*args, **kwargs)
         self._disable_module_getattr = False
         self.proxy_buffer_attributes = True
@@ -200,6 +202,7 @@ class ColoTracer(Tracer):
         # whether the current tracing occurs within the activation checkpoint functions
         self.inside_torch_checkpoint_func = False
         self.act_ckpt_region_count = 0
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def proxy(self, node: Node) -> "ColoProxy":
         return ColoProxy(node, self)
@@ -457,9 +460,10 @@ def symbolic_trace(
 @compatibility(is_backward_compatible=False)
 class _TorchTensorOverride(object):
     def __init__(self, tracer: Tracer):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.overrides = {}
         self.tracer = tracer
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def __enter__(self):
         gd.debuginfo(prj="mt", info=f'')

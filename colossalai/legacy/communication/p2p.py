@@ -206,10 +206,12 @@ def recv_forward(
     Returns:
         Union[:class:`torch.Tensor`, List[:class:`torch.Tensor`]]: The input tensor or input tensor list.
     """
-    gd.debuginfo(prj="mt", info=f'')
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     if gpc.is_pipeline_first_stage():
+        gd.debuginfo(prj="mt", info=f'')
         input_tensor = None
     else:
+        gd.debuginfo(prj="mt", info=f'')
         input_tensor, _ = _communicate(
             recv_prev=True,
             recv_prev_shape=input_tensor_shape,
@@ -217,6 +219,7 @@ def recv_forward(
             dtype=dtype,
             scatter_gather_tensors=scatter_gather_tensors,
         )
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     return input_tensor
 
 
@@ -255,6 +258,7 @@ def send_forward(output_tensor, next_rank=None, scatter_gather_tensors=False) ->
     """
     gd.debuginfo(prj="mt", info=f'')
     if not gpc.is_pipeline_last_stage():
+        gd.debuginfo(prj="mt", info=f'')
         _communicate(object_send_next=output_tensor, next_rank=next_rank, scatter_gather_tensors=scatter_gather_tensors)
 
 
@@ -286,10 +290,12 @@ def send_forward_recv_backward(
     Returns:
         Union[:class:`torch.Tensor`, List[:class:`torch.Tensor`]]: The input gradient tensor.
     """
-    gd.debuginfo(prj="mt", info=f'')
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     if gpc.is_pipeline_last_stage():
+        gd.debuginfo(prj="mt", info=f'')
         output_tensor_grad = None
     else:
+        gd.debuginfo(prj="mt", info=f'')
         _, output_tensor_grad = _communicate(
             object_send_next=output_tensor,
             recv_next=recv_next,
@@ -298,6 +304,7 @@ def send_forward_recv_backward(
             dtype=dtype,
             scatter_gather_tensors=scatter_gather_tensors,
         )
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     return output_tensor_grad
 
 
@@ -320,10 +327,12 @@ def send_backward_recv_forward(
     Returns:
         Union[:class:`torch.Tensor`, List[:class:`torch.Tensor`]]: The input tensor.
     """
-    gd.debuginfo(prj="mt", info=f'')
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     if gpc.is_pipeline_first_stage():
         input_tensor = None
+        gd.debuginfo(prj="mt", info=f'')
     else:
+        gd.debuginfo(prj="mt", info=f'')
         input_tensor, _ = _communicate(
             object_send_prev=input_tensor_grad,
             recv_prev=recv_prev,
@@ -332,6 +341,7 @@ def send_backward_recv_forward(
             dtype=dtype,
             scatter_gather_tensors=scatter_gather_tensors,
         )
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     return input_tensor
 
 
@@ -355,7 +365,7 @@ def send_forward_recv_forward(
     Returns:
         Union[:class:`torch.Tensor`, List[:class:`torch.Tensor`]]: The input tensor.
     """
-    gd.debuginfo(prj="mt", info=f'')
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     input_tensor, _ = _communicate(
         object_send_next=output_tensor,
         recv_prev=recv_prev,
@@ -365,6 +375,7 @@ def send_forward_recv_forward(
         dtype=dtype,
         scatter_gather_tensors=scatter_gather_tensors,
     )
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     return input_tensor
 
 
@@ -426,7 +437,7 @@ def send_forward_backward_recv_forward_backward(
     Returns:
         Tuple(Union[:class:`torch.Tensor`, List[:class:`torch.Tensor`]], Union[:class:`torch.Tensor`, List[:class:`torch.Tensor`]]): (the input tensor, the input gradient tensor)
     """
-    gd.debuginfo(prj="mt", info=f'')
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     input_tensor, output_tensor_grad = _communicate(
         object_send_next=output_tensor,
         object_send_prev=input_tensor_grad,
@@ -439,4 +450,5 @@ def send_forward_backward_recv_forward_backward(
         dtype=dtype,
         scatter_gather_tensors=scatter_gather_tensors,
     )
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     return input_tensor, output_tensor_grad

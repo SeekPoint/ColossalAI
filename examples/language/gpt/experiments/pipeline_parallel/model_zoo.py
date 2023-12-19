@@ -13,8 +13,10 @@ class GPTLMModel(nn.Module):
         vocab_size=50257,
         checkpoint=False,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.checkpoint = checkpoint
+        gd.debuginfo(prj="mt", info=f'==========================')
         self.config = GPT2Config(
             n_embd=hidden_size,
             n_layer=num_layers,
@@ -23,11 +25,15 @@ class GPTLMModel(nn.Module):
             n_ctx=max_seq_len,
             vocab_size=vocab_size,
         )
+        gd.debuginfo(prj="mt", info=f'==========================')
         self.model = GPT2LMHeadModel(self.config)
         if checkpoint:
+            gd.debuginfo(prj="mt", info=f'')
             self.model.gradient_checkpointing_enable()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, input_ids, attention_mask):
+        gd.debuginfo(prj="mt", info=f'')
         # Only return lm_logits
         return self.model(input_ids=input_ids, attention_mask=attention_mask, use_cache=not self.checkpoint)[0]
 

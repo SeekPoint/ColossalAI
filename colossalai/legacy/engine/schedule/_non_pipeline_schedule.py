@@ -68,6 +68,7 @@ class NonPipelineSchedule(BaseSchedule):
         Returns:
             Tuple[:class:`torch.Tensor`]: A tuple of (output, label, loss), loss and label could be None.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert (
             forward_only or return_loss
         ), "The argument 'return_loss' has to be True when 'forward_only' is False, but got False."
@@ -90,11 +91,15 @@ class NonPipelineSchedule(BaseSchedule):
 
         if return_output_label:
             if return_loss:
+                gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
                 return output, label, loss
             else:
+                gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
                 return output, label, None
         else:
             if return_loss:
+                gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
                 return None, None, loss
             else:
+                gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
                 return None, None, None

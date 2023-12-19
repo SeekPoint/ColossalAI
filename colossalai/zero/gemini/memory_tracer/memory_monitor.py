@@ -14,9 +14,10 @@ class MemoryMonitor:
     """
 
     def __init__(self):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.time_stamps = []
         self.mem_stats = []
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def __len__(self):
         return len(self.mem_stats)
@@ -75,7 +76,7 @@ class AsyncMemoryMonitor(MemoryMonitor):
     """
 
     def __init__(self, power: int = 10):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.keep_measuring = False
 
@@ -87,6 +88,8 @@ class AsyncMemoryMonitor(MemoryMonitor):
         self.executor = ThreadPoolExecutor(max_workers=1, initializer=_set_cuda_device)
         self.monitor_thread = None
         self.interval = 1 / (10**power)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def set_interval(self, power: int):
         self.clear()
@@ -131,8 +134,9 @@ class SyncCudaMemoryMonitor(MemoryMonitor):
     """
 
     def __init__(self, power: int = 10):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def start(self):
         torch.cuda.synchronize()

@@ -314,7 +314,8 @@ class BertModelPolicy(BertPolicy):
 
     def module_policy(self):
         policy = super().module_policy()
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
+
         from transformers.models.bert.modeling_bert import BertModel
 
         if self.pipeline_stage_manager:
@@ -343,6 +344,7 @@ class BertForPreTrainingPolicy(BertPolicy):
 
     def module_policy(self):
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         policy = self.add_lm_head_policy(policy)
         policy = self.add_lm_prediction_policy(policy)
         gd.debuginfo(prj="mt", info=f'')
@@ -395,6 +397,7 @@ class BertLMHeadModelPolicy(BertPolicy):
     def module_policy(self):
         gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         policy = self.add_lm_head_policy(policy)
         policy = self.add_lm_prediction_policy(policy)
         from transformers.models.bert.modeling_bert import BertLMHeadModel
@@ -443,6 +446,7 @@ class BertForMaskedLMPolicy(BertPolicy):
     def module_policy(self):
         gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         policy = self.add_lm_head_policy(policy)
         policy = self.add_lm_prediction_policy(policy)
         from transformers.models.bert.modeling_bert import BertForMaskedLM
@@ -494,7 +498,7 @@ class BertForSequenceClassificationPolicy(BertPolicy):
         from transformers.models.bert.modeling_bert import BertForSequenceClassification
 
         policy = super().module_policy()
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         if self.shard_config.enable_tensor_parallelism:
             addon_module = {
@@ -549,7 +553,7 @@ class BertForTokenClassificationPolicy(BertPolicy):
         from transformers.models.bert.modeling_bert import BertForTokenClassification
 
         policy = super().module_policy()
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         if self.shard_config.enable_tensor_parallelism:
             addon_module = {
@@ -602,6 +606,7 @@ class BertForNextSentencePredictionPolicy(BertPolicy):
     def module_policy(self):
         gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         from transformers.models.bert.modeling_bert import BertForNextSentencePrediction
 
         if self.pipeline_stage_manager:
@@ -643,6 +648,7 @@ class BertForMultipleChoicePolicy(BertPolicy):
         from transformers.models.bert.modeling_bert import BertForMultipleChoice
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         if self.shard_config.enable_tensor_parallelism:
             gd.debuginfo(prj="mt", info=f'')
@@ -696,6 +702,7 @@ class BertForQuestionAnsweringPolicy(BertPolicy):
         from transformers.models.bert.modeling_bert import BertForQuestionAnswering
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         if self.pipeline_stage_manager:
             self.set_pipeline_forward(
                 model_cls=BertForQuestionAnswering,

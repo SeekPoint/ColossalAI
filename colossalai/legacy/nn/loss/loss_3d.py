@@ -48,13 +48,14 @@ class CrossEntropyLoss3D(_Loss):
             logits (:class:`torch.tensor`): Predicted unnormalized scores (often referred to as logits).
             targets (:class:`torch.tensor`): Ground truth class indices or class probabilities.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         targets = split_tensor_3d(targets, 0, self.weight_parallel_mode)
         targets = split_tensor_3d(targets, 0, self.input_parallel_mode)
         loss = cross_entropy(logits, targets, reduction="none", *self.loss_args, **self.loss_kwargs)
         if self.reduction_mean:
             loss = loss.mean()
             loss = reduce_by_batch_3d(loss, self.input_parallel_mode, self.weight_parallel_mode, True)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return loss
 
 
@@ -65,7 +66,7 @@ class _VocabParallelCrossEntropy3D(torch.autograd.Function):
     @staticmethod
     @custom_fwd(cast_inputs=torch.float32)
     def forward(ctx, logits, targets, output_parallel_mode):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # logits: [b/q^2, c/q]
         # labels: [b/q^2]
         # loss: [b/q^2]
@@ -98,12 +99,14 @@ class _VocabParallelCrossEntropy3D(torch.autograd.Function):
         exp_logits.div_(sum_exp_logits.unsqueeze(dim=-1))
         ctx.save_for_backward(exp_logits, target_mask, masked_target)
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return loss
 
     @staticmethod
     @custom_bwd
     def backward(ctx, output_grad):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # Retrieve tensors from the forward path.
         softmax, target_mask, masked_target = ctx.saved_tensors
 
@@ -117,7 +120,7 @@ class _VocabParallelCrossEntropy3D(torch.autograd.Function):
         arange_1d = torch.arange(start=0, end=grad_2d.size()[0], device=get_current_device())
         grad_2d[arange_1d, masked_target] -= 1.0 - target_mask.view(-1).float()
         input_grad.mul_(output_grad.unsqueeze(dim=-1))
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return input_grad, None, None, None
 
 

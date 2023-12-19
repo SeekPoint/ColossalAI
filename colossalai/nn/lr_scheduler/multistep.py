@@ -29,8 +29,9 @@ class MultiStepLR(_MultiStepLR):
         last_epoch: int = -1,
         **kwargs,
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(optimizer, milestones, gamma=gamma, last_epoch=last_epoch)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
 
 class MultiStepWarmupLR(WarmupScheduler):
@@ -57,9 +58,10 @@ class MultiStepWarmupLR(WarmupScheduler):
         last_epoch: int = -1,
         **kwargs,
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if len(milestones) == 0:
             raise ValueError("milestones cannot be empty")
         milestones = [v - warmup_steps for v in milestones if v >= warmup_steps]
         base_scheduler = _MultiStepLR(optimizer, milestones=milestones, gamma=gamma)
         super().__init__(optimizer, warmup_steps, base_scheduler, last_epoch=last_epoch)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')

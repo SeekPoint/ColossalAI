@@ -18,11 +18,12 @@ class ModuleInfos:
     def __init__(
         self, module: torch.nn.Module, module_name: str, module_full_name: str, parent_module: torch.nn.Module
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.module = module
         self.module_name = module_name
         self.module_full_name = module_full_name
         self.parent_module = parent_module
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
 
 class StaticMemStatsCollector(ChunkMemStatsCollector):
@@ -31,10 +32,11 @@ class StaticMemStatsCollector(ChunkMemStatsCollector):
     """
 
     def __init__(self, module: nn.Module, chunk_manager: ChunkManager) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(chunk_manager)
         self.module = module
         self.module_info_list = []
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def init_mem_stats(self, *inputs):
         self.register_opnodes_recursively(self.module)

@@ -91,6 +91,8 @@ class VocabParallelEmbedding(torch.nn.Module):
         # self.init_method(self.tokentype_embeddings.weight)
 
     def forward(self, input_ids, position_ids=None, tokentype_ids=None):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         # Embeddings.
         if input_ids is not None:
             input_shape = input_ids.size()
@@ -109,6 +111,9 @@ class VocabParallelEmbedding(torch.nn.Module):
         # Dropout.
         with seed(ParallelMode.TENSOR):
             embeddings = self.embedding_dropout(embeddings)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return embeddings
 
     def state_dict_for_save_checkpoint(self, destination=None, prefix="", keep_vars=False):
@@ -204,6 +209,7 @@ class VocabParallelEmbedding1D(torch.nn.Module):
         init.uniform_(self.weight, -1, 1)
 
     def forward(self, input_):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.tensor_model_parallel_size > 1:
             # Build the mask.
             input_mask = (input_ < self.vocab_start_index) | (input_ >= self.vocab_end_index)
@@ -227,20 +233,24 @@ class VocabParallelEmbedding1D(torch.nn.Module):
             output_parallel[input_mask, :] = 0.0
         # Reduce across all the model parallel GPUs.
         output = output = reduce_input(output_parallel, ParallelMode.PARALLEL_1D)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output
 
 
 @LOSSES.register_module
 class vocab_parallel_cross_entropy(nn.Module):
     def __init__(self):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, vocab_parallel_logits, target):
         """Helper function for the cross entropy."""
-        gd.debuginfo(prj='mt', info=f"")
+
         vocab_parallel_logits = vocab_parallel_logits[..., :-1, :].contiguous()
         target = target[..., 1:].contiguous()
+        gd.debuginfo(prj='mt', info=f"vocab_parallel_logits={infoTensor(vocab_parallel_logits)}")
+        gd.debuginfo(prj='mt', info=f"target={infoTensor(target)}")
         return _VocabParallelCrossEntropy.apply(
             vocab_parallel_logits.view(-1, vocab_parallel_logits.size(-1)), target.view(-1)
         )
@@ -249,7 +259,7 @@ class vocab_parallel_cross_entropy(nn.Module):
 class _VocabParallelCrossEntropy(torch.autograd.Function):
     @staticmethod
     def forward(ctx, vocab_parallel_logits, target):
-        gd.debuginfo(prj='mt', info=f"")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # Maximum value along vocab dimension across all GPUs.
         logits_max = torch.max(vocab_parallel_logits, dim=-1)[0]
         torch.distributed.all_reduce(
@@ -299,10 +309,12 @@ class _VocabParallelCrossEntropy(torch.autograd.Function):
         # Store softmax, target-mask and masked-target for backward pass.
         exp_logits.div_(sum_exp_logits.unsqueeze(dim=-1))
         ctx.save_for_backward(exp_logits, target_mask, masked_target_1d)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return loss
 
     @staticmethod
     def backward(ctx, grad_output):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # Retrieve tensors from the forward path.
         softmax, target_mask, masked_target_1d = ctx.saved_tensors
 
@@ -318,7 +330,7 @@ class _VocabParallelCrossEntropy(torch.autograd.Function):
 
         # Finally elementwise multiplication with the output gradients.
         grad_input.mul_(grad_output.unsqueeze(dim=-1))
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return grad_input, None
 
 
@@ -329,12 +341,14 @@ class VocabUtility:
 
     @staticmethod
     def vocab_range_from_per_partition_vocab_size(per_partition_vocab_size, rank, world_size):
+        gd.debuginfo(prj="mt", info=f'')
         index_f = rank * per_partition_vocab_size
         index_l = index_f + per_partition_vocab_size
         return index_f, index_l
 
     @staticmethod
     def vocab_range_from_global_vocab_size(global_vocab_size, rank, world_size):
+        gd.debuginfo(prj="mt", info=f'')
         per_partition_vocab_size = divide(global_vocab_size, world_size)
         return VocabUtility.vocab_range_from_per_partition_vocab_size(per_partition_vocab_size, rank, world_size)
 
@@ -345,16 +359,21 @@ class VocabParallelGPTLMHead1D(ParallelLayer):
     """
 
     def __init__(self, embed=None, vocab_size=None, dtype=None, embed_dim=None):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         if embed is not None:
+            gd.debuginfo(prj="mt", info=f'')
             self.head = embed
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.head = VocabParallelEmbedding1D(vocab_size, embed_dim, dtype=dtype)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         x = reduce_grad(x, ParallelMode.PARALLEL_1D)
         x = F.linear(x, self.head.weight)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return x
 
 
@@ -440,6 +459,7 @@ class HiddenParallelEmbedding(torch.nn.Module):
         # self.init_method(self.tokentype_embeddings.weight)
 
     def forward(self, input_ids, position_ids=None, tokentype_ids=None):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if input_ids is not None:
             input_shape = input_ids.size()
             input_ids = input_ids.view(-1, input_shape[-1])
@@ -457,6 +477,7 @@ class HiddenParallelEmbedding(torch.nn.Module):
         # Dropout.
         with seed(ParallelMode.TENSOR):
             embeddings = self.embedding_dropout(embeddings)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return embeddings
 
     def state_dict_for_save_checkpoint(self, destination=None, prefix="", keep_vars=False):
@@ -551,9 +572,12 @@ class HiddenParallelEmbedding1D(torch.nn.Module):
         output_parallel = F.embedding(
             input_, self.weight, self.padding_idx, self.max_norm, self.norm_type, self.scale_grad_by_freq, self.sparse
         )
+        gd.debuginfo(prj="mt", info=f'output_parallel={infoTensor(output_parallel)}')
 
         # Reduce across all the model parallel GPUs.
         output = gather_forward_split_backward(output_parallel, ParallelMode.PARALLEL_1D, dim=-1)
+        gd.debuginfo(prj="mt", info=f'output={infoTensor(output)}')
+
         return output
 
 
@@ -570,22 +594,28 @@ class HiddenParallelGPTLMHead1D(ParallelLayer):
         vocab_size=None,
         dtype=None,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         if embed is not None:
+            gd.debuginfo(prj="mt", info=f'')
             self.head = embed
             self.synced_embed = True
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # self.embedding = HiddenParallelEmbedding1D(vocab_size, hidden_size, dtype, padding_idx)
             # (hidden_size/q, vocab_size)
             self.synced_embed = False
             self.head = Linear1D_Row(
                 in_features=embed_dim, out_features=vocab_size, bias=False, dtype=dtype, parallel_input=False
             )
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x: Tensor) -> Tensor:
         if self.synced_embed:
             x = F.linear(x, self.head.weight)
+            gd.debuginfo(prj="mt", info=f'x={infoTensor(x)}')
         else:
             x = self.head(x)
+            gd.debuginfo(prj="mt", info=f'x={infoTensor(x)}')
 
         return x

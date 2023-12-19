@@ -10,7 +10,7 @@ from pydebug import gd, infoTensor
 
 class BucketStore(BaseStore):
     def __init__(self, torch_pg: ProcessGroup):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(torch_pg)
 
         # init
@@ -27,6 +27,7 @@ class BucketStore(BaseStore):
 
         # offset_list records number of tensors in the bucket before each reduction
         self.offset_list = [0]
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def num_elements_in_bucket(self) -> int:
         """Return the total number of elements in bucket

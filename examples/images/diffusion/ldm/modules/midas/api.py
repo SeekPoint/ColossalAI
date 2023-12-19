@@ -144,14 +144,16 @@ class MiDaSInference(nn.Module):
     ]
 
     def __init__(self, model_type):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         assert model_type in self.MODEL_TYPES_ISL
         model, _ = load_model(model_type)
         self.model = model
         self.model.train = disabled_train
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         # x in 0..1 as produced by calling self.transform on a 0..1 float64 numpy array
         # NOTE: we expect that the correct transform has been called during dataloading.
         with torch.no_grad():

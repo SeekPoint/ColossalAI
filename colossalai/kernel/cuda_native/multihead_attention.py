@@ -62,7 +62,7 @@ class MultiHeadAttention1DFunc(Function):
         norm_bias,
         config,
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         cuda_module = colossal_multihead_attention
         forward_func = (
             cuda_module.multihead_attention_fw_fp16 if config.fp16 else cuda_module.multihead_attention_fw_fp32
@@ -100,11 +100,12 @@ class MultiHeadAttention1DFunc(Function):
             )
             ctx.config = config
             gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output
 
     @staticmethod
     def backward(ctx, grad_output):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert ctx.config.training
 
         cuda_module = colossal_multihead_attention
@@ -158,7 +159,7 @@ class MultiHeadAttention1DFunc(Function):
             norm_weight,
             norm_bias,
         )
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return (
             grad_input,
             None,
@@ -332,7 +333,7 @@ class MultiHeadAttention(nn.Module):
         return destination
 
     def forward(self, hidden_states, encoder_padding_mask):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.config.training = self.training
         self.config.is_grad_enabled = torch.is_grad_enabled()
         hidden_states = hidden_states.contiguous()
@@ -359,5 +360,5 @@ class MultiHeadAttention(nn.Module):
             self.norm_bias,
             self.config,
         )
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output.to(self.precision)

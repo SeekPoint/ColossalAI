@@ -63,7 +63,7 @@ class PipelineScheduleV2(PipelineSchedule):
     def forward_backward_step(
         self, engine: Engine, data_iter: Iterable, forward_only=False, return_loss=True, return_output_label=True
     ) -> Tuple[torch.Tensor]:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         """Runs non-interleaved 1F1B schedule, with communication between pipeline stages.
         Returns a tuple with losses if the last stage, an empty tuple otherwise.
 
@@ -173,6 +173,8 @@ class PipelineScheduleV2(PipelineSchedule):
 
         if len(return_tensors) > 0:
             output, label = pack_return_tensors(return_tensors)
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return output, label, accum_loss
         else:
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return None, None, accum_loss

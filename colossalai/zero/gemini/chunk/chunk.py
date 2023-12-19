@@ -87,7 +87,7 @@ class Chunk:
             keep_gathered (bool): optional, if True, this chunk is always gathered in CUDA memory
             pin_memory (bool): optional, if True, this chunk always has a shard copied in pinned CPU memory
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
         self.count_id = Chunk._total_number
         Chunk._total_number += 1
@@ -167,6 +167,8 @@ class Chunk:
         self.l2_norm = None
 
         self.grad_chunk = None
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @property
     def memory_usage(self) -> Dict[str, int]:

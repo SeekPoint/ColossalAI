@@ -30,9 +30,10 @@ class TorchAMPOptimizer(OptimizerWrapper):
     """
 
     def __init__(self, optim: Optimizer, *args, **kwargs):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(optim)
         self.scaler = GradScaler(*args, **kwargs)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def backward(self, loss: Tensor):
         """Backward with torch amp gradient scaler
@@ -40,12 +41,16 @@ class TorchAMPOptimizer(OptimizerWrapper):
         Args:
             loss (torch.Tensor): Loss computed by a loss function
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.scaler.scale(loss).backward()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def step(self):
         """Update the parameters of the model"""
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.scaler.step(self.optim)
         self.scaler.update()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def clip_grad_norm(self, model: nn.Module, max_norm: float):
         """Apply gradient clipping to the model parameters
@@ -54,6 +59,7 @@ class TorchAMPOptimizer(OptimizerWrapper):
             model (torch.nn.Module): Your model object
             max_norm (float): Max norm value for gradient clipping
         """
+        gd.debuginfo(prj="mt", info=f'')
         if max_norm > 0.0:
             self.scaler.unscale_(self.optim)
             clip_grad_norm_fp32(model.parameters(), max_norm)
@@ -68,14 +74,17 @@ class TorchAMPModel(nn.Module):
     """
 
     def __init__(self, model: nn.Module) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.model = model
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @torch_amp.autocast()
     def forward(self, *args, **kwargs):
         """
         Execute forward under the torch amp context
         """
+        gd.debuginfo(prj="mt", info=f'')
         return self.model(*args, **kwargs)
 
 
@@ -87,12 +96,15 @@ class TorchAMPLoss(nn.Module):
     """
 
     def __init__(self, loss: _Loss):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.loss = loss
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @torch_amp.autocast()
     def forward(self, *args, **kwargs):
         """
         Execute forward under the torch amp context
         """
+        gd.debuginfo(prj="mt", info=f'')
         return self.loss(*args, **kwargs)

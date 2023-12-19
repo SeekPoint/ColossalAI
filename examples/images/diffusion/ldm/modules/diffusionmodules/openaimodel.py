@@ -40,12 +40,14 @@ class AttentionPool2d(nn.Module):
         num_heads_channels: int,
         output_dim: int = None,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.positional_embedding = nn.Parameter(th.randn(embed_dim, spacial_dim**2 + 1) / embed_dim**0.5)
         self.qkv_proj = conv_nd(1, embed_dim, 3 * embed_dim, 1)
         self.c_proj = conv_nd(1, embed_dim, output_dim or embed_dim, 1)
         self.num_heads = embed_dim // num_heads_channels
         self.attention = QKVAttention(self.num_heads)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
         b, c, *_spatial = x.shape
@@ -97,7 +99,7 @@ class Upsample(nn.Module):
     """
 
     def __init__(self, channels, use_conv, dims=2, out_channels=None, padding=1):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.channels = channels
         self.out_channels = out_channels or channels
@@ -105,8 +107,10 @@ class Upsample(nn.Module):
         self.dims = dims
         if use_conv:
             self.conv = conv_nd(dims, self.channels, self.out_channels, 3, padding=padding)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         assert x.shape[1] == self.channels
         if self.dims == 3:
             x = F.interpolate(x, (x.shape[2], x.shape[3] * 2, x.shape[4] * 2), mode="nearest")
@@ -121,12 +125,13 @@ class TransposedUpsample(nn.Module):
     "Learned 2x upsampling without padding"
 
     def __init__(self, channels, out_channels=None, ks=5):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.channels = channels
         self.out_channels = out_channels or channels
 
         self.up = nn.ConvTranspose2d(self.channels, self.out_channels, kernel_size=ks, stride=2)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
         return self.up(x)
@@ -142,7 +147,7 @@ class Downsample(nn.Module):
     """
 
     def __init__(self, channels, use_conv, dims=2, out_channels=None, padding=1):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.channels = channels
         self.out_channels = out_channels or channels
@@ -155,7 +160,10 @@ class Downsample(nn.Module):
             assert self.channels == self.out_channels
             self.op = avg_pool_nd(dims, kernel_size=stride, stride=stride)
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         assert x.shape[1] == self.channels
         return self.op(x)
 
@@ -189,6 +197,7 @@ class ResBlock(TimestepBlock):
         up=False,
         down=False,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.channels = channels
         self.emb_channels = emb_channels
@@ -235,6 +244,8 @@ class ResBlock(TimestepBlock):
             self.skip_connection = conv_nd(dims, channels, self.out_channels, 3, padding=1)
         else:
             self.skip_connection = conv_nd(dims, channels, self.out_channels, 1)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x, emb):
         """
@@ -283,6 +294,7 @@ class AttentionBlock(nn.Module):
         use_checkpoint=False,
         use_new_attention_order=False,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.channels = channels
         if num_head_channels == -1:
@@ -303,6 +315,7 @@ class AttentionBlock(nn.Module):
             self.attention = QKVAttentionLegacy(self.num_heads)
 
         self.proj_out = zero_module(conv_nd(1, channels, channels, 1))
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
         return checkpoint(
@@ -345,9 +358,10 @@ class QKVAttentionLegacy(nn.Module):
     """
 
     def __init__(self, n_heads):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.n_heads = n_heads
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, qkv):
         """
@@ -376,9 +390,10 @@ class QKVAttention(nn.Module):
     """
 
     def __init__(self, n_heads):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.n_heads = n_heads
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, qkv):
         """
@@ -386,6 +401,7 @@ class QKVAttention(nn.Module):
         :param qkv: an [N x (3 * H * C) x T] tensor of Qs, Ks, and Vs.
         :return: an [N x (H * C) x T] tensor after attention.
         """
+        gd.debuginfo(prj="mt", info=f'')
         bs, width, length = qkv.shape
         assert width % (3 * self.n_heads) == 0
         ch = width // (3 * self.n_heads)
@@ -466,6 +482,7 @@ class UNetModel(nn.Module):
         disable_middle_self_attn=False,
         use_linear_in_transformer=False,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         if use_spatial_transformer:
             assert (
@@ -757,6 +774,7 @@ class UNetModel(nn.Module):
                 # nn.LogSoftmax(dim=1)  # change to cross_entropy and produce non-normalized logits
             )
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     def convert_to_fp16(self):
         """
         Convert the torso of the model to float16.
@@ -782,6 +800,7 @@ class UNetModel(nn.Module):
         :param y: an [N] Tensor of labels, if class-conditional.
         :return: an [N x C x ...] Tensor of outputs.
         """
+        gd.debuginfo(prj="mt", info=f'')
         assert (y is not None) == (
             self.num_classes is not None
         ), "must specify y if and only if the model is class-conditional"

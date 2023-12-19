@@ -7,7 +7,7 @@ from pydebug import gd, infoTensor
 
 class MemStats(object):
     def __init__(self) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         """
         Store the non model data statistics used for Gemini and GeminiOptimizer.
         """
@@ -35,6 +35,8 @@ class MemStats(object):
         self._non_model_data_cuda_list = []
         self._non_model_data_cpu_list = []
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def calc_max_cuda_non_model_data(self):
         if self._prev_overall_cuda != -1 and self._prev_md_cuda != -1:
             max_cuda_non_model_data = self._prev_overall_cuda - self._prev_md_cuda
@@ -61,6 +63,7 @@ class MemStats(object):
         Args:
             param_list (List[torch.nn.Parameter]): a list of torch parameters.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         for p in param_list:
             if p not in self._param_step_dict:
                 self._param_step_dict[p] = [self._preop_step]
@@ -69,6 +72,7 @@ class MemStats(object):
             self._param_runtime_order.append(p)
         self._step_param_dict[self._preop_step] = param_list
         self._preop_step += 1
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def param_used_step(self, param: torch.nn.Parameter) -> Optional[List[int]]:
         """param_used_step
@@ -80,10 +84,14 @@ class MemStats(object):
         Returns:
             Optional[List[int]]: a list of int indicates the time step of preop hook.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if param not in self._param_step_dict:
+            gd.debuginfo(prj="mt", info=f'')
             return None
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return self._param_step_dict[param]
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def param_order(self):
         if self._param_runtime_order.is_empty():

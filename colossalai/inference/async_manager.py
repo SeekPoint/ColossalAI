@@ -49,6 +49,7 @@ class Async_DynamicBatchManager(DynamicBatchManager):
         """
         Logic for handling requests
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         has_new_finished = False
         if self.running_batch is None:
             gd.debuginfo(prj="mt", info=f'')
@@ -91,6 +92,9 @@ class Async_DynamicBatchManager(DynamicBatchManager):
         if has_new_finished:
             gd.debuginfo(prj="mt", info=f'')
             return outputs
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return None
 
     def _prefill_batch(self, batch):

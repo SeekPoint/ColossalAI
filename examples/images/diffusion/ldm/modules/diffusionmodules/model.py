@@ -56,13 +56,15 @@ def Normalize(in_channels, num_groups=32):
 
 class Upsample(nn.Module):
     def __init__(self, in_channels, with_conv):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.with_conv = with_conv
         if self.with_conv:
             self.conv = torch.nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         x = torch.nn.functional.interpolate(x, scale_factor=2.0, mode="nearest")
         if self.with_conv:
             x = self.conv(x)
@@ -71,26 +73,29 @@ class Upsample(nn.Module):
 
 class Downsample(nn.Module):
     def __init__(self, in_channels, with_conv):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.with_conv = with_conv
         if self.with_conv:
             # no asymmetric padding in torch conv, must do it ourselves
             self.conv = torch.nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=2, padding=0)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
         if self.with_conv:
+            gd.debuginfo(prj="mt", info=f'')
             pad = (0, 1, 0, 1)
             x = torch.nn.functional.pad(x, pad, mode="constant", value=0)
             x = self.conv(x)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             x = torch.nn.functional.avg_pool2d(x, kernel_size=2, stride=2)
         return x
 
 
 class ResnetBlock(nn.Module):
     def __init__(self, *, in_channels, out_channels=None, conv_shortcut=False, dropout, temb_channels=512):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.in_channels = in_channels
         out_channels = in_channels if out_channels is None else out_channels
@@ -110,7 +115,10 @@ class ResnetBlock(nn.Module):
             else:
                 self.nin_shortcut = torch.nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0)
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def forward(self, x, temb):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         h = x
         h = self.norm1(h)
         h = nonlinearity(h)
@@ -130,12 +138,13 @@ class ResnetBlock(nn.Module):
             else:
                 x = self.nin_shortcut(x)
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return x + h
 
 
 class AttnBlock(nn.Module):
     def __init__(self, in_channels):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.in_channels = in_channels
 
@@ -144,8 +153,10 @@ class AttnBlock(nn.Module):
         self.k = torch.nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0)
         self.v = torch.nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0)
         self.proj_out = torch.nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         h_ = x
         h_ = self.norm(h_)
         q = self.q(h_)
@@ -168,7 +179,7 @@ class AttnBlock(nn.Module):
         h_ = h_.reshape(b, c, h, w)
 
         h_ = self.proj_out(h_)
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return x + h_
 
 
@@ -181,7 +192,7 @@ class MemoryEfficientAttnBlock(nn.Module):
 
     #
     def __init__(self, in_channels):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.in_channels = in_channels
 
@@ -191,8 +202,10 @@ class MemoryEfficientAttnBlock(nn.Module):
         self.v = torch.nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0)
         self.proj_out = torch.nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0)
         self.attention_op: Optional[Any] = None
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         h_ = x
         h_ = self.norm(h_)
         q = self.q(h_)
@@ -216,15 +229,18 @@ class MemoryEfficientAttnBlock(nn.Module):
         out = out.unsqueeze(0).reshape(B, 1, out.shape[1], C).permute(0, 2, 1, 3).reshape(B, out.shape[1], C)
         out = rearrange(out, "b (h w) c -> b c h w", b=B, h=H, w=W, c=C)
         out = self.proj_out(out)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return x + out
 
 
 class MemoryEfficientCrossAttentionWrapper(MemoryEfficientCrossAttention):
     def forward(self, x, context=None, mask=None):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         b, c, h, w = x.shape
         x = rearrange(x, "b c h w -> b (h w) c")
         out = super().forward(x, context=context, mask=mask)
         out = rearrange(out, "b (h w) c -> b c h w", h=h, w=w, c=c)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return x + out
 
 
@@ -270,6 +286,7 @@ class Model(nn.Module):
         use_linear_attn=False,
         attn_type="vanilla",
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         if use_linear_attn:
             attn_type = "linear"
@@ -362,7 +379,10 @@ class Model(nn.Module):
         self.norm_out = Normalize(block_in)
         self.conv_out = torch.nn.Conv2d(block_in, out_ch, kernel_size=3, stride=1, padding=1)
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def forward(self, x, t=None, context=None):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # assert x.shape[2] == x.shape[3] == self.resolution
         if context is not None:
             # assume aligned context, cat along channel axis
@@ -407,6 +427,8 @@ class Model(nn.Module):
         h = self.norm_out(h)
         h = nonlinearity(h)
         h = self.conv_out(h)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return h
 
     def get_last_layer(self):
@@ -432,6 +454,7 @@ class Encoder(nn.Module):
         attn_type="vanilla",
         **ignore_kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         if use_linear_attn:
             attn_type = "linear"
@@ -486,8 +509,10 @@ class Encoder(nn.Module):
         self.conv_out = torch.nn.Conv2d(
             block_in, 2 * z_channels if double_z else z_channels, kernel_size=3, stride=1, padding=1
         )
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         # timestep embedding
         temb = None
 
@@ -535,6 +560,7 @@ class Decoder(nn.Module):
         attn_type="vanilla",
         **ignorekwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         if use_linear_attn:
             attn_type = "linear"
@@ -593,8 +619,10 @@ class Decoder(nn.Module):
         # end
         self.norm_out = Normalize(block_in)
         self.conv_out = torch.nn.Conv2d(block_in, out_ch, kernel_size=3, stride=1, padding=1)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, z):
+        gd.debuginfo(prj="mt", info=f'')
         # assert z.shape[1:] == self.z_shape[1:]
         self.last_z_shape = z.shape
 
@@ -632,7 +660,7 @@ class Decoder(nn.Module):
 
 class SimpleDecoder(nn.Module):
     def __init__(self, in_channels, out_channels, *args, **kwargs):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.model = nn.ModuleList(
             [
@@ -647,8 +675,10 @@ class SimpleDecoder(nn.Module):
         # end
         self.norm_out = Normalize(in_channels)
         self.conv_out = torch.nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         for i, layer in enumerate(self.model):
             if i in [1, 2, 3]:
                 x = layer(x, None)
@@ -663,7 +693,7 @@ class SimpleDecoder(nn.Module):
 
 class UpsampleDecoder(nn.Module):
     def __init__(self, in_channels, out_channels, ch, num_res_blocks, resolution, ch_mult=(2, 2), dropout=0.0):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         # upsampling
         self.temb_ch = 0
@@ -691,8 +721,10 @@ class UpsampleDecoder(nn.Module):
         # end
         self.norm_out = Normalize(block_in)
         self.conv_out = torch.nn.Conv2d(block_in, out_channels, kernel_size=3, stride=1, padding=1)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         # upsampling
         h = x
         for k, i_level in enumerate(range(self.num_resolutions)):
@@ -708,7 +740,7 @@ class UpsampleDecoder(nn.Module):
 
 class LatentRescaler(nn.Module):
     def __init__(self, factor, in_channels, mid_channels, out_channels, depth=2):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         # residual block, interpolate, residual block
         self.factor = factor
@@ -732,8 +764,10 @@ class LatentRescaler(nn.Module):
             out_channels,
             kernel_size=1,
         )
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         x = self.conv_in(x)
         for block in self.res_block1:
             x = block(x, None)
@@ -762,6 +796,7 @@ class MergedRescaleEncoder(nn.Module):
         rescale_factor=1.0,
         rescale_module_depth=1,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         intermediate_chn = ch * ch_mult[-1]
         self.encoder = Encoder(
@@ -784,6 +819,7 @@ class MergedRescaleEncoder(nn.Module):
             out_channels=out_ch,
             depth=rescale_module_depth,
         )
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
         x = self.encoder(x)
@@ -806,6 +842,7 @@ class MergedRescaleDecoder(nn.Module):
         rescale_factor=1.0,
         rescale_module_depth=1,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         tmp_chn = z_channels * ch_mult[-1]
         self.decoder = Decoder(
@@ -828,15 +865,19 @@ class MergedRescaleDecoder(nn.Module):
             depth=rescale_module_depth,
         )
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         x = self.rescaler(x)
         x = self.decoder(x)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return x
 
 
 class Upsampler(nn.Module):
     def __init__(self, in_size, out_size, in_channels, out_channels, ch_mult=2):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         assert out_size >= in_size
         num_blocks = int(np.log2(out_size // in_size)) + 1
@@ -857,16 +898,19 @@ class Upsampler(nn.Module):
             ch=in_channels,
             ch_mult=[ch_mult for _ in range(num_blocks)],
         )
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         x = self.rescaler(x)
         x = self.decoder(x)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return x
 
 
 class Resize(nn.Module):
     def __init__(self, in_channels=None, learned=False, mode="bilinear"):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.with_conv = learned
         self.mode = mode
@@ -878,8 +922,10 @@ class Resize(nn.Module):
             assert in_channels is not None
             # no asymmetric padding in torch conv, must do it ourselves
             self.conv = torch.nn.Conv2d(in_channels, in_channels, kernel_size=4, stride=2, padding=1)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x, scale_factor=1.0):
+        gd.debuginfo(prj="mt", info=f'')
         if scale_factor == 1.0:
             return x
         else:

@@ -330,7 +330,9 @@ class GradScaler(object):
         .. warning::
             Closure use is not currently supported.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if not self._enabled:
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return optimizer.step(*args, **kwargs)
 
         if "closure" in kwargs:
@@ -352,6 +354,8 @@ class GradScaler(object):
             # it can query its own state, invoke unscale_ on itself, etc
             retval = optimizer.step(*args, **dict(kwargs, grad_scaler=self))
             optimizer_state["stage"] = OptState.STEPPED
+
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return retval
 
         if optimizer_state["stage"] is OptState.READY:
@@ -362,6 +366,8 @@ class GradScaler(object):
         retval = self._maybe_opt_step(optimizer, optimizer_state, *args, **kwargs)
 
         optimizer_state["stage"] = OptState.STEPPED
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
         return retval
 

@@ -378,11 +378,13 @@ class LayoutConverter(metaclass=SingletonMeta):
         Return:
             valid_spec_dict(Dict[Layout, CommSpec]): all valid layouts from source_layout with one step transform.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         valid_spec_dict = {}
         valid_spec_dict.update(self.all_gather_transform_layouts(source_layout))
         valid_spec_dict.update(self.all_to_all_transform_layout(source_layout))
         valid_spec_dict.update(self.shard_transform_layout(source_layout))
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return valid_spec_dict
 
     def layout_converting(

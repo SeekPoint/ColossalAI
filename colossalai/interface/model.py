@@ -10,9 +10,10 @@ class ModelWrapper(nn.Module):
     """
 
     def __init__(self, module: nn.Module) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.module = module
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def unwrap(self):
         """

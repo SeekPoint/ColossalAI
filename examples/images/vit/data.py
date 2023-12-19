@@ -5,7 +5,7 @@ from pydebug import gd, infoTensor
 
 class BeansDataset(Dataset):
     def __init__(self, image_processor, tp_size=1, split="train"):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.image_processor = image_processor
         self.ds = load_dataset("beans")[split]
@@ -17,6 +17,8 @@ class BeansDataset(Dataset):
         self.inputs = []
         for example in self.ds:
             self.inputs.append(self.process_example(example))
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def __len__(self):
         return len(self.inputs)

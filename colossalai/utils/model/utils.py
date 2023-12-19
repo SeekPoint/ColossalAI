@@ -42,9 +42,10 @@ def call_to_str(base, *args, **kwargs):
 
 class InsertPostInitMethodToModuleSubClasses(object):
     def __init__(self, default_dtype: Optional[torch.dtype] = None):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self._old_default_dtype = None
         self._default_dtype = default_dtype
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def __enter__(self):
         r"""

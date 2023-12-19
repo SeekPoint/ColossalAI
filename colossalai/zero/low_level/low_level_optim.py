@@ -39,12 +39,13 @@ class LowLevelZeroFP16MixedPrecisionMixin(FP16MixedPrecisionMixin):
         hysteresis: int = 2,
         max_scale: float = 2**32,
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(
             initial_scale, min_scale, growth_factor, backoff_factor, growth_interval, hysteresis, max_scale
         )
         self.num_working_param_groups = num_working_param_groups
         self.grad_store = grad_store
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def check_local_overflow(self) -> bool:
         for group_id in range(self.num_working_param_groups):
@@ -78,6 +79,7 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
         forced_dtype: Optional[torch.dtype] = None,
         master_weights: bool = True,  # master weights
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super(LowLevelZeroOptimizer, self).__init__(optim=optimizer)
         self._dtype = self.optim.param_groups[0]["params"][0].dtype
         # self._logger = get_dist_logger()
@@ -174,6 +176,7 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
             )
         elif self._dtype is torch.bfloat16:
             self.mixed_precision_mixin = BF16MixedPrecisionMixin()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @property
     def dtype(self):
@@ -330,6 +333,7 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
     ################################
 
     def backward(self, loss, retain_graph=False):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert not (
             self._partition_grads and not self.require_grad_sync
         ), "ZeRO2(partition_grads) and no_sync are not compatible"
@@ -349,8 +353,10 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
             torch.cuda.synchronize()
 
         self.zero_grad()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def backward_by_grad(self, tensor, grad):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert not (
             self._partition_grads and not self.require_grad_sync
         ), "ZeRO2(partition_grads) and gradient accumulation(no_sync) are not compatible"
@@ -368,6 +374,8 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
             torch.cuda.synchronize()
 
         self.zero_grad()
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def zero_grad(self, set_to_none=True):
         """
@@ -393,6 +401,7 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
     ####################
 
     def step(self, closure=None):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert closure is None, "closure is not supported by step()"
         if not self.require_grad_sync:
             return
@@ -470,6 +479,8 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
                 dist.all_gather(all_splited_param, splited_param.cuda().to(self._dtype), group=self.dp_pg)
                 working_param.data.copy_(flatten(all_splited_param)[: working_param.numel()].reshape_as(working_param))
             self.optim.param_groups[group_id]["params"] = self._master_param_groups_of_current_rank[group_id]
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _compute_grad_norm(self, gradients: List[Tensor], norm_type: int = 2) -> float:
         r"""

@@ -59,7 +59,7 @@ class LayerNorm3D(ParallelLayer):
     """
 
     def __init__(self, normalized_shape: int, eps: float = 1e-12, bias=True, dtype=None):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.input_parallel_mode = get_parallel_mode_from_env(INPUT_GROUP_3D)
         self.weight_parallel_mode = get_parallel_mode_from_env(WEIGHT_GROUP_3D)
@@ -81,6 +81,7 @@ class LayerNorm3D(ParallelLayer):
         self.variance_epsilon = eps
         self.reset_parameters()
         self._set_tensor_parallel_attributes()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _set_tensor_parallel_attributes(self) -> None:
         set_tensor_parallel_attribute_by_partition(self.weight, self.depth)
@@ -147,6 +148,7 @@ class LayerNorm3D(ParallelLayer):
             destination.update(local_state)
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         return layernorm_3d(
             input_,
             self.weight,
@@ -186,7 +188,7 @@ class Linear3D(ParallelLayer):
         weight_initializer: Callable = init.kaiming_uniform_(a=math.sqrt(5)),
         bias_initializer: Callable = init.xavier_uniform_(a=1, scale=1),
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -218,6 +220,7 @@ class Linear3D(ParallelLayer):
         self.reset_parameters(weight_initializer, bias_initializer)
         self._set_tensor_parallel_attributes()
         swap_in_out_group()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _set_tensor_parallel_attributes(self) -> None:
         set_tensor_parallel_attribute_by_partition(self.weight, self.depth**3)
@@ -323,6 +326,7 @@ class Linear3D(ParallelLayer):
             destination.update(local_state)
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         output = linear_3d(
             input_,
             self.weight,
@@ -467,6 +471,7 @@ class Classifier3D(ParallelLayer):
             destination.update(local_state)
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         return classifier_3d(
             input_,
             self.weight,
@@ -647,6 +652,7 @@ class VocabParallelClassifier3D(ParallelLayer):
             destination.update(local_state)
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         return vocab_parallel_classifier_3d(
             input_,
             self.weight,
@@ -815,6 +821,7 @@ class PatchEmbedding3D(ParallelLayer):
             destination.update(local_state)
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         input_ = split_batch_3d(
             input_, input_parallel_mode=self.input_parallel_mode, weight_parallel_mode=self.weight_parallel_mode
         )
@@ -825,7 +832,7 @@ class PatchEmbedding3D(ParallelLayer):
         cls_token = self.cls_token.expand(output.shape[0], -1, -1)
         output = torch.cat((cls_token, output), dim=1)
         output = output + self.pos_embed
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output
 
 
@@ -870,7 +877,7 @@ class Embedding3D(ParallelLayer):
         *args,
         **kwargs,
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.depth = get_depth_from_env()
         self.input_parallel_mode = get_parallel_mode_from_env(INPUT_GROUP_3D)
@@ -891,6 +898,7 @@ class Embedding3D(ParallelLayer):
 
         self.reset_parameters(weight_initializer)
         self._set_tensor_parallel_attributes()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _set_tensor_parallel_attributes(self) -> None:
         set_tensor_parallel_attribute_by_partition(self.weight, self.depth)
@@ -956,10 +964,12 @@ class Embedding3D(ParallelLayer):
             destination.update(local_state)
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         input_ = split_batch_3d(
             input_, input_parallel_mode=self.input_parallel_mode, weight_parallel_mode=self.weight_parallel_mode
         )
         output = F.embedding(input_, self.weight, self.padding_idx, *self.embed_args, **self.embed_kwargs)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
         return output
 

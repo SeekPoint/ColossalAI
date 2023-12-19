@@ -28,13 +28,17 @@ def get_new_state_dict(state_dict, start_index=13):
 
 class LMModel(nn.Module):
     def __init__(self, model, config, args):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
 
         self.checkpoint = args.checkpoint_activations
         self.config = config
         self.model = model
         if self.checkpoint:
+            gd.debuginfo(prj="mt", info=f'')
             self.model.gradient_checkpointing_enable()
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, input_ids, token_type_ids=None, attention_mask=None):
         # Only return lm_logits

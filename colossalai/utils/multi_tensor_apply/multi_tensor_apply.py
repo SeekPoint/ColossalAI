@@ -14,13 +14,16 @@ class MultiTensorApply(object):
     warned = False
 
     def __init__(self, chunk_size):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         try:
             MultiTensorApply.available = True
             self.chunk_size = chunk_size
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         except ImportError as err:
             MultiTensorApply.available = False
             MultiTensorApply.import_err = err
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
 
     def check_avail(self):
         gd.debuginfo(prj="mt", info=f'')

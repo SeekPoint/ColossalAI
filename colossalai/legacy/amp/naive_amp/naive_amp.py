@@ -38,8 +38,9 @@ class NaiveAMPOptimizer(OptimizerWrapper):
         super().__init__(optim)
 
     def backward(self, loss: Tensor):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.optim.backward(loss)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def step(self):
         gd.debuginfo(prj="mt", info=f'')

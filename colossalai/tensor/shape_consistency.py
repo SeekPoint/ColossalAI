@@ -419,11 +419,13 @@ class ShapeConsistencyManager(metaclass=SingletonMeta):
         Return:
             valid_spec_dict(Dict[ShardingSpec, float]): all valid sharding specs from source_spec with single all-to-all operation.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         valid_spec_dict = {}
         valid_spec_dict.update(self.get_all_all_gather_spec(source_spec, orig_cost_dict))
         valid_spec_dict.update(self.get_all_all_to_all_spec(source_spec, orig_cost_dict))
         valid_spec_dict.update(self.get_all_shard_spec(source_spec, orig_cost_dict))
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return valid_spec_dict
 
     def mem_cost(self, comm_action_sequence: List[CommSpec]) -> TrainCycleItem:

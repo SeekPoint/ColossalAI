@@ -91,7 +91,7 @@ class _Classifier2D(torch.autograd.Function):
         pipeline_parallel_size: int,
         tensor_parallel_size: int,
     ) -> Tensor:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         A = A.clone().detach()
         A_shape = A.shape
         A = A.reshape((-1, A_shape[-1]))
@@ -99,6 +99,7 @@ class _Classifier2D(torch.autograd.Function):
         B = B.reshape((-1, B_shape[-1]))
         B_temp = all_gather(B, -1, col_parallel_mode)
         if ctx:
+            gd.debuginfo(prj="mt", info=f'')
             ctx.save_for_backward(A, B_temp)
 
         C = torch.matmul(A, B_temp.transpose(0, 1))
@@ -112,6 +113,7 @@ class _Classifier2D(torch.autograd.Function):
         out = C.reshape(out_shape)
 
         if ctx:
+            gd.debuginfo(prj="mt", info=f'')
             ctx.summa_dim = summa_dim
             ctx.row_rank = row_rank
             ctx.col_rank = col_rank
@@ -123,13 +125,13 @@ class _Classifier2D(torch.autograd.Function):
             ctx.pipeline_parallel_rank = pipeline_parallel_rank
             ctx.pipeline_parallel_size = pipeline_parallel_size
             ctx.tensor_parallel_size = tensor_parallel_size
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return out
 
     @staticmethod
     @custom_bwd
     def backward(ctx: Any, output_grad: Tensor) -> Tuple[Tensor, ...]:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         A, B = ctx.saved_tensors
 
         with torch.no_grad():
@@ -143,7 +145,7 @@ class _Classifier2D(torch.autograd.Function):
                 bias_grad = all_reduce(bias_grad, ctx.col_parallel_mode)
             else:
                 bias_grad = None
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return A_grad, B_grad, bias_grad, None, None, None, None, None, None, None, None, None, None
 
 
@@ -243,10 +245,11 @@ class Matmul_AB_2D(torch.autograd.Function):
         # A: [b / q, s, h / q] -> [(b * s) / q, h / q]
         # B: [h / q, s / q]
         # C: [b / q, s, s / q] -> [(b * s) / q, s / q]
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert A.shape[-1] == B.shape[-2], "Invalid shapes: A={}, B={} for AB.".format(A.shape, B.shape)
 
         if ctx:
+            gd.debuginfo(prj="mt", info=f'')
             ctx.save_for_backward(A, B)
 
         A_shape = A.shape
@@ -304,6 +307,7 @@ class Matmul_AB_2D(torch.autograd.Function):
         out = C.reshape(out_shape)
 
         if ctx:
+            gd.debuginfo(prj="mt", info=f'')
             ctx.summa_dim = summa_dim
             ctx.row_rank = row_rank
             ctx.col_rank = col_rank
@@ -315,11 +319,13 @@ class Matmul_AB_2D(torch.autograd.Function):
             ctx.pipeline_parallel_rank = pipeline_parallel_rank
             ctx.pipeline_parallel_size = pipeline_parallel_size
             ctx.tensor_parallel_size = tensor_parallel_size
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return out
 
     @staticmethod
     @custom_bwd
     def backward(ctx: Any, output_grad: Tensor) -> Tuple[Tensor, ...]:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         A, B = ctx.saved_tensors
         with torch.no_grad():
             A_grad = Matmul_ABT_2D.apply(
@@ -350,6 +356,7 @@ class Matmul_AB_2D(torch.autograd.Function):
                 ctx.pipeline_parallel_size,
                 ctx.tensor_parallel_size,
             )
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return A_grad, B_grad, None, None, None, None, None, None, None, None, None, None
 
 
@@ -393,10 +400,11 @@ class Matmul_ABT_2D(torch.autograd.Function):
         pipeline_parallel_size: int,
         tensor_parallel_size: int,
     ) -> Tensor:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert A.shape[-1] == B.shape[-1], "Invalid shapes: A={}, B={} for ABT.".format(A.shape, B.shape)
 
         if ctx:
+            gd.debuginfo(prj="mt", info=f'')
             ctx.save_for_backward(A, B)
 
         A_shape = A.shape
@@ -461,6 +469,7 @@ class Matmul_ABT_2D(torch.autograd.Function):
         out = C.reshape(out_shape)
 
         if ctx:
+            gd.debuginfo(prj="mt", info=f'')
             ctx.summa_dim = summa_dim
             ctx.row_rank = row_rank
             ctx.col_rank = col_rank
@@ -473,12 +482,13 @@ class Matmul_ABT_2D(torch.autograd.Function):
             ctx.pipeline_parallel_size = pipeline_parallel_size
             ctx.tensor_parallel_size = tensor_parallel_size
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return out
 
     @staticmethod
     @custom_bwd
     def backward(ctx: Any, output_grad: Tensor) -> Tuple[Tensor, ...]:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         A, B = ctx.saved_tensors
 
         with torch.no_grad():
@@ -510,6 +520,7 @@ class Matmul_ABT_2D(torch.autograd.Function):
                 ctx.pipeline_parallel_size,
                 ctx.tensor_parallel_size,
             )
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return A_grad, B_grad, None, None, None, None, None, None, None, None, None, None
 
 
@@ -552,7 +563,7 @@ class Matmul_ATB_2D(torch.autograd.Function):
         pipeline_parallel_size: int,
         tensor_parallel_size: int,
     ) -> Tensor:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert A.shape[-2] == B.shape[-2], "Invalid shapes: A={}, B={} for ATB.".format(A.shape, B.shape)
 
         if ctx:
@@ -632,6 +643,7 @@ class Matmul_ATB_2D(torch.autograd.Function):
             ctx.pipeline_parallel_size = pipeline_parallel_size
             ctx.tensor_parallel_size = tensor_parallel_size
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return out
 
     @staticmethod
@@ -690,6 +702,8 @@ class _Add_Bias_2D(torch.autograd.Function):
         pipeline_parallel_size: int,
         tensor_parallel_size: int,
     ) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         bias_temp = all_gather(bias, -1, col_parallel_mode)
 
         ctx.row_rank = row_rank
@@ -703,9 +717,11 @@ class _Add_Bias_2D(torch.autograd.Function):
         ctx.tensor_parallel_size = tensor_parallel_size
         gd.debuginfo(prj="mt", info=f'')
         if skip_bias_add:
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return bias_temp
         else:
             output = input_ + bias_temp
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return output
 
     @staticmethod

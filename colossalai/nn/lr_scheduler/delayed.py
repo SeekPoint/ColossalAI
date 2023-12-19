@@ -9,8 +9,9 @@ else:
 
 class _enable_get_lr_call:
     def __init__(self, o):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.o = o
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def __enter__(self):
         gd.debuginfo(prj="mt", info=f'')
@@ -35,13 +36,14 @@ class DelayerScheduler(_LRScheduler):
     """
 
     def __init__(self, optimizer, delay_epochs, after_scheduler, last_epoch=-1):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if delay_epochs < 0:
             raise ValueError(f"delay_epochs must >= 0, got {delay_epochs}")
         self.delay_epochs = delay_epochs
         self.after_scheduler = after_scheduler
         self.finished = False
         super().__init__(optimizer, last_epoch)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def state_dict(self):
         state_dict = {key: value for key, value in self.__dict__.items() if key not in "optimizer"}
@@ -69,6 +71,7 @@ class DelayerScheduler(_LRScheduler):
         return self.base_lrs
 
     def step(self, epoch=None):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.finished:
             if epoch is None:
                 gd.debuginfo(prj="mt", info=f'')
@@ -81,6 +84,8 @@ class DelayerScheduler(_LRScheduler):
         else:
             gd.debuginfo(prj="mt", info=f'')
             return super(DelayerScheduler, self).step(epoch)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
 
 class WarmupScheduler(_LRScheduler):
@@ -96,11 +101,12 @@ class WarmupScheduler(_LRScheduler):
     """
 
     def __init__(self, optimizer, warmup_epochs, after_scheduler, last_epoch=-1):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.warmup_epochs = int(warmup_epochs)
         self.after_scheduler = after_scheduler
         self.finished = False
         super().__init__(optimizer, last_epoch)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def state_dict(self):
         gd.debuginfo(prj="mt", info=f'')
@@ -127,6 +133,7 @@ class WarmupScheduler(_LRScheduler):
         return [(self.last_epoch + 1) / self.warmup_epochs * lr for lr in self.base_lrs]
 
     def step(self, epoch=None):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.finished:
             if epoch is None:
                 gd.debuginfo(prj="mt", info=f'')
@@ -139,6 +146,7 @@ class WarmupScheduler(_LRScheduler):
         else:
             gd.debuginfo(prj="mt", info=f'')
             return super().step(epoch)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
 
 class WarmupDelayerScheduler(_LRScheduler):
@@ -155,7 +163,7 @@ class WarmupDelayerScheduler(_LRScheduler):
     """
 
     def __init__(self, optimizer, warmup_epochs, delay_epochs, after_scheduler, last_epoch=-1):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if delay_epochs < 0:
             raise ValueError(f"delay_epochs must >= 0, got {delay_epochs}")
         if warmup_epochs < 0:
@@ -165,6 +173,7 @@ class WarmupDelayerScheduler(_LRScheduler):
         self.after_scheduler = after_scheduler
         self.finished = False
         super().__init__(optimizer, last_epoch)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def state_dict(self):
         gd.debuginfo(prj="mt", info=f'')
@@ -198,6 +207,7 @@ class WarmupDelayerScheduler(_LRScheduler):
         return [(self.last_epoch + 1) / self.warmup_epochs * lr for lr in self.base_lrs]
 
     def step(self, epoch=None):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.finished:
             if epoch is None:
                 gd.debuginfo(prj="mt", info=f'')
@@ -210,3 +220,5 @@ class WarmupDelayerScheduler(_LRScheduler):
         else:
             gd.debuginfo(prj="mt", info=f'')
             return super().step(epoch)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')

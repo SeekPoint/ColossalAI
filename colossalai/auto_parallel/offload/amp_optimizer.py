@@ -138,7 +138,7 @@ class AMPOptimizer(OptimizerWrapper):
         return self.optim.zero_grad(set_to_none=True)
 
     def step(self, *args, **kwargs):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # Copy gradients from model params to main params.
         self._set_grad_ptr()
 
@@ -150,6 +150,7 @@ class AMPOptimizer(OptimizerWrapper):
             gd.debuginfo(prj="mt", info=f"Found overflow. Skip step")
             self.zero_grad()  # reset all gradients
             self._update_fp16_params()
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return
 
         # get combined scale. combined scale = loss scale * clipping norm
@@ -162,6 +163,8 @@ class AMPOptimizer(OptimizerWrapper):
 
         self.zero_grad()
         self._update_fp16_params()
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return ret
 
     def clip_grad_norm(self, model: torch.nn.Module, max_norm: float, norm_type: float = 2.0):

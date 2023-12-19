@@ -52,6 +52,7 @@ class GLUEDataBuilder:
         **kwargs,
     ):
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.model_name_or_path = model_name_or_path
         self.task_name = task_name
         self.max_seq_length = max_seq_length
@@ -61,10 +62,14 @@ class GLUEDataBuilder:
 
         self.text_fields = self.task_text_field_map[task_name]
         self.num_labels = self.glue_task_num_labels[task_name]
+        gd.debuginfo(prj="mt", info=f'')
         self.tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(self.model_name_or_path, use_fast=True)
+        gd.debuginfo(prj="mt", info=f'')
         self.setup()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def setup(self):
+        gd.debuginfo(prj="mt", info=f'')
         self.dataset = datasets.load_dataset("/share/hf_model/glue", self.task_name)
 
         for split in self.dataset.keys():

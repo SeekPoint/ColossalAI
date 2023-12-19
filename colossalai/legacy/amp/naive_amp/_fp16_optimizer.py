@@ -284,7 +284,7 @@ class FP16Optimizer(Optimizer):
 
     def step(self):
         """Update the model parameters."""
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # Copy gradients from model params to main params.
         self._assign_grad_to_fp32_master_param()
         self._unscale_grads()
@@ -307,8 +307,10 @@ class FP16Optimizer(Optimizer):
             self._update_fp16_param_from_fp32_param()
 
             # Successful update.
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return True, grad_norm
         else:
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return False, None
 
     def backward(self, loss):
@@ -317,9 +319,10 @@ class FP16Optimizer(Optimizer):
         Args:
             loss (:class:`torch.Tensor`): the loss value.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         scaled_loss = loss * self.grad_scaler.scale
         scaled_loss.backward()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def state_dict(self):
         """Returns the states of the fp16 optimizer as a dict object."""

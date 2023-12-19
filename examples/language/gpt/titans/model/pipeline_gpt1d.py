@@ -29,7 +29,7 @@ __all__ = [
 
 class GenericPipelineGPT(nn.Module):
     def __init__(self, embedding=None, blocks=None, norm=None, head=None) -> None:
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.embedding = embedding
         self.blocks = blocks
@@ -38,19 +38,37 @@ class GenericPipelineGPT(nn.Module):
         assert blocks is not None
         if norm is not None or head is not None:
             assert norm is not None and head is not None
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, hidden_states=None, input_ids=None, attention_mask=None):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.embedding is not None:
             hidden_states = self.embedding(input_ids=input_ids)
+            gd.debuginfo(prj="mt", info=f'1-hidden_states={infoTensor(hidden_states)}')
+
         batch_size = hidden_states.shape[0]
         attention_mask = attention_mask.view(batch_size, -1)
+        gd.debuginfo(prj="mt", info=f'1-attention_mask={infoTensor(attention_mask)}')
+
         attention_mask = attention_mask[:, None, None, :]
+        gd.debuginfo(prj="mt", info=f'2-attention_mask={infoTensor(attention_mask)}')
+
         attention_mask = attention_mask.to(dtype=hidden_states.dtype)  # fp16 compatibility
+        gd.debuginfo(prj="mt", info=f'3-attention_mask={infoTensor(attention_mask)}')
+
         attention_mask = (1.0 - attention_mask) * -10000.0
+        gd.debuginfo(prj="mt", info=f'4-attention_mask={infoTensor(attention_mask)}')
+
         for block in self.blocks:
             hidden_states, attention_mask = block(hidden_states, attention_mask)
+            gd.debuginfo(prj="mt", info=f'2-hidden_states={infoTensor(hidden_states)}')
+            gd.debuginfo(prj="mt", info=f'5-attention_mask={infoTensor(attention_mask)}')
+
         if self.norm is not None:
             hidden_states = self.head(self.norm(hidden_states))
+            gd.debuginfo(prj="mt", info=f'3-hidden_states={infoTensor(hidden_states)}')
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return hidden_states
 
 
@@ -164,13 +182,23 @@ class FusedPipelineGPT1D(GenericPipelineGPT):
         super().__init__(embedding=embedding, blocks=blocks, norm=norm, head=head)
 
     def forward(self, hidden_states=None, input_ids=None, attention_mask=None):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.embedding is not None:
             hidden_states = self.embedding(input_ids=input_ids)
+            gd.debuginfo(prj="mt", info=f'1-hidden_states={infoTensor(hidden_states)}')
+
         attention_mask = attention_mask.to(dtype=hidden_states.dtype)  # fp16 compatibility
+        gd.debuginfo(prj="mt", info=f'1-attention_mask={infoTensor(attention_mask)}')
         for block in self.blocks:
             hidden_states, attention_mask = block(hidden_states, attention_mask)
+            gd.debuginfo(prj="mt", info=f'2-hidden_states={infoTensor(hidden_states)}')
+            gd.debuginfo(prj="mt", info=f'2-attention_mask={infoTensor(attention_mask)}')
+
         if self.norm is not None:
             hidden_states = self.head(self.norm(hidden_states))
+            gd.debuginfo(prj="mt", info=f'3-hidden_states={infoTensor(hidden_states)}')
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return hidden_states
 
 

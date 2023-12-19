@@ -63,7 +63,7 @@ class FusedAdam(torch.optim.Optimizer):
         amsgrad=False,
         set_grad_none=True,
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if amsgrad:
             raise RuntimeError("FusedAdam does not support the AMSGrad variant.")
         defaults = dict(lr=lr, bias_correction=bias_correction, betas=betas, eps=eps, weight_decay=weight_decay)
@@ -81,6 +81,8 @@ class FusedAdam(torch.optim.Optimizer):
             self.multi_tensor_adam = fused_optim.multi_tensor_adam
         else:
             raise RuntimeError("FusedAdam requires cuda extensions")
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def zero_grad(self, set_to_none=False):
         if set_to_none:
@@ -101,6 +103,7 @@ class FusedAdam(torch.optim.Optimizer):
 
         The remaining arguments are deprecated, and are only retained (for the moment) for error-checking purposes.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if any(p is not None for p in [grads, output_params, scale, grad_norms]):
             raise RuntimeError(
                 "FusedAdam has been updated.  Simply initialize it identically to torch.optim.Adam, and call step() with no arguments."
@@ -162,5 +165,5 @@ class FusedAdam(torch.optim.Optimizer):
                 group["weight_decay"],
                 div_scale,
             )
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return loss

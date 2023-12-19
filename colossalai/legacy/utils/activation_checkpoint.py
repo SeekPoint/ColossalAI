@@ -79,7 +79,7 @@ class CheckpointFunction(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, *args):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if not torch.autograd._is_checkpoint_valid():
             raise RuntimeError(
                 "Checkpointing is not compatible with .grad() or when an `inputs` parameter is "
@@ -138,6 +138,9 @@ class CheckpointFunction(torch.autograd.Function):
             raise RuntimeError("none of output has requires_grad=True," " this checkpoint() is not necessary")
         torch.autograd.backward(outputs_with_grad, args_with_grad)
         grads = tuple(inp.grad if isinstance(inp, torch.Tensor) else None for inp in detached_inputs)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return (None, None) + grads
 
 

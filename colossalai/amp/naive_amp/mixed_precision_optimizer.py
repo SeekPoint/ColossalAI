@@ -22,11 +22,12 @@ class NaiveFP16MixedPrecisionMixin(FP16MixedPrecisionMixin):
         hysteresis: int = 2,
         max_scale: float = 2**32,
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(
             initial_scale, min_scale, growth_factor, backoff_factor, growth_interval, hysteresis, max_scale
         )
         self.params = working_params
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def check_local_overflow(self) -> bool:
         for p in self.params:
@@ -49,6 +50,7 @@ class MixedPrecisionOptimizer(OptimizerWrapper):
         max_scale: float = 2**32,
         max_norm: float = 0.0,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(optim)
         if precision == "fp16":
             gd.debuginfo(prj="mt", info=f'')
@@ -87,6 +89,8 @@ class MixedPrecisionOptimizer(OptimizerWrapper):
                     self.master_to_working_map[master_p] = p
                     master_params.append(master_p)
             group["params"] = master_params
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def backward(self, loss: Tensor, *args, **kwargs):
         gd.debuginfo(prj="mt", info=f'')
@@ -151,7 +155,7 @@ class MixedPrecisionOptimizer(OptimizerWrapper):
         Returns:
             float: The total norm of the given gradients.
         """
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if len(param_gradient_pairs) == 0:
             gd.debuginfo(prj="mt", info=f'')
             return 0.0
@@ -169,10 +173,11 @@ class MixedPrecisionOptimizer(OptimizerWrapper):
             for grad in gradients:
                 total_norm_exponentiated += grad.data.double().norm(norm_type) ** norm_type
             total_norm = total_norm_exponentiated ** (1.0 / norm_type)
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return total_norm
 
     def step(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.mixed_precision.should_skip_step():
             gd.debuginfo(prj="mt", info=f'')
             self.zero_grad()
@@ -212,6 +217,8 @@ class MixedPrecisionOptimizer(OptimizerWrapper):
                 if p is working_param:
                     continue
                 working_param.data.copy_(p.data)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def update_master_params(self, model: Module):
         gd.debuginfo(prj="mt", info=f'')

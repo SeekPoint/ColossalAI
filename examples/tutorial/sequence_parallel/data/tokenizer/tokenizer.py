@@ -66,8 +66,10 @@ class AbstractTokenizer(ABC):
     """Abstract class for tokenizer."""
 
     def __init__(self, name):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.name = name
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @property
     @abstractmethod

@@ -19,6 +19,7 @@ class CustomizedTritonAutoTuner(triton.KernelInterface):
         prune_configs_by: Dict = None,
         nearest_power_of_two: bool = False,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if not configs:
             self.configs = [triton.Config({}, num_warps=4, num_stages=2)]
             gd.debuginfo(prj="mt", info=f'')
@@ -54,6 +55,8 @@ class CustomizedTritonAutoTuner(triton.KernelInterface):
         self.perf_model, self.configs_top_k = perf_model, top_k
         self.early_config_prune = early_config_prune
         self.fn = fn
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _bench(self, *args, config, **meta):
         gd.debuginfo(prj="mt", info=f'')

@@ -176,21 +176,25 @@ class ShardedOptimizerV2(OptimizerWrapper):
         self._zero_grad()
 
     def backward(self, loss: Tensor) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if not self.bf16:
             loss = self.loss_scale * loss
             self.optim_state = OptimState.SCALED
         self._grad_prepared = False
         self.model.backward(loss)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def backward_by_grad(self, tensor: Tensor, grad: Tensor) -> None:
         # This function is called except the last stage of pipeline parallel
         # It receives the scaled grad from the previous rank
         # No need to scale the grad again
         # Need to unscale when optimizing
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if not self.bf16:
             self.optim_state = OptimState.SCALED
         self._grad_prepared = False
         self.model.backward_by_grad(tensor, grad)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def clip_grad_norm(self, model: nn.Module, max_norm: float):
         self._prepare_grads()
@@ -199,6 +203,7 @@ class ShardedOptimizerV2(OptimizerWrapper):
         return super().clip_grad_norm(model, max_norm)
 
     def step(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self._prepare_grads()
         # unscale grads if scaled
         if not self.bf16 and self.optim_state == OptimState.SCALED:
@@ -226,6 +231,7 @@ class ShardedOptimizerV2(OptimizerWrapper):
             gd.debuginfo(prj="mt", info=f"After step ShardedOptimizerV2 consumes {gpu_mem / 1e6} MB CUDA Memory, {cpu_mem / 1e6} MB CUDA Memory!")
 
         self._copy_master_model_to_model_fp16()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return ret
 
     def _check_overflow(self):

@@ -8,8 +8,9 @@ from pydebug import gd, infoTensor
 
 class AbstractEncoder(nn.Module):
     def __init__(self):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def encode(self, *args, **kwargs):
         raise NotImplementedError
@@ -22,12 +23,13 @@ class IdentityEncoder(AbstractEncoder):
 
 class ClassEmbedder(nn.Module):
     def __init__(self, embed_dim, n_classes=1000, key="class", ucg_rate=0.1):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.key = key
         self.embedding = nn.Embedding(n_classes, embed_dim)
         self.n_classes = n_classes
         self.ucg_rate = ucg_rate
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, batch, key=None, disable_dropout=False):
         if key is None:
@@ -60,6 +62,7 @@ class FrozenT5Embedder(AbstractEncoder):
     def __init__(
         self, version="google/t5-v1_1-large", device="cuda", max_length=77, freeze=True
     ):  # others are google/t5-v1_1-xl and google/t5-v1_1-xxl
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.tokenizer = T5Tokenizer.from_pretrained(version)
         self.transformer = T5EncoderModel.from_pretrained(version)
@@ -67,6 +70,7 @@ class FrozenT5Embedder(AbstractEncoder):
         self.max_length = max_length  # TODO: typical value?
         if freeze:
             self.freeze()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def freeze(self):
         self.transformer = self.transformer.eval()
@@ -108,6 +112,7 @@ class FrozenCLIPEmbedder(AbstractEncoder):
         layer="last",
         layer_idx=None,
     ):  # clip-vit-base-patch32
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         assert layer in self.LAYERS
         self.tokenizer = CLIPTokenizer.from_pretrained(version)
@@ -121,6 +126,7 @@ class FrozenCLIPEmbedder(AbstractEncoder):
         if layer == "hidden":
             assert layer_idx is not None
             assert 0 <= abs(layer_idx) <= 12
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def freeze(self):
         self.transformer = self.transformer.eval()
@@ -166,6 +172,7 @@ class FrozenOpenCLIPEmbedder(AbstractEncoder):
     def __init__(
         self, arch="ViT-H-14", version="laion2b_s32b_b79k", device="cuda", max_length=77, freeze=True, layer="last"
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         assert layer in self.LAYERS
         model, _, _ = open_clip.create_model_and_transforms(arch, device=torch.device("cpu"), pretrained=version)
@@ -184,12 +191,15 @@ class FrozenOpenCLIPEmbedder(AbstractEncoder):
         else:
             raise NotImplementedError()
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def freeze(self):
         self.model = self.model.eval()
         for param in self.parameters():
             param.requires_grad = False
 
     def forward(self, text):
+        gd.debuginfo(prj="mt", info=f'')
         tokens = open_clip.tokenize(text)
         z = self.encode_with_transformer(tokens.to(self.device))
         return z
@@ -226,13 +236,14 @@ class FrozenCLIPT5Encoder(AbstractEncoder):
         clip_max_length=77,
         t5_max_length=77,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.clip_encoder = FrozenCLIPEmbedder(clip_version, device, max_length=clip_max_length)
+        gd.debuginfo(prj="mt", info=f'===================================')
         self.t5_encoder = FrozenT5Embedder(t5_version, device, max_length=t5_max_length)
-        print(
-            f"{self.clip_encoder.__class__.__name__} has {count_params(self.clip_encoder)*1.e-6:.2f} M parameters, "
-            f"{self.t5_encoder.__class__.__name__} comes with {count_params(self.t5_encoder)*1.e-6:.2f} M params."
-        )
+        gd.debuginfo(prj="mt", info=f"{self.clip_encoder.__class__.__name__} has {count_params(self.clip_encoder)*1.e-6:.2f} M parameters, "
+            f"{self.t5_encoder.__class__.__name__} comes with {count_params(self.t5_encoder)*1.e-6:.2f} M params.")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def encode(self, text):
         return self(text)

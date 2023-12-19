@@ -14,6 +14,7 @@ class Partition:
     """
 
     def __init__(self, name: str):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.name: str = name
         self.node_names: List[str] = []
         self.inputs: Dict[str, None] = {}
@@ -23,7 +24,7 @@ class Partition:
         self.graph: torch.fx.graph.Graph = torch.fx.graph.Graph()
         self.environment: Dict[torch.fx.node.Node, torch.fx.node.Node] = {}
         self.targets: Dict[str, Any] = {}
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def __repr__(self) -> str:
         return (

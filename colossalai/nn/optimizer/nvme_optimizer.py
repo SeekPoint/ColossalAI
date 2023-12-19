@@ -26,6 +26,7 @@ class NVMeOptimizer(torch.optim.Optimizer):
                  defaults: dict,
                  nvme_offload_fraction: float = 0.0,
                  offload_dir: Optional[str] = None) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert 0.0 <= nvme_offload_fraction <= 1.0
         super().__init__(params, defaults)
         self.nvme_offload_fraction = float(nvme_offload_fraction)
@@ -52,6 +53,7 @@ class NVMeOptimizer(torch.optim.Optimizer):
 
         self.prefetch_params: List[Parameter] = []
         self.param_to_prefetch_idx: Dict[Parameter, int] = {}
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _get_numel(self) -> int:
         gd.debuginfo(prj="mt", info=f'')
@@ -91,7 +93,7 @@ class NVMeOptimizer(torch.optim.Optimizer):
                     self.prefetch_params.append(p)
 
     def _pre_step(self, *state_keys: str) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.total_numel is None:
             self.total_numel = self._get_numel()
             self.can_offload_numel = math.floor(self.total_numel * self.nvme_offload_fraction)
@@ -105,8 +107,10 @@ class NVMeOptimizer(torch.optim.Optimizer):
         for key in state_keys:
             self.offloader.async_read(state[key])
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def _pre_update(self, param: Parameter, *state_keys: str) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.offloader is None or param not in self.param_to_prefetch_idx:
             gd.debuginfo(prj="mt", info=f'')
             return
@@ -116,9 +120,10 @@ class NVMeOptimizer(torch.optim.Optimizer):
             state = self.state[self.prefetch_params[idx + 1]]
             for key in state_keys:
                 self.offloader.async_read(state[key])
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _post_update(self, param: Parameter, *state_keys: str) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.offloader is None:
             gd.debuginfo(prj="mt", info=f'')
             return
@@ -128,14 +133,16 @@ class NVMeOptimizer(torch.optim.Optimizer):
             state = self.state[param]
             for key in state_keys:
                 self.offloader.async_write(state[key])
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _post_step(self) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.offloader is not None:
             gd.debuginfo(prj="mt", info=f'')
             self.offloader.synchronize()
             self.prefetch_params.clear()
             self.param_to_prefetch_idx.clear()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def step(self, closure: Optional[Callable[[], float]] = ...) -> Optional[float]:
         """Performs a single optimization step (parameter update).

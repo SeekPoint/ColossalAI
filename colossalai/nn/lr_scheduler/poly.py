@@ -22,13 +22,14 @@ class PolynomialLR(_LRScheduler):
                  power: float = 1.0,
                  last_epoch: int = -1,
                  **kwargs):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if end_lr < 0:
             raise ValueError(f"end_lr must >= 0, got {end_lr}")
         self.total_steps = total_steps
         self.end_lr = end_lr
         self.power = power
         super().__init__(optimizer, last_epoch=last_epoch)
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def get_lr(self):
         return self._get_closed_form_lr()
@@ -65,6 +66,7 @@ class PolynomialWarmupLR(WarmupScheduler):
         last_epoch: int = -1,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         base_scheduler = PolynomialLR(optimizer, total_steps - warmup_steps, end_lr=end_lr, power=power)
         super().__init__(optimizer, warmup_steps, base_scheduler, last_epoch=last_epoch)
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')

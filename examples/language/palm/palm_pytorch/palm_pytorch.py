@@ -9,13 +9,15 @@ from pydebug import gd, infoTensor
 
 class LayerNorm(nn.Module):
     def __init__(self, dim, eps=1e-5):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.eps = eps
         self.gamma = nn.Parameter(torch.ones(dim))
         self.register_buffer("beta", torch.zeros(dim))
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         return F.layer_norm(x, x.shape[-1:], self.gamma, self.beta)
 
 
@@ -25,11 +27,13 @@ class LayerNorm(nn.Module):
 
 class ParallelResidual(nn.Module):
     def __init__(self, *fns):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.fns = nn.ModuleList(fns)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         return x + sum([fn(x) for fn in self.fns])
 
 
@@ -39,12 +43,14 @@ class ParallelResidual(nn.Module):
 
 class RotaryEmbedding(nn.Module):
     def __init__(self, dim):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         inv_freq = 1.0 / (10000 ** (torch.arange(0, dim, 2).float() / dim))
         self.register_buffer("inv_freq", inv_freq)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, max_seq_len, *, device):
+        gd.debuginfo(prj="mt", info=f'')
         seq = torch.arange(max_seq_len, device=device)
         # freqs = einsum("i , j -> i j", seq.type_as(self.inv_freq), self.inv_freq)
         # freqs = torch.outer(seq.type_as(self.inv_freq), self.inv_freq)
@@ -70,11 +76,13 @@ def apply_rotary_pos_emb(pos, t):
 
 class SwiGLU(nn.Module):
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         x, gate = x.chunk(2, dim=-1)
         return F.silu(gate) * x
 
 
 def FeedForward(dim, mult=4):
+    gd.debuginfo(prj="mt", info=f'')
     inner_dim = int(dim * mult)
     return nn.Sequential(
         LayerNorm(dim),
@@ -87,7 +95,7 @@ def FeedForward(dim, mult=4):
 # attention
 class Attention(nn.Module):
     def __init__(self, dim, dim_head=64, heads=8):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         inner_dim = dim_head * heads
         self.norm = LayerNorm(dim)
@@ -103,6 +111,7 @@ class Attention(nn.Module):
 
         self.register_buffer("mask", None, persistent=False)
         self.register_buffer("pos_emb", None, persistent=False)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def get_mask(self, n, device):
         if self.mask is not None and self.mask.shape[-1] >= n:
@@ -128,7 +137,7 @@ class Attention(nn.Module):
         n, i, j - sequence length (base sequence length, source, target)
         d - feature dimension
         """
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         n, device, h = x.shape[1], x.device, self.heads
 
         # pre layernorm
@@ -184,6 +193,8 @@ class Attention(nn.Module):
         # merge heads
 
         out = rearrange(out, "b h n d -> b n (h d)")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return self.to_out(out)
 
 

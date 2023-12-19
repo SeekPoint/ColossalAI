@@ -7,7 +7,7 @@ from pydebug import gd, infoTensor
 
 class GradientStore(BaseStore):
     def __init__(self, *args, partition_grad: bool = False):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(*args)
         """
         self._grads_of_params mapping the paramater and its gradient slices
@@ -23,6 +23,7 @@ class GradientStore(BaseStore):
         self._working_index = 0 if partition_grad else self._local_rank
 
         self.grad_to_param_mapping = dict()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def get_partitioned_gradients_by_param_id(self, group_id: int, param_id: int) -> List:
         """Return list of gradient slices of a specific parameter

@@ -34,6 +34,7 @@ class BertLayer(nn.Module):
         bias_dropout_fusion: bool = True,
         convert_fp16_to_fp32_in_softmax: bool = False,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.layer_number = layer_number
 
@@ -62,6 +63,7 @@ class BertLayer(nn.Module):
         self.post_attention_layernorm = LayerNorm(hidden_size)
 
         self.mlp = TransformerMLP(hidden_size=hidden_size, mlp_ratio=mlp_ratio)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, hidden_states, attention_mask):
         # hidden_states: [batch_size, sub_seq_len, hidden_size]

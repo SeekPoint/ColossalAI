@@ -251,6 +251,7 @@ class Trainer:
         self._call_timer(action="reset", item="Test-epoch")
 
     def _exceed_max_step(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self._max_steps is not None and self._cur_step >= self._max_steps
 
     def fit(

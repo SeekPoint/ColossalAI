@@ -57,13 +57,16 @@ def parse_args():
 
 class GPTLMLoss(nn.Module):
     def __init__(self):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.loss_fn = nn.CrossEntropyLoss()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, logits, labels):
         shift_logits = logits[..., :-1, :].contiguous()
         shift_labels = labels[..., 1:].contiguous()
+        gd.debuginfo(prj="mt", info=f'shift_logits={infoTensor(shift_logits)}')
+        gd.debuginfo(prj="mt", info=f'shift_labels={infoTensor(shift_labels)}')
         # Flatten the tokens
         return self.loss_fn(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
 

@@ -12,7 +12,7 @@ class _VocabParallelCrossEntropy1D(torch.autograd.Function):
     @staticmethod
     @custom_fwd(cast_inputs=torch.float32)
     def forward(ctx, vocab_parallel_logits, targets, process_group):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if process_group is None:
             process_group = gpc.get_group(ParallelMode.PARALLEL_1D)
 
@@ -56,12 +56,13 @@ class _VocabParallelCrossEntropy1D(torch.autograd.Function):
         # Store softmax, target-mask and masked-target for backward pass.
         exp_logits.div_(sum_exp_logits.unsqueeze(dim=-1))
         ctx.save_for_backward(exp_logits, target_mask, masked_target_1d)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return loss
 
     @staticmethod
     @custom_bwd
     def backward(ctx, grad_output):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # Retrieve tensors from the forward path.
         softmax, target_mask, masked_target_1d = ctx.saved_tensors
 
@@ -77,6 +78,7 @@ class _VocabParallelCrossEntropy1D(torch.autograd.Function):
 
         # Finally elementwise multiplication with the output gradients.
         grad_input.mul_(grad_output.unsqueeze(dim=-1))
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
         return grad_input, None, None
 
@@ -101,7 +103,9 @@ class VocabParallelCrossEntropyLoss1D(_Loss):
             logits (:class:`torch.tensor`): Predicted unnormalized scores (often referred to as logits).
             targets (:class:`torch.tensor`): Ground truth class indices or class probabilities.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         loss = _VocabParallelCrossEntropy1D.apply(logits, targets, process_group)
         if self.reduction_mean:
             loss = loss.mean()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return loss

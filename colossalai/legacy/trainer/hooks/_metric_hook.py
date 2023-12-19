@@ -31,8 +31,9 @@ class Metric(ABC):
 
     def __init__(self, epoch_only: bool):
         # is the metric only read for the full epoch
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self._epoch_only = epoch_only
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @property
     def epoch_only(self):
@@ -82,17 +83,20 @@ class LossMetric(Metric):
     """
 
     def __init__(self, epoch_only):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(epoch_only=epoch_only)
         self.last_step_loss = torch.zeros(1, device=get_current_device())
         self.accum_loss = torch.zeros(1, device=get_current_device())
         self.count = 0
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def reset(self) -> None:
         """Sets :attr:`last_step_loss` and :attr:`accum_loss` to zero."""
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.last_step_loss.zero_()
         self.accum_loss.zero_()
         self.count = 0
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def update(self, loss) -> None:
         """Updates :attr:`last_step_loss` and :attr:`accum_loss` with current loss.
@@ -101,23 +105,31 @@ class LossMetric(Metric):
         Args:
             loss (:class:`torch.tensor`): Current loss of the output.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # expect output to be logits, label and loss
         loss_ = loss.detach()
         self.last_step_loss.copy_(loss_)
         self.accum_loss.add_(loss_)
         self.count += 1
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def get_accumulated_value(self):
         """Returns accumulated loss."""
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if gpc.is_initialized(ParallelMode.DATA):
+            gd.debuginfo(prj="mt", info=f'=================')
             dist.all_reduce(self.accum_loss, op=dist.ReduceOp.SUM, group=gpc.get_group(ParallelMode.DATA))
             self.accum_loss.div_(gpc.get_world_size(ParallelMode.DATA))
 
         self.accum_loss.div_(self.count)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return self.accum_loss.item()
 
     def get_last_step_value(self) -> float:
         """Returns :attr:`last_step_loss`."""
+        gd.debuginfo(prj="mt", info=f'')
         return self.last_step_loss.cpu().item()
 
     @staticmethod
@@ -134,9 +146,10 @@ class LearningRateMetric(Metric):
     """
 
     def __init__(self, epoch_only: bool, initial_lr: float = 0.0):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(epoch_only=epoch_only)
         self.lr = initial_lr
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def reset(self) -> None:
         pass
@@ -165,19 +178,22 @@ class AccuracyMetric(Metric):
     """
 
     def __init__(self, epoch_only: bool, accuracy_func: Callable):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(epoch_only=epoch_only)
         self.acc = accuracy_func
         self.last_step_sum = torch.zeros(1, device=get_current_device())
         self.last_step_correct = torch.zeros(1, device=get_current_device())
         self.accumulated_sum = torch.zeros(1, device=get_current_device())
         self.accumulated_correct = torch.zeros(1, device=get_current_device())
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def reset(self) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.last_step_sum.zero_()
         self.last_step_correct.zero_()
         self.accumulated_sum.zero_()
         self.accumulated_correct.zero_()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def update(self, logits, targets, batch_size) -> None:
         """Updates last step accuracy and accumulated accuracy with current logits
@@ -188,6 +204,7 @@ class AccuracyMetric(Metric):
             targets (:class:`torch.tensor`): Real labels of the dataset.
             batch_size (int): Batch size of the task.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if isinstance(logits, (list, tuple)):
             logits = logits[0]
         if isinstance(targets, (list, tuple)):
@@ -199,15 +216,22 @@ class AccuracyMetric(Metric):
         self.last_step_correct.fill_(correct)
         self.accumulated_sum += self.last_step_sum
         self.accumulated_correct += self.last_step_correct
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def get_last_step_value(self) -> float:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.last_step_sum = all_reduce(self.last_step_sum, ParallelMode.DATA)
+        gd.debuginfo(prj="mt", info=f'----------------------------------')
         self.last_step_correct = all_reduce(self.last_step_correct, ParallelMode.DATA)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return _format_number((self.last_step_correct / self.last_step_sum).cpu().item())
 
     def get_accumulated_value(self):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.accumulated_sum = all_reduce(self.accumulated_sum, ParallelMode.DATA)
+        gd.debuginfo(prj="mt", info=f'------------------------------------')
         self.accumulated_correct = all_reduce(self.accumulated_correct, ParallelMode.DATA)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return (self.accumulated_correct / self.accumulated_sum).item()
 
     @staticmethod
@@ -231,12 +255,15 @@ class MetricHook(BaseHook):
         self,
         priority: int,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(priority)
         self._is_stage_to_compute = is_no_pp_or_last_stage()
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _check_metric_states_initialization(self, trainer):
+        gd.debuginfo(prj="mt", info=f'')
         if "metrics" not in trainer.states:
+            gd.debuginfo(prj="mt", info=f'')
             self.init_runner_states(trainer, "metrics", dict(train={}, test={}))
 
 
@@ -251,13 +278,16 @@ class LossHook(MetricHook):
     """
 
     def __init__(self, priority: int = 0):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(priority)
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def after_hook_is_attached(self, trainer):
+        gd.debuginfo(prj="mt", info=f'')
         self._check_metric_states_initialization(trainer)
 
         if self._is_stage_to_compute:
+            gd.debuginfo(prj="mt", info=f'')
             self.train_loss = LossMetric(epoch_only=False)
             self.test_loss = LossMetric(epoch_only=True)
 
@@ -266,19 +296,27 @@ class LossHook(MetricHook):
             trainer.states["metrics"]["test"]["Loss"] = self.test_loss
 
     def before_train_epoch(self, trainer):
+        gd.debuginfo(prj="mt", info=f'')
         if self._is_stage_to_compute:
+            gd.debuginfo(prj="mt", info=f'')
             self.train_loss.reset()
 
     def after_train_iter(self, trainer, logits, label, loss):
+        gd.debuginfo(prj="mt", info=f'')
         if self._is_stage_to_compute:
+            gd.debuginfo(prj="mt", info=f'')
             self.train_loss.update(loss)
 
     def before_test_epoch(self, trainer):
+        gd.debuginfo(prj="mt", info=f'')
         if self._is_stage_to_compute:
+            gd.debuginfo(prj="mt", info=f'')
             self.test_loss.reset()
 
     def after_test_iter(self, trainer, logits, label, loss):
+        gd.debuginfo(prj="mt", info=f'')
         if self._is_stage_to_compute:
+            gd.debuginfo(prj="mt", info=f'')
             self.test_loss.update(loss)
 
 
@@ -294,24 +332,32 @@ class AccuracyHook(MetricHook):
     """
 
     def __init__(self, accuracy_func: Callable, priority: int = 0):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(priority)
         self.accuracy_func = accuracy_func
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def after_hook_is_attached(self, trainer):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self._check_metric_states_initialization(trainer)
         if self._is_stage_to_compute:
+            gd.debuginfo(prj="mt", info=f'')
             self.metric = AccuracyMetric(epoch_only=True, accuracy_func=self.accuracy_func)
 
             # register the metric
             trainer.states["metrics"]["test"]["Accuracy"] = self.metric
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def before_test(self, trainer):
+        gd.debuginfo(prj="mt", info=f'')
         if self._is_stage_to_compute:
+            gd.debuginfo(prj="mt", info=f'')
             self.metric.reset()
 
     def after_test_iter(self, trainer, logits, targets, *args):
+        gd.debuginfo(prj="mt", info=f'')
         if self._is_stage_to_compute:
+            gd.debuginfo(prj="mt", info=f'')
             batch_size = trainer.engine.schedule.batch_size
             self.metric.update(logits, targets, batch_size)
 
@@ -323,7 +369,14 @@ class ThroughputMetric(Metric):
         epoch_only (bool): Whether the metric only read for the full epoch.
     """
 
-    def __init__(self, epoch_only: bool, ignored_steps: int = 0, tflop_per_step: int = 0, use_local: bool = False):
+    def __init__(self,
+                 epoch_only: bool,
+                 ignored_steps: int = 0,
+                 tflop_per_step: int = 0,
+                 use_local: bool = False):
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         super().__init__(epoch_only=epoch_only)
         self.ignored_steps = ignored_steps
         self.cur_steps = 0
@@ -333,52 +386,72 @@ class ThroughputMetric(Metric):
         self.last_step_used_time = torch.zeros(1, device=get_current_device())
         self._tflop_per_step = tflop_per_step
         self._use_local = use_local
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def reset(self) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # self.cur_steps = 0
         self.accumulated_num_samples.zero_()
         self.accumulated_used_time.zero_()
         self.last_step_num_samples.zero_()
         self.last_step_used_time.zero_()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def update(self, num_samples, time) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.cur_steps += 1
         self.last_step_num_samples.fill_(num_samples)
         self.last_step_used_time.fill_(time)
         if self.cur_steps >= self.ignored_steps:
+            gd.debuginfo(prj="mt", info=f'')
             self.accumulated_num_samples += self.last_step_num_samples
             self.accumulated_used_time += self.last_step_used_time
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def get_last_step_value(self) -> float:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self._use_local:
+            gd.debuginfo(prj="mt", info=f'')
             self.last_step_num_samples *= gpc.get_world_size(ParallelMode.DATA)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.last_step_used_time = all_reduce(self.last_step_used_time, ParallelMode.DATA) / gpc.get_world_size(
                 ParallelMode.DATA
             )
             self.last_step_num_samples = all_reduce(self.last_step_num_samples, ParallelMode.DATA)
 
         sample_per_sec = _format_number(self.last_step_num_samples / (self.last_step_used_time + 1e-12).item())
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return sample_per_sec
 
     def get_last_step_info(self) -> str:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self._use_local:
+            gd.debuginfo(prj="mt", info=f'')
             self.last_step_num_samples *= gpc.get_world_size(ParallelMode.DATA)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.last_step_used_time = all_reduce(self.last_step_used_time, ParallelMode.DATA) / gpc.get_world_size(
                 ParallelMode.DATA
             )
             self.last_step_num_samples = all_reduce(self.last_step_num_samples, ParallelMode.DATA)
 
         sample_per_sec = _format_number(self.last_step_num_samples / (self.last_step_used_time + 1e-12).item())
+
         if self._tflop_per_step > 0:
+            gd.debuginfo(prj="mt", info=f'')
             tflops = _format_number(self._tflop_per_step / (self.last_step_used_time.item() + 1e-12))
             return f"{sample_per_sec} sample_per_sec, {tflops} Tflops"
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return f"{sample_per_sec} sample_per_sec"
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def get_accumulated_value(self) -> float:
+        gd.debuginfo(prj="mt", info=f'')
         self.accumulated_used_time = all_reduce(self.accumulated_used_time, ParallelMode.DATA) / gpc.get_world_size(
             ParallelMode.DATA
         )
@@ -404,15 +477,18 @@ class ThroughputHook(MetricHook):
     """
 
     def __init__(self, ignored_steps: int = 0, priority: int = 10, tflop_per_step: int = 0, use_local=False):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(priority)
         self.ignored_steps = ignored_steps
         self._tflop_per_step = tflop_per_step
         self._use_local = use_local
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def after_hook_is_attached(self, trainer):
+        gd.debuginfo(prj="mt", info=f'')
         self._check_metric_states_initialization(trainer)
         if self._is_stage_to_compute:
+            gd.debuginfo(prj="mt", info=f'')
             self.metric = ThroughputMetric(
                 epoch_only=True,
                 ignored_steps=self.ignored_steps,
@@ -425,21 +501,29 @@ class ThroughputHook(MetricHook):
             trainer.states["metrics"]["test"]["Throughput"] = self.metric
 
     def before_train_epoch(self, trainer):
+        gd.debuginfo(prj="mt", info=f'')
         if self._is_stage_to_compute:
+            gd.debuginfo(prj="mt", info=f'')
             self.metric.reset()
 
     def after_train_iter(self, trainer, *args):
+        gd.debuginfo(prj="mt", info=f'')
         if self._is_stage_to_compute:
+            gd.debuginfo(prj="mt", info=f'')
             self.metric.update(
                 trainer.engine.schedule.batch_size, trainer._timer.get_timer("Train-step").get_elapsed_time()
             )
 
     def before_test(self, trainer):
+        gd.debuginfo(prj="mt", info=f'')
         if self._is_stage_to_compute:
+            gd.debuginfo(prj="mt", info=f'')
             self.metric.reset()
 
     def after_test_iter(self, trainer, *args):
+        gd.debuginfo(prj="mt", info=f'')
         if self._is_stage_to_compute:
+            gd.debuginfo(prj="mt", info=f'')
             self.metric.update(
                 trainer.engine.schedule.batch_size, trainer._timer.get_timer("Test-step").get_elapsed_time()
             )

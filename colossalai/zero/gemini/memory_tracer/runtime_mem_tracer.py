@@ -26,7 +26,7 @@ class RuntimeMemTracer:
     """
 
     def __init__(self, module: torch.nn.Module, dtype: torch.dtype = torch.half):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.module = module
         self.dtype = dtype
@@ -37,9 +37,11 @@ class RuntimeMemTracer:
         self.cpu_param_data_dict = {}
 
         for p in module.parameters():
+            gd.debuginfo(prj="mt", info=f'p={infoTensor(p)}')
             p.data = p.data.to(dtype)
 
         self._cast_buffers_to_cuda_dtype()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def parameters_in_runtime_order(self):
         return self._memstats._param_runtime_order.generate()
@@ -48,12 +50,14 @@ class RuntimeMemTracer:
         return self._memstats
 
     def __call__(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         return self.forward(*args, **kwargs)
 
     def _backup_params(self):
         """
         The function is called before forward. Backup model params on cpu.
         """
+        gd.debuginfo(prj="mt", info=f'')
         for p in self.module.parameters():
             self.cpu_param_data_dict[p] = torch.empty(p.data.shape, dtype=self.dtype, device="cpu")
             self.cpu_param_data_dict[p].copy_(p.data)
@@ -62,43 +66,54 @@ class RuntimeMemTracer:
         """
         This function is called after backward. Restore model params.
         """
+        gd.debuginfo(prj="mt", info=f'')
         for p in self.module.parameters():
             p.data = torch.empty(p.data.shape, dtype=self.dtype, device="cpu", requires_grad=p.data.requires_grad)
             p.data.copy_(self.cpu_param_data_dict[p])
         self.cpu_param_data_dict.clear()
 
     def _pre_forward(self):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self._clear_cuda_mem_info()
         self._backup_params()
         self.grad_hook.register_grad_hook(self.module)
         self.param_op_hook.mem_monitor.start()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         args, kwargs = _cast_float(args, self.dtype), _cast_float(kwargs, self.dtype)
         self.module.zero_grad(set_to_none=True)
         self._pre_forward()
         with ColoParamOpHookManager.use_hooks(self.param_op_hook):
             outputs = self.module(*args, **kwargs)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return outputs
 
     def backward(self, loss):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         with self.param_op_hook.switch_to_backward(), ColoParamOpHookManager.use_hooks(self.param_op_hook):
             loss.backward()
         self._post_backward()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _post_backward(self):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         cuda_volume = self.param_op_hook.mem_monitor.finish()
         self._memstats.record_max_cuda_overall_data(cuda_volume)
         # calc the last Op non model data
         self._memstats.calc_max_cuda_non_model_data()
         self.grad_hook.remove_grad_hook()
         self._restore_params()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _clear_cuda_mem_info(self):
+        gd.debuginfo(prj="mt", info=f'')
         self._memstats.clear()
         self._gradstat.clear()
 
     def _cast_buffers_to_cuda_dtype(self):
+        gd.debuginfo(prj="mt", info=f'')
         for buffer in self.module.buffers():
             buffer.data = buffer.cuda()
             if torch.is_floating_point(buffer):

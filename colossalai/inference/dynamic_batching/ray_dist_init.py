@@ -150,8 +150,10 @@ class Driver:
         ray.get([w.abort.remote(request_id) for w in self.workers])
 
     def step(self):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         results = ray.get([w.step.remote() for w in self.workers])
         outputs = results[0]  # get any one of the copies
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return outputs
 
     def add_req(self, request_id: str, prompt_ids: List[int], sampling_params: SamplingParams, prompt: str):

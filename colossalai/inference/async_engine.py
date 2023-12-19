@@ -84,13 +84,15 @@ class Async_Engine:
         """
         Logic for handling requests
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         request_outputs = self.driver.step()
         if request_outputs is not None:
             gd.debuginfo(prj="mt", info=f'')
             for request_output in request_outputs:
                 self._request_tracker.process_request_output(request_output)
             self._request_tracker.add_stop()
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def abort_request(self, request_id: str):
         gd.debuginfo(prj="mt", info=f'')

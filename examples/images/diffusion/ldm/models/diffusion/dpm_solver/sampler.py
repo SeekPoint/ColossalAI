@@ -8,13 +8,15 @@ from pydebug import gd, infoTensor
 
 class DPMSolverSampler(object):
     def __init__(self, model, **kwargs):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.model = model
         to_torch = lambda x: x.clone().detach().to(torch.float32).to(model.device)
         self.register_buffer("alphas_cumprod", to_torch(model.alphas_cumprod))
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def register_buffer(self, name, attr):
+        gd.debuginfo(prj="mt", info=f'')
         if type(attr) == torch.Tensor:
             if attr.device != torch.device("cuda"):
                 attr = attr.to(torch.device("cuda"))
@@ -46,6 +48,7 @@ class DPMSolverSampler(object):
         # this has to come in the same format as the conditioning, # e.g. as encoded tokens, ...
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if conditioning is not None:
             if isinstance(conditioning, dict):
                 cbs = conditioning[list(conditioning.keys())[0]].shape[0]
@@ -83,5 +86,5 @@ class DPMSolverSampler(object):
         x = dpm_solver.sample(
             img, steps=S, skip_type="time_uniform", method="multistep", order=2, lower_order_final=True
         )
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return x.to(device), None

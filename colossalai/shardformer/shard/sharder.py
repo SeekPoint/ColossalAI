@@ -26,10 +26,11 @@ class ModelSharder(object):
     """
 
     def __init__(self, model: nn.Module, policy: Policy, shard_config: ShardConfig = None) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.model = model
         self.policy = get_autopolicy(self.model, shard_config.inference_only) if policy is None else policy
         self.shard_config = shard_config
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def shard(self) -> List[Dict[int, Tensor]]:
         r"""

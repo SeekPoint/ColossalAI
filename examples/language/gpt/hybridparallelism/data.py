@@ -51,6 +51,7 @@ class GLUEDataBuilder:
         eval_batch_size: int = 32,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.model_name_or_path = model_name_or_path
         self.task_name = task_name
@@ -65,8 +66,10 @@ class GLUEDataBuilder:
         # self.tokenizer.pad_token = self.tokenizer.eos_token
         self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
         self.setup()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def setup(self):
+        gd.debuginfo(prj="mt", info=f'')
         self.dataset = datasets.load_dataset("/share/hf_model/glue", self.task_name)
 
         for split in self.dataset.keys():
@@ -81,18 +84,22 @@ class GLUEDataBuilder:
         self.eval_splits = [x for x in self.dataset.keys() if "validation" in x]
 
     def prepare_data(self):
+        gd.debuginfo(prj="mt", info=f'')
         datasets.load_dataset("/share/hf_model/glue", self.task_name)
         AutoTokenizer.from_pretrained(self.model_name_or_path, use_fast=True)
 
     def train_dataloader(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self.plugin.prepare_dataloader(
             self.dataset["train"], batch_size=self.train_batch_size, shuffle=True, drop_last=True
         )
 
     def val_dataloader(self):
         if len(self.eval_splits) == 1:
+            gd.debuginfo(prj="mt", info=f'')
             return self.plugin.prepare_dataloader(self.dataset["validation"], batch_size=self.eval_batch_size)
         elif len(self.eval_splits) > 1:
+            gd.debuginfo(prj="mt", info=f'')
             return [
                 self.plugin.prepare_dataloader(self.dataset[x], batch_size=self.eval_batch_size)
                 for x in self.eval_splits
@@ -100,8 +107,10 @@ class GLUEDataBuilder:
 
     def test_dataloader(self):
         if len(self.eval_splits) == 1:
+            gd.debuginfo(prj="mt", info=f'')
             return self.plugin.prepare_dataloader(self.dataset["test"], batch_size=self.eval_batch_size)
         elif len(self.eval_splits) > 1:
+            gd.debuginfo(prj="mt", info=f'')
             return [
                 self.plugin.prepare_dataloader(self.dataset[x], batch_size=self.eval_batch_size)
                 for x in self.eval_splits
@@ -110,14 +119,17 @@ class GLUEDataBuilder:
     def convert_to_features(self, example_batch):
         # Either encode single sentence or sentence pairs
         if len(self.text_fields) > 1:
+            gd.debuginfo(prj="mt", info=f'')
             texts_or_text_pairs = list(zip(example_batch[self.text_fields[0]], example_batch[self.text_fields[1]]))
         else:
+            gd.debuginfo(prj="mt", info=f'')
             texts_or_text_pairs = example_batch[self.text_fields[0]]
 
         # Tokenize the text/text pairs
         features = self.tokenizer.batch_encode_plus(
             texts_or_text_pairs, max_length=self.max_seq_length, padding="max_length", truncation=True
         )
+        gd.debuginfo(prj="mt", info=f'features={features}')
 
         # Rename label to labels to make it easier to pass to model forward
         features["labels"] = example_batch["label"]

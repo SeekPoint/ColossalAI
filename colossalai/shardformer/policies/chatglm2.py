@@ -255,6 +255,7 @@ class ChatGLMModelPolicy(ChatGLMPolicy):
         pass
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         if self.pipeline_stage_manager is not None:
             gd.debuginfo(prj="mt", info=f'')
@@ -275,6 +276,7 @@ class ChatGLMForConditionalGenerationPolicy(ChatGLMModelPolicy):
     def module_policy(self):
         gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         if self.pipeline_stage_manager is not None:
             gd.debuginfo(prj="mt", info=f'')

@@ -32,13 +32,17 @@ def parse_args():
 
 class GPTLMLoss(nn.Module):
     def __init__(self):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.loss_fn = nn.CrossEntropyLoss()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, logits, labels):
+
         shift_logits = logits[..., :-1, :].contiguous()
         shift_labels = labels[..., 1:].contiguous()
+        gd.debuginfo(prj="mt", info=f'shift_logits={infoTensor(shift_logits)}')
+        gd.debuginfo(prj="mt", info=f'shift_labels={infoTensor(shift_labels)}')
         # Flatten the tokens
         return self.loss_fn(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
 
@@ -47,15 +51,19 @@ class GPTLMLoss(nn.Module):
 def get_data(batch_size, seq_len, vocab_size):
     input_ids = torch.randint(0, vocab_size, (batch_size, seq_len), device=torch.cuda.current_device())
     attention_mask = torch.ones_like(input_ids)
+    gd.debuginfo(prj="mt", info=f'input_ids={infoTensor(input_ids)}')
+    gd.debuginfo(prj="mt", info=f'attention_mask={infoTensor(attention_mask)}')
     return input_ids, attention_mask
 
 
 def get_tflops(model_numel, batch_size, seq_len, step_time):
+    gd.debuginfo(prj="mt", info=f'')
     return model_numel * batch_size * seq_len * 8 / 1e12 / (step_time + 1e-12)
 
 
 # Create annotated model which is noted where to be splitted.
 def get_annotated_model(model, data_kwargs, num_stages, num_microbatches):
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     tracer = ColoTracer()
     meta_args = {k: v.to("meta") for k, v in data_kwargs.items()}
     graph = tracer.trace(root=model, meta_args=meta_args)
@@ -67,17 +75,19 @@ def get_annotated_model(model, data_kwargs, num_stages, num_microbatches):
 
     # annotated_model = avgnode_split_pass(gm, num_stages)
     annotated_model = gpipe_dp_split_pass(gm, num_stages, num_microbatches, mode="block", block_limit=0.01)
-
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     return annotated_model
 
 
 def create_partition_module(pp_rank: int, num_stages: int, model, data_kwargs, num_microbatches):
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     annotated_model = get_annotated_model(model, data_kwargs, num_stages, num_microbatches)
     top_module, split_submodules = split_with_split_nodes_pass(annotated_model, merge_output=True)
     topo = get_fx_topology(top_module)
     for submodule in split_submodules:
         if isinstance(submodule, torch.fx.GraphModule):
             setattr(submodule, "_topo", topo)
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     return split_submodules[pp_rank + 1]
 
 

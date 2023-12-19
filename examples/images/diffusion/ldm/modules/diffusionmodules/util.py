@@ -253,18 +253,21 @@ def avg_pool_nd(dims, *args, **kwargs):
 
 class HybridConditioner(nn.Module):
     def __init__(self, c_concat_config, c_crossattn_config):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.concat_conditioner = instantiate_from_config(c_concat_config)
         self.crossattn_conditioner = instantiate_from_config(c_crossattn_config)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, c_concat, c_crossattn):
+        gd.debuginfo(prj="mt", info=f'')
         c_concat = self.concat_conditioner(c_concat)
         c_crossattn = self.crossattn_conditioner(c_crossattn)
         return {"c_concat": [c_concat], "c_crossattn": [c_crossattn]}
 
 
 def noise_like(shape, device, repeat=False):
+    gd.debuginfo(prj="mt", info=f'')
     repeat_noise = lambda: torch.randn((1, *shape[1:]), device=device).repeat(shape[0], *((1,) * (len(shape) - 1)))
     noise = lambda: torch.randn(shape, device=device)
     return repeat_noise() if repeat else noise()

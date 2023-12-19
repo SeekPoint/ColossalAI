@@ -14,9 +14,10 @@ class ConstantGradScaler(BaseGradScaler):
     """
 
     def __init__(self, initial_scale: int, verbose: bool):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(initial_scale, verbose)
-        self.log(f"Constant Gradient Scaler is initialized with scale {self.scale}")
+        gd.debuginfo(prj="mt", info=f"Constant Gradient Scaler is initialized with scale {self.scale}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def update(self, overflow: bool) -> None:
         """Do nothing to keep the loss scale constant.

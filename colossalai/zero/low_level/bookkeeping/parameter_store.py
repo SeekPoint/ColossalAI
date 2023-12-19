@@ -6,7 +6,7 @@ from pydebug import gd, infoTensor
 
 class ParameterStore(BaseStore):
     def __init__(self, torch_pg: ProcessGroup):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(torch_pg)
 
         # record the padding size of each param
@@ -15,6 +15,7 @@ class ParameterStore(BaseStore):
         # mapping working param and master param
         self.master_to_working_param = dict()
         self.working_to_master_param = dict()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def record_param_padding_size(self, param: Tensor, padding_size: int):
         """Record the padding size of a param

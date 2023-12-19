@@ -27,22 +27,29 @@ def eval_decorator(fn):
 def top_k(logits, thres=0.9):
     k = int((1 - thres) * logits.shape[-1])
     val, ind = torch.topk(logits, k)
+    gd.debuginfo(prj="mt", info=f'k={k}, val={val}, ind={ind}')
+
     probs = torch.full_like(logits, float("-inf"))
+    gd.debuginfo(prj="mt", info=f'probs={infoTensor(probs)}')
+
     probs.scatter_(1, ind, val)
+    gd.debuginfo(prj="mt", info=f'probs={infoTensor(probs)}')
     return probs
 
 
 class AutoregressiveWrapper(nn.Module):
     def __init__(self, net, max_seq_len=2048, pad_value=0):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.max_seq_len = max_seq_len
         self.pad_value = pad_value
         self.net = net
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @torch.no_grad()
     @eval_decorator
     def generate(self, start_tokens, seq_len, eos_token=None, temperature=1.0, filter_thres=0.9, **kwargs):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         b, t, device = *start_tokens.shape, start_tokens.device
 
         out = start_tokens
@@ -68,9 +75,13 @@ class AutoregressiveWrapper(nn.Module):
                     break
 
         out = out[:, t:]
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return out
 
     def forward(self, x, **kwargs):
         x_inp, x_labels = x[:, :-1], x[:, 1:]
         logits = self.net(x_inp, **kwargs)
+        gd.debuginfo(prj="mt", info=f'x_inp={infoTensor(x_inp)}')
+        gd.debuginfo(prj="mt", info=f'x_labels={infoTensor(x_labels)}')
+        gd.debuginfo(prj="mt", info=f'logits={infoTensor(logits)}')
         return F.cross_entropy(rearrange(logits, "b c n -> b n c"), x_labels)

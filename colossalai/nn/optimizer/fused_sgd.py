@@ -62,7 +62,7 @@ class FusedSGD(Optimizer):
                  weight_decay=0,
                  nesterov=False,
                  wd_after_momentum=False):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if lr is not required and lr < 0.0:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if momentum < 0.0:
@@ -90,6 +90,8 @@ class FusedSGD(Optimizer):
             self.multi_tensor_sgd = fused_optim.multi_tensor_sgd
         else:
             raise RuntimeError("FusedSGD requires cuda extensions")
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def __setstate__(self, state):
         gd.debuginfo(prj="mt", info=f'')
@@ -122,7 +124,7 @@ class FusedSGD(Optimizer):
             closure (callable, optional): A closure that reevaluates the model
                 and returns the loss.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         loss = None
         if closure is not None:
             loss = closure()
@@ -161,5 +163,5 @@ class FusedSGD(Optimizer):
                 self.wd_after_momentum,
                 1.0,
             )
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return loss

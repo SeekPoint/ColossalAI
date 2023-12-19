@@ -119,10 +119,12 @@ class IndexedDataset(torch.utils.data.Dataset):
     _HDR_MAGIC = b"TNTIDX\x00\x00"
 
     def __init__(self, path):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.path = path
         self.data_file = None
         self.read_index(path)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def read_index(self, path):
         with open(index_file_path(path), "rb") as f:
@@ -422,6 +424,7 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
             return self._len
 
     def __init__(self, path, skip_warmup=False):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
 
         self._path = None
@@ -429,6 +432,7 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
         self._bin_buffer = None
 
         self._do_init(path, skip_warmup)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def __getstate__(self):
         return self._path

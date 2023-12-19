@@ -5,7 +5,7 @@ from pydebug import gd, infoTensor
 
 class NetflixDataset(Dataset):
     def __init__(self, tokenizer):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
 
         self.tokenizer = tokenizer
@@ -23,6 +23,7 @@ class NetflixDataset(Dataset):
             )
             self.input_ids.append(torch.tensor(encodings_dict["input_ids"]))
             self.attn_masks.append(torch.tensor(encodings_dict["attention_mask"]))
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def __len__(self):
         return len(self.input_ids)

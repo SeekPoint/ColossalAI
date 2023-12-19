@@ -29,6 +29,7 @@ if HAS_TRITON:
         Return:
             output (Torch.Tensor): The output shape is (batch, seq_len, num_heads, head_size)
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert len(q.shape) == 4, "the shape of q val must be 4"
         batches, M, H, K = q.shape
         assert q.shape == k.shape, "the shape of q and the shape of k must be equal"
@@ -143,6 +144,9 @@ if HAS_TRITON:
             GROUP_SIZE_M=8,
             scale=-1,
         )
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return output.view(batches, -1, d_model)
 
     # modified from https://github.com/microsoft/DeepSpeed/blob/master/deepspeed/ops/transformer/inference/triton/attention.py#L212

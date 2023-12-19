@@ -261,12 +261,14 @@ class GenerateSchedule(PipelineSchedule):
         return actions
 
     def generate_step(self, model: Module, data_iter: Iterable) -> Union[torch.Tensor, dict]:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.stage_manager.num_stages == 2:
             gd.debuginfo(prj="mt", info=f'')
             return self.generate_step_p2p(model, data_iter)
         else:
             gd.debuginfo(prj="mt", info=f'')
             return self.generate_step_broadcast(model, data_iter)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @torch.no_grad()
     def generate_step_p2p(self, model: Module, data_iter: Iterable) -> Union[torch.Tensor, dict]:
@@ -281,7 +283,7 @@ class GenerateSchedule(PipelineSchedule):
         Returns:
             Union[torch.Tensor, dict]: The intermediate output (dict) of the current stage. If it is the last stage, the output is the loss (Tensor).
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         output_sequence = []
         self.load_batch(data_iter)
         model.eval()
@@ -310,7 +312,7 @@ class GenerateSchedule(PipelineSchedule):
             self.mb_manager.clear()
             if self.verbose and self.stage_manager.is_first_stage():
                 whole_timestamp.extend(self.timestamps)
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output_sequence, whole_timestamp
 
     @torch.no_grad()
@@ -325,7 +327,7 @@ class GenerateSchedule(PipelineSchedule):
         Returns:
             Union[torch.Tensor, dict]: The intermediate output (dict) of the current stage. If it is the last stage, the output is the loss (Tensor).
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         output_sequence = []
         self.load_batch(data_iter)
         model.eval()
@@ -408,4 +410,5 @@ class GenerateSchedule(PipelineSchedule):
                 whole_timestamp.extend(self.timestamps)
                 gd.debuginfo(prj="mt", info=f'')
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output_sequence, whole_timestamp

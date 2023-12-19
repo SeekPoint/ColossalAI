@@ -72,8 +72,10 @@ class WorkItem:
     def __init__(
         self, stage_id, phase, args, kwargs, output, microbatch_id, batch_id, num_microbatches, forward_only, refcount=0
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         for attr_name in self.__slots__:
             setattr(self, attr_name, locals()[attr_name])
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
 
 class BackwardCache:
@@ -90,8 +92,10 @@ class BackwardCache:
         stage_outputs: Tuple[Any] = None,
         checkpoint: bool = False,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         for arg_name in self.__slots__:
             setattr(self, arg_name, locals()[arg_name])
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
 
 class WorkerBase(ABC):
@@ -108,6 +112,7 @@ class WorkerBase(ABC):
         checkpoint: bool = False,
         data_process_func: Callable = None,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
 
         self.pp_rank = pp_rank
@@ -150,40 +155,51 @@ class WorkerBase(ABC):
         # main loop
         self.main_loop_thread = threading.Thread(target=self._work_loop, name=f"rank_{pp_rank}", daemon=True)
         self.main_loop_thread.start()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _get_future_by_device(self):
+        gd.debuginfo(prj="mt", info=f'')
         return torch.futures.Future(devices=None if self.device in (None, "cpu") else [self.device])
 
     def _initialize_outstanding_range(self):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         outstanding_range = None
         if self.pp_rank == self.actual_stage_num - 1:
             outstanding_range = (0, 1)
         else:
             outstanding_range = (self.actual_stage_num, self.actual_stage_num)
         self.outstanding_range = outstanding_range
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _initialize_context_container(self):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.microbatch_id_to_backward_cache: Dict[int, BackwardCache] = dict()
         self.microbatch_id_to_labels: Dict[int, Any] = dict()
         self.work_list: Dict[UniqueKey, WorkItem] = dict()
         self.output_list: Dict[UniqueKey, WorkItem] = dict()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _initialize_lock(self):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.partition_condition_lock = threading.Condition(threading.Lock())
         self.work_list_condition_lock = threading.Condition(threading.Lock())
         self.output_list_condition_lock = threading.Condition(threading.Lock())
         self.label_lock = threading.Condition(threading.Lock())
         self.reset_condition = threading.Condition(threading.Lock())
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _initialize_partition(self):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         partition_fn = self.partition_fn
         partition_args = self.partition_args
         device = self.device
         with self.partition_condition_lock:
             self.module_partition: nn.Module = partition_fn(*partition_args).to(device)
             self.partition_condition_lock.notify_all()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _get_output_all(self, key: UniqueKey, ref_use=False, rank=None):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         with self.output_list_condition_lock:
             self.output_list_condition_lock.wait_for(lambda: key in self.output_list)
             output_work_item = self.output_list[key]
@@ -216,10 +232,11 @@ class WorkerBase(ABC):
 
         if isinstance(output, Future):
             output = output.wait()
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output
 
     def sync_global_worker_rrefs(self, pp_rank_to_worker_rref: Dict[int, PyRRef]) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert self.pp_rank_to_worker_rref is None, f"in rank {self.pp_rank}, worker has sync global workers rrefs"
         assert pp_rank_to_worker_rref is not None, "stage_to_workers must be a dict instead of None"
         self.pp_rank_to_worker_rref = pp_rank_to_worker_rref
@@ -227,11 +244,13 @@ class WorkerBase(ABC):
         # for some schedule need the other worker's info to initialise partition (like Chimera)
         # construction of partition is executed after the registration of pp_rank_to_worker_rref
         self._initialize_partition()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     # res_use works for lifecycle counter,
     # if ref_use is True, lifecycle won't add.
     # offset supports get partial output to reduce comm costs.
     def get_output_by_key(self, key: UniqueKey, ref_use=False, rank=None, offsets=None) -> Any:
+        gd.debuginfo(prj="mt", info=f'')
         output = self._get_output_all(key, ref_use, rank)
         if offsets is None:  # get all for non iterable output
             return output
@@ -240,26 +259,32 @@ class WorkerBase(ABC):
         return output
 
     def get_numels(self) -> int:
+        gd.debuginfo(prj="mt", info=f'')
         numel = sum(param.numel() for param in self.module_partition.parameters())
         return numel
 
     def get_parameters(self) -> List[torch.Tensor]:
+        gd.debuginfo(prj="mt", info=f'')
         return [p for p in self.module_partition.parameters()]
 
     def get_parameter_gradients(self) -> List[torch.Tensor]:
+        gd.debuginfo(prj="mt", info=f'')
         return [p.grad for p in self.module_partition.parameters()]
 
     def get_partition(self):
+        gd.debuginfo(prj="mt", info=f'')
         with self.partition_condition_lock:
             self.partition_condition_lock.wait_for(lambda: hasattr(self, "module_partition"))
             return self.module_partition
 
     def get_partition_state_dict(self):
+        gd.debuginfo(prj="mt", info=f'')
         with self.partition_condition_lock:
             self.partition_condition_lock.wait_for(lambda: hasattr(self, "module_partition"))
             return self.module_partition.state_dict()
 
     def _make_args_kwargs(self, microbatch, merge=False):
+        gd.debuginfo(prj="mt", info=f'')
         if isinstance(microbatch, dict):
             if merge:
                 return list(microbatch.values()), {}
@@ -285,6 +310,7 @@ class WorkerBase(ABC):
 
     # just for first pp_rank
     def set_input(self, microbatch_id: int, microbatch: Tuple[Any], forward_only: bool):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         key = UniqueKey(microbatch_id, Phase.FORWARD)
         output = self._get_future_by_device()
 
@@ -346,14 +372,18 @@ class WorkerBase(ABC):
                 self.output_list[recv_input_key] = work_item_remote
                 self.output_list_condition_lock.notify_all()
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     # just for last pp_rank
     def set_labels(self, microbatch_id: int, microlabels: Any):
+        gd.debuginfo(prj="mt", info=f'')
         with self.label_lock:
             self.microbatch_id_to_labels[microbatch_id] = microlabels
             self.label_lock.notify_all()
 
     # just for last pp_rank
     def _begin_backward(self, microbatch_id: int):
+        gd.debuginfo(prj="mt", info=f'')
         with self.work_list_condition_lock:
             assert self.producer_stage_ids is not None
 
@@ -380,6 +410,7 @@ class WorkerBase(ABC):
         """
         You should call this function asynchronously
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         stage_id = self.pp_rank
         output = self._get_future_by_device()
         if not self.use_middleware():
@@ -445,11 +476,12 @@ class WorkerBase(ABC):
             self.num_microbatches,
             forward_only,
         )
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return work_item_from_producer
 
     # TODO(jiangziyue) Profile the side effect of the lock for lifecycle protection and consider a better one.
     def subscribe_producer(self, microbatch_id: int, forward_only: bool):
+        gd.debuginfo(prj="mt", info=f'')
         key = UniqueKey(microbatch_id, Phase.FORWARD)
         with self.work_list_condition_lock:
             if key not in self.work_list:
@@ -462,6 +494,7 @@ class WorkerBase(ABC):
                 self.work_list_condition_lock.notify_all()
 
     def _subscribe_consumer(self, microbatch_id: int):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         """
         You should call this function asynchronously
         """
@@ -498,10 +531,11 @@ class WorkerBase(ABC):
             self.num_microbatches,
             False,
         )
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return work_item_from_consumer
 
     def subscribe_consumer(self, microbatch_id: int):
+        gd.debuginfo(prj="mt", info=f'')
         key = UniqueKey(microbatch_id, Phase.BACKWARD)
         with self.work_list_condition_lock:
             if key not in self.work_list:
@@ -514,6 +548,7 @@ class WorkerBase(ABC):
                 self.work_list_condition_lock.notify_all()
 
     def get_producer_stage_ids(self):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         producer_stage_ids = []
         rank = self.pp_rank
         if not self.use_middleware():
@@ -531,9 +566,11 @@ class WorkerBase(ABC):
                 # it will be specially tackled.
                 if partition_id != model_input_partition_id:
                     producer_stage_ids.append(self.partition_id_to_pp_rank(partition_id, topo))
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return producer_stage_ids
 
     def get_consumer_stage_ids(self):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         consumer_stage_ids = []
         rank = self.pp_rank
         if not self.use_middleware():
@@ -549,9 +586,11 @@ class WorkerBase(ABC):
             for partition_id in output_partition_ids:
                 if model_output_partition_id != partition_id:
                     consumer_stage_ids.append(self.partition_id_to_pp_rank(partition_id, topo))
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return consumer_stage_ids
 
     def _get_producer_consumer(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         rank = self.pp_rank
         assert self.producer_stage_ids is None, f"all the producers of rank {rank} has been subscribed"
         assert self.consumer_stage_ids is None, f"all the consumers of rank {rank} has been subscribed"
@@ -561,16 +600,19 @@ class WorkerBase(ABC):
         self.consumer_stage_ids = self.get_consumer_stage_ids()
 
     def pp_rank_to_partition_id(self, pp_rank: int, topo: Topo):
+        gd.debuginfo(prj="mt", info=f'')
         partition_ids = topo.get_mid_partition_ids()
         return partition_ids[pp_rank]
 
     def partition_id_to_pp_rank(self, partition_id: int, topo: Topo):
+        gd.debuginfo(prj="mt", info=f'')
         partition_ids = topo.get_mid_partition_ids()
         for i, id in enumerate(partition_ids):
             if id == partition_id:
                 return i
 
     def get_topo(self):
+        gd.debuginfo(prj="mt", info=f'')
         with self.partition_condition_lock:
             self.partition_condition_lock.wait_for(lambda: hasattr(self, "module_partition"))
             if hasattr(self.module_partition, "_topo"):
@@ -579,10 +621,12 @@ class WorkerBase(ABC):
                 return None
 
     def use_middleware(self):
+        gd.debuginfo(prj="mt", info=f'')
         topo = self.get_topo()
         return topo is not None
 
     def _get_input_offsets_by_index(self, target_index):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         res = []
         topo: Topo = self.get_topo()
         self_partition_id = self.pp_rank_to_partition_id(self.pp_rank, topo)
@@ -621,9 +665,11 @@ class WorkerBase(ABC):
                     return res
                 else:
                     res.append(src_offset)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return res
 
     def _get_output_offsets_by_index(self, target_index):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         res = []
         topo: Topo = self.get_topo()
         self_partition_id = self.pp_rank_to_partition_id(self.pp_rank, topo)
@@ -648,10 +694,12 @@ class WorkerBase(ABC):
                         return res
                     else:
                         res.append(dst_offset)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return res
 
     # TODO(jiangziyue) get single value instead of the whole output
     def _get_real_args_kwargs_fwd(self, args_or_kwargs):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if not self.use_middleware():
             args_or_kwargs = pytree_map(args_or_kwargs, fn=lambda x: x.wait(), process_types=Future)
             if args_or_kwargs is not None:
@@ -710,10 +758,12 @@ class WorkerBase(ABC):
                                 target = args_or_kwargs[src_index][real_offset]
                             flatten_args.append(target)
                     args_or_kwargs = flatten_args
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return args_or_kwargs
 
     # TODO(jiangziyue) get single value instead of the whole output
     def _get_real_args_kwargs_bwd(self, args_or_kwargs):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if not self.use_middleware():
             args_or_kwargs = pytree_map(args_or_kwargs, fn=lambda x: x.wait(), process_types=Future)
             if args_or_kwargs is not None:
@@ -761,6 +811,7 @@ class WorkerBase(ABC):
                             continue
                     flatten_args.append(target)
             args_or_kwargs = flatten_args
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return args_or_kwargs
 
     @abstractmethod
@@ -776,6 +827,7 @@ class WorkerBase(ABC):
         return self.pp_rank == self.actual_stage_num - 1
 
     def need_model_input(self):
+        gd.debuginfo(prj="mt", info=f'')
         need_input = False
         topo: Topo = self.get_topo()
         self_partition_id = self.pp_rank_to_partition_id(self.pp_rank, topo)
@@ -793,6 +845,7 @@ class WorkerBase(ABC):
         return self.is_first_stage()
 
     def _default_data_process_func(self, args_kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         if self.is_first_stage():
             args = args_kwargs[0]
             kwargs = args_kwargs[1]
@@ -803,6 +856,7 @@ class WorkerBase(ABC):
         return args, kwargs
 
     def _consume_work_item_by_phase(self, work_item: WorkItem):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         phase = work_item.phase
         args = work_item.args
         kwargs = work_item.kwargs
@@ -978,12 +1032,16 @@ class WorkerBase(ABC):
         else:
             raise TypeError(f"Unknown phase appears in _consume_work_item_by_phase {phase}")
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return consume_result
 
     def _get_store_len(self):
+        gd.debuginfo(prj="mt", info=f'')
         return f"work_list:{len(self.work_list)} output_list:{len(self.output_list)} backward_cache:{len(self.microbatch_id_to_backward_cache)} label_cache:{len(self.microbatch_id_to_labels)}"
 
     def _get_parameter_grad_sum(self):
+        gd.debuginfo(prj="mt", info=f'')
         grad_sum = 0
         for p in self.module_partition.parameters():
             if p.grad is not None:
@@ -991,9 +1049,11 @@ class WorkerBase(ABC):
         return grad_sum
 
     def _is_first_step(self, work_item: WorkItem) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         return work_item.phase == Phase.FORWARD and work_item.microbatch_id == 0
 
     def _is_last_step(self, work_item: WorkItem) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         if work_item.forward_only:
             last_phase = Phase.FORWARD
         else:
@@ -1007,12 +1067,14 @@ class WorkerBase(ABC):
 
     # install the main loop to wait for next batch input
     def _wait_for_reset(self):
+        gd.debuginfo(prj="mt", info=f'')
         with self.reset_condition:
             self.reset_condition.wait_for(lambda: self.reset)
             self.reset = False
 
     # do the main loop to consume ready_list
     def _work_loop(self):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # for init
         self._get_producer_consumer()
         torch.cuda.set_device(ppg.get_local_pp_rank())
@@ -1039,9 +1101,11 @@ class WorkerBase(ABC):
             # if is last step in one batch reset context and do step
             if self._is_last_step(work_item):
                 self._wait_for_reset()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     # reset context and resume loop
     def reset_context(self):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.forward_times = 0
         self.backward_times = 0
         self.outstanding = 0
@@ -1056,13 +1120,20 @@ class WorkerBase(ABC):
             self.reset = True
             self.reset_condition.notify_all()
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def initialize_optimizer(self, optimizer_class: type, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         self.optimizer: optim.Optimizer = optimizer_class(self.module_partition.parameters(), **kwargs)
 
     def step(self):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self._hook_before_step()
+        gd.debuginfo(prj="mt", info=f'-----------------------')
         self.optimizer.step()
+        gd.debuginfo(prj="mt", info=f'-----------------------')
         self.optimizer.zero_grad()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
 
 class PipelineEngineBase(ABC, nn.Module):
@@ -1080,6 +1151,7 @@ class PipelineEngineBase(ABC, nn.Module):
         checkpoint: bool = False,
         data_process_func: Callable = None,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.worker_type = worker_type
         self.partition_fn: Callable = partition_fn
@@ -1094,13 +1166,19 @@ class PipelineEngineBase(ABC, nn.Module):
         self.data_process_func = data_process_func
 
         self.pp_rank_to_worker_rref: Dict[int, PyRRef] = dict()
-
+        gd.debuginfo(prj="mt", info=f'-------------------------')
         self._check_argument()
+        gd.debuginfo(prj="mt", info=f'-------------------------')
         self._create_pp_rank_to_rpc_worker_id()
+        gd.debuginfo(prj="mt", info=f'-------------------------')
         self._create_pp_rank_to_module_partition_id()
+        gd.debuginfo(prj="mt", info=f'-------------------------')
         self._init_worker()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _check_argument(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
+
         # make virtual stage num
         self.virtual_stage_num = self.stage_num * self.chunk
         assert self.stage_num <= torch.cuda.device_count(), "stage_num must be smaller than device count!"
@@ -1117,6 +1195,7 @@ class PipelineEngineBase(ABC, nn.Module):
             ), f"length of data_process_func' arguments must be 2, receive {len(sig.parameters)} arguments instead"
 
     def _get_actual_stage_num(self) -> int:
+        gd.debuginfo(prj="mt", info=f'')
         return self.stage_num if self.chunk == 1 else self.virtual_stage_num
 
     def _create_pp_rank_to_rpc_worker_id(self) -> None:
@@ -1125,22 +1204,29 @@ class PipelineEngineBase(ABC, nn.Module):
         pp_rank_to_rpc_worker_id = [0, 1, 0, 1], that means first and third part
         of partitions will be moved to device 0 and the others to device 1
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         stage_num = self.stage_num
         actual_stage_num = self._get_actual_stage_num()
         self.pp_rank_to_rpc_worker_id = [0] * actual_stage_num
         for pp_rank in range(actual_stage_num):
             self.pp_rank_to_rpc_worker_id[pp_rank] = pp_rank % stage_num
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def _create_pp_rank_to_module_partition_id(self) -> None:
         """By default(both fill drain and 1F1B), length of model partitions equal to
         actual_stage_num, so allocate model partition to corresponding stage
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         actual_stage_num = self._get_actual_stage_num()
         self.pp_rank_to_module_partition_id = [0] * actual_stage_num
         for pp_rank in range(actual_stage_num):
             self.pp_rank_to_module_partition_id[pp_rank] = pp_rank
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def _init_worker(self) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         actual_stage_num = self._get_actual_stage_num()
 
         worker_type = self.worker_type
@@ -1189,16 +1275,21 @@ class PipelineEngineBase(ABC, nn.Module):
         for fut in sync_futs:
             fut.wait()
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def remote_numels(self) -> Dict[int, int]:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         numels = {}
         actual_stage_num = self._get_actual_stage_num()
         for stage_id in range(actual_stage_num):
             worker_rref = self.pp_rank_to_worker_rref[stage_id]
             numel = worker_rref.rpc_sync().get_numels()
             numels[stage_id] = numel
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return numels
 
     def remote_parameters(self) -> Dict[int, List[torch.Tensor]]:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         parameters = {}
         actual_stage_num = self._get_actual_stage_num()
         for stage_id in range(actual_stage_num):
@@ -1206,9 +1297,11 @@ class PipelineEngineBase(ABC, nn.Module):
             worker_rref = self.pp_rank_to_worker_rref[stage_id]
             for p in worker_rref.rpc_sync().get_parameters():
                 parameters[stage_id].append(p)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return parameters
 
     def remote_grad(self) -> Dict[int, List[torch.Tensor]]:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         grads = {}
         actual_stage_num = self._get_actual_stage_num()
         for stage_id in range(actual_stage_num):
@@ -1216,6 +1309,8 @@ class PipelineEngineBase(ABC, nn.Module):
             worker_rref = self.pp_rank_to_worker_rref[stage_id]
             for grad in worker_rref.rpc_sync().get_parameter_gradients():
                 grads[stage_id].append(grad)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return grads
 
     def get_input_pp_ranks(self) -> List[int]:
@@ -1227,6 +1322,8 @@ class PipelineEngineBase(ABC, nn.Module):
     def _consume_constraint(
         self, microbatch_id: int, forward_only: bool, input_pp_ranks: List[int], output_pp_ranks: List[int], ret_future
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         actual_stage_num = self._get_actual_stage_num()
         use_1F1B = self.use_1F1B
         if microbatch_id >= actual_stage_num:
@@ -1243,6 +1340,8 @@ class PipelineEngineBase(ABC, nn.Module):
 
                 for fut in futs:
                     fut.wait()
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _create_ret_future(self, output_pp_ranks: List[int]) -> Dict[int, List[Future]]:
         num_microbatches = self.num_microbatches
@@ -1261,13 +1360,19 @@ class PipelineEngineBase(ABC, nn.Module):
             worker_rref.remote().set_labels(microbatch_id, microlabels)
 
     # TODO(jiangziyue) : get model output with single value, instead of merging into last stage.
-    def _subscribe_forward(self, microbatch_id: int, output_pp_ranks: List[int], ret_future: Dict[int, List[Future]]):
+    def _subscribe_forward(self,
+                           microbatch_id: int,
+                           output_pp_ranks: List[int],
+                           ret_future: Dict[int, List[Future]]):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         key = UniqueKey(microbatch_id, Phase.FORWARD)
         for pp_rank in output_pp_ranks:
             worker_rref = self.pp_rank_to_worker_rref[pp_rank]
             ret_future[pp_rank][microbatch_id] = worker_rref.rpc_async().get_output_by_key(key)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _ensure_backward(self, forward_only: bool, input_pp_ranks: List[int]):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if not forward_only:
             backward_result = []
             for pp_rank in input_pp_ranks:
@@ -1280,8 +1385,11 @@ class PipelineEngineBase(ABC, nn.Module):
 
             for fut in backward_result:
                 fut.wait()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _collect_forward_result(self, output_pp_ranks: List[int], ret_future: Dict[int, List[Future]]):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         forward_result = []
         for pp_rank in output_pp_ranks:
             worker_forward_result = [None] * self.num_microbatches
@@ -1294,9 +1402,12 @@ class PipelineEngineBase(ABC, nn.Module):
             worker_forward_result = list(zip(*worker_forward_result))
             forward_result.extend(worker_forward_result)
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return forward_result
 
     def _reset_worker(self):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         actual_stage_num = self._get_actual_stage_num()
         reset_futs: List[Future] = []
         for pp_rank in range(actual_stage_num):
@@ -1306,8 +1417,10 @@ class PipelineEngineBase(ABC, nn.Module):
 
         for fut in reset_futs:
             fut.wait()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward_backward(self, batch: torch.Tensor, labels: torch.Tensor = None, forward_only: bool = False):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         batch_lengths = get_batch_lengths(batch)
         batch_length = batch_lengths[0]
 
@@ -1361,15 +1474,21 @@ class PipelineEngineBase(ABC, nn.Module):
             self.step()
 
         self._reset_worker()  # reset worker attributes for next batch
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return forward_result
 
     def initialize_optimizer(self, optimizer_class: type, **kwargs):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.optimizer_class = optimizer_class
         for pp_rank in self.pp_rank_to_worker_rref:
             worker_rref = self.pp_rank_to_worker_rref[pp_rank]
             worker_rref.remote().initialize_optimizer(optimizer_class, **kwargs)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def step(self):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         actual_stage_num = self._get_actual_stage_num()
         step_futs: List[Future] = []
         for pp_rank in range(actual_stage_num):
@@ -1379,3 +1498,5 @@ class PipelineEngineBase(ABC, nn.Module):
 
         for fut in step_futs:
             fut.wait()
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')

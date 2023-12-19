@@ -15,10 +15,11 @@ class HostInfo:
         hostname: str,
         port: str = None,
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.hostname = hostname
         self.port = port
         self.is_local_host = HostInfo.is_host_localhost(hostname, port)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @staticmethod
     def is_host_localhost(hostname: str, port: str = None) -> None:
@@ -62,8 +63,9 @@ class HostInfoList:
     """
 
     def __init__(self):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.hostinfo_list = []
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def append(self, hostinfo: HostInfo) -> None:
         """

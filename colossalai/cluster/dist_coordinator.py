@@ -38,7 +38,7 @@ class DistCoordinator(metaclass=SingletonMeta):
     """
 
     def __init__(self):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert (
             dist.is_initialized()
         ), "Distributed is not initialized. Please call `torch.distributed.init_process_group` or `colossalai.launch` first."
@@ -46,6 +46,11 @@ class DistCoordinator(metaclass=SingletonMeta):
         self._world_size = dist.get_world_size()
         # this is often passed by launchers such as torchrun
         self._local_rank = os.environ.get("LOCAL_RANK", -1)
+        gd.debuginfo(prj="mt", info=f'self._rank={self._rank}')
+        gd.debuginfo(prj="mt", info=f'self._world_size={self._world_size}')
+        gd.debuginfo(prj="mt", info=f'self._local_rank={self._local_rank}')
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @property
     def rank(self) -> int:

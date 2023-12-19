@@ -50,7 +50,8 @@ class DeviceMesh:
         init_process_group: bool = False,
         device: str = "cuda",
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         # ============================
         # Physical & Logical Mesh IDs
         # ============================
@@ -144,6 +145,8 @@ class DeviceMesh:
         if init_process_group:
             self.init_logical_process_group()
             gd.debuginfo(prj="mt", info=f'')
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @property
     def shape(self) -> torch.Size:
@@ -287,10 +290,15 @@ class DeviceMesh:
         return self._ranks_in_the_process_group[global_rank][axis]
 
     def __deepcopy__(self, memo) -> "DeviceMesh":
+
         cls = self.__class__
-        gd.debuginfo(prj="mt", info=f'cls={cls}')
+        # gd.debuginfo(prj="mt", info=f'cls={cls}')
+        # cls=<class 'colossalai.device.device_mesh.DeviceMesh'>
+
         result = cls.__new__(cls)
-        gd.debuginfo(prj="mt", info=f'result={result}')
+        # gd.debuginfo(prj="mt", info=f'result={result}')
+        # result=<colossalai.device.device_mesh.DeviceMesh object at 0x7fe571196c10>
+
         memo[id(self)] = result
         for k, v in self.__dict__.items():
             if k != "_process_group_dict":

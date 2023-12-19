@@ -54,21 +54,38 @@ class HybridParallelModule(ModelWrapper):
     ) -> None:
         logf = f'OPT_HybridParallelModule_init'
         gd.emb_start(info=logf)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         self.stage_manager = shard_config.pipeline_stage_manager
+        gd.debuginfo(prj="mt", info=f'self.stage_manager={self.stage_manager}')
+
         self.dp_group = dp_group
+        gd.debuginfo(prj="mt", info=f'self.dp_group={self.dp_group}')
 
         shardformer = ShardFormer(shard_config)
+        gd.debuginfo(prj="mt", info=f'shardformer={shardformer}')
+
         if custom_policy is not None:
             assert isinstance(custom_policy, object)
+
         module, self.shared_params = shardformer.optimize(module, policy=custom_policy)
+        gd.debuginfo(prj="mt", info=f'1-module={module}')
+        gd.debuginfo(prj="mt", info=f'self.shared_params={self.shared_params}')
+
+        gd.debuginfo(prj="mt", info=f'------------0------------------')
 
         # setting process groups for shared parameters
         self.shared_param_process_groups = []
         for shared_param in self.shared_params:
+            gd.debuginfo(prj="mt", info=f'shared_param={infoTensor(shared_param)}')
             if len(shared_param) > 0:
-                self.shared_param_process_groups.append(
-                    self.stage_manager.init_process_group_by_stages(list(shared_param.keys()))
-                )
+                gd.debuginfo(prj="mt", info=f'shared_param.keys()={shared_param.keys()}')
+                tmp = self.stage_manager.init_process_group_by_stages(list(shared_param.keys()))
+                gd.debuginfo(prj="mt", info=f'tmp={tmp}')
+                self.shared_param_process_groups.append(tmp)
+
+        gd.debuginfo(prj="mt", info=f'------------1------------------')
 
         # setting mixed_precision
         self.mixed_precision = None
@@ -81,24 +98,35 @@ class HybridParallelModule(ModelWrapper):
         if self.mixed_precision is not None:
             gd.debuginfo(prj="mt", info=f'')
             module = module.to(self.mixed_precision)
+
+        gd.debuginfo(prj="mt", info=f'2-module={module}')
+
+        gd.debuginfo(prj="mt", info=f'------------2------------------')
+
         module = module.cuda()
+        gd.debuginfo(prj="mt", info=f'3-module={module}')
 
         # setting input type cast when using mixed precision
         self.convert_fn = None
         if self.mixed_precision is not None:
-            gd.debuginfo(prj="mt", info=f'')
             self.convert_fn = partial(_convert_floating_point, dtype=self.mixed_precision)
+            gd.debuginfo(prj="mt", info=f'self.convert_fn={self.convert_fn}')
 
         # setting ddp configs
         if use_ddp:
-            gd.debuginfo(prj="mt", info=f'')
             # convert model to sync bn
             module = SyncBatchNorm.convert_sync_batchnorm(module, dp_group)
+            gd.debuginfo(prj="mt", info=f'4-module={module}')
+
             # wrap the model with PyTorch DDP
             module = DDP(module, process_group=dp_group, **ddp_config)
+            gd.debuginfo(prj="mt", info=f'5-module={module}')
+
+        gd.debuginfo(prj="mt", info=f'------------3------------------')
 
         super().__init__(module)
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         gd.emb_end(info=logf)
 
     def sync_shared_params(self):
@@ -223,7 +251,7 @@ class HybridParallelNaiveOptimizer(OptimizerWrapper):
             *args: Variable-length positional arguments to be passed to the optimizer's step function.
             **kwargs: Keyword arguments to be passed to the optimizer's step function.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.max_norm > 0:
             gd.debuginfo(prj="mt", info=f'')
             # Compute the total gradient norm.
@@ -237,6 +265,8 @@ class HybridParallelNaiveOptimizer(OptimizerWrapper):
 
         # Perform the optimization step using the underlying optimizer.
         self.optim.step(*args, **kwargs)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _compute_grad_norm(self, param_gradient_pairs: List[Tuple[Tensor]], norm_type: int = 2) -> int:
         r"""

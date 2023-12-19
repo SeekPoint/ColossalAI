@@ -54,7 +54,7 @@ class RingQK(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx, grad_output):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         (
             sub_q,
             sub_k,
@@ -87,6 +87,7 @@ class RingQK(torch.autograd.Function):
             grad_q += torch.matmul(grad_output[:, :, start_idx:end_idx], sub_k)
 
         grad_q /= local_world_size
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
         return grad_q, grad_k, None, None, None
 
@@ -133,7 +134,7 @@ class RingAV(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx, grad_output):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         local_rank = gpc.get_local_rank(ParallelMode.SEQUENCE)
         local_world_size = gpc.get_world_size(ParallelMode.SEQUENCE)
         local_start_idx, local_end_idx = _calc_current_device_range(local_rank, ctx.sub_seq_length)
@@ -158,5 +159,5 @@ class RingAV(torch.autograd.Function):
 
             # compute grad_q
             grad_attention_score[:, :, start_idx:end_idx] += torch.matmul(grad_output, sub_v.transpose(2, 1))
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return grad_attention_score, grad_v, None, None, None, None

@@ -391,6 +391,7 @@ class T5ModelPolicy(T5BasePolicy):
         from transformers import T5Model
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         if self.shard_config.enable_tensor_parallelism:
             self.append_or_create_submodule_replacement(
@@ -435,6 +436,7 @@ class T5ForConditionalGenerationPolicy(T5BasePolicy):
         from transformers import T5ForConditionalGeneration
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         if self.shard_config.enable_tensor_parallelism:
             self.append_or_create_submodule_replacement(
@@ -512,6 +514,7 @@ class T5EncoderPolicy(T5BasePolicy):
         from transformers import T5EncoderModel
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         if self.shard_config.enable_tensor_parallelism:
             self.append_or_create_submodule_replacement(

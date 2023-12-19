@@ -27,7 +27,7 @@ class _Linear3D(torch.autograd.Function):
         weight_parallel_mode: ParallelMode,
         output_parallel_mode: ParallelMode,
     ) -> Tensor:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         ctx.weight_id = weight_id
         ctx.input_parallel_mode = input_parallel_mode
         ctx.weight_parallel_mode = weight_parallel_mode
@@ -40,12 +40,14 @@ class _Linear3D(torch.autograd.Function):
         output = torch.matmul(input_, weight)
         output = reduce_scatter(output, 0, output_parallel_mode)
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return output
 
     @staticmethod
     @custom_bwd
     def backward(ctx, output_grad: Tensor) -> Tuple[Tensor, ...]:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         input_, weight = ctx.saved_tensors
         output_grad = all_gather(output_grad, 0, ctx.output_parallel_mode)
 
@@ -59,7 +61,7 @@ class _Linear3D(torch.autograd.Function):
         weight_grad = push_async_grad(op, weight_grad, ctx.weight_id)
 
         input_op.wait()
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return input_grad, weight_grad, None, None, None, None
 
 
@@ -108,7 +110,7 @@ class _Classifier3D(torch.autograd.Function):
         weight_parallel_mode: ParallelMode,
         output_parallel_mode: ParallelMode,
     ) -> Tensor:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         ctx.use_bias = bias is not None
         ctx.weight_id = weight_id
 
@@ -127,12 +129,14 @@ class _Classifier3D(torch.autograd.Function):
         ctx.input_parallel_mode = input_parallel_mode
         ctx.weight_parallel_mode = weight_parallel_mode
         ctx.output_parallel_mode = output_parallel_mode
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return output
 
     @staticmethod
     @custom_bwd
     def backward(ctx, output_grad: Tensor) -> Tuple[Tensor, ...]:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         input_, weight = ctx.saved_tensors
         weight_grad = torch.matmul(
             output_grad.reshape(-1, output_grad.shape[-1]).transpose(0, 1), input_.reshape(-1, input_.shape[-1])
@@ -153,6 +157,7 @@ class _Classifier3D(torch.autograd.Function):
             bias_grad = None
 
         input_grad = torch.matmul(output_grad, weight)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
         return input_grad, weight_grad, bias_grad, None, None, None, None, None
 
@@ -206,7 +211,7 @@ class _VocabParallelClassifier3D(torch.autograd.Function):
         weight_parallel_mode: ParallelMode,
         output_parallel_mode: ParallelMode,
     ) -> Tensor:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         ctx.use_bias = bias is not None
         ctx.weight_id = weight_id
 
@@ -224,12 +229,14 @@ class _VocabParallelClassifier3D(torch.autograd.Function):
         ctx.input_parallel_mode = input_parallel_mode
         ctx.weight_parallel_mode = weight_parallel_mode
         ctx.output_parallel_mode = output_parallel_mode
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output
 
     @staticmethod
     @custom_bwd
     def backward(ctx, output_grad: Tensor) -> Tuple[Tensor, ...]:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         input_, weight = ctx.saved_tensors
         output_grad = all_gather(output_grad, 0, ctx.output_parallel_mode)
 
@@ -250,7 +257,7 @@ class _VocabParallelClassifier3D(torch.autograd.Function):
             bias_grad = None
 
         input_op.wait()
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return input_grad, weight_grad, bias_grad, None, None, None, None, None
 
 
@@ -302,6 +309,7 @@ def norm_forward(x: Tensor, mean: Tensor, sqr_mean: Tensor, weight: Tensor, bias
 
 @torch.jit.script
 def norm_backward(grad: Tensor, mu: Tensor, sigma: Tensor, weight: Tensor):
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     # dbias, dweight = grad, grad * mu / sigma
     dz = grad * weight
     dmu = dz / sigma
@@ -309,7 +317,7 @@ def norm_backward(grad: Tensor, mu: Tensor, sigma: Tensor, weight: Tensor):
     dmean = -dmu
     dvar = torch.sum(dvar, -1, keepdim=True)
     dmean = torch.sum(dmean, -1, keepdim=True)
-
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     return dmu, dmean, dvar
 
 
@@ -328,7 +336,7 @@ class _Layernorm3D(torch.autograd.Function):
         output_parallel_mode: ParallelMode,
         input_x_weight_parallel_mode: ParallelMode,
     ) -> Tensor:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         ctx.weight_id = weight_id
         ctx.bias_id = bias_id
 
@@ -343,13 +351,13 @@ class _Layernorm3D(torch.autograd.Function):
         ctx.normalized_shape = normalized_shape
         ctx.output_parallel_mode = output_parallel_mode
         ctx.input_x_weight_parallel_mode = input_x_weight_parallel_mode
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output
 
     @staticmethod
     @custom_bwd
     def backward(ctx, output_grad: Tensor) -> Tuple[Tensor, ...]:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         mu, sigma, weight = ctx.saved_tensors
 
         bias_grad, weight_grad = output_grad, output_grad * mu / sigma
@@ -363,7 +371,7 @@ class _Layernorm3D(torch.autograd.Function):
         dmu, dmean, dvar = norm_backward(output_grad, mu, sigma, weight)
         dvar, dmean = all_reduce(torch.stack((dvar, dmean)), ctx.output_parallel_mode)
         input_grad = dmu + (dmean + 2 * dvar * mu) / ctx.normalized_shape
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return input_grad, weight_grad, bias_grad, None, None, None, None, None, None, None, None
 
 

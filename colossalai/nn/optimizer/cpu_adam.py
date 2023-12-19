@@ -74,13 +74,15 @@ class CPUAdam(NVMeOptimizer):
         nvme_offload_fraction: float = 0.0,
         nvme_offload_dir: Optional[str] = None,
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         default_args = dict(lr=lr, betas=betas, eps=eps, weight_decay=weight_decay, bias_correction=bias_correction)
         super(CPUAdam, self).__init__(model_params, default_args, nvme_offload_fraction, nvme_offload_dir)
         self.adamw_mode = adamw_mode
         cpu_adam = CPUAdamBuilder().load()
         # if you find yourself stuck here, make sure that you install colossalai with CUDA_EXT=1 specification
         self.cpu_adam_op = cpu_adam.CPUAdamOptimizer(lr, betas[0], betas[1], eps, weight_decay, adamw_mode)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def torch_adam_update(
         self,
@@ -122,7 +124,7 @@ class CPUAdam(NVMeOptimizer):
 
     @torch.no_grad()
     def step(self, closure=None, div_scale: float = -1):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         loss = None
         if closure is not None:
             with torch.enable_grad():
@@ -212,5 +214,9 @@ class CPUAdam(NVMeOptimizer):
                     )
                 else:
                     raise RuntimeError
+
+        gd.debuginfo(prj="mt", info=f'========================')
         self._post_step()
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return loss

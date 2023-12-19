@@ -49,11 +49,13 @@ class DropPath(nn.Module):
     """
 
     def __init__(self, drop_prob=None):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super(DropPath, self).__init__()
         self.drop_prob = drop_prob
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         return drop_path(x, self.drop_prob, self.training)
 
 
@@ -94,6 +96,7 @@ class WrappedDropout(nn.Module):
             return F.dropout(inputs, self.p, self.training, self.inplace)
 
     def forward(self, inputs):
+        gd.debuginfo(prj="mt", info=f'')
         return self.func(inputs)
 
 
@@ -129,6 +132,7 @@ class WrappedDropPath(nn.Module):
             return drop_path(inputs, self.p, self.training)
 
     def forward(self, inputs):
+        gd.debuginfo(prj="mt", info=f'')
         return self.func(inputs)
 
 
@@ -195,6 +199,7 @@ class VanillaPatchEmbedding(nn.Module):
         position_embed_initializer(self.pos_embed)
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         B, C, H, W = input_.shape
         assert (
             H == self.img_size[0] and W == self.img_size[1]
@@ -206,6 +211,7 @@ class VanillaPatchEmbedding(nn.Module):
         cls_token = self.cls_token.expand(output.shape[0], -1, -1)
         output = torch.cat((cls_token, output), dim=1)
         output = output + self.pos_embed
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output
 
 
@@ -268,6 +274,7 @@ class VanillaClassifier(nn.Module):
             bias_initializer(self.bias, fan_in=fan_in)
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         return F.linear(input_, self.weight, self.bias)
 
 
@@ -303,6 +310,7 @@ class VanillaLayerNorm(nn.Module):
             self.bias = None
 
     def forward(self, x: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         return F.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.variance_epsilon)
 
 
@@ -353,6 +361,8 @@ class VanillaLinear(nn.Module):
 
     def forward(self, input: Tensor) -> Tensor:
         if not self.skip_bias_add:
+            gd.debuginfo(prj="mt", info=f'')
             return F.linear(input, self.weight, self.bias)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return F.linear(input, self.weight), self.bias

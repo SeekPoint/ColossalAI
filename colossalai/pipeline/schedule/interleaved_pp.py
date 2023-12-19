@@ -20,6 +20,8 @@ class InterleavedSchedule(PipelineSchedule):
                  num_microbatches: int,
                  num_model_chunks: int,
                  stage_manager: PipelineStageManager) -> None:
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.num_model_chunks = num_model_chunks
         assert (
             num_microbatches % self.num_model_chunks == 0
@@ -31,7 +33,7 @@ class InterleavedSchedule(PipelineSchedule):
         self.batch_size: Optional[int] = None
         self.microbatch_offset: Optional[int] = None
         self.microbatch_size: Optional[int] = None
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def load_batch(self, data_iter: Iterable, device: Optional[torch.device] = None) -> None:
         """Load a batch from data iterator.
@@ -123,13 +125,14 @@ class InterleavedSchedule(PipelineSchedule):
         Returns:
             Any: The input tensor or input tensor list.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.is_first_stage(model_chunk_id):
             input_tensor = None
             gd.debuginfo(prj="mt", info=f'')
         else:
             input_tensor = self.comm.recv_forward(prev_rank)
             gd.debuginfo(prj="mt", info=f'')
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return input_tensor
 
     def recv_backward(self, model_chunk_id: int, next_rank: int = None) -> Any:
@@ -143,6 +146,7 @@ class InterleavedSchedule(PipelineSchedule):
         Returns:
             Any: The input gradient tensor or gradient tensor list.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.is_last_stage(model_chunk_id):
             output_tensor_grad = None
             gd.debuginfo(prj="mt", info=f'')
@@ -150,6 +154,7 @@ class InterleavedSchedule(PipelineSchedule):
             output_tensor_grad = self.comm.recv_backward(next_rank)
             gd.debuginfo(prj="mt", info=f'')
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output_tensor_grad
 
     def send_forward(self, model_chunk_id, output_object: Any, next_rank: int = None) -> None:
@@ -161,10 +166,11 @@ class InterleavedSchedule(PipelineSchedule):
             output_object (Any): Object to be sent.
             next_rank (int, optional): The rank of the recipient of the tensor.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if not self.is_last_stage(model_chunk_id):
             gd.debuginfo(prj="mt", info=f'')
             self.comm.send_forward(output_object, next_rank)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def send_backward(self, model_chunk_id, input_object: Any, prev_rank: int = None) -> None:
         """Sends the gradient tensor to the previous stage in pipeline.
@@ -175,10 +181,11 @@ class InterleavedSchedule(PipelineSchedule):
             input_object (Any): Object to be sent.
             prev_rank (int, optional): The rank of the recipient of the tensor
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if not self.is_first_stage(model_chunk_id):
             gd.debuginfo(prj="mt", info=f'')
             self.comm.send_backward(input_object, prev_rank)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward_step(
         self,
@@ -200,6 +207,8 @@ class InterleavedSchedule(PipelineSchedule):
         Returns:
             Union[torch.Tensor, dict]: The intermediate output (dict) of the current stage. If it is the last stage, the output is the loss (Tensor).
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         micro_batch = self.load_micro_batch(model_chunk_id=model_chunk_id)
         gd.debuginfo(prj="mt", info=f'')
         # for the first stage, input_obj is None
@@ -219,6 +228,8 @@ class InterleavedSchedule(PipelineSchedule):
             gd.debuginfo(prj="mt", info=f'')
             return output_obj
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def backward_step(
         self,
         optimizer: OptimizerWrapper,
@@ -237,7 +248,7 @@ class InterleavedSchedule(PipelineSchedule):
         Returns:
             Optional[dict]: Gradient of the `input_obj`. If it is the first stage, the `input_obj_grad` is None.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # Retain the grad on the input_obj.
         tree_map(retain_grad, input_obj)
 
@@ -265,6 +276,7 @@ class InterleavedSchedule(PipelineSchedule):
             for k, v in input_obj.items():
                 if isinstance(v, torch.Tensor) and v.grad is not None:
                     input_obj_grad[k] = v.grad
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return input_obj_grad
 
     def forward_backward_step(
@@ -289,7 +301,7 @@ class InterleavedSchedule(PipelineSchedule):
         Returns:
             dict: A dict with keys: 'loss' and 'outputs'.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         forward_only = not torch.is_grad_enabled()
         if optimizer is None:
             assert forward_only, "Optimizer should be passed when doing backward."
@@ -411,4 +423,5 @@ class InterleavedSchedule(PipelineSchedule):
             outputs = merge_batch(outputs)
             gd.debuginfo(prj="mt", info=f'')
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return {"loss": accum_loss, "outputs": outputs}

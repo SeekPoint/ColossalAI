@@ -12,7 +12,7 @@ from pydebug import gd, infoTensor
 @DATASETS.register_module
 class WebtextDataset(Dataset):
     def __init__(self, path: Optional[str] = None, seq_len=1024) -> None:
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         if path is not None:
             root = os.path.dirname(path)
@@ -35,6 +35,7 @@ class WebtextDataset(Dataset):
         else:
             self.data = torch.randint(0, 50257, (10240, seq_len))
             self.attention_mask = torch.ones_like(self.data)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def __len__(self):
         return len(self.data)

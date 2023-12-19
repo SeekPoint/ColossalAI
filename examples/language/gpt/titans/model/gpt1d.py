@@ -38,6 +38,7 @@ class GPTMLP1D(ParallelLayer):
         checkpoint: bool = False,
         skip_bias_add: bool = False,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
 
         self.in_features = in_features
@@ -66,13 +67,23 @@ class GPTMLP1D(ParallelLayer):
         )
 
         self.dropout = col_nn.Dropout(dropout_prob)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _forward(self, hidden_states: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         intermediate_output = self.dense_1(hidden_states)
+        gd.debuginfo(prj="mt", info=f'1-intermediate_output={infoTensor(intermediate_output)}')
+
         intermediate_output = self.act(intermediate_output)
+        gd.debuginfo(prj="mt", info=f'2-intermediate_output={infoTensor(intermediate_output)}')
 
         output = self.dense_2(intermediate_output)
+        gd.debuginfo(prj="mt", info=f'1-output={infoTensor(output)}')
+
         output = self.dropout(output)
+        gd.debuginfo(prj="mt", info=f'2-output={infoTensor(output)}')
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output
 
     def _checkpoint_forward(self, hidden_states: Tensor) -> Tensor:
@@ -80,8 +91,10 @@ class GPTMLP1D(ParallelLayer):
 
     def forward(self, hidden_states: Tensor) -> Tensor:
         if self.checkpoint:
+            gd.debuginfo(prj="mt", info=f'')
             return self._checkpoint_forward(hidden_states)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return self._forward(hidden_states)
 
 
@@ -96,6 +109,7 @@ class GenericGPTSelfAttention1D(ParallelLayer):
         checkpoint: bool = False,
         max_position_embeddings=1024,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.hidden_size = hidden_size
         self.attention_head_size = divide(hidden_size, num_attention_heads)
@@ -115,35 +129,64 @@ class GenericGPTSelfAttention1D(ParallelLayer):
             parallel_input=True,
         )
         self.dropout = col_nn.Dropout(hidden_dropout_prob)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def softmax_forward(self, attention_scores, attention_mask, query_layer, key_layer):
         raise NotImplementedError
 
     def _forward(self, hidden_states: Tensor, attention_mask=None) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         query_key_value = self.query_key_value(hidden_states)
+        gd.debuginfo(prj="mt", info=f'1-query_key_value={infoTensor(query_key_value)}')
+
         new_qkv_shape = query_key_value.shape[:-1] + (
             self.num_attention_heads_per_partition,
             3 * self.attention_head_size,
         )
+        gd.debuginfo(prj="mt", info=f'1-new_qkv_shape={infoTensor(new_qkv_shape)}')
+
         query_key_value = query_key_value.view(new_qkv_shape)
+        gd.debuginfo(prj="mt", info=f'2-query_key_value={infoTensor(query_key_value)}')
+
         query_key_value = query_key_value.permute((0, 2, 1, 3))
+        gd.debuginfo(prj="mt", info=f'3-query_key_value={infoTensor(query_key_value)}')
+
         query_layer, key_layer, value_layer = torch.chunk(query_key_value, 3, dim=-1)
+        gd.debuginfo(prj="mt", info=f'query_layer={infoTensor(query_layer)}')
+        gd.debuginfo(prj="mt", info=f'key_layer={infoTensor(key_layer)}')
+        gd.debuginfo(prj="mt", info=f'value_layer={infoTensor(value_layer)}')
 
         attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
+        gd.debuginfo(prj="mt", info=f'1-attention_scores={infoTensor(attention_scores)}')
 
         attention_scores = self.softmax_forward(attention_scores, attention_mask, query_layer, key_layer)
+        gd.debuginfo(prj="mt", info=f'2-attention_scores={infoTensor(attention_scores)}')
 
         attention_scores = attention_scores.type(value_layer.dtype)
+        gd.debuginfo(prj="mt", info=f'3-attention_scores={infoTensor(attention_scores)}')
 
         attention_probs = self.attention_dropout(attention_scores)
+        gd.debuginfo(prj="mt", info=f'4-attention_scores={infoTensor(attention_scores)}')
 
         context_layer = torch.matmul(attention_probs, value_layer)
-        context_layer = context_layer.transpose(1, 2)
-        new_context_layer_shape = context_layer.size()[:-2] + (self.hidden_size_per_partition,)
-        context_layer = context_layer.reshape(new_context_layer_shape)
-        output = self.dense(context_layer)
-        output = self.dropout(output)
+        gd.debuginfo(prj="mt", info=f'1-context_layer={infoTensor(context_layer)}')
 
+        context_layer = context_layer.transpose(1, 2)
+        gd.debuginfo(prj="mt", info=f'2-context_layer={infoTensor(context_layer)}')
+
+        new_context_layer_shape = context_layer.size()[:-2] + (self.hidden_size_per_partition,)
+        gd.debuginfo(prj="mt", info=f'1-new_context_layer_shape={infoTensor(new_context_layer_shape)}')
+
+        context_layer = context_layer.reshape(new_context_layer_shape)
+        gd.debuginfo(prj="mt", info=f'3-context_layer={infoTensor(context_layer)}')
+
+        output = self.dense(context_layer)
+        gd.debuginfo(prj="mt", info=f'1-output={infoTensor(output)}')
+
+        output = self.dropout(output)
+        gd.debuginfo(prj="mt", info=f'2-output={infoTensor(output)}')
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output
 
     def _checkpoint_forward(self, hidden_states: Tensor, attention_mask=None) -> Tensor:
@@ -151,8 +194,10 @@ class GenericGPTSelfAttention1D(ParallelLayer):
 
     def forward(self, hidden_states: Tensor, attention_mask=None) -> Tensor:
         if self.checkpoint:
+            gd.debuginfo(prj="mt", info=f'')
             return self._checkpoint_forward(hidden_states, attention_mask)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return self._forward(hidden_states, attention_mask)
 
 
@@ -167,6 +212,7 @@ class GPTSelfAttention1D(GenericGPTSelfAttention1D):
         checkpoint: bool = False,
         max_position_embeddings=1024,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(
             hidden_size,
             num_attention_heads,
@@ -185,8 +231,10 @@ class GPTSelfAttention1D(GenericGPTSelfAttention1D):
             ),
         )
         self.register_buffer("masked_bias", torch.tensor(-1e4))
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def softmax_forward(self, attention_scores, attention_mask, query_layer, key_layer):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         attention_scores = attention_scores / math.sqrt(self.attention_head_size)
         # causal mask
         query_length, key_length = query_layer.size(-2), key_layer.size(-2)
@@ -196,6 +244,7 @@ class GPTSelfAttention1D(GenericGPTSelfAttention1D):
             # Apply the attention mask
             attention_scores = attention_scores + attention_mask
         attention_scores = self.softmax(attention_scores)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return attention_scores
 
 
@@ -210,6 +259,7 @@ class FusedGPTSelfAttention1D(GenericGPTSelfAttention1D):
         checkpoint: bool = False,
         max_position_embeddings=1024,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(
             hidden_size,
             num_attention_heads,
@@ -228,6 +278,7 @@ class FusedGPTSelfAttention1D(GenericGPTSelfAttention1D):
             softmax_in_fp32=True,
             scale=math.sqrt(self.attention_head_size),
         )
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def softmax_forward(self, attention_scores, attention_mask, query_layer, key_layer):
         return self.softmax(attention_scores, attention_mask)
@@ -250,10 +301,12 @@ class GenericGPTTransformerLayer1D(ParallelLayer):
         attention=None,
         layer_norm=None,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.checkpoint = checkpoint
         self.dtype = dtype
         self.norm1 = layer_norm(hidden_size, eps=layer_norm_epsilon)
+        gd.debuginfo(prj="mt", info=f'===========0====================')
         self.apply_post_layer_norm = apply_post_layer_norm
         self.attention = attention(
             hidden_size=hidden_size,
@@ -264,8 +317,10 @@ class GenericGPTTransformerLayer1D(ParallelLayer):
             max_position_embeddings=max_position_embeddings,
             checkpoint=False,
         )
-
+        gd.debuginfo(prj="mt", info=f'===========1====================')
         self.norm2 = layer_norm(hidden_size, eps=layer_norm_epsilon)
+
+        gd.debuginfo(prj="mt", info=f'===========2====================')
         self.mlp = GPTMLP1D(
             in_features=hidden_size,
             dropout_prob=hidden_dropout_prob,
@@ -274,31 +329,53 @@ class GenericGPTTransformerLayer1D(ParallelLayer):
             dtype=dtype,
             checkpoint=False,
         )
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _forward(self, hidden_states, attention_mask) -> Tensor:
         if not self.apply_post_layer_norm:
             residual = hidden_states
+            gd.debuginfo(prj="mt", info=f'residual={infoTensor(residual)}')
+
         hidden_states = self.norm1(hidden_states)
+        gd.debuginfo(prj="mt", info=f'1-hidden_states={infoTensor(hidden_states)}')
+
         if self.apply_post_layer_norm:
             residual = hidden_states
+            gd.debuginfo(prj="mt", info=f'residual={infoTensor(residual)}')
+
         attention_output = self.attention(hidden_states, attention_mask)
+        gd.debuginfo(prj="mt", info=f'attention_output={infoTensor(attention_output)}')
+
         hidden_states = residual + attention_output
+        gd.debuginfo(prj="mt", info=f'2-hidden_states={infoTensor(hidden_states)}')
 
         if not self.apply_post_layer_norm:
             residual = hidden_states
+            gd.debuginfo(prj="mt", info=f'residual={infoTensor(residual)}')
+
         hidden_states = self.norm2(hidden_states)
+        gd.debuginfo(prj="mt", info=f'3-hidden_states={infoTensor(hidden_states)}')
+
         if self.apply_post_layer_norm:
             residual = hidden_states
+            gd.debuginfo(prj="mt", info=f'residual={infoTensor(residual)}')
+
         feed_forward_hidden_states = self.mlp(hidden_states)
+        gd.debuginfo(prj="mt", info=f'feed_forward_hidden_states={infoTensor(feed_forward_hidden_states)}')
+
         hidden_states = residual + feed_forward_hidden_states
+        gd.debuginfo(prj="mt", info=f'4-hidden_states={infoTensor(hidden_states)}')
 
         output = (hidden_states, attention_mask)
+
         return output
 
     def forward(self, hidden_states, attention_mask):
         if self.checkpoint:
+            gd.debuginfo(prj="mt", info=f'')
             return checkpoint(self._forward, False, hidden_states, attention_mask)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return self._forward(hidden_states, attention_mask)
 
 

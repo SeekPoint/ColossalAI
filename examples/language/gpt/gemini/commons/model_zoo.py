@@ -13,8 +13,10 @@ class GPTLMModel(nn.Module):
         vocab_size=50257,
         checkpoint=False,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.checkpoint = checkpoint
+        gd.debuginfo(prj="mt", info=f'---------------------------------')
         self.config = GPT2Config(
             n_embd=hidden_size,
             n_layer=num_layers,
@@ -23,48 +25,62 @@ class GPTLMModel(nn.Module):
             n_ctx=max_seq_len,
             vocab_size=vocab_size,
         )
+        gd.debuginfo(prj="mt", info=f'---------------------------------')
         self.model = GPT2LMHeadModel(self.config)
+        gd.debuginfo(prj="mt", info=f'---------------------------------')
         if checkpoint:
+            gd.debuginfo(prj="mt", info=f'')
             self.model.gradient_checkpointing_enable()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, input_ids, attention_mask):
+        gd.debuginfo(prj="mt", info=f'')
         # Only return lm_logits
         return self.model(input_ids=input_ids, attention_mask=attention_mask, use_cache=not self.checkpoint)[0]
 
 
 def gpt2_medium(checkpoint=False):
+    gd.debuginfo(prj="mt", info=f'')
     return GPTLMModel(hidden_size=1024, num_layers=24, num_attention_heads=16, checkpoint=checkpoint)
 
 
 def gpt2_xl(checkpoint=True):
+    gd.debuginfo(prj="mt", info=f'')
     return GPTLMModel(hidden_size=1600, num_layers=48, num_attention_heads=32, checkpoint=checkpoint)
 
 
 def gpt2_10b(checkpoint=True):
+    gd.debuginfo(prj="mt", info=f'')
     return GPTLMModel(hidden_size=4096, num_layers=50, num_attention_heads=16, checkpoint=checkpoint)
 
 
 def gpt2_14b(checkpoint=True):
+    gd.debuginfo(prj="mt", info=f'')
     return GPTLMModel(hidden_size=4096, num_layers=70, num_attention_heads=16, checkpoint=checkpoint)
 
 
 def gpt2_20b(checkpoint=True):
+    gd.debuginfo(prj="mt", info=f'')
     return GPTLMModel(hidden_size=8192, num_layers=25, num_attention_heads=16, checkpoint=checkpoint)
 
 
 def gpt2_24b(checkpoint=True):
+    gd.debuginfo(prj="mt", info=f'')
     return GPTLMModel(hidden_size=8192, num_layers=30, num_attention_heads=16, checkpoint=checkpoint)
 
 
 def gpt2_30b(checkpoint=True):
+    gd.debuginfo(prj="mt", info=f'')
     return GPTLMModel(hidden_size=8192, num_layers=37, num_attention_heads=16, checkpoint=checkpoint)
 
 
 def gpt2_40b(checkpoint=True):
+    gd.debuginfo(prj="mt", info=f'')
     return GPTLMModel(hidden_size=8192, num_layers=50, num_attention_heads=16, checkpoint=checkpoint)
 
 
 def model_builder(model_size: str) -> callable:
+    gd.debuginfo(prj="mt", info=f'model_size={model_size}')
     if model_size == "gpt2_medium":
         return gpt2_medium
     elif model_size == "gpt2_xl":

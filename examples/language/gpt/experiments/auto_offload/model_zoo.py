@@ -5,7 +5,7 @@ from transformers import GPT2Config, GPT2LMHeadModel
 from pydebug import gd, infoTensor
 class GPTLMModel(nn.Module):
     def __init__(self, hidden_size=768, num_layers=12, num_attention_heads=12, max_seq_len=1024, vocab_size=50257):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.model = GPT2LMHeadModel(
             GPT2Config(
@@ -17,26 +17,32 @@ class GPTLMModel(nn.Module):
                 vocab_size=vocab_size,
             )
         )
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, input_ids, attention_mask):
         # Only return lm_logits
+        gd.debuginfo(prj="mt", info=f'')
         return self.model(input_ids=input_ids, attention_mask=attention_mask, use_cache=True)[0]
 
 
 class GPTLMLoss(nn.Module):
     def __init__(self):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.loss_fn = nn.CrossEntropyLoss()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, logits, labels):
         shift_logits = logits[..., :-1, :].contiguous()
         shift_labels = labels[..., 1:].contiguous()
+        gd.debuginfo(prj="mt", info=f'shift_logits={infoTensor(shift_logits)}')
+        gd.debuginfo(prj="mt", info=f'shift_labels={infoTensor(shift_labels)}')
         # Flatten the tokens
         return self.loss_fn(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
 
 
 def get_gpt2_components(model_type: str, batch_size: int):
+    gd.debuginfo(prj="mt", info=f'')
     vocab_size = 1024
     seq_len = 8
 
@@ -57,8 +63,11 @@ def get_gpt2_components(model_type: str, batch_size: int):
             raise TypeError(f"model_builder {model_type}")
 
     def gpt2_data_gen(device="cuda"):
+        gd.debuginfo(prj="mt", info=f'')
         input_ids = torch.randint(0, vocab_size, (batch_size, seq_len), device=device)
         attention_mask = torch.ones_like(input_ids, device=device)
+        gd.debuginfo(prj="mt", info=f'input_ids={infoTensor(input_ids)}')
+        gd.debuginfo(prj="mt", info=f'attention_mask={infoTensor(attention_mask)}')
         kwargs = dict(input_ids=input_ids, attention_mask=attention_mask)
         return kwargs
 

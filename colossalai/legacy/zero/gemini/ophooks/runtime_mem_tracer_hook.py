@@ -17,9 +17,10 @@ class TrainingPhase(Enum):
 
 class GradMemStats:
     def __init__(self) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.unreleased_grad_flag = {}
         self.unreleased_grad_volume = 0
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def clear(self):
         self.unreleased_grad_flag.clear()
@@ -28,8 +29,10 @@ class GradMemStats:
 
 class GradMemTracerHook:
     def __init__(self, grad_stats: GradMemStats):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.grad_hook_list = []
         self._grad_stats = grad_stats
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def grad_handle(self, p, grad):
         assert self._grad_stats.unreleased_grad_flag[p]
@@ -50,13 +53,16 @@ class GradMemTracerHook:
 
 class ParamMemTracerHook(ColoParamOpHook):
     def __init__(self, memstats: MemStats, gradstats: GradMemStats) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self._training_phase = TrainingPhase.FORWARD
         self._memstats = memstats
         self._grad_stats = gradstats
         self.mem_monitor = SyncCudaMemoryMonitor()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _free_cuda_params(self, params):
+        gd.debuginfo(prj="mt", info=f'')
         for p in params:
             if p.data.device.type == "cpu":
                 raise NotImplementedError("Only free cuda memory")
@@ -72,6 +78,7 @@ class ParamMemTracerHook(ColoParamOpHook):
         Raises:
             NotImplementedError: raise error when param has cpu grad
         """
+        gd.debuginfo(prj="mt", info=f'')
         for p in params:
             cur_dev = p.data.device.type
             if cur_dev == "cpu":
@@ -87,6 +94,7 @@ class ParamMemTracerHook(ColoParamOpHook):
         """
         get cuda model data used by params
         """
+        gd.debuginfo(prj="mt", info=f'')
         data_volume = self._grad_stats.unreleased_grad_volume
         for p in params:
             cur_model_data_volume = p.data.numel() * p.data.element_size()
@@ -101,6 +109,7 @@ class ParamMemTracerHook(ColoParamOpHook):
         self._memstats.record_max_cuda_model_data(data_volume)
 
     def pre_op(self, params):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         max_cuda_used_pre_op = self.mem_monitor.finish()
         # record max cuda overall data for prev OP.
         self._memstats.record_max_cuda_overall_data(max_cuda_used_pre_op)
@@ -113,24 +122,31 @@ class ParamMemTracerHook(ColoParamOpHook):
 
         self.mem_monitor.start()
         self._memstats.increase_preop_step(params)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def post_op(self, params):
+        gd.debuginfo(prj="mt", info=f'')
         self._free_cuda_params(params)
 
     def pre_forward(self, params: List[torch.Tensor]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.pre_op(params)
 
     def post_forward(self, params: List[torch.Tensor]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.post_op(params)
 
     def pre_backward(self, params: List[torch.Tensor]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.pre_op(params)
 
     def post_backward(self, params: List[torch.Tensor]) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.post_op(params)
 
     @contextmanager
     def switch_training_phase(self, training_phase: TrainingPhase = TrainingPhase.BACKWARD):
+        gd.debuginfo(prj="mt", info=f'')
         old_training_phase = self._training_phase
         try:
             self._training_phase = training_phase

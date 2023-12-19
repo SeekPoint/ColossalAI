@@ -21,8 +21,9 @@ class OrderedParamGenerator(ParamGenerator):
     """
 
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.param_visited_order = []
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def append(self, param: torch.nn.Parameter):
         self.param_visited_order.append(param)

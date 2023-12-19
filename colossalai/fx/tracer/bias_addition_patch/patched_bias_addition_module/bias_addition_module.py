@@ -12,7 +12,7 @@ class BiasAdditionModule(ABC):
     """
 
     def __init__(self, tracer, target, args, kwargs, substitute_func):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.tracer = tracer
         self.target = target
         self.args = args
@@ -20,6 +20,7 @@ class BiasAdditionModule(ABC):
         self.substitute_func = substitute_func
         self.weight_proxy = self._create_weight_proxy()
         self.bias_proxy = self._create_bias_proxy()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _create_weight_proxy(self):
         """

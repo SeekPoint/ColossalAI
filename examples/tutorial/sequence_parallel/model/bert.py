@@ -31,6 +31,7 @@ class BertForPretrain(nn.Module):
         init_std=0.02,
         convert_fp16_to_fp32_in_softmax=False,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.seq_parallel_size = gpc.get_world_size(ParallelMode.SEQUENCE)
         assert (
@@ -71,6 +72,7 @@ class BertForPretrain(nn.Module):
             hidden_size, self.embedding.word_embedding_weight.size(0), add_binary_head=add_binary_head
         )
         self.reset_parameters()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _init_normal(self, tensor):
         init_normal(tensor, sigma=self.init_std)
@@ -146,6 +148,7 @@ class PipelineBertForPretrain(nn.Module):
         start_idx=None,
         end_idx=None,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.seq_parallel_size = gpc.get_world_size(ParallelMode.SEQUENCE)
         assert (
@@ -197,11 +200,14 @@ class PipelineBertForPretrain(nn.Module):
             self.layer_norm = LayerNorm(hidden_size)
             self.head = BertDualHead(hidden_size, vocab_size, add_binary_head=add_binary_head)
         self.reset_parameters()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _init_normal(self, tensor):
+        gd.debuginfo(prj="mt", info=f'')
         init_normal(tensor, sigma=self.init_std)
 
     def _output_init_normal(self, tensor):
+        gd.debuginfo(prj="mt", info=f'')
         output_init_normal(tensor, sigma=self.init_std, num_layers=self.num_layers)
 
     def reset_parameters(self):

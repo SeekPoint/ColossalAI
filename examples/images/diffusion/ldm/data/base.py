@@ -12,7 +12,7 @@ class Txt2ImgIterableBaseDataset(IterableDataset):
     """
 
     def __init__(self, file_path: str, rank, world_size):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.file_path = file_path
         self.folder_list = []
@@ -33,6 +33,7 @@ class Txt2ImgIterableBaseDataset(IterableDataset):
         self.valid_ids = [i for i in range(self.end)]
 
         gd.debuginfo(prj="mt", info=f"{self.__class__.__name__} dataset contains {self.__len__()} examples.")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def __len__(self):
         # return self.iter_end - self.iter_start

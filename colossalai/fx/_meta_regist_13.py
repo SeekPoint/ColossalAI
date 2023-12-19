@@ -21,6 +21,7 @@ def meta_convolution_backward(
     groups,
     output_mask,
 ):
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     # High level logic taken from slow_conv3d_backward_cpu which should
     # be representative of all convolution_backward impls
     backend_grad_input = None
@@ -36,13 +37,13 @@ def meta_convolution_backward(
     if output_mask[2]:
         backend_grad_bias = grad_output_.new_empty(bias_sizes_opt)
         gd.debuginfo(prj="mt", info=f'')
-
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     return (backend_grad_input, backend_grad_weight, backend_grad_bias)
 
 
 @register_meta(aten._adaptive_avg_pool2d_backward.default)
 def meta__adaptive_avg_pool2d_backward(grad_out, self):
-    gd.debuginfo(prj="mt", info=f'')
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     ndim = grad_out.ndim
     for i in range(1, ndim):
         check(
@@ -58,4 +59,5 @@ def meta__adaptive_avg_pool2d_backward(grad_out, self):
         self.dtype == grad_out.dtype,
         lambda: f"expected dtype {self.dtype} for `grad_output` but got dtype {grad_out.dtype}",
     )
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     return self.new_empty(self.shape)

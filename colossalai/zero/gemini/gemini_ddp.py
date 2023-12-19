@@ -78,7 +78,7 @@ class GeminiDDP(ModelWrapper):
         master_weights: bool = True,
         verbose: bool = False,
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
         assert mixed_precision in (torch.float16, torch.bfloat16)
         if chunk_config_dict is not None:
@@ -166,6 +166,8 @@ class GeminiDDP(ModelWrapper):
             if p.requires_grad:
                 p.register_hook(partial(self.grad_handle, p))
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def parameters(self, recurse: bool = True):
         gd.debuginfo(prj="mt", info=f'')
         return self.module.parameters(recurse)
@@ -205,6 +207,7 @@ class GeminiDDP(ModelWrapper):
             params_to_ignore (Iterable[torch.Tensor]): A list of parameters to be ignored.
         """
         for p in params_to_ignore:
+            gd.debuginfo(prj="mt", info=f'p={infoTensor(p)}')
             p._ddp_to_ignore = True
 
     def _get_non_persistent_buffers_set(
@@ -256,6 +259,7 @@ class GeminiDDP(ModelWrapper):
 
     def forward(self, *args, **kwargs):
         # check whether we are in a inference mode
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         grad_flag = torch.is_grad_enabled()
         gd.debuginfo(prj="mt", info=f'')
 
@@ -278,10 +282,15 @@ class GeminiDDP(ModelWrapper):
         if self.force_outputs_fp32:
             gd.debuginfo(prj="mt", info=f'')
             return _cast_float(outputs, torch.float)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return outputs
 
     def _inference_forward(self, *args, **kwargs):
         """This function is only triggered for inference."""
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         fwd_ctx = ColoParamOpHookManager.use_hooks(self.param_op_hook)
         gd.debuginfo(prj="mt", info=f'')
 
@@ -301,6 +310,8 @@ class GeminiDDP(ModelWrapper):
 
         # reset all recorded attributes
         self.gemini_manager.reset_attributes()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return outputs
 
     def _setup_grads_ptr(self):
@@ -311,15 +322,16 @@ class GeminiDDP(ModelWrapper):
             p.grad = None
 
     def _pre_backward(self):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # set a visit label for all parameters
         # the label is used to check whether the parameter is correctly reduced
         for param in self.param2name:
             if not is_ddp_ignored(param):
                 setattr(param, "_gemini_reduced", False)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _post_backward(self):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.chunk_manager.accessed_mem != 0:
             gd.debuginfo(prj="mt", info=f'')
             error_params = ["Reduction failed at followed parameters:"]
@@ -344,18 +356,24 @@ class GeminiDDP(ModelWrapper):
                                     f"CUDA->CPU vol: {self.gemini_manager._d2h_volume}")
         self.gemini_manager.post_iter()
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def backward(self, loss: torch.Tensor):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self._pre_backward()
         with self.param_op_hook.switch_to_backward(), ColoParamOpHookManager.use_hooks(self.param_op_hook):
             loss.backward()
         self._post_backward()
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def backward_by_grad(self, tensor, grad):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         with self.param_op_hook.switch_to_backward(), ColoParamOpHookManager.use_hooks(self.param_op_hook):
             torch.autograd.backward(tensor, grad)
         self._post_backward()
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def grad_handle(self, p, grad):
         gd.debuginfo(prj="mt", info=f'')

@@ -15,19 +15,23 @@ from pydebug import gd, infoTensor
 
 class CheckpointModule(nn.Module):
     def __init__(self, checkpoint: bool = True, offload: bool = False):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.checkpoint = checkpoint
         self._use_checkpoint = checkpoint
         self._offload = offload
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _forward(self, *args, **kwargs):
+        gd.debuginfo(prj="mt", info=f'')
         raise NotImplementedError("CheckpointModule should implement _forward method instead of origin forward")
 
     def forward(self, *args, **kwargs):
         if self._use_checkpoint:
+            gd.debuginfo(prj="mt", info=f'')
             return checkpoint(self._forward, self._offload, *args, **kwargs)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             return self._forward(*args, **kwargs)
 
     def train(self, mode: bool = True):

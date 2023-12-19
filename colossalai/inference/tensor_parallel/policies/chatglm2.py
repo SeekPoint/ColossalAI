@@ -29,6 +29,7 @@ class ChatGLM2InferPolicy(ChatGLMModelPolicy):
     def module_policy(self):
         gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         self.shard_config._infer()
 
         model_infer_forward = ChatGLM2InferenceForwards.chatglm_model_forward
@@ -68,6 +69,7 @@ class ChatGLM2ForConditionalGenerationInferPolicy(ChatGLM2InferPolicy):
     def module_policy(self):
         gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         model_infer_forward = ChatGLM2InferenceForwards.chatglm_for_conditional_generation_forward
         method_replacement = {"forward": partial(model_infer_forward)}
         self.append_or_create_method_replacement(

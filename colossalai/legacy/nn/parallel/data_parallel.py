@@ -98,6 +98,7 @@ class ColoDDP(torch.nn.Module):
         return self.module(*args, **kwargs)
 
     def backward(self, loss: torch.Tensor):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         loss.backward()
         with torch.cuda.stream(self.comm_stream):
             self.reducer.flush()
@@ -109,6 +110,8 @@ class ColoDDP(torch.nn.Module):
                 continue
             if p.grad.device.type != "cpu":
                 p.grad = p._saved_grad
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def grad_handle(self, p, grad):
         if grad.device.type != "cpu":

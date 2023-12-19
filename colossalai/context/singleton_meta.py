@@ -14,9 +14,11 @@ class SingletonMeta(type):
         Possible changes to the value of the `__init__` argument do not affect
         the returned instance.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'cls.__name__={cls.__name__}')
         if cls not in cls._instances:
+            gd.debuginfo(prj="mt", info=f'-----------0---------------')
             instance = super().__call__(*args, **kwargs)
+            gd.debuginfo(prj="mt", info=f'instance={instance}')
             cls._instances[cls] = instance
         else:
             assert (

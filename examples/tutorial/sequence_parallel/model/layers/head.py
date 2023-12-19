@@ -44,9 +44,11 @@ class BertLMHead(nn.Module):
 
 class BertBinaryHead(nn.Module):
     def __init__(self, hidden_size):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.pooler = Pooler(hidden_size)
         self.dense = Linear(hidden_size, 2)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, hidden_states):
         if gpc.get_local_rank(ParallelMode.SEQUENCE) == 0:
@@ -59,13 +61,17 @@ class BertBinaryHead(nn.Module):
 
 class BertDualHead(nn.Module):
     def __init__(self, hidden_size, vocab_size, add_binary_head):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.lm_head = BertLMHead(vocab_size, hidden_size)
         self.add_binary_head = add_binary_head
         if add_binary_head:
+            gd.debuginfo(prj="mt", info=f'')
             self.binary_head = BertBinaryHead(hidden_size)
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self.binary_head = None
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, hidden_states, word_embeddings_weight, lm_labels):
         if self.add_binary_head:

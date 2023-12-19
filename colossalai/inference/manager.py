@@ -108,7 +108,7 @@ class DynamicBatchManager:
         """
         The main loop for a dynamic batching process.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         counter_count = 0
         # self.running_batch is not None or self.req_queue.waiting_req_list
         while self.running_batch is not None or self.req_queue.waiting_req_list:
@@ -126,12 +126,13 @@ class DynamicBatchManager:
 
             if self.running_batch is None:
                 time.sleep(0.1)  # 10ms
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _step(self):
         """
         Logic for handling requests
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.running_batch is None:
             new_batch = self.req_queue.generate_new_batch(self.running_batch)
             gd.debuginfo(prj="mt", info=f'')
@@ -142,6 +143,7 @@ class DynamicBatchManager:
                 yield from self._prefill_batch(self.running_batch)
                 self._filter_runing_batch()
                 self.has_wait_tokens = 0
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return
 
         if self.has_wait_tokens < self.max_wait_tokens:
@@ -150,6 +152,7 @@ class DynamicBatchManager:
             yield from self._decode_batch(self.running_batch)
             self._filter_runing_batch()
             self.has_wait_tokens += 1
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return
         else:
             new_mini_batch = self.req_queue.generate_new_batch(self.running_batch)
@@ -171,6 +174,7 @@ class DynamicBatchManager:
                 self._filter_runing_batch()
                 self.has_wait_tokens += 1
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return
 
     def _init_batch(self, batch: Batch, dtype="fp16"):

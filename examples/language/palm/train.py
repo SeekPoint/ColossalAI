@@ -126,10 +126,11 @@ print("generate dataset ready!")
 
 class TextSamplerDataset(Dataset):
     def __init__(self, data, seq_len):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.data = data
         self.seq_len = seq_len
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def __getitem__(self, index):
         rand_start = torch.randint(0, self.data.size(0) - self.seq_len, (1,))

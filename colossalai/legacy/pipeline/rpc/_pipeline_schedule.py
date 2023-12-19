@@ -20,9 +20,11 @@ class FillDrainWorker(WorkerBase):
         num_microbatches = self.num_microbatches
 
         if self.forward_times < num_microbatches:
+            gd.debuginfo(prj="mt", info=f'')
             target_phase = Phase.FORWARD
             target_microbatch_id = self.forward_times
         else:
+            gd.debuginfo(prj="mt", info=f'')
             target_phase = Phase.BACKWARD
             target_microbatch_id = self.backward_times
 
@@ -44,7 +46,7 @@ class FillDrainPipelineEngine(PipelineEngineBase):
         checkpoint: bool = False,
         data_process_func: Callable = None,
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if chunk > 1:
             assert (
                 num_microbatches % stage_num == 0
@@ -64,6 +66,7 @@ class FillDrainPipelineEngine(PipelineEngineBase):
             checkpoint,
             data_process_func,
         )
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
 
 class OneFOneBWorker(WorkerBase):
@@ -76,9 +79,11 @@ class OneFOneBWorker(WorkerBase):
         is_last_stage = pp_rank == actual_stage_num - 1
 
         if self.outstanding <= self.outstanding_range[0]:
+            gd.debuginfo(prj="mt", info=f'')
             target_phase = Phase.FORWARD
             target_microbatch_id = self.forward_times
         elif self.outstanding >= self.outstanding_range[1]:
+            gd.debuginfo(prj="mt", info=f'')
             target_phase = Phase.BACKWARD
             target_microbatch_id = self.backward_times
         else:
@@ -114,7 +119,7 @@ class OneFOneBPipelineEngine(PipelineEngineBase):
         checkpoint: bool = False,
         data_process_func: Callable = None,
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if chunk > 1:
             assert (
                 num_microbatches % stage_num == 0
@@ -135,6 +140,7 @@ class OneFOneBPipelineEngine(PipelineEngineBase):
             checkpoint,
             data_process_func,
         )
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
 
 class ChimeraWorker(WorkerBase):
@@ -155,12 +161,14 @@ class ChimeraWorker(WorkerBase):
         prev_rank = rank - 1
         next_rank = rank + 1
         if prev_rank >= min_pp_rank:
+            gd.debuginfo(prj="mt", info=f'')
             self.producer_stage_ids.append(prev_rank)
         if next_rank <= max_pp_rank:
+            gd.debuginfo(prj="mt", info=f'')
             self.consumer_stage_ids.append(next_rank)
 
     def _get_work_item_key(self) -> UniqueKey:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         pp_rank = self.pp_rank
         stage_num = self.actual_stage_num
         real_microbatch_num = self.num_microbatches // 2
@@ -171,9 +179,11 @@ class ChimeraWorker(WorkerBase):
         if self.forward_times >= real_microbatch_num or (
             (pp_rank + 1) % stage_num == 0 and forward_block_num > self.backward_times
         ):
+            gd.debuginfo(prj="mt", info=f'')
             target_phase = Phase.BACKWARD
             target_microbatch_id = self.backward_times
         else:  # others
+            gd.debuginfo(prj="mt", info=f'')
             target_phase = Phase.FORWARD
             target_microbatch_id = self.forward_times
 
@@ -181,15 +191,17 @@ class ChimeraWorker(WorkerBase):
         # In down pipeline, microbatch_id to consume is 1, 3, 5 (2n + 1)
         real_target_microbatch_id = target_microbatch_id * 2
         if pp_rank >= stage_num:
+            gd.debuginfo(prj="mt", info=f'')
             real_target_microbatch_id += 1
         target_key = UniqueKey(real_target_microbatch_id, target_phase)
 
         with self.work_list_condition_lock:
             self.work_list_condition_lock.wait_for(lambda: target_key in self.work_list)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return target_key
 
     def _initialize_partition(self):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # In order to ensure the down pipeline share the same parameter
         # with the up pipeline, partition of down partition will be copied
         # from corresponding up stage
@@ -197,8 +209,10 @@ class ChimeraWorker(WorkerBase):
         stage_num = self.actual_stage_num
         self.device
         if pp_rank < stage_num:
+            gd.debuginfo(prj="mt", info=f'')
             super()._initialize_partition()
         else:
+            gd.debuginfo(prj="mt", info=f'')
             # if it is down pipeline, create partition by origin method
             co_up_pp_worker_rref = self.pp_rank_to_worker_rref[pp_rank - stage_num]
             # get the corresponding model state dict and wait for its init
@@ -216,10 +230,14 @@ class ChimeraWorker(WorkerBase):
         self.have_grad_lock = threading.Lock()
         self.have_grad_lock.acquire()
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def _get_lock_gradient(self):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.have_grad_lock.acquire()
         grads = self.get_parameter_gradients()
         self.step_sync_lock.release()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return grads
 
     def is_first_stage(self):
@@ -229,9 +247,12 @@ class ChimeraWorker(WorkerBase):
         return (self.pp_rank % self.actual_stage_num) == self.actual_stage_num - 1
 
     def _is_last_step(self, work_item: WorkItem) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         if work_item.forward_only:
+            gd.debuginfo(prj="mt", info=f'')
             last_phase = Phase.FORWARD
         else:
+            gd.debuginfo(prj="mt", info=f'')
             last_phase = Phase.BACKWARD
         is_last_phase = work_item.phase == last_phase
         last_microbatch_id = self.num_microbatches - 1
@@ -241,6 +262,7 @@ class ChimeraWorker(WorkerBase):
         return is_last_phase and is_last_microbatch
 
     def _get_step_order(self) -> List[int]:
+        gd.debuginfo(prj="mt", info=f'')
         # TODO : If you want to extend it to multi head chimera, overwrite here
         stage_num = self.actual_stage_num
         pp_rank = self.pp_rank
@@ -250,6 +272,7 @@ class ChimeraWorker(WorkerBase):
         return local_device_pp_ranks
 
     def _hook_before_step(self):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.have_grad_lock.release()
         pp_rank = self.pp_rank
         stage_num = self.actual_stage_num
@@ -267,6 +290,8 @@ class ChimeraWorker(WorkerBase):
         for i in range(len(grads)):
             grads[i] += co_grads[i]
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
 
 class ChimeraPipelineEngine(PipelineEngineBase):
     def __init__(
@@ -280,7 +305,7 @@ class ChimeraPipelineEngine(PipelineEngineBase):
         checkpoint: bool = False,
         data_process_func: Callable = None,
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert num_microbatches % stage_num == 0, "In Chimera, num_microbatches must be the multiply of stage_num!"
         use_1F1B = False
         chunk = 1
@@ -298,6 +323,7 @@ class ChimeraPipelineEngine(PipelineEngineBase):
             checkpoint,
             data_process_func,
         )
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _consume_constraint(
         self, microbatch_id: int, forward_only: bool, input_pp_ranks: List[int], output_pp_ranks: List[int], ret_future
@@ -305,6 +331,7 @@ class ChimeraPipelineEngine(PipelineEngineBase):
         pass
 
     def _create_pp_rank_to_rpc_worker_id(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         stage_num = self.stage_num
         self.pp_rank_to_rpc_worker_id = [0] * (stage_num * 2)
         for pp_rank in range(stage_num):
@@ -312,6 +339,7 @@ class ChimeraPipelineEngine(PipelineEngineBase):
             self.pp_rank_to_rpc_worker_id[pp_rank + stage_num] = stage_num - pp_rank - 1
 
     def _create_pp_rank_to_module_partition_id(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         stage_num = self.stage_num
         self.pp_rank_to_module_partition_id = [0] * (stage_num * 2)
         for pp_rank in range(stage_num):
@@ -319,6 +347,7 @@ class ChimeraPipelineEngine(PipelineEngineBase):
             self.pp_rank_to_module_partition_id[pp_rank + stage_num] = pp_rank
 
     def _create_ret_future(self, output_pp_ranks: List[int]) -> Dict[int, List[Future]]:
+        gd.debuginfo(prj="mt", info=f'')
         num_microbatches = self.num_microbatches
         stage_num = self.stage_num
         up_ret_future = {pp_rank: [None] * num_microbatches for pp_rank in output_pp_ranks}
@@ -327,6 +356,7 @@ class ChimeraPipelineEngine(PipelineEngineBase):
         return {**up_ret_future, **down_ret_future}
 
     def _set_input(self, input_pp_ranks: List[int], microbatch_id: int, microbatch, forward_only: bool):
+        gd.debuginfo(prj="mt", info=f'')
         # offset is 0 for all the ranks in up pipeline
         # offset is stage_num for all the ranks in down pipeline
         offset = (microbatch_id % 2) * self.stage_num
@@ -335,6 +365,7 @@ class ChimeraPipelineEngine(PipelineEngineBase):
             worker_rref.remote().set_input(microbatch_id, microbatch, forward_only)
 
     def _set_labels(self, output_pp_ranks: List[int], microbatch_id: int, microlabels):
+        gd.debuginfo(prj="mt", info=f'')
         # offset is 0 for all the ranks in up pipeline
         # offset is stage_num for all the ranks in down pipeline
         offset = (microbatch_id % 2) * self.stage_num
@@ -343,15 +374,16 @@ class ChimeraPipelineEngine(PipelineEngineBase):
             worker_rref.remote().set_labels(microbatch_id, microlabels)
 
     def _subscribe_forward(self, microbatch_id: int, output_pp_ranks: List[int], ret_future: Dict[int, List[Future]]):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         key = UniqueKey(microbatch_id, Phase.FORWARD)
         offset = (microbatch_id % 2) * self.stage_num
         for pp_rank in output_pp_ranks:
             worker_rref = self.pp_rank_to_worker_rref[pp_rank + offset]
             ret_future[pp_rank + offset][microbatch_id] = worker_rref.rpc_async().get_output_by_key(key)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _ensure_backward(self, forward_only: bool, input_pp_ranks: List[int]):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         stage_num = self.stage_num
         num_microbatches = self.num_microbatches
         if not forward_only:
@@ -366,12 +398,13 @@ class ChimeraPipelineEngine(PipelineEngineBase):
                 down_key = UniqueKey(down_last_microbatch_id, Phase.BACKWARD)
                 up_worker_rref.rpc_sync().get_output_by_key(up_key)
                 down_worker_rref.rpc_sync().get_output_by_key(down_key)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _collect_forward_result(self, output_pp_ranks: List[int], ret_future: Dict[PyRRef, List[Future]]):
         """Logic of collection of forward in Chimera.
         Currently, only one input one output model is supported
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         stage_num = self.stage_num
         forward_result = []
         for pp_rank in output_pp_ranks:
@@ -385,4 +418,5 @@ class ChimeraPipelineEngine(PipelineEngineBase):
             worker_forward_result = list(zip(*worker_forward_result))
             forward_result.extend(worker_forward_result)
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return forward_result

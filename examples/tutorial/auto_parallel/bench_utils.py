@@ -108,6 +108,7 @@ class GPTLMModel(nn.Module):
         vocab_size=50257,
         checkpoint=False,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.checkpoint = checkpoint
         self.model = GPT2LMHeadModel(
@@ -121,7 +122,9 @@ class GPTLMModel(nn.Module):
             )
         )
         if checkpoint:
+            gd.debuginfo(prj="mt", info=f'')
             self.model.gradient_checkpointing_enable()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, input_ids, attention_mask):
         # Only return lm_logits
@@ -134,9 +137,10 @@ class GPTLMLoss(nn.Module):
     """
 
     def __init__(self):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.loss_fn = nn.CrossEntropyLoss()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, logits, labels):
         shift_logits = logits[..., :-1, :].contiguous()

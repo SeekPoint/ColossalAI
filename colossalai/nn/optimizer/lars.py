@@ -26,6 +26,7 @@ class Lars(Optimizer):
                  eeta=1e-3,
                  weight_decay=0,
                 epsilon=0.0) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if not isinstance(lr, float) or lr < 0.0:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if momentum < 0.0:
@@ -40,6 +41,8 @@ class Lars(Optimizer):
 
         super().__init__(params, defaults)
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     @torch.no_grad()
     def step(self, closure=None):
         """Performs a single optimization step.
@@ -48,7 +51,7 @@ class Lars(Optimizer):
             closure (callable, optional): A closure that reevaluates the model
                 and returns the loss.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         loss = None
         if closure is not None:
             gd.debuginfo(prj="mt", info=f'')
@@ -93,4 +96,5 @@ class Lars(Optimizer):
 
                 p.add_(decayed_grad, alpha=-scaled_lr)
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return loss

@@ -175,6 +175,7 @@ class ViTModelPolicy(ViTPolicy):
         from transformers.models.vit.modeling_vit import ViTModel
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         if self.shard_config.pipeline_stage_manager is not None:
             gd.debuginfo(prj="mt", info=f'')
@@ -202,7 +203,7 @@ class ViTForImageClassificationPolicy(ViTPolicy):
         from transformers.models.vit.modeling_vit import ViTForImageClassification, ViTModel
 
         policy = super().module_policy()
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         if self.shard_config.enable_tensor_parallelism:
             new_item = {
@@ -253,6 +254,7 @@ class ViTForMaskedImageModelingPolicy(ViTPolicy):
         from transformers.models.vit.modeling_vit import ViTForMaskedImageModeling, ViTModel
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         gd.debuginfo(prj="mt", info=f'')
 

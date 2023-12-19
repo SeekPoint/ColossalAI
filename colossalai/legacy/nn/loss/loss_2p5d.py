@@ -47,11 +47,13 @@ class CrossEntropyLoss2p5D(_Loss):
             logits (:class:`torch.tensor`): Predicted unnormalized scores (often referred to as logits).
             targets (:class:`torch.tensor`): Ground truth class indices or class probabilities.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         targets = split_batch_2p5d(targets)
         loss = cross_entropy(logits, targets, reduction="none", *self.loss_args, **self.loss_kwargs)
         if self.reduction_mean:
             loss = loss.mean()
             loss = reduce_by_batch_2p5d(loss, True)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return loss
 
 
@@ -61,7 +63,7 @@ class _VocabParallelCrossEntropy2p5D(torch.autograd.Function):
     @staticmethod
     @custom_fwd(cast_inputs=torch.float32)
     def forward(ctx, logits, targets):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # logits: [b/dq, h/q]
         # loss: [b/dq]
         # targets: [b/dq, h/q]
@@ -98,12 +100,14 @@ class _VocabParallelCrossEntropy2p5D(torch.autograd.Function):
         exp_logits.div_(sum_exp_logits.unsqueeze(dim=-1))
         ctx.save_for_backward(exp_logits, target_mask, masked_target)
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return loss
 
     @staticmethod
     @custom_bwd
     def backward(ctx, output_grad):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # Retrieve tensors from the forward path.
         softmax, target_mask, masked_target = ctx.saved_tensors
 
@@ -120,7 +124,7 @@ class _VocabParallelCrossEntropy2p5D(torch.autograd.Function):
 
         # Finally elementwise multiplication with the output gradients.
         grad_input.mul_(output_grad.unsqueeze(dim=-1))
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return grad_input, None
 
 
@@ -145,10 +149,12 @@ class VocabParallelCrossEntropyLoss2p5D(_Loss):
             logits (:class:`torch.tensor`): Predicted unnormalized scores (often referred to as logits).
             targets (:class:`torch.tensor`): Ground truth class indices or class probabilities.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         targets = split_batch_2p5d(targets)
         loss = _VocabParallelCrossEntropy2p5D.apply(logits, targets)
         if self.reduction_mean:
             loss = loss.mean()
             loss = reduce_by_batch_2p5d(loss, True)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
         return loss

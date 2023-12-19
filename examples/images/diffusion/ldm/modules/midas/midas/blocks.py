@@ -153,7 +153,7 @@ class ResidualConvUnit(nn.Module):
         Args:
             features (int): number of features
         """
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
 
         self.conv1 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1, bias=True)
@@ -161,6 +161,7 @@ class ResidualConvUnit(nn.Module):
         self.conv2 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1, bias=True)
 
         self.relu = nn.ReLU(inplace=True)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
         """Forward pass.
@@ -221,7 +222,7 @@ class ResidualConvUnit_custom(nn.Module):
         Args:
             features (int): number of features
         """
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
 
         self.bn = bn
@@ -239,6 +240,7 @@ class ResidualConvUnit_custom(nn.Module):
         self.activation = activation
 
         self.skip_add = nn.quantized.FloatFunctional()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
         """Forward pass.

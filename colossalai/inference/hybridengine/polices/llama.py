@@ -43,12 +43,14 @@ def get_triton_rmsnorm_forward():
 
 class LlamaModelInferPolicy(LlamaForCausalLMPolicy):
     def __init__(self) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def module_policy(self):
         gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         if self.shard_config.inference_gptq:
             gd.debuginfo(prj="mt", info=f'')

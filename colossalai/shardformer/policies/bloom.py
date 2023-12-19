@@ -237,6 +237,7 @@ class BloomModelPolicy(BloomPolicy):
     def module_policy(self):
         gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         from transformers.models.bloom.modeling_bloom import BloomModel
 
         if self.pipeline_stage_manager:
@@ -263,7 +264,8 @@ class BloomForCausalLMPolicy(BloomPolicy):
         from transformers.models.bloom.modeling_bloom import BloomForCausalLM
 
         policy = super().module_policy()
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
+
         # handle tensor parallelism
         if self.shard_config.enable_tensor_parallelism:
             self.append_or_create_submodule_replacement(
@@ -312,7 +314,7 @@ class BloomForSequenceClassificationPolicy(BloomPolicy):
         from transformers.models.bloom.modeling_bloom import BloomForSequenceClassification
 
         policy = super().module_policy()
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         # handle tensor parallelism
         if self.shard_config.enable_tensor_parallelism:
@@ -355,7 +357,8 @@ class BloomForTokenClassificationPolicy(BloomPolicy):
         from transformers.models.bloom.modeling_bloom import BloomForTokenClassification
 
         policy = super().module_policy()
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
+
         # handle tensor parallelism
         if self.shard_config.enable_tensor_parallelism:
             self.append_or_create_submodule_replacement(
@@ -405,6 +408,7 @@ class BloomForQuestionAnsweringPolicy(BloomPolicy):
         from transformers.models.bloom.modeling_bloom import BloomForQuestionAnswering
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         if self.pipeline_stage_manager:
             self.set_pipeline_forward(
                 model_cls=BloomForQuestionAnswering,

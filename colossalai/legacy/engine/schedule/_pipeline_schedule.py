@@ -208,15 +208,18 @@ class PipelineSchedule(BaseSchedule):
                 raise TypeError(f"Expected data to be of type torch.Tensor, list, tuple, or dict, but got {type(data)}")
 
     def _get_actual_forward_func(self, module):
+        gd.debuginfo(prj="mt", info=f'')
         if isinstance(module, NaiveAMPModel):
             sig = inspect.signature(module.model.forward)
         elif hasattr(module, "colo_attr"):
             sig = inspect.signature(module.module.forward)
         else:
             sig = inspect.signature(module.forward)
+        gd.debuginfo(prj="mt", info=f'sig={sig}')
         return sig
 
     def _get_data_label_for_current_step(self, stage_output, micro_batch_data, criterion, model):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.data_process_func:
             # use customized function to get data and label
             data, label = self.data_process_func(stage_output, micro_batch_data)
@@ -240,6 +243,7 @@ class PipelineSchedule(BaseSchedule):
                     label = None
                 load_data = micro_batch_data
                 data.update(load_data)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return data, label
 
     def _forward_step(self, engine, input_obj, return_tensors, return_output_label=True, accum_loss=None):
@@ -256,6 +260,7 @@ class PipelineSchedule(BaseSchedule):
         Returns:
             Union[:class:`torch.Tensor`, List[:class:`torch.Tensor`]]: output or the loss value of the current pipeline stage.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         micro_batch_data = self.load_micro_batch()
 
         data, label = self._get_data_label_for_current_step(input_obj, micro_batch_data, engine.criterion, engine.model)
@@ -268,9 +273,11 @@ class PipelineSchedule(BaseSchedule):
             if accum_loss is not None:
                 loss_reduced = self._call_engine_criterion(engine, output_obj, label) / self.num_microbatches
                 accum_loss.add_(loss_reduced.detach())
+                gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
                 return loss_reduced
             else:
                 # forward only, it's useless since backward is not needed
+                gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
                 return output_obj
         else:
             if isinstance(output_obj, torch.Tensor):
@@ -278,7 +285,9 @@ class PipelineSchedule(BaseSchedule):
                                             f"pipeline rank {gpc.get_local_rank(ParallelMode.PIPELINE)} "
                                             f"forward output tensor {output_obj.shape}, "
                                             f"dtype {output_obj.dtype}")
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return output_obj
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _backward_step(self, engine, input_obj, output_obj, output_obj_grad):
         """Backward step through the passed-in output tensor. If it is the last stage, the
@@ -295,7 +304,7 @@ class PipelineSchedule(BaseSchedule):
         Returns:
             Union[:class:`torch.Tensor`, List[:class:`torch.Tensor`]]: gradient of input tensor.
         """
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # Retain the grad on the input_obj.
         if input_obj is not None:
             if isinstance(input_obj, torch.Tensor):
@@ -319,7 +328,7 @@ class PipelineSchedule(BaseSchedule):
                 input_obj_grad = []
                 for in_tensor in input_obj:
                     input_obj_grad.append(in_tensor.grad)
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return input_obj_grad
 
     def forward_backward_step(self, engine, data_iter, forward_only=False, return_loss=True, return_output_label=True):
@@ -337,7 +346,7 @@ class PipelineSchedule(BaseSchedule):
         Returns:
             Tuple[:class:`torch.Tensor`]: A tuple of (output, label, loss), loss and label could be None.
         """
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert (
             forward_only or return_loss
         ), "The argument 'return_loss' has to be True when 'forward_only' is False, but got False."
@@ -453,8 +462,10 @@ class PipelineSchedule(BaseSchedule):
 
         if len(return_tensors) > 0:
             output, label = pack_return_tensors(return_tensors)
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return output, label, accum_loss
         else:
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return None, None, accum_loss
 
 
@@ -538,6 +549,7 @@ class InterleavedPipelineSchedule(PipelineSchedule):
         Returns:
             Union[:class:`torch.Tensor`, List[:class:`torch.Tensor`]]: output or the loss value of the current pipeline stage.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         micro_batch_data = self.load_micro_batch(model_chunk_id)
         data, label = self._get_data_label_for_current_step(
             input_obj, micro_batch_data, engine.criterion, engine.model[model_chunk_id]
@@ -547,13 +559,16 @@ class InterleavedPipelineSchedule(PipelineSchedule):
 
         if gpc.is_pipeline_last_stage():
             if return_output_label:
+                gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
                 return_tensors.append((output_obj, label))
             if accum_loss is not None:
                 loss_reduced = self._call_engine_criterion(engine, output_obj, label) / self.num_microbatches
                 accum_loss.add_(loss_reduced.detach())
+                gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
                 return loss_reduced
             else:
                 # forward only, it's useless since backward is not needed
+                gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
                 return output_obj
         else:
             if isinstance(output_obj, torch.Tensor):
@@ -561,7 +576,9 @@ class InterleavedPipelineSchedule(PipelineSchedule):
                                             f"pipeline rank {gpc.get_local_rank(ParallelMode.PIPELINE)} "
                                             f"forward output tensor {output_obj.shape}, "
                                             f"dtype {output_obj.dtype}")
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return output_obj
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward_backward_step(self, engine, data_iter, forward_only=False, return_loss=True, return_output_label=True):
         """Run interleaved 1F1B schedule (model split into model chunks), with
@@ -579,6 +596,7 @@ class InterleavedPipelineSchedule(PipelineSchedule):
             Tuple[:class:`torch.Tensor`]: A tuple of (output, label, loss), loss and label could be None.
                 The loss would be returned only in the last stage.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert (
             forward_only or return_loss
         ), "The argument 'return_loss' has to be True when 'forward_only' is False, but got False."
@@ -624,6 +642,8 @@ class InterleavedPipelineSchedule(PipelineSchedule):
                 num_warmup_microbatches = min(num_warmup_microbatches, num_microbatches)
         num_microbatches_remaining = num_microbatches - num_warmup_microbatches
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         def get_model_chunk_id(microbatch_id, forward):
             """Helper method to get the model chunk ID given the iteration number."""
             microbatch_id_in_group = microbatch_id % (pipeline_parallel_size * num_model_chunks)
@@ -636,6 +656,7 @@ class InterleavedPipelineSchedule(PipelineSchedule):
             """Helper method to run forward step with model split into chunks
             (run set_virtual_pipeline_model_parallel_rank() before calling
             forward_step())."""
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             model_chunk_id = get_model_chunk_id(microbatch_id, forward=True)
             gpc.set_virtual_pipeline_parallel_rank(model_chunk_id)
 
@@ -658,13 +679,14 @@ class InterleavedPipelineSchedule(PipelineSchedule):
             if forward_only:
                 input_objs[model_chunk_id].pop()
                 output_objs[model_chunk_id].pop()
-
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return output_obj
 
         def _backward_step_helper(microbatch_id):
             """Helper method to run backward step with model split into chunks
             (run set_virtual_pipeline_model_parallel_rank() before calling
             backward_step())."""
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             model_chunk_id = get_model_chunk_id(microbatch_id, forward=False)
             gpc.set_virtual_pipeline_parallel_rank(model_chunk_id)
 
@@ -675,7 +697,7 @@ class InterleavedPipelineSchedule(PipelineSchedule):
             output_obj = output_objs[model_chunk_id].pop(0)
             output_obj_grad = output_obj_grads[model_chunk_id].pop(0)
             input_obj_grad = self._backward_step(engine, input_obj, output_obj, output_obj_grad)
-
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return input_obj_grad
 
         # Run warmup forward passes.

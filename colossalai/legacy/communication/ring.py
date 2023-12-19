@@ -23,7 +23,7 @@ def ring_forward(tensor_send_next: torch.Tensor, parallel_mode: ParallelMode) ->
         The parallel_mode should be concluded in ``ParallelMode``. More details about ``ParallelMode`` could be found
         in `parallel_mode <https://github.com/hpcaitech/ColossalAI/blob/main/colossalai/context/parallel_mode.py>`_.
     """
-    gd.debuginfo(prj="mt", info=f'')
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     buffer_shape = tensor_send_next.size()
 
     ops = []
@@ -54,5 +54,5 @@ def ring_forward(tensor_send_next: torch.Tensor, parallel_mode: ParallelMode) ->
 
     # To protect against race condition when using batch_isend_irecv().
     synchronize()
-
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     return tensor_recv_prev

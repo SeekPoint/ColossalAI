@@ -15,8 +15,9 @@ class OptimizerWrapper:
     """
 
     def __init__(self, optim: Optimizer):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.optim = optim
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @property
     def parameters(self):

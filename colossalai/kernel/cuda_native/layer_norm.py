@@ -21,7 +21,7 @@ class FusedLayerNormAffineFunction(torch.autograd.Function):
     @staticmethod
     @custom_fwd(cast_inputs=torch.float32)
     def forward(ctx, input, weight, bias, normalized_shape, eps):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         ctx.normalized_shape = normalized_shape
         ctx.eps = eps
         input_ = input.contiguous()
@@ -35,25 +35,25 @@ class FusedLayerNormAffineFunction(torch.autograd.Function):
         output, mean, invvar = layer_norm.forward_affine(input_, ctx.normalized_shape, weight_, bias_, ctx.eps)
         ctx.layernorm_op = layer_norm
         ctx.save_for_backward(input_, weight_, bias_, mean, invvar)
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output
 
     @staticmethod
     @custom_bwd
     def backward(ctx, grad_output):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         input_, weight_, bias_, mean, invvar = ctx.saved_tensors
         grad_input = grad_weight = grad_bias = None
         grad_input, grad_weight, grad_bias = layer_norm.backward_affine(
             grad_output.contiguous(), mean, invvar, input_, ctx.normalized_shape, weight_, bias_, ctx.eps
         )
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return grad_input, grad_weight, grad_bias, None, None
 
 
 class MixedFusedLayerNorm(torch.nn.Module):
     def __init__(self, normalized_shape, eps=1e-5, device=None, dtype=None):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super(MixedFusedLayerNorm, self).__init__()
 
         if isinstance(normalized_shape, numbers.Integral):
@@ -64,6 +64,7 @@ class MixedFusedLayerNorm(torch.nn.Module):
         self.weight = Parameter(torch.empty(*normalized_shape, device=device, dtype=dtype))
         self.bias = Parameter(torch.empty(*normalized_shape, device=device, dtype=dtype))
         self.reset_parameters()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def reset_parameters(self):
         gd.debuginfo(prj="mt", info=f'')

@@ -43,8 +43,9 @@ class CosineAnnealingLR(_CosineAnnealingLR):
     """
 
     def __init__(self, optimizer, total_steps: int, eta_min: int = 0, last_epoch: int = -1, **kwargs):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(optimizer, total_steps, eta_min=eta_min, last_epoch=last_epoch)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
 
 class CosineAnnealingWarmupLR(WarmupScheduler):
@@ -65,9 +66,10 @@ class CosineAnnealingWarmupLR(WarmupScheduler):
                  warmup_steps: int = 0,
                  eta_min: float = 0.0,
                  last_epoch: int = -1):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         base_scheduler = _CosineAnnealingLR(optimizer, total_steps - warmup_steps, eta_min=eta_min, last_epoch=last_epoch)
         super().__init__(optimizer, warmup_steps, base_scheduler, last_epoch=last_epoch)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
 
 class FlatAnnealingLR(DelayerScheduler):
@@ -82,13 +84,14 @@ class FlatAnnealingLR(DelayerScheduler):
     """
 
     def __init__(self, optimizer, total_steps: int, pct_start: float = 0.72, last_epoch: int = -1, **kwargs):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if not (0.0 <= pct_start <= 1.0):
             raise ValueError(f"pct_start must >= 0.0 and <= 1.0, got {pct_start}")
         flat_steps = int(total_steps * pct_start)
         anneal_steps = total_steps - flat_steps
         base_scheduler = _CosineAnnealingLR(optimizer, anneal_steps)
         super().__init__(optimizer, flat_steps, base_scheduler, last_epoch=last_epoch)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
 
 class FlatAnnealingWarmupLR(WarmupDelayerScheduler):
@@ -115,10 +118,11 @@ class FlatAnnealingWarmupLR(WarmupDelayerScheduler):
         last_epoch: int = -1,
         **kwargs,
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if not (0.0 <= pct_start <= 1.0):
             raise ValueError(f"pct_start must >= 0.0 and <= 1.0, got {pct_start}")
         flat_steps = int((total_steps - warmup_steps) * pct_start)
         anneal_steps = total_steps - warmup_steps - flat_steps
         base_scheduler = _CosineAnnealingLR(optimizer, anneal_steps, eta_min=eta_min)
         super().__init__(optimizer, warmup_steps, flat_steps, base_scheduler, last_epoch=last_epoch)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')

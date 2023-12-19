@@ -37,11 +37,12 @@ class GeminiFP16MixedPrecisionMixin(FP16MixedPrecisionMixin):
         hysteresis: int = 2,
         max_scale: float = 2**32,
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(
             initial_scale, min_scale, growth_factor, backoff_factor, growth_interval, hysteresis, max_scale
         )
         self.module = module
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def check_local_overflow(self) -> bool:
         gd.debuginfo(prj="mt", info=f'')
@@ -99,7 +100,7 @@ class GeminiOptimizer(OptimizerWrapper):
         verbose: bool = False,
         **defaults: Any,
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(optim)
         assert isinstance(module, GeminiDDP)
         assert type(optim) in _AVAIL_OPTIM_LIST, (
@@ -177,6 +178,8 @@ class GeminiOptimizer(OptimizerWrapper):
             gd.debuginfo(prj="mt", info=f'gpu_margin_mem_ratio is meaningless when placement_policy is not "auto"')
 
         self._register_states = disposable(self._register_states_)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _set_grad_ptr(self):
         gd.debuginfo(prj="mt", info=f'')
@@ -257,7 +260,7 @@ class GeminiOptimizer(OptimizerWrapper):
         return self.optim.zero_grad(set_to_none=True)
 
     def step(self, *args, **kwargs):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.module.master_weights:
             self._maybe_move_fp32_params()
             gd.debuginfo(prj="mt", info=f'')
@@ -287,25 +290,30 @@ class GeminiOptimizer(OptimizerWrapper):
             gd.debuginfo(prj="mt", info=f'')
 
         self.module.accumulating_grads = False
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return ret
 
     def clip_grad_norm(self, model: torch.nn.Module, max_norm: float, norm_type: float = 2.0):
         raise NotImplementedError
 
     def backward(self, loss: torch.Tensor):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         loss = self.mix_precision_mixin.pre_backward(loss)
         self.module.backward(loss)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def backward_by_grad(self, tensor: torch.Tensor, grad: torch.Tensor):
         # This function is called except the last stage of pipeline parallel
         # It receives the scaled grad from the previous rank
         # No need to scale the grad again
         # Need to unscale when optimizing
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         grad = self.mix_precision_mixin.pre_backward_by_grad(grad)
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'---------------------------------------')
 
         self.module.backward_by_grad(tensor, grad)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _maybe_move_fp32_params(self):
         gd.debuginfo(prj="mt", info=f'')
@@ -351,7 +359,7 @@ class GeminiOptimizer(OptimizerWrapper):
                         self.chunk_manager.add_extern_static_tensor(val)
 
     def __init__optimizer(self):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         def get_range_pair(local_chunk: Chunk, local_param: Parameter):
             gd.debuginfo(prj="mt", info=f'')
             param_info = local_chunk.tensors_info[local_param]
@@ -391,6 +399,7 @@ class GeminiOptimizer(OptimizerWrapper):
             group["params"] = fake_params_list
             group_backup["params"] = group_ids
             self.param_groups_backup.append(group_backup)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def get_offsets(self, param_id: int) -> tuple:
         """

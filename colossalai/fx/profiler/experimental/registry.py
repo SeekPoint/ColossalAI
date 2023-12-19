@@ -2,9 +2,10 @@ from pydebug import gd, infoTensor
 
 class ProfilerRegistry:
     def __init__(self, name):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.name = name
         self.store = {}
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def register(self, source):
         def wrapper(func):

@@ -195,6 +195,7 @@ class LlamaModelPolicy(LlamaPolicy):
 
     def module_policy(self):
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         from transformers.models.llama.modeling_llama import LlamaModel
         gd.debuginfo(prj="mt", info=f'')
         if self.pipeline_stage_manager:
@@ -220,6 +221,7 @@ class LlamaForCausalLMPolicy(LlamaPolicy):
         from transformers import LlamaForCausalLM
         gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         if self.shard_config.enable_tensor_parallelism:
             # add a new item for casual lm
@@ -280,7 +282,7 @@ class LlamaForSequenceClassificationPolicy(LlamaPolicy):
         from transformers import LlamaForSequenceClassification
 
         policy = super().module_policy()
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         if self.shard_config.enable_tensor_parallelism:
             # add a new item for sequence classification

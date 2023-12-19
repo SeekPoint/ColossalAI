@@ -9,11 +9,12 @@ from pydebug import gd, infoTensor
 
 class PLMSSampler(object):
     def __init__(self, model, schedule="linear", **kwargs):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.model = model
         self.ddpm_num_timesteps = model.num_timesteps
         self.schedule = schedule
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def register_buffer(self, name, attr):
         if type(attr) == torch.Tensor:
@@ -22,6 +23,7 @@ class PLMSSampler(object):
         setattr(self, name, attr)
 
     def make_schedule(self, ddim_num_steps, ddim_discretize="uniform", ddim_eta=0.0, verbose=True):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if ddim_eta != 0:
             raise ValueError("ddim_eta must be 0 for PLMS")
         self.ddim_timesteps = make_ddim_timesteps(
@@ -59,6 +61,7 @@ class PLMSSampler(object):
             * (1 - self.alphas_cumprod / self.alphas_cumprod_prev)
         )
         self.register_buffer("ddim_sigmas_for_original_num_steps", sigmas_for_original_sampling_steps)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @torch.no_grad()
     def sample(
@@ -87,6 +90,7 @@ class PLMSSampler(object):
         dynamic_threshold=None,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if conditioning is not None:
             if isinstance(conditioning, dict):
                 cbs = conditioning[list(conditioning.keys())[0]].shape[0]
@@ -121,6 +125,7 @@ class PLMSSampler(object):
             unconditional_conditioning=unconditional_conditioning,
             dynamic_threshold=dynamic_threshold,
         )
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return samples, intermediates
 
     @torch.no_grad()
@@ -145,6 +150,7 @@ class PLMSSampler(object):
         unconditional_conditioning=None,
         dynamic_threshold=None,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         device = self.model.betas.device
         b = shape[0]
         if x_T is None:
@@ -205,7 +211,7 @@ class PLMSSampler(object):
             if index % log_every_t == 0 or index == total_steps - 1:
                 intermediates["x_inter"].append(img)
                 intermediates["pred_x0"].append(pred_x0)
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return img, intermediates
 
     @torch.no_grad()
@@ -228,6 +234,7 @@ class PLMSSampler(object):
         t_next=None,
         dynamic_threshold=None,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         b, *_, device = *x.shape, x.device
 
         def get_model_output(x, t):
@@ -291,5 +298,5 @@ class PLMSSampler(object):
             e_t_prime = (55 * e_t - 59 * old_eps[-1] + 37 * old_eps[-2] - 9 * old_eps[-3]) / 24
 
         x_prev, pred_x0 = get_x_prev_and_pred_x0(e_t_prime, index)
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return x_prev, pred_x0, e_t

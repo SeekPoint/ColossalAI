@@ -45,26 +45,30 @@ def init_(tensor):
 # feedforward
 class GEGLU(nn.Module):
     def __init__(self, dim_in, dim_out):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.proj = nn.Linear(dim_in, dim_out * 2)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         x, gate = self.proj(x).chunk(2, dim=-1)
         return x * F.gelu(gate)
 
 
 class FeedForward(nn.Module):
     def __init__(self, dim, dim_out=None, mult=4, glu=False, dropout=0.0):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         inner_dim = int(dim * mult)
         dim_out = default(dim_out, dim)
         project_in = nn.Sequential(nn.Linear(dim, inner_dim), nn.GELU()) if not glu else GEGLU(dim, inner_dim)
 
         self.net = nn.Sequential(project_in, nn.Dropout(dropout), nn.Linear(inner_dim, dim_out))
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'')
         return self.net(x)
 
 
@@ -83,7 +87,7 @@ def Normalize(in_channels):
 
 class SpatialSelfAttention(nn.Module):
     def __init__(self, in_channels):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.in_channels = in_channels
 
@@ -92,8 +96,10 @@ class SpatialSelfAttention(nn.Module):
         self.k = torch.nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0)
         self.v = torch.nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0)
         self.proj_out = torch.nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         h_ = x
         h_ = self.norm(h_)
         q = self.q(h_)
@@ -115,13 +121,13 @@ class SpatialSelfAttention(nn.Module):
         h_ = torch.einsum("bij,bjk->bik", v, w_)
         h_ = rearrange(h_, "b c (h w) -> b c h w", h=h)
         h_ = self.proj_out(h_)
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return x + h_
 
 
 class CrossAttention(nn.Module):
     def __init__(self, query_dim, context_dim=None, heads=8, dim_head=64, dropout=0.0):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         inner_dim = dim_head * heads
         context_dim = default(context_dim, query_dim)
@@ -134,8 +140,10 @@ class CrossAttention(nn.Module):
         self.to_v = nn.Linear(context_dim, inner_dim, bias=False)
 
         self.to_out = nn.Sequential(nn.Linear(inner_dim, query_dim), nn.Dropout(dropout))
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x, context=None, mask=None):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         h = self.heads
 
         q = self.to_q(x)
@@ -159,13 +167,15 @@ class CrossAttention(nn.Module):
 
         out = einsum("b i j, b j d -> b i d", sim, v)
         out = rearrange(out, "(b h) n d -> b n (h d)", h=h)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return self.to_out(out)
 
 
 class MemoryEfficientCrossAttention(nn.Module):
     # https://github.com/MatthieuTPHR/diffusers/blob/d80b531ff8060ec1ea982b65a1b8df70f73aa67c/src/diffusers/models/attention.py#L223
     def __init__(self, query_dim, context_dim=None, heads=8, dim_head=64, dropout=0.0):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         print(
             f"Setting up {self.__class__.__name__}. Query dim is {query_dim}, context_dim is {context_dim} and using "
@@ -183,8 +193,10 @@ class MemoryEfficientCrossAttention(nn.Module):
 
         self.to_out = nn.Sequential(nn.Linear(inner_dim, query_dim), nn.Dropout(dropout))
         self.attention_op: Optional[Any] = None
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x, context=None, mask=None):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         q = self.to_q(x)
         context = default(context, x)
         k = self.to_k(context)
@@ -211,6 +223,7 @@ class MemoryEfficientCrossAttention(nn.Module):
             .permute(0, 2, 1, 3)
             .reshape(b, out.shape[1], self.heads * self.dim_head)
         )
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return self.to_out(out)
 
 
@@ -231,6 +244,7 @@ class BasicTransformerBlock(nn.Module):
         checkpoint=True,
         disable_self_attn=False,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         attn_mode = "softmax-xformers" if XFORMERS_IS_AVAILBLE else "softmax"
         assert attn_mode in self.ATTENTION_MODES
@@ -251,11 +265,14 @@ class BasicTransformerBlock(nn.Module):
         self.norm2 = nn.LayerNorm(dim)
         self.norm3 = nn.LayerNorm(dim)
         self.checkpoint = checkpoint
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x, context=None):
+        gd.debuginfo(prj="mt", info=f'')
         return checkpoint(self._forward, (x, context), self.parameters(), self.checkpoint)
 
     def _forward(self, x, context=None):
+        gd.debuginfo(prj="mt", info=f'')
         x = self.attn1(self.norm1(x), context=context if self.disable_self_attn else None) + x
         x = self.attn2(self.norm2(x), context=context) + x
         x = self.ff(self.norm3(x)) + x
@@ -284,6 +301,7 @@ class SpatialTransformer(nn.Module):
         use_linear=False,
         use_checkpoint=True,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         if exists(context_dim) and not isinstance(context_dim, list):
             context_dim = [context_dim]
@@ -314,8 +332,10 @@ class SpatialTransformer(nn.Module):
         else:
             self.proj_out = zero_module(nn.Linear(in_channels, inner_dim))
         self.use_linear = use_linear
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x, context=None):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # note: if no context is given, cross-attention defaults to self-attention
         if not isinstance(context, list):
             context = [context]
@@ -334,4 +354,5 @@ class SpatialTransformer(nn.Module):
         x = rearrange(x, "b (h w) c -> b c h w", h=h, w=w).contiguous()
         if not self.use_linear:
             x = self.proj_out(x)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return x + x_in

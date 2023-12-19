@@ -17,7 +17,7 @@ if HAS_MEM_EFF_ATTN:
 
 class ColoAttention(torch.nn.Module):
     def __init__(self, embed_dim: int, num_heads: int, dropout: float = 0.0, scale=None):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         assert (
             embed_dim % num_heads == 0
@@ -33,6 +33,8 @@ class ColoAttention(torch.nn.Module):
 
         if not HAS_MEM_EFF_ATTN and not HAS_FLASH_ATTN:
             raise Exception("flash attention can not support!")
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @staticmethod
     def unpad(tensor: torch.Tensor, indices: torch.Tensor) -> torch.Tensor:
@@ -53,6 +55,7 @@ class ColoAttention(torch.nn.Module):
         attn_mask_type: Optional[AttnMaskType] = None,
         bias: Optional[torch.Tensor] = None,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         attn = None
         if HAS_FLASH_ATTN and query.dtype in [torch.float16, torch.bfloat16] and bias == None:
             attn = flash_attention
@@ -127,17 +130,17 @@ class ColoAttention(torch.nn.Module):
             padded=padded,
         )
 
-        gd.debuginfo(prj="mt", info=f'out={out}')
+        gd.debuginfo(prj="mt", info=f'out={infoTensor(out)}')
 
         # repad
         if padded:
             if batch_size > 1:
                 out = self.repad(out, seq_len_info_q.indices, batch_size, tgt_len)
-                gd.debuginfo(prj="mt", info=f'out={out}')
+                gd.debuginfo(prj="mt", info=f'out={infoTensor(out)}')
             out = rearrange(out, "(b s) h d -> b s h d", b=batch_size)
-            gd.debuginfo(prj="mt", info=f'out={out}')
+            gd.debuginfo(prj="mt", info=f'out={infoTensor(out)}')
 
         out = rearrange(out, "b s h d -> b s (h d)")
-        gd.debuginfo(prj="mt", info=f'out={out}')
-
+        gd.debuginfo(prj="mt", info=f'out={infoTensor(out)}')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return out

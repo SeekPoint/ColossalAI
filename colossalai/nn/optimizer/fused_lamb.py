@@ -64,7 +64,7 @@ class FusedLAMB(torch.optim.Optimizer):
         max_grad_norm=1.0,
         use_nvlamb=False,
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if amsgrad:
             raise RuntimeError("FusedLAMB does not support the AMSGrad variant.")
         defaults = dict(
@@ -96,6 +96,8 @@ class FusedLAMB(torch.optim.Optimizer):
         self.set_grad_none = set_grad_none
         self.use_nvlamb = use_nvlamb
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def zero_grad(self):
         if self.set_grad_none:
             gd.debuginfo(prj="mt", info=f'')
@@ -113,7 +115,7 @@ class FusedLAMB(torch.optim.Optimizer):
             closure (callable, optional): A closure that reevaluates the model
                 and returns the loss.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         loss = None
         if closure is not None:
             loss = closure()
@@ -232,5 +234,5 @@ class FusedLAMB(torch.optim.Optimizer):
                     self.use_nvlamb,
                 )
                 gd.debuginfo(prj="mt", info=f'')
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return loss

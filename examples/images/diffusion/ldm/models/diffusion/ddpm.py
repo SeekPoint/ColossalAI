@@ -92,6 +92,7 @@ class DDPM(pl.LightningModule):
         reset_ema=False,
         reset_num_ema_updates=False,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         assert parameterization in ["eps", "x0", "v"], 'currently only supporting "eps" and "x0" and "v"'
         self.parameterization = parameterization
@@ -175,6 +176,8 @@ class DDPM(pl.LightningModule):
         if self.ucg_training:
             self.ucg_prng = np.random.RandomState()
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def register_schedule(
         self,
         given_betas=None,
@@ -184,6 +187,7 @@ class DDPM(pl.LightningModule):
         linear_end=2e-2,
         cosine_s=8e-3,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if exists(given_betas):
             betas = given_betas
         else:
@@ -243,6 +247,7 @@ class DDPM(pl.LightningModule):
         lvlb_weights[0] = lvlb_weights[1]
         self.register_buffer("lvlb_weights", lvlb_weights, persistent=False)
         assert not torch.isnan(self.lvlb_weights).all()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @contextmanager
     def ema_scope(self, context=None):
@@ -1569,14 +1574,16 @@ class LatentDiffusion(DDPM):
 
 class DiffusionWrapper(pl.LightningModule):
     def __init__(self, diff_model_config, conditioning_key):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.sequential_cross_attn = diff_model_config.pop("sequential_crossattn", False)
         self.diffusion_model = UNetModel(**diff_model_config)
         self.conditioning_key = conditioning_key
         assert self.conditioning_key in [None, "concat", "crossattn", "hybrid", "adm", "hybrid-adm", "crossattn-adm"]
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, x, t, c_concat: list = None, c_crossattn: list = None, c_adm=None):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.conditioning_key is None:
             out = self.diffusion_model(x, t)
         elif self.conditioning_key == "concat":
@@ -1606,19 +1613,20 @@ class DiffusionWrapper(pl.LightningModule):
             out = self.diffusion_model(x, t, y=cc)
         else:
             raise NotImplementedError()
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return out
 
 
 class LatentUpscaleDiffusion(LatentDiffusion):
     def __init__(self, *args, low_scale_config, low_scale_key="LR", noise_level_key=None, **kwargs):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(*args, **kwargs)
         # assumes that neither the cond_stage nor the low_scale_model contain trainable params
         assert not self.cond_stage_trainable
         self.instantiate_low_stage(low_scale_config)
         self.low_scale_key = low_scale_key
         self.noise_level_key = noise_level_key
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def instantiate_low_stage(self, config):
         model = ImageConcatWithNoiseAugmentation(**config)
@@ -1629,6 +1637,7 @@ class LatentUpscaleDiffusion(LatentDiffusion):
 
     @torch.no_grad()
     def get_input(self, batch, k, cond_key=None, bs=None, log_mode=False):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if not log_mode:
             z, c = super().get_input(batch, k, force_c_encode=True, bs=bs)
         else:
@@ -1656,6 +1665,7 @@ class LatentUpscaleDiffusion(LatentDiffusion):
             # TODO: maybe disable if too expensive
             x_low_rec = self.low_scale_model.decode(zx)
             return z, all_conds, x, xrec, xc, x_low, x_low_rec, noise_level
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return z, all_conds
 
     @torch.no_grad()
@@ -1676,6 +1686,7 @@ class LatentUpscaleDiffusion(LatentDiffusion):
         use_ema_scope=True,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         ema_scope = self.ema_scope if use_ema_scope else nullcontext
         use_ddim = ddim_steps is not None
 
@@ -1773,7 +1784,7 @@ class LatentUpscaleDiffusion(LatentDiffusion):
                 )
             prog_row = self._get_denoise_row_from_list(progressives, desc="Progressive Generation")
             log["progressive_row"] = prog_row
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return log
 
 
@@ -1797,6 +1808,7 @@ class LatentFinetuneDiffusion(LatentDiffusion):
         *args,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         ckpt = kwargs.pop("ckpt", None)
         ignore_keys = kwargs.pop("ignore_keys", list())
         super().__init__(*args, **kwargs)
@@ -1810,7 +1822,10 @@ class LatentFinetuneDiffusion(LatentDiffusion):
         if exists(ckpt):
             self.init_from_ckpt(ckpt, ignore_keys)
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def init_from_ckpt(self, path, ignore_keys=list(), only_model=False):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         sd = torch.load(path, map_location="cpu")
         if "state_dict" in list(sd.keys()):
             sd = sd["state_dict"]
@@ -1842,6 +1857,7 @@ class LatentFinetuneDiffusion(LatentDiffusion):
             rank_zero_info(f"Missing Keys: {missing}")
         if len(unexpected) > 0:
             rank_zero_info(f"Unexpected Keys: {unexpected}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @torch.no_grad()
     def log_images(
@@ -1863,6 +1879,7 @@ class LatentFinetuneDiffusion(LatentDiffusion):
         use_ema_scope=True,
         **kwargs,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         ema_scope = self.ema_scope if use_ema_scope else nullcontext
         use_ddim = ddim_steps is not None
 
@@ -1943,6 +1960,7 @@ class LatentFinetuneDiffusion(LatentDiffusion):
                 x_samples_cfg = self.decode_first_stage(samples_cfg)
                 log[f"samples_cfg_scale_{unconditional_guidance_scale:.2f}"] = x_samples_cfg
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return log
 
 
@@ -1954,13 +1972,16 @@ class LatentInpaintDiffusion(LatentFinetuneDiffusion):
     """
 
     def __init__(self, concat_keys=("mask", "masked_image"), masked_image_key="masked_image", *args, **kwargs):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(concat_keys, *args, **kwargs)
         self.masked_image_key = masked_image_key
         assert self.masked_image_key in concat_keys
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @torch.no_grad()
     def get_input(self, batch, k, cond_key=None, bs=None, return_first_stage_outputs=False):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         # note: restricted to non-trainable encoders currently
         assert not self.cond_stage_trainable, "trainable cond stages not yet supported for inpainting"
         z, c, x, xrec, xc = super().get_input(
@@ -1992,6 +2013,9 @@ class LatentInpaintDiffusion(LatentFinetuneDiffusion):
         all_conds = {"c_concat": [c_cat], "c_crossattn": [c]}
         if return_first_stage_outputs:
             return z, all_conds, x, xrec, xc
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return z, all_conds
 
     @torch.no_grad()
@@ -2009,10 +2033,11 @@ class LatentDepth2ImageDiffusion(LatentFinetuneDiffusion):
     """
 
     def __init__(self, depth_stage_config, concat_keys=("midas_in",), *args, **kwargs):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(concat_keys=concat_keys, *args, **kwargs)
         self.depth_model = MiDaSInference(**depth_stage_config)
         self.depth_stage_key = concat_keys[0]
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @torch.no_grad()
     def get_input(self, batch, k, cond_key=None, bs=None, return_first_stage_outputs=False):

@@ -208,20 +208,23 @@ class GPT2Policy(Policy):
 # GPT2Model
 class GPT2ModelPolicy(GPT2Policy):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def module_policy(self):
         gd.debuginfo(prj="mt", info=f'')
         from transformers.models.gpt2.modeling_gpt2 import GPT2Model
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         if self.pipeline_stage_manager is not None:
             self.set_pipeline_forward(
                 model_cls=GPT2Model, new_forward=GPT2PipelineForwards.gpt2_model_forward, policy=policy
             )
             gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
@@ -243,6 +246,7 @@ class GPT2LMHeadModelPolicy(GPT2Policy):
         from transformers.models.gpt2.modeling_gpt2 import GPT2LMHeadModel
 
         module_policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'module_policy={module_policy}')
 
         if self.shard_config.enable_tensor_parallelism:
             addon_module = {
@@ -299,6 +303,7 @@ class GPT2DoubleHeadsModelPolicy(GPT2Policy):
         from transformers.models.gpt2.modeling_gpt2 import GPT2DoubleHeadsModel
 
         module_policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'module_policy={module_policy}')
 
         if self.shard_config.enable_tensor_parallelism:
             gd.debuginfo(prj="mt", info=f'')
@@ -363,6 +368,7 @@ class GPT2ForQuestionAnsweringPolicy(GPT2Policy):
         from transformers.models.gpt2.modeling_gpt2 import GPT2ForQuestionAnswering
 
         module_policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'module_policy={module_policy}')
 
         if self.pipeline_stage_manager is not None:
             self.set_pipeline_forward(
@@ -398,6 +404,7 @@ class GPT2ForTokenClassificationPolicy(GPT2Policy):
         from transformers.models.gpt2.modeling_gpt2 import GPT2ForTokenClassification
 
         module_policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'module_policy={module_policy}')
 
         if self.shard_config.enable_tensor_parallelism:
             addon_module = {
@@ -444,6 +451,7 @@ class GPT2ForSequenceClassificationPolicy(GPT2Policy):
         from transformers.models.gpt2.modeling_gpt2 import GPT2ForSequenceClassification
 
         module_policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'module_policy={module_policy}')
 
         if self.pipeline_stage_manager is not None:
             self.set_pipeline_forward(

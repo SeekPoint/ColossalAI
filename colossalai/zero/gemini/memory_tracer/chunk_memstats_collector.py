@@ -17,9 +17,10 @@ class ChunkMemStatsCollector(MemStatsCollector):
             chunk_manager (ChunkManager): the chunk manager.
             memstats (Optional[MemStats], optional): memory statistics collected by RMT. Defaults to None.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(memstats)
         self._chunk_manager = chunk_manager
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     # override
     def record_model_data_volume(self) -> None:

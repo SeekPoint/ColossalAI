@@ -70,10 +70,11 @@ class MultiNodeRunner:
     """
 
     def __init__(self):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.processes = {}
         self.master_send_conns = {}
         self.master_recv_conns = {}
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def connect(self, host_info_list: HostInfoList, workdir: str, env: dict) -> None:
         """

@@ -27,7 +27,7 @@ class Lamb(Optimizer):
     """
 
     def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-6, weight_decay=0, adam=False):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:
@@ -39,6 +39,7 @@ class Lamb(Optimizer):
         defaults = dict(lr=lr, betas=betas, eps=eps, weight_decay=weight_decay)
         self.adam = adam
         super(Lamb, self).__init__(params, defaults)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def step(self, closure=None):
         """Performs a single optimization step.
@@ -47,7 +48,7 @@ class Lamb(Optimizer):
             closure (callable, optional): A closure that reevaluates the model
                 and returns the loss.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         loss = None
         if closure is not None:
             loss = closure()
@@ -113,5 +114,5 @@ class Lamb(Optimizer):
                     gd.debuginfo(prj="mt", info=f'')
 
                 p.data.add_(adam_step, alpha=-step_size * trust_ratio)
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return loss

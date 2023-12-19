@@ -202,14 +202,15 @@ class OPTPolicy(Policy):
 
 class OPTModelPolicy(OPTPolicy):
     def __init__(self) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def module_policy(self):
         from transformers.models.opt.modeling_opt import OPTModel
 
         policy = super().module_policy()
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         if self.pipeline_stage_manager:
             gd.debuginfo(prj="mt", info=f'')
@@ -232,7 +233,7 @@ class OPTForCausalLMPolicy(OPTPolicy):
         from transformers.models.opt.modeling_opt import OPTForCausalLM
 
         policy = super().module_policy()
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         if self.shard_config.enable_tensor_parallelism:
             self.append_or_create_submodule_replacement(
@@ -288,14 +289,16 @@ class OPTForCausalLMPolicy(OPTPolicy):
 
 class OPTForSequenceClassificationPolicy(OPTPolicy):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def module_policy(self):
         from transformers.models.opt.modeling_opt import OPTForSequenceClassification
         gd.debuginfo(prj="mt", info=f'')
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         if self.pipeline_stage_manager:
             self.set_pipeline_forward(
                 model_cls=OPTForSequenceClassification,
@@ -321,14 +324,16 @@ class OPTForSequenceClassificationPolicy(OPTPolicy):
 
 class OPTForQuestionAnsweringPolicy(OPTPolicy):
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def module_policy(self):
         from transformers.models.opt.modeling_opt import OPTForQuestionAnswering
 
         policy = super().module_policy()
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
+
 
         if self.pipeline_stage_manager:
             self.set_pipeline_forward(

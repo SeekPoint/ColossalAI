@@ -458,7 +458,7 @@ class WhisperModelPolicy(WhisperPolicy):
         from transformers import WhisperModel
 
         policy = super().module_policy()
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         if self.pipeline_stage_manager is not None:
             self.set_pipeline_forward(
@@ -487,6 +487,7 @@ class WhisperForConditionalGenerationPolicy(WhisperPolicy):
         from transformers import WhisperForConditionalGeneration
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         policy = self.add_lm_head_policy(policy)
         gd.debuginfo(prj="mt", info=f'')
 
@@ -566,6 +567,7 @@ class WhisperForAudioClassificationPolicy(WhisperPolicy):
         from transformers import WhisperForAudioClassification
 
         policy = super().module_policy()
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         if self.pipeline_stage_manager is not None:
             self.set_pipeline_forward(

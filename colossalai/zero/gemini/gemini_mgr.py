@@ -33,7 +33,7 @@ class GeminiManager:
         memstats: Optional[MemStats] = None,
         **placement_kwargs,
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
         assert placement_policy in PlacementPolicyFactory.get_policy_names()
         self.policy_name = placement_policy
@@ -55,6 +55,7 @@ class GeminiManager:
         self._evict_time = 0
         self._warmup = True
         self._comp_cuda_demand_time = 0
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def reset_attributes(self):
         self._compute_idx = -1

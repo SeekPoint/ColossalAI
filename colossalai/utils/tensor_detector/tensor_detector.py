@@ -23,7 +23,7 @@ class TensorDetector:
             module (Optional[:class:`nn.Module`]): when sending an ``nn.Module`` object,
                 the detector can name the tensors detected better.
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.show_info = show_info
         self.log = log
         self.include_cpu = include_cpu
@@ -39,12 +39,15 @@ class TensorDetector:
             gd.debuginfo(prj="mt", info=f'')
             # if module is an instance of nn.Module, we can name the parameter with its real name
             for name, param in module.named_parameters():
+                gd.debuginfo(prj="mt", info=f'name={name}, param={infoTensor(param)}')
                 self.tensor_info[id(param)].append(name)
                 self.tensor_info[id(param)].append(param.device)
                 self.tensor_info[id(param)].append(param.shape)
                 self.tensor_info[id(param)].append(param.requires_grad)
                 self.tensor_info[id(param)].append(param.dtype)
                 self.tensor_info[id(param)].append(self.get_tensor_mem(param))
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def get_tensor_mem(self, tensor):
         gd.debuginfo(prj="mt", info=f'')

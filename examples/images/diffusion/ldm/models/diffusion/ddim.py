@@ -13,11 +13,12 @@ from pydebug import gd, infoTensor
 
 class DDIMSampler(object):
     def __init__(self, model, schedule="linear", **kwargs):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.model = model
         self.ddpm_num_timesteps = model.num_timesteps
         self.schedule = schedule
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def register_buffer(self, name, attr):
         if type(attr) == torch.Tensor:

@@ -18,11 +18,12 @@ class TrainingPhase(Enum):
 
 class GeminiZeROHook(ColoParamOpHook):
     def __init__(self, gemini_manager: GeminiManager) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self._gemini_manager = gemini_manager
         self._chunk_manager = gemini_manager.chunk_manager
         self._training_phase = TrainingPhase.FORWARD
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def pre_op(self, params):
         params = [p for p in params if not is_ddp_ignored(p)]

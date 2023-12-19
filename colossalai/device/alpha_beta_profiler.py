@@ -48,6 +48,7 @@ class AlphaBetaProfiler:
             repeat: Number of iterations to measure.
             latency_iters: Number of iterations to measure latency.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.physical_devices = physical_devices
         self.ctype = ctype
         self.world_size = len(physical_devices)
@@ -63,6 +64,7 @@ class AlphaBetaProfiler:
         else:
             self.alpha_beta_dict = alpha_beta_dict
             gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _init_profiling(self):
         gd.debuginfo(prj="mt", info=f'')

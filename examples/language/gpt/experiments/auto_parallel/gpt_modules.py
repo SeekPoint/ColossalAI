@@ -9,18 +9,24 @@ from pydebug import gd, infoTensor
 
 class GPT2MLP(nn.Module):
     def __init__(self, intermediate_size, config):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         embed_dim = config.hidden_size
         self.c_fc = Conv1D(intermediate_size, embed_dim)
         self.c_proj = Conv1D(embed_dim, intermediate_size)
         self.act = ACT2FN[config.activation_function]
         self.dropout = nn.Dropout(config.resid_pdrop)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, hidden_states: Optional[Tuple[torch.FloatTensor]]) -> torch.FloatTensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         hidden_states = self.c_fc(hidden_states)
+        gd.debuginfo(prj="mt", info=f'1-hidden_states={infoTensor(hidden_states)}')
         hidden_states = self.act(hidden_states)
+        gd.debuginfo(prj="mt", info=f'2-hidden_states={infoTensor(hidden_states)}')
         hidden_states = self.c_proj(hidden_states)
+        gd.debuginfo(prj="mt", info=f'3-hidden_states={infoTensor(hidden_states)}')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return hidden_states
 
 
@@ -31,7 +37,7 @@ class GPT2MLP(nn.Module):
 # order is same as megatron-lm gpt model.
 class GPT2Attention(nn.Module):
     def __init__(self, config, layer_idx=None):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
 
         max_positions = config.max_position_embeddings
@@ -60,8 +66,10 @@ class GPT2Attention(nn.Module):
         self.resid_dropout = nn.Dropout(config.resid_pdrop)
 
         self.pruned_heads = set()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _attn(self, query, key, value, attention_mask=None, head_mask=None):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         attn_weights = torch.matmul(query, key.transpose(-1, -2))
 
         if self.scale_attn_weights:
@@ -88,15 +96,17 @@ class GPT2Attention(nn.Module):
             attn_weights = attn_weights * head_mask
 
         attn_output = torch.matmul(attn_weights, value)
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return attn_output, attn_weights
 
     def _split_heads(self, tensor, num_heads, attn_head_size):
+        gd.debuginfo(prj="mt", info=f'')
         new_shape = tensor.size()[:-1] + (num_heads, attn_head_size)
         tensor = tensor.view(new_shape)
         return tensor.permute(0, 2, 1, 3)  # (batch, head, seq_length, head_features)
 
     def _merge_heads(self, tensor, num_heads, attn_head_size):
+        gd.debuginfo(prj="mt", info=f'')
         tensor = tensor.permute(0, 2, 1, 3).contiguous()
         new_shape = tensor.size()[:-2] + (num_heads * attn_head_size,)
         return tensor.view(new_shape)
@@ -107,25 +117,31 @@ class GPT2Attention(nn.Module):
         attention_mask: Optional[torch.FloatTensor] = None,
         head_mask: Optional[torch.FloatTensor] = None,
     ) -> Tuple[Union[torch.Tensor, Tuple[torch.Tensor]], ...]:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         qkv = self.c_attn(hidden_states)
         query, key, value = self._split_heads(qkv, self.num_heads, 3 * self.head_dim).split(self.head_dim, dim=3)
         (key, value)
         attn_output, attn_weights = self._attn(query, key, value, attention_mask, head_mask)
         attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
         attn_output = self.c_proj(attn_output)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return attn_output
 
 
 class GPT2Block(nn.Module):
     def __init__(self, config, layer_idx=None):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         hidden_size = config.hidden_size
         inner_dim = config.n_inner if config.n_inner is not None else 4 * hidden_size
         self.ln_1 = nn.LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
+        gd.debuginfo(prj="mt", info=f'==================1======================')
         self.attn = GPT2Attention(config, layer_idx=layer_idx)
+        gd.debuginfo(prj="mt", info=f'==================2======================')
         self.ln_2 = nn.LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
+        gd.debuginfo(prj="mt", info=f'==================3======================')
         self.mlp = GPT2MLP(inner_dim, config)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(
         self,
@@ -133,8 +149,13 @@ class GPT2Block(nn.Module):
         attention_mask: Optional[torch.FloatTensor] = None,
         head_mask: Optional[torch.FloatTensor] = None,
     ) -> Union[Tuple[torch.Tensor], Optional[Tuple[torch.Tensor, Tuple[torch.FloatTensor, ...]]]]:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         residual = hidden_states
+        gd.debuginfo(prj="mt", info=f'residual={infoTensor(residual)}')
+
         hidden_states = self.ln_1(hidden_states)
+        gd.debuginfo(prj="mt", info=f'1-hidden_states={infoTensor(hidden_states)}')
+
         attn_outputs = self.attn(
             hidden_states,
             attention_mask=attention_mask,
@@ -142,18 +163,26 @@ class GPT2Block(nn.Module):
         )
         # residual connection
         hidden_states = attn_outputs + residual
+        gd.debuginfo(prj="mt", info=f'2-hidden_states={infoTensor(hidden_states)}')
+
         residual = hidden_states
         hidden_states = self.ln_2(hidden_states)
+        gd.debuginfo(prj="mt", info=f'3-hidden_states={infoTensor(hidden_states)}')
+
         feed_forward_hidden_states = self.mlp(hidden_states)
+        gd.debuginfo(prj="mt", info=f'feed_forward_hidden_states={infoTensor(feed_forward_hidden_states)}')
+
         # residual connection
         hidden_states = residual + feed_forward_hidden_states
+        gd.debuginfo(prj="mt", info=f'4-hidden_states={infoTensor(hidden_states)}')
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return hidden_states
 
 
 class GPT2Model(GPT2PreTrainedModel):
     def __init__(self, config):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(config)
 
         self.embed_dim = config.hidden_size
@@ -167,6 +196,7 @@ class GPT2Model(GPT2PreTrainedModel):
 
         # Initialize weights and apply final processing
         self.post_init()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(
         self,
@@ -174,8 +204,11 @@ class GPT2Model(GPT2PreTrainedModel):
         attention_mask: Optional[torch.FloatTensor] = None,
         head_mask: Optional[torch.FloatTensor] = None,
     ) -> Union[Tuple, BaseModelOutputWithPastAndCrossAttentions]:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         input_shape = input_ids.size()
         input_ids = input_ids.view(-1, input_shape[-1])
+        gd.debuginfo(prj="mt", info=f'input_ids={infoTensor(input_ids)}')
+
         batch_size = input_ids.shape[0]
 
         device = input_ids.device
@@ -184,13 +217,24 @@ class GPT2Model(GPT2PreTrainedModel):
         past_key_values = tuple([None] * len(self.h))
 
         position_ids = torch.arange(past_length, input_shape[-1] + past_length, dtype=torch.long, device=device)
+        gd.debuginfo(prj="mt", info=f'position_ids={infoTensor(position_ids)}')
+
         position_ids = position_ids.unsqueeze(0).view(-1, input_shape[-1])
+        gd.debuginfo(prj="mt", info=f'position_ids={infoTensor(position_ids)}')
+
 
         # GPT2Attention mask.
         attention_mask = attention_mask.view(batch_size, -1)
+        gd.debuginfo(prj="mt", info=f'attention_mask={infoTensor(attention_mask)}')
+
         attention_mask = attention_mask[:, None, None, :]
+        gd.debuginfo(prj="mt", info=f'attention_mask={infoTensor(attention_mask)}')
+
         attention_mask = attention_mask.to(dtype=self.dtype)  # fp16 compatibility
+        gd.debuginfo(prj="mt", info=f'attention_mask={infoTensor(attention_mask)}')
+
         attention_mask = (1.0 - attention_mask) * -10000.0
+        gd.debuginfo(prj="mt", info=f'attention_mask={infoTensor(attention_mask)}')
 
         # Prepare head mask if needed
         # 1.0 in head_mask indicate we keep the head
@@ -201,6 +245,7 @@ class GPT2Model(GPT2PreTrainedModel):
         position_embeds = self.wpe(position_ids)
 
         hidden_states = inputs_embeds + position_embeds
+        gd.debuginfo(prj="mt", info=f'1-hidden_states={infoTensor(hidden_states)}')
 
         output_shape = input_shape + (hidden_states.size(-1),)
 
@@ -209,8 +254,12 @@ class GPT2Model(GPT2PreTrainedModel):
             hidden_states = outputs
 
         hidden_states = self.ln_f(hidden_states)
-        hidden_states = hidden_states.view(output_shape)
+        gd.debuginfo(prj="mt", info=f'2-hidden_states={infoTensor(hidden_states)}')
 
+        hidden_states = hidden_states.view(output_shape)
+        gd.debuginfo(prj="mt", info=f'3-hidden_states={infoTensor(hidden_states)}')
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return hidden_states
 
 
@@ -229,23 +278,28 @@ class GPT2LMHeadModel(GPT2PreTrainedModel):
         input_ids: Optional[torch.LongTensor] = None,
         attention_mask: Optional[torch.FloatTensor] = None,
     ):
-        transformer_outputs = self.transformer(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-        )
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+        transformer_outputs = self.transformer(input_ids=input_ids,
+                                               attention_mask=attention_mask,)
+        gd.debuginfo(prj="mt", info=f'transformer_outputs={transformer_outputs}')
         lm_logits = self.lm_head(transformer_outputs)
+        gd.debuginfo(prj="mt", info=f'lm_logits={lm_logits}')
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return lm_logits
 
 
 class GPTLMLoss(nn.Module):
     def __init__(self):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.loss_fn = nn.CrossEntropyLoss()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def forward(self, logits, labels):
         shift_logits = logits[..., :-1, :].contiguous()
         shift_labels = labels[..., 1:].contiguous()
+        gd.debuginfo(prj="mt", info=f'shift_logits={shift_logits}')
+        gd.debuginfo(prj="mt", info=f'shift_labels={shift_labels}')
         # Flatten the tokens
         return self.loss_fn(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))

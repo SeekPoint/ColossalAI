@@ -20,11 +20,12 @@ class ChunkManager:
     """
 
     def __init__(self, chunk_configuration, init_device: Optional[torch.device] = None) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.device = init_device or get_current_device()
         self.dp_degree_chunk_size_dict: Dict[int, int] = dict()
         self.kwargs_config = chunk_configuration
         for k, v in self.kwargs_config.items():
+            gd.debuginfo(prj="mt", info=f'k={k}, v={v}')
             self.dp_degree_chunk_size_dict[k] = v.pop("chunk_size")
             v["init_device"] = self.device
 
@@ -33,6 +34,8 @@ class ChunkManager:
         self.accessed_chunks: Set[Chunk] = set()
         self.accessed_mem: int = 0
         self.total_mem: Dict[str, int] = {"cpu": 0, "cuda": 0}
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def register_tensor(
         self,

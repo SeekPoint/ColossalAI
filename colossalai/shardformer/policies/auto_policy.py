@@ -180,11 +180,14 @@ def import_policy(policy_location: PolicyLocation, inference_only: Optional[bool
     """
     if inference_only:
         module_name = f"colossalai.inference.tensor_parallel.policies.{policy_location.file_name}"
+        gd.debuginfo(prj="mt", info=f'module_name={module_name}')
     else:
         module_name = f"colossalai.shardformer.policies.{policy_location.file_name}"
+        gd.debuginfo(prj="mt", info=f'module_name={module_name}')
 
-    gd.debuginfo(prj="mt", info=f'module_name={module_name}')
     module = importlib.import_module(module_name)
+    gd.debuginfo(prj="mt", info=f'module={module}')
+
     return getattr(module, policy_location.class_name)
 
 
@@ -192,11 +195,12 @@ def _fullname(obj):
     """
     Return the full name of an object, including the module name.
     """
-    gd.debuginfo(prj="mt", info=f'')
     klass = obj.__class__
     module = klass.__module__
+    gd.debuginfo(prj="mt", info=f'klass={klass}')
+    gd.debuginfo(prj="mt", info=f'module={module}')
     if module == "builtins":
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'klass.__qualname__={klass.__qualname__}')
         return klass.__qualname__  # avoid outputs like 'builtins.str'
     return module + "." + klass.__qualname__
 
@@ -211,13 +215,17 @@ def get_autopolicy(model: nn.Module, inference_only: Optional[bool] = False) -> 
     Return:
         :class:`Policy`: The auto policy for the model
     """
+    gd.debuginfo(prj="mt", info=f'')
+
     full_name = _fullname(model)
+    gd.debuginfo(prj="mt", info=f'full_name={full_name}')
+
     if inference_only:
         policy_location = _INFER_POLICY_LIST.get(full_name, None)
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy_location={policy_location}')
     else:
         policy_location = _POLICY_LIST.get(full_name, None)
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy_location={policy_location}')
 
     if policy_location is None:
         raise NotImplementedError(
@@ -225,5 +233,5 @@ def get_autopolicy(model: nn.Module, inference_only: Optional[bool] = False) -> 
         )
     else:
         policy = import_policy(policy_location, inference_only)
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
     return policy()

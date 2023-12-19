@@ -13,10 +13,11 @@ class LinearWarmupLR(_LRScheduler):
     """
 
     def __init__(self, optimizer, total_steps: int, warmup_steps: int = 0, last_epoch: int = -1, **kwargs):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.warmup_steps = warmup_steps
         self.total_steps = total_steps
         super().__init__(optimizer, last_epoch=last_epoch)
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def get_lr(self):
         if self.last_epoch < self.warmup_steps:

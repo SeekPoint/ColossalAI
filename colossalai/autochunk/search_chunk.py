@@ -256,7 +256,7 @@ class SearchChunk(object):
         Returns:
             best_chunk_region (Dict)
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         peak_region = self._find_peak_region(mem_peak)
         max_chunk_region = self._search_max_chunk_region(active_node, peak_region, chunk_infos)
         if max_chunk_region == None:
@@ -265,6 +265,8 @@ class SearchChunk(object):
         possible_chunk_regions = self._search_possible_chunk_regions(max_chunk_region, peak_region)
         best_chunk_region = self.select_chunk._select_best_chunk_region(possible_chunk_regions, chunk_infos, mem_peak)
         best_chunk_region = self.reorder_graph.reorder_all(best_chunk_region)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return best_chunk_region
 
     def search_region(self) -> Dict:

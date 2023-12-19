@@ -6,10 +6,11 @@ from energonai import BatchManager, SubmitEntry, TaskEntry
 
 class BatchManagerForGeneration(BatchManager):
     def __init__(self, max_batch_size: int = 1, pad_token_id: int = 0) -> None:
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.max_batch_size = max_batch_size
         self.pad_token_id = pad_token_id
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _left_padding(self, batch_inputs):
         max_len = max(len(inputs["input_ids"]) for inputs in batch_inputs)

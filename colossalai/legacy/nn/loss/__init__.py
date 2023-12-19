@@ -39,4 +39,5 @@ class CrossEntropyLoss(_Loss):
             self.loss = _parallel_cross_entropy[tensor_parallel](reduction=reduction, *args, **kwargs)
 
     def forward(self, *args):
+        gd.debuginfo(prj="mt", info=f'')
         return self.loss(*args)

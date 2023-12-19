@@ -18,15 +18,17 @@ from pydebug import gd, infoTensor
 
 class Event:
     def __init__(self, start: int, end: int, name: str, rank: int) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.start = start
         self.end = end
         self.name = name
         self.rank = rank
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
 
 class Recorder:
     def __init__(self) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.rank_to_history: Dict[int, List[Event]] = {}
         self.base_time = time.time()
         self.temp_event = None
@@ -40,10 +42,11 @@ class Recorder:
         self.legend_fontsize = 16
         self.device_fontsize = 20
         self.bar_height = 0.2
-        gd.debuginfo(prj="mt", info=f'')
 
         if not os.path.exists(LOG_FOLDER):
             os.makedirs(LOG_FOLDER)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def start(self, name: str, rank: int):
         # TODO : add lock to prevent conflict

@@ -7,8 +7,10 @@ from pydebug import gd, infoTensor
 
 class PreProcessor(nn.Module):
     def __init__(self, sub_seq_length):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.sub_seq_length = sub_seq_length
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def bert_position_ids(self, token_ids):
         # Create position ids

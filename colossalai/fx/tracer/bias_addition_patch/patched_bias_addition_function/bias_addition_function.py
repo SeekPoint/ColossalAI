@@ -12,12 +12,13 @@ class BiasAdditionFunc(ABC):
     """
 
     def __init__(self, tracer, target, args, kwargs, substitute_func):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.tracer = tracer
         self.target = target
         self.args = args
         self.kwargs = kwargs
         self.substitute_func = substitute_func
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @abstractmethod
     def extract_kwargs_from_origin_func(self):

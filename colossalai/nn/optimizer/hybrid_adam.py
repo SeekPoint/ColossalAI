@@ -73,6 +73,7 @@ class HybridAdam(CPUAdam):
         nvme_offload_dir: Optional[str] = None,
         **defaults: Any,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(
             model_params,
             lr,
@@ -87,11 +88,11 @@ class HybridAdam(CPUAdam):
         fused_optim = FusedOptimBuilder().load()
         self.gpu_adam_op = fused_optim.multi_tensor_adam
         self._dummy_overflow_buf = torch.cuda.IntTensor([0])
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @torch.no_grad()
     def step(self, closure=None, div_scale: float = -1):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         loss = None
         if closure is not None:
             gd.debuginfo(prj="mt", info=f'')
@@ -197,5 +198,8 @@ class HybridAdam(CPUAdam):
                 )
                 gd.debuginfo(prj="mt", info=f'')
 
+        gd.debuginfo(prj="mt", info=f'--------------------')
         self._post_step()
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return loss

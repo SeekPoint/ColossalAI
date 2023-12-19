@@ -172,6 +172,7 @@ class Linear2D(ParallelLayer):
             destination.update(local_state)
 
     def forward(self, x: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # input: [m/q, n/q, k/q]
         # output: [m/q, n/q, h/q]
         out_shape = x.shape[:-1] + (self.hidden_size_per_partition,)
@@ -207,6 +208,7 @@ class Linear2D(ParallelLayer):
                     self.pipeline_parallel_size,
                     self.tensor_parallel_size,
                 )
+                gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
                 return output, bias
             else:
                 output = add_bias_2d(
@@ -223,9 +225,13 @@ class Linear2D(ParallelLayer):
                     self.pipeline_parallel_size,
                     self.tensor_parallel_size,
                 )
+                gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
                 return output
         else:
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return output
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
 
 
 @LAYERS.register_module
@@ -336,6 +342,7 @@ class LayerNorm2D(ParallelLayer):
             destination.update(local_state)
 
     def forward(self, x: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         with torch.no_grad():
             E_x = torch.sum(x, dim=-1, keepdim=True)  # [b/q, s, 1]
             torch.distributed.all_reduce(E_x, group=gpc.get_group(ParallelMode.PARALLEL_2D_ROW))
@@ -385,6 +392,8 @@ class LayerNorm2D(ParallelLayer):
             output = torch.addcmul(bias, scale, output)
         else:
             output = torch.mul(scale, output)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output
 
 
@@ -545,6 +554,8 @@ class PatchEmbedding2D(ParallelLayer):
             destination.update(local_state)
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         input_ = split_batch_2d(input_)
 
         B, C, H, W = input_.shape
@@ -564,7 +575,7 @@ class PatchEmbedding2D(ParallelLayer):
         cls_token = cls_token.expand(output.shape[0], -1, -1)
         output = torch.cat((cls_token, output), dim=1)
         output = output + pos_embed
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output
 
 

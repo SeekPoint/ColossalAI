@@ -92,7 +92,7 @@ class ShardedModelV2(nn.Module):
         *args,
         **kwargs,
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert not isinstance(module, ShardedModelV2), "Nested ShardedModelV2 is not supported."
         super().__init__()
         self.logger = get_dist_logger()
@@ -184,19 +184,25 @@ class ShardedModelV2(nn.Module):
         # record whether gradients have inf or nan
         self.overflow_counter = 0
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def adjust_stateful_tensor_layout(self) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self._stateful_tensor_mgr.adjust_layout()
 
     @property
     def use_memory_tracer(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self._use_memory_tracer
 
     @property
     def cuda_margin_space(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self._cuda_margin_space
 
     @property
     def cpu_offload(self):
+        gd.debuginfo(prj="mt", info=f'')
         return self._cpu_offload
 
     def dump_memory_stats(self, filename: Optional[str] = "dump_mem_stats.log") -> None:
@@ -209,6 +215,7 @@ class ShardedModelV2(nn.Module):
             model.dump_memory_stats()
             exit(0)
         """
+        gd.debuginfo(prj="mt", info=f'')
         if self._use_memory_tracer:
             gd.debuginfo(prj="mt", info=f"dump memory tracer collected information to a {filename}")
             if gpc.get_global_rank() == 0:
@@ -224,6 +231,7 @@ class ShardedModelV2(nn.Module):
                     f.write("\n")
 
     def _pre_forward_operations(self, *args):
+        gd.debuginfo(prj="mt", info=f'')
         # the operation will affect the memory tracer behavior in ZeroHook
         if self._memstats_collector:
             self._start_collect_memstats()
@@ -235,11 +243,13 @@ class ShardedModelV2(nn.Module):
         self._stateful_tensor_mgr.start_iter()
 
     def _post_forward_operations(self):
+        gd.debuginfo(prj="mt", info=f'')
         for p in self.module.parameters():
             if hasattr(p, "colo_attr"):
                 p.colo_attr.sharded_data_tensor.trans_state(TensorState.HOLD)
 
     def forward(self, *args: Any, **kwargs: Any) -> torch.Tensor:
+        gd.debuginfo(prj="mt", info=f'')
         self._pre_forward_operations(*args)
         cast_fn = cast_tensor_to_bf16 if self.bf16 else cast_tensor_to_fp16
         args, kwargs = cast_float_arguments(cast_fn, *args, **kwargs)
@@ -248,19 +258,23 @@ class ShardedModelV2(nn.Module):
         return outputs
 
     def backward(self, loss):
+        gd.debuginfo(prj="mt", info=f'')
         loss.backward()
         self._post_backward_operations()
         for ophook in self._ophook_list:
             ophook.post_iter()
 
     def backward_by_grad(self, tensor, grad):
+        gd.debuginfo(prj="mt", info=f'')
         torch.autograd.backward(tensors=tensor, grad_tensors=grad)
         self._post_backward_operations()
         for ophook in self._ophook_list:
             ophook.post_iter()
 
     def _update_memstats(self):
+        gd.debuginfo(prj="mt", info=f'')
         if self._memstats_collector:
+            gd.debuginfo(prj="mt", info=f'')
             self._finish_collect_memstats()
             # cuda margin space = cuda mem capacity - max fwd/bwd cuda mem used.
             # the way to calculate margin space is based on the assumption that
@@ -279,6 +293,7 @@ class ShardedModelV2(nn.Module):
         3. shard tensors not dealed in the zero hook
         4. move sharded param grad payload to param.grad
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # 1. update memory tracer.
         self._update_memstats()
 
@@ -313,6 +328,8 @@ class ShardedModelV2(nn.Module):
 
             p.grad = None
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     @torch.no_grad()
     def _grad_post_backward_hook(self, param: Parameter, grad: torch.Tensor) -> Optional[torch.Tensor]:
         """
@@ -334,6 +351,7 @@ class ShardedModelV2(nn.Module):
         alignment is created by `param.colo_attr.grad`, which ensures that
         the local optimizer only sees the relevant parameter shard.
         """
+        gd.debuginfo(prj="mt", info=f'')
         if grad is None:
             return
         assert not grad.requires_grad, "ShardedModel only works with gradients that don't require gradients"
@@ -351,6 +369,7 @@ class ShardedModelV2(nn.Module):
         return empty_grad
 
     def _reduce_scatter_handler(self, param: Parameter, grad: torch.Tensor) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         self.comm_stream.wait_stream(torch.cuda.current_stream())
         with torch.cuda.stream(self.comm_stream):
             if self.fp32_reduce_scatter:
@@ -370,6 +389,7 @@ class ShardedModelV2(nn.Module):
         torch.cuda.current_stream().wait_stream(self.comm_stream)
 
     def _reduce_scatter_callback(self, param: Parameter, reduced_grad: torch.Tensor) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         assert isinstance(
             reduced_grad, torch.Tensor
         ), f"_reduce_scatter_callback accept reduced_grad as {type(reduced_grad)}"
@@ -381,6 +401,8 @@ class ShardedModelV2(nn.Module):
 
     # FIXME(ver217): refactor the below line when impl eviction policy
     def _save_grad(self, param: Parameter, grad: torch.Tensor):
+        gd.debuginfo(prj="mt", info=f'')
+
         # record whether we have overflow
         self.overflow_counter += torch.isinf(grad).any().item()
         self.overflow_counter += torch.isnan(grad).any().item()
@@ -416,12 +438,15 @@ class ShardedModelV2(nn.Module):
         param.colo_attr.saved_grad.trans_state(TensorState.HOLD)
 
     def parameters(self, recurse: bool = True) -> Iterator[Parameter]:
+        gd.debuginfo(prj="mt", info=f'')
         return self.module.parameters(recurse=recurse)
 
     def named_parameters(self, prefix: str = "", recurse: bool = True) -> Iterator[Tuple[str, Parameter]]:
+        gd.debuginfo(prj="mt", info=f'')
         return self.module.named_parameters(prefix, recurse)
 
     def state_dict(self, destination=None, prefix="", keep_vars=False) -> "OrderedDict[str, torch.Tensor]":
+        gd.debuginfo(prj="mt", info=f'')
         return self._colo_state_dict(
             destination,
             prefix,
@@ -434,6 +459,7 @@ class ShardedModelV2(nn.Module):
         )
 
     def load_state_dict(self, state_dict: "OrderedDict[str, torch.Tensor]", strict: bool = True) -> None:
+        gd.debuginfo(prj="mt", info=f'')
         for name, p in self.named_parameters():
             if name in state_dict:
                 p.colo_attr.data_payload_reset(
@@ -456,6 +482,7 @@ class ShardedModelV2(nn.Module):
         sharded_params=[],
         process_group=None,
     ) -> "OrderedDict[str, torch.Tensor]":
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if len(sharded_params) == 0:
             for param in self.parameters():
                 if param.colo_attr.param_is_sharded:
@@ -471,6 +498,8 @@ class ShardedModelV2(nn.Module):
             shard_strategy.shard([p.colo_attr.sharded_data_tensor for p in sharded_params], process_group)
         for p in sharded_params:
             p.colo_attr.set_data_none()
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return gathered_state_dict
 
     def _colo_load_from_state_dict(
@@ -508,6 +537,7 @@ class ShardedModelV2(nn.Module):
                 :meth:`~torch.nn.Module.load_state_dict`
             shard_strategy (Optional[BaseShardStrategy], optional): A shard strategy to manage shard behavior. Defaults to None.
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         for hook in self._load_state_dict_pre_hooks.values():
             hook(state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs)
 
@@ -558,6 +588,8 @@ class ShardedModelV2(nn.Module):
             elif strict:
                 missing_keys.append(key)
 
+
+
         extra_state_key = prefix + _EXTRA_STATE_KEY_SUFFIX
         if getattr(self.__class__, "set_extra_state", nn.Module.set_extra_state) is not nn.Module.set_extra_state:
             if extra_state_key in state_dict:
@@ -574,6 +606,7 @@ class ShardedModelV2(nn.Module):
                     input_name = input_name.split(".", 1)[0]  # get the name of param/buffer/child
                     if input_name not in self._modules and input_name not in local_state:
                         unexpected_keys.append(key)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def __getitem__(self, idx: int):
         assert isinstance(self.module, nn.ModuleList)

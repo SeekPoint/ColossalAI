@@ -47,14 +47,16 @@ class TorchAMPOptimizer(OptimizerWrapper):
         )
 
     def backward(self, loss: Tensor, *args, **kwargs) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         scaled_loss = self.scale_loss(loss)
         scaled_loss.backward(*args, **kwargs)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def step(self, *args, **kwargs) -> Optional[float]:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         out = self.scaler.step(self.optim, *args, **kwargs)
         self.scaler.update()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return out
 
     def scale_loss(self, loss: Tensor) -> Tensor:

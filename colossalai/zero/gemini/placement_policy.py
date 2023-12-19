@@ -20,8 +20,10 @@ class PlacementPolicy(ABC):
     def __init__(
         self, chunk_manager: ChunkManager, mem_stats_collector: Optional[ChunkMemStatsCollector] = None, **kwargs
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.chunk_manager = chunk_manager
         self.mem_stats_collector: Optional[ChunkMemStatsCollector] = mem_stats_collector
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @abstractmethod
     def evict_tensors(self, can_evict_chunks: List[Chunk], **kwargs) -> Tuple[int, float]:
@@ -44,7 +46,7 @@ class StaticPlacementPolicy(PlacementPolicy):
         offload_param_frac: float = 0.0,
         **kwargs,
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(chunk_manager, mem_stats_collector=mem_stats_collector)
         if offload_param_frac > 0.0 and (shard_param_frac != 1.0 or offload_optim_frac != 1.0):
             gd.debuginfo(prj="mt", info=f"offload_param_frac is ignored when shard_param_frac != 1.0 or offload_optim_frac != 1.0")
@@ -55,6 +57,7 @@ class StaticPlacementPolicy(PlacementPolicy):
         # these should be initialized in setup_grads_device
         self.keep_gathered_chunk_mem = 0.0
         self.keep_cuda_chunk_mem = 0.0
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def evict_tensors(self, can_evict_chunks: List[Chunk], **kwargs) -> Tuple[int, float]:
         gd.debuginfo(prj="mt", info=f'')
@@ -113,13 +116,14 @@ class AutoPlacementPolicy(PlacementPolicy):
         steady_cuda_cap_ratio: float = 0.9,
         **kwargs,
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(chunk_manager, mem_stats_collector=mem_stats_collector)
         # model data will use 1-_warmup_non_model_data_ratio CUDA memory in warmup phase
         # you can set them by AutoPlacementPolicy.set_warmup_non_model_data_ratio()
         # and AutoPlacementPolicy.set_steady_cuda_cap_ratio()
         self._warmup_non_model_data_ratio = warmup_non_model_data_ratio
         self._steady_cuda_cap_ratio = steady_cuda_cap_ratio
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def evict_tensors(
         self,

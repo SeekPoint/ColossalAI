@@ -28,6 +28,7 @@ class SubModuleReplacementDescription:
         kwargs (Dict[str, Any]): the dictionary used to pass extra arguments to the `ParallelModule.from_native_module` method.
         ignore_if_not_exist (bool): if the submodule does not exist, ignore it or raise an exception
     """
+    gd.debuginfo(prj="mt", info=f'')
     suffix: str
     target_module: ParallelModule
     kwargs: Dict[str, Any] = None
@@ -54,6 +55,7 @@ class ModulePolicyDescription:
                     object which specifies the module to be replaced and the target module used to replacement.
         method_replace (Dict[str, Callable]): key is the method name, value is the method for replacement
     """
+    gd.debuginfo(prj="mt", info=f'')
     attribute_replacement: Dict[str, Any] = None
     param_replacement: List[Callable] = None
     sub_module_replacement: List[SubModuleReplacementDescription] = None
@@ -165,6 +167,7 @@ class Policy(ABC):
             policy[target_key] = ModulePolicyDescription(sub_module_replacement=description)
             gd.debuginfo(prj="mt", info=f'')
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def append_or_create_method_replacement(
@@ -181,6 +184,7 @@ class Policy(ABC):
             policy (Dict[Union[str, nn.Module], ModulePolicyDescription]): the policy to be updated
             target_key (Union[str, nn.Module]): the key of the policy to be updated
         """
+        gd.debuginfo(prj="mt", info=f'')
         if target_key in policy:
             if policy[target_key].method_replacement is None:
                 policy[target_key].method_replacement = description
@@ -233,6 +237,7 @@ class Policy(ABC):
         """
         get the start index and end index of layers for each stage.
         """
+        gd.debuginfo(prj="mt", info=f'')
         num_layers_per_stage_accumulated = np.insert(np.cumsum(layers_per_stage), 0, 0)
 
         start_idx = num_layers_per_stage_accumulated[stage]

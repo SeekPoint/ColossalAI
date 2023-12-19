@@ -35,6 +35,7 @@ class DynamicGradScaler(BaseGradScaler):
         hysteresis: int = 2,
         verbose: bool = False,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(initial_scale, verbose)
         if min_scale:
             gd.debuginfo(prj="mt", info=f'')
@@ -57,6 +58,7 @@ class DynamicGradScaler(BaseGradScaler):
         self._hysteresis = hysteresis
         self._hysteresis_step = 0
         self._sanity_checks()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _sanity_checks(self) -> None:
         gd.debuginfo(prj="mt", info=f'')

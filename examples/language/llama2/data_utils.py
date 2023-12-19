@@ -111,6 +111,8 @@ class RandomDataset(Dataset):
         self.max_length = max_length
         self.input_ids = torch.randint(0, vocab_size, (num_samples, max_length), device=get_current_device())
         self.attention_mask = torch.ones_like(self.input_ids)
+        gd.debuginfo(prj="mt", info=f'self.input_ids={infoTensor(self.input_ids)}')
+        gd.debuginfo(prj="mt", info=f'self.attention_mask={infoTensor(self.attention_mask)}')
 
     def __len__(self):
         return self.num_samples

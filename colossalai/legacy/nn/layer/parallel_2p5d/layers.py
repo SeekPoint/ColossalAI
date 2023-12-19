@@ -181,6 +181,8 @@ class Linear2p5D(ParallelLayer):
                 destination.update(local_state)
 
     def forward(self, x: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         # input: [m/dq, n/q, k/q]
         # output: [m/dq, n/q, h/q]
         out_shape = x.shape[:-1] + (self.hidden_size_per_partition,)
@@ -218,6 +220,7 @@ class Linear2p5D(ParallelLayer):
                     self.pipeline_parallel_size,
                     self.tensor_parallel_size,
                 )
+                gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
                 return output, bias
             else:
                 output = add_bias_2p5d(
@@ -235,9 +238,13 @@ class Linear2p5D(ParallelLayer):
                     self.pipeline_parallel_size,
                     self.tensor_parallel_size,
                 )
+                gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
                 return output
         else:
+            gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
             return output
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
 
 @LAYERS.register_module
@@ -349,6 +356,8 @@ class LayerNorm2p5D(ParallelLayer):
             destination.update(local_state)
 
     def forward(self, x: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         with torch.no_grad():
             E_x = torch.sum(x, dim=-1, keepdim=True)  # [b/q, s, 1]
             torch.distributed.all_reduce(E_x, group=gpc.get_group(ParallelMode.PARALLEL_2P5D_ROW))
@@ -398,6 +407,9 @@ class LayerNorm2p5D(ParallelLayer):
             output = torch.addcmul(bias, scale, output)
         else:
             output = torch.mul(scale, output)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return output
 
 
@@ -558,6 +570,8 @@ class PatchEmbedding2p5D(ParallelLayer):
             destination.update(local_state)
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         input_ = split_batch_2p5d(input_, 0)
 
         B, C, H, W = input_.shape
@@ -577,6 +591,8 @@ class PatchEmbedding2p5D(ParallelLayer):
         cls_token = cls_token.expand(output.shape[0], -1, -1)
         output = torch.cat((cls_token, output), dim=1)
         output = output + pos_embed
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
         return output
 
@@ -708,11 +724,15 @@ class Embedding2p5D(ParallelLayer):
             destination.update(local_state)
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         input_ = split_batch_2p5d(input_, 0)
 
         weight = all_gather_tensor_2p5d(self.weight, -1, ParallelMode.PARALLEL_2P5D_COL)
 
         output = F.embedding(input_, weight, self.padding_idx, *self.embed_args, **self.embed_kwargs)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
         return output
 
@@ -852,6 +872,8 @@ class VocabParallelEmbedding2p5D(ParallelLayer):
             destination.update(local_state)
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         # Build the mask.
         input_mask = (input_ < self.vocab_start_index) | (input_ >= self.vocab_end_index)
         # Mask the input.
@@ -866,6 +888,9 @@ class VocabParallelEmbedding2p5D(ParallelLayer):
         output_parallel[input_mask, :] = 0.0
         # Reduce across all the model parallel GPUs.
         output = reduce_scatter_tensor_2p5d(output_parallel, 0, ParallelMode.PARALLEL_2P5D_COL)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return output
 
 
@@ -1009,6 +1034,8 @@ class Classifier2p5D(ParallelLayer):
             destination.update(local_state)
 
     def forward(self, input_: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'')
+
         out_shape = input_.shape[:-1] + (self.num_classes,)
 
         return classifier_2p5d(
@@ -1144,6 +1171,8 @@ class VocabParallelClassifier2p5D(ParallelLayer):
         super()._load_from_global_state_dict(local_state, prefix, *args, **kwargs)
 
     def forward(self, x: Tensor) -> Tensor:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         # input: [m/dq, n/q, k/q]
         # output: [m/dq, n/q, h/q]
         out_shape = x.shape[:-1] + (self.hidden_size_per_partition,)
@@ -1180,4 +1209,5 @@ class VocabParallelClassifier2p5D(ParallelLayer):
                 self.pipeline_parallel_size,
                 self.tensor_parallel_size,
             )
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return output

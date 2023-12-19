@@ -219,6 +219,7 @@ class DataModuleFromConfig(pl.LightningDataModule):
         use_worker_init_fn=False,
         shuffle_val_dataloader=False,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         # Set data module attributes
         self.batch_size = batch_size
@@ -239,6 +240,7 @@ class DataModuleFromConfig(pl.LightningDataModule):
             self.dataset_configs["predict"] = predict
             self.predict_dataloader = self._predict_dataloader
         self.wrap = wrap
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def prepare_data(self):
         # Instantiate datasets
@@ -320,7 +322,7 @@ class SetupCallback(Callback):
     # Initialize the callback with the necessary parameters
 
     def __init__(self, resume, now, logdir, ckptdir, cfgdir, config, lightning_config):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.resume = resume
         self.now = now
@@ -329,6 +331,7 @@ class SetupCallback(Callback):
         self.cfgdir = cfgdir
         self.config = config
         self.lightning_config = lightning_config
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     # Save a checkpoint if training is interrupted with keyboard interrupt
     def on_keyboard_interrupt(self, trainer, pl_module):
@@ -395,6 +398,7 @@ class ImageLogger(Callback):
         log_first_step=False,  # Whether to log on the first step
         log_images_kwargs=None,
     ):  # Additional keyword arguments to pass to log_images method
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.rescale = rescale
         self.batch_freq = batch_frequency
@@ -412,6 +416,8 @@ class ImageLogger(Callback):
         self.log_on_batch_idx = log_on_batch_idx
         self.log_images_kwargs = log_images_kwargs if log_images_kwargs else {}
         self.log_first_step = log_first_step
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @rank_zero_only  # Ensure that only the first process in distributed training executes this method
     def _testtube(

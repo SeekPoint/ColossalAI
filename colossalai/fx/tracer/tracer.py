@@ -66,7 +66,7 @@ class ColoTracer(Tracer):
     """
 
     def __init__(self, trace_act_ckpt: bool = False, *args, **kwargs):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(*args, **kwargs)
         self.tracer_type = TracerType.META
         self.proxy_cls = ColoProxy
@@ -76,6 +76,8 @@ class ColoTracer(Tracer):
         # whether the current tracing occurs within the activation checkpoint functions
         self.inside_torch_checkpoint_func = False
         self.act_ckpt_region_count = 0
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     # Feature flag for proxying accesses to buffer values
     proxy_buffer_attributes: bool = True

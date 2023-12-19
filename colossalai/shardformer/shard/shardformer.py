@@ -32,9 +32,11 @@ class ShardFormer:
     """
 
     def __init__(self, shard_config: ShardConfig):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.coordinator = DistCoordinator()
+        gd.debuginfo(prj="mt", info=f'------------------------------')
         self.shard_config = shard_config
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def optimize(self, model: nn.Module, policy: Policy = None) -> Tuple[nn.Module, List[Dict[int, Tensor]]]:
         r"""

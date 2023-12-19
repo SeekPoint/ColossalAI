@@ -204,7 +204,7 @@ class LazyTensor(torch.Tensor):
         return r
 
     def __init__(self, func, *args, meta_data=None, concrete_data=None, **kwargs):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self._device = torch.device(kwargs.get("device", None) or "cpu")
 
         if func.__name__ in _NORMAL_FACTORY:
@@ -214,6 +214,8 @@ class LazyTensor(torch.Tensor):
         self._factory_method = (func, args, kwargs)  # (func, args, kwargs)
         self._op_buffer = []  # (func, args, kwargs, replace)
         self._materialized_data: Optional[torch.Tensor] = concrete_data  # materialized data
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @property
     def device(self) -> torch.device:
@@ -527,11 +529,12 @@ class LazyInitContext:
         tensor_cls: Union[_MyTensor, LazyTensor] = LazyTensor,
         default_device: Optional[Union[torch.device, str, int]] = None,
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert tensor_cls is LazyTensor or tensor_cls is _MyTensor
         self.tensor_cls = tensor_cls
         self.old_default_device = LazyTensor.default_device
         self.default_device = default_device
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def __enter__(self):
         if LazyInitContext._replaced:

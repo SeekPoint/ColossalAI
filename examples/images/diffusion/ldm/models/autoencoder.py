@@ -23,6 +23,7 @@ class AutoencoderKL(pl.LightningModule):
         ema_decay=None,
         learn_logvar=False,
     ):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.learn_logvar = learn_logvar
         self.image_key = image_key
@@ -34,6 +35,7 @@ class AutoencoderKL(pl.LightningModule):
         self.post_quant_conv = torch.nn.Conv2d(embed_dim, ddconfig["z_channels"], 1)
         self.embed_dim = embed_dim
         if colorize_nlabels is not None:
+            gd.debuginfo(prj="mt", info=f'')
             assert type(colorize_nlabels) == int
             self.register_buffer("colorize", torch.randn(3, colorize_nlabels, 1, 1))
         if monitor is not None:
@@ -47,9 +49,13 @@ class AutoencoderKL(pl.LightningModule):
             gd.debuginfo(prj="mt", info=f"Keeping EMAs of {len(list(self.model_ema.buffers()))}.")
 
         if ckpt_path is not None:
+            gd.debuginfo(prj="mt", info=f'')
             self.init_from_ckpt(ckpt_path, ignore_keys=ignore_keys)
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def init_from_ckpt(self, path, ignore_keys=list()):
+        gd.debuginfo(prj="mt", info=f'')
         sd = torch.load(path, map_location="cpu")["state_dict"]
         keys = list(sd.keys())
         for k in keys:
@@ -230,9 +236,10 @@ class AutoencoderKL(pl.LightningModule):
 
 class IdentityFirstStage(torch.nn.Module):
     def __init__(self, *args, vq_interface=False, **kwargs):
-        gd.debuginfo(prj='mt', info=f"C:{self.__class__.__name__}")
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.vq_interface = vq_interface
         super().__init__()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def encode(self, x, *args, **kwargs):
         return x
