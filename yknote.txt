@@ -119,6 +119,10 @@ torchrun --standalone --nproc_per_node=3 /workspace/yk_repo/ColossalAI/applicati
 --rm_pretrain Coati-bloom-560m-sft --rm_path Coati-bloom-560m-rw.pt --max_datasets_size 500 --num_episodes 1
 
 
+root@83dccafe7db4:/workspace/yk_repo/ColossalAI/examples/language/palm#
+bash run.sh  ==== passed
+
+
 
 
 

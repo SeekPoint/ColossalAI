@@ -413,7 +413,7 @@ class OPTPipelineForwards:
         if stage_manager.is_last_stage():
             hidden_states = transformer_outputs[0]
             logits = self.score(hidden_states)
-            gd.debuginfo(prj="mt", info=f'hidden_states={infortensor(hidden_states)}')
+            gd.debuginfo(prj="mt", info=f'hidden_states={infoTensor(hidden_states)}')
             gd.debuginfo(prj="mt", info=f'logits={logits}')
 
             batch_size = input_ids.shape[0] if input_ids is not None else hidden_states.shape[0]
@@ -698,7 +698,7 @@ def get_jit_fused_opt_decoder_layer_forward():
         # 125m, 1.7B, ..., 175B applies layer norm BEFORE attention
         if self.do_layer_norm_before:
             hidden_states = self.self_attn_layer_norm(hidden_states)
-            gd.debuginfo(prj="mt", info=f'hidden_states={infortensor(hidden_states)}')
+            gd.debuginfo(prj="mt", info=f'hidden_states={infoTensor(hidden_states)}')
 
         # Self Attention
         hidden_states, self_attn_weights, present_key_value = self.self_attn(
@@ -708,47 +708,50 @@ def get_jit_fused_opt_decoder_layer_forward():
             layer_head_mask=layer_head_mask,
             output_attentions=output_attentions,
         )
-        gd.debuginfo(prj="mt", info=f'hidden_states={infortensor(hidden_states)}')
+        gd.debuginfo(prj="mt", info=f'hidden_states={infoTensor(hidden_states)}')
         gd.debuginfo(prj="mt", info=f'self_attn_weights={infoTensor(self_attn_weights)}')
-        gd.debuginfo(prj="mt", info=f'present_key_value={infoTensor(present_key_value)}')
+        gd.debuginfo(prj="mt", info=f'len of present_key_value={len(present_key_value)}')
+        for i, v in enumerate(present_key_value):
+            gd.debuginfo(prj="mt", info=f'present_key_value[{i}]={infoTensor(v)}')
 
         hidden_states = self.dropout_add(hidden_states, residual, self.dropout, self.training)
-        gd.debuginfo(prj="mt", info=f'hidden_states={infortensor(hidden_states)}')
+        gd.debuginfo(prj="mt", info=f'hidden_states={infoTensor(hidden_states)}')
 
         # 350m applies layer norm AFTER attention
         if not self.do_layer_norm_before:
             hidden_states = self.self_attn_layer_norm(hidden_states)
-            gd.debuginfo(prj="mt", info=f'hidden_states={infortensor(hidden_states)}')
+            gd.debuginfo(prj="mt", info=f'hidden_states={infoTensor(hidden_states)}')
 
         # Fully Connected
         hidden_states_shape = hidden_states.shape
         hidden_states = hidden_states.reshape(-1, hidden_states.size(-1))
-        gd.debuginfo(prj="mt", info=f'hidden_states={infortensor(hidden_states)}')
+        gd.debuginfo(prj="mt", info=f'hidden_states={infoTensor(hidden_states)}')
         residual = hidden_states
 
         # 125m, 1.7B, ..., 175B applies layer norm BEFORE attention
         if self.do_layer_norm_before:
             hidden_states = self.final_layer_norm(hidden_states)
-            gd.debuginfo(prj="mt", info=f'hidden_states={infortensor(hidden_states)}')
+            gd.debuginfo(prj="mt", info=f'hidden_states={infoTensor(hidden_states)}')
 
         hidden_states = self.fc1(hidden_states)
-        gd.debuginfo(prj="mt", info=f'hidden_states={infortensor(hidden_states)}')
+        gd.debuginfo(prj="mt", info=f'hidden_states={infoTensor(hidden_states)}')
 
         hidden_states = self.activation_fn(hidden_states)
-        gd.debuginfo(prj="mt", info=f'hidden_states={infortensor(hidden_states)}')
+        gd.debuginfo(prj="mt", info=f'hidden_states={infoTensor(hidden_states)}')
 
         hidden_states = self.fc2(hidden_states)
-        gd.debuginfo(prj="mt", info=f'hidden_states={infortensor(hidden_states)}')
+        gd.debuginfo(prj="mt", info=f'hidden_states={infoTensor(hidden_states)}')
 
         hidden_states = self.dropout_add(hidden_states, residual, self.dropout, self.training).view(hidden_states_shape)
-        gd.debuginfo(prj="mt", info=f'hidden_states={infortensor(hidden_states)}')
+        gd.debuginfo(prj="mt", info=f'hidden_states={infoTensor(hidden_states)}')
 
         # 350m applies layer norm AFTER attention
         if not self.do_layer_norm_before:
             hidden_states = self.final_layer_norm(hidden_states)
-            gd.debuginfo(prj="mt", info=f'hidden_states={infortensor(hidden_states)}')
+            gd.debuginfo(prj="mt", info=f'hidden_states={infoTensor(hidden_states)}')
 
         outputs = (hidden_states,)
+        #gd.debuginfo(prj="mt", info=f'outputs={infoTensor(outputs)}')
 
         if output_attentions:
             outputs += (self_attn_weights,)
@@ -758,7 +761,7 @@ def get_jit_fused_opt_decoder_layer_forward():
             outputs += (present_key_value,)
             gd.debuginfo(prj="mt", info=f'')
 
-        gd.debuginfo(prj="mt", info=f'outputs={outputs}')
+        #gd.debuginfo(prj="mt", info=f'outputs={infoTensor(outputs)}')
 
         return outputs
 

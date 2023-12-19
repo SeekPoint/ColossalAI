@@ -281,12 +281,12 @@ def main():
 
     gd.debuginfo(prj="mt", info=f'init_ctx={init_ctx}')
 
+    logf = f'llama2_model'
+    gd.emb_start(info=logf)
+
     with init_ctx:
         model = LlamaForCausalLM(config)
-        logf = f'llama2_model'
-        gd.emb_start(info=logf)
         gd.debuginfo(prj="mt", info=f'model={model}')
-        gd.emb_end(info=logf)
 
     if args.grad_checkpoint:
         model.gradient_checkpointing_enable()

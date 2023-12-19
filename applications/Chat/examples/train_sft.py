@@ -186,7 +186,7 @@ def train(args):
         eval_dataloader = None
         gd.debuginfo(prj="mt", info=f'')
 
-    logf = f'trainer.fit'
+    logf = f'sft_model'
     gd.emb_start(info=logf)
 
     num_update_steps_per_epoch = len(train_dataloader) // args.accumulation_steps
@@ -206,14 +206,14 @@ def train(args):
     optim = strategy_dict["optimizer"]
     lr_scheduler = strategy_dict["lr_scheduler"]
 
-    logf = f'sft_model'
-    gd.emb_start(info=logf)
-
     gd.debuginfo(prj="mt", info=f'model={model}')
     gd.debuginfo(prj="mt", info=f'optim={optim}')
     gd.debuginfo(prj="mt", info=f'lr_scheduler={lr_scheduler}')
 
     gd.emb_end(info=logf)
+
+    logf = f'trainer.fit'
+    gd.emb_start(info=logf)
 
     trainer = SFTTrainer(
         model=model,
@@ -227,6 +227,7 @@ def train(args):
     gd.debuginfo(prj="mt", info=f'trainer={trainer}')
 
     # logger = get_dist_logger()
+    logger = None
     trainer.fit(
         train_dataloader=train_dataloader,
         eval_dataloader=eval_dataloader,

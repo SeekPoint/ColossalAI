@@ -309,7 +309,7 @@ def norm_forward(x: Tensor, mean: Tensor, sqr_mean: Tensor, weight: Tensor, bias
 
 @torch.jit.script
 def norm_backward(grad: Tensor, mu: Tensor, sigma: Tensor, weight: Tensor):
-    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+    # gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     # dbias, dweight = grad, grad * mu / sigma
     dz = grad * weight
     dmu = dz / sigma
@@ -317,7 +317,7 @@ def norm_backward(grad: Tensor, mu: Tensor, sigma: Tensor, weight: Tensor):
     dmean = -dmu
     dvar = torch.sum(dvar, -1, keepdim=True)
     dmean = torch.sum(dmean, -1, keepdim=True)
-    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+    # gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     return dmu, dmean, dvar
 
 

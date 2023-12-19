@@ -90,7 +90,8 @@ def train(args):
         optim = Adam(model.parameters(), lr=args.lr)
 
     # logger = get_dist_logger()
-    logger.set_level("WARNING")
+    # logger.set_level("WARNING")
+    logger = None
 
     # configure dataset
     law_dataset = EasyDataset(args.dataset, tokenizer=tokenizer, is_group_texts=not args.is_short_text)

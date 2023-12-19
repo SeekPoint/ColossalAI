@@ -95,10 +95,16 @@ class ColoAttention(torch.nn.Module):
                     query, key, value = self.unpad(
                         torch.stack([query, key, value], dim=2), seq_len_info_q.indices
                     ).unbind(dim=1)
-                    gd.debuginfo(prj="mt", info=f'query={query}, key={key}, value={value}')
+                    gd.debuginfo(prj="mt",
+                                 info=f'query={infoTensor(query)}, '
+                                      f'key={infoTensor(key)}, '
+                                      f'value={infoTensor(value)}')
                 else:
                     query, key, value = torch.stack([query, key, value], dim=2).squeeze(0).unbind(dim=1)
-                    gd.debuginfo(prj="mt", info=f'query={query}, key={key}, value={value}')
+                    gd.debuginfo(prj="mt",
+                                 info=f'query={infoTensor(query)}, '
+                                      f'key={infoTensor(key)}, '
+                                      f'value={infoTensor(value)}')
                 seq_len_info_kv = seq_len_info_q
                 gd.debuginfo(prj="mt", info=f'seq_len_info_kv={seq_len_info_kv}')
             else:
@@ -113,10 +119,16 @@ class ColoAttention(torch.nn.Module):
                     key, value = self.unpad(torch.stack([query, key, value], dim=2), seq_len_info_kv.indices).unbind(
                         dim=1
                     )
-                    gd.debuginfo(prj="mt", info=f'query={query}, key={key}, value={value}')
+                    gd.debuginfo(prj="mt",
+                                 info=f'query={infoTensor(query)}, '
+                                      f'key={infoTensor(key)}, '
+                                      f'value={infoTensor(value)}')
                 else:
                     query, key, value = torch.stack([query, key, value], dim=2).squeeze(0).unbind(dim=1)
-                    gd.debuginfo(prj="mt", info=f'query={query}, key={key}, value={value}')
+                    gd.debuginfo(prj="mt",
+                                 info=f'query={infoTensor(query)}, '
+                                      f'key={infoTensor(key)}, '
+                                      f'value={infoTensor(value)}')
 
         out = attn(
             query,

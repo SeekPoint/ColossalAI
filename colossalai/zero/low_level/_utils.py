@@ -209,8 +209,10 @@ def sync_tensor(flat_tensor, tensor_list):
     :type flat_tensor: torch.Tensor
     :type tensor_list: List[torch.Tensor]
     """
-    gd.debuginfo(prj="mt", info=f'')
+    gd.debuginfo(prj="mt", info=f'flat_tensor={infoTensor(flat_tensor)}')
     updated_params = unflatten(flat_tensor, tensor_list)
+    for i, v in enumerate(updated_params):
+        gd.debuginfo(prj="mt", info=f'updated_params[{i}]={infoTensor(v)}')
 
     # update the tensor data
     for p, q in zip(tensor_list, updated_params):

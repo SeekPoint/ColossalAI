@@ -48,6 +48,7 @@ class LowLevelZeroFP16MixedPrecisionMixin(FP16MixedPrecisionMixin):
         gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def check_local_overflow(self) -> bool:
+        gd.debuginfo(prj="mt", info=f'')
         for group_id in range(self.num_working_param_groups):
             for avg_grad in self.grad_store.get_working_grads_by_group_id(group_id):
                 if avg_grad is not None and has_inf_or_nan(avg_grad):
@@ -196,6 +197,7 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
                 ), f"Parameters are expected to have the same dtype `{self._dtype}`, but got `{param.dtype}`"
 
     def _create_master_param_current_rank(self, param_list):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # split each param evenly by world size
         params_current_rank = []
         device = "cpu" if self._cpu_offload else get_current_device()
@@ -221,7 +223,7 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
                     splited_param_current_rank = splited_params[self._local_rank]
                 params_current_rank.append(splited_param_current_rank)
                 self._param_store.link_master_and_working_param(splited_param_current_rank, param)
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return params_current_rank
 
     ###########################
@@ -229,12 +231,14 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
     ###########################
 
     def _grad_handler(self, param, group_id, grad):
+        gd.debuginfo(prj="mt", info=f'')
         # if run with no_sync context, would not sync grad when backward
         if self.require_grad_sync:
             self._add_to_bucket(param, group_id)
         return grad
 
     def _attach_reduction_hook(self):
+        gd.debuginfo(prj="mt", info=f'')
         # we iterate over the working params
         # on each param, we register a hook to its AccumulateGrad object
         for group_id in range(self.num_param_groups):
@@ -248,7 +252,9 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
     #######################
 
     def _run_reduction(self):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self._bucket_store.num_elements_in_bucket() > 0:
+            gd.debuginfo(prj="mt", info=f'')
             self._bucket_store.build_grad_in_bucket()
 
             flat_grads = self._bucket_store.get_flatten_grad()
@@ -258,12 +264,14 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
             self._bucket_store.reset_num_elements_in_bucket()
 
             if self._overlap_communication:
+                gd.debuginfo(prj="mt", info=f'')
                 stream = self._comm_stream
                 # in case of the memory being reused in the default stream
                 flat_grads.record_stream(stream)
                 # waiting for ops in the default stream finishing
                 stream.wait_stream(torch.cuda.current_stream())
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 stream = torch.cuda.current_stream()
 
             with torch.cuda.stream(stream):
@@ -271,11 +279,13 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
 
                 grad_dtype = flat_grads.dtype
                 if self._communication_dtype is not None:
+                    gd.debuginfo(prj="mt", info=f'')
                     flat_grads = flat_grads.to(self._communication_dtype)
 
                 if not self._partition_grads:
                     dist.all_reduce(flat_grads, group=self.dp_pg)
                     if flat_grads.dtype != grad_dtype:
+                        gd.debuginfo(prj="mt", info=f'')
                         flat_grads = flat_grads.to(grad_dtype)
 
                     flat_grads_per_rank = flat_grads.split(flat_grads.numel() // self._world_size)
@@ -289,16 +299,20 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
                                 len(self._grad_store.get_partitioned_gradients_by_param_id(group_id, param_id))
                                 < self._world_size
                             ):
+                                gd.debuginfo(prj="mt", info=f'')
                                 self._grad_store.append_gradients_by_param_id(grad, group_id, param_id)
                             else:
+                                gd.debuginfo(prj="mt", info=f'')
                                 self._grad_store.add_gradients_by_param_id(grad, rank, group_id, param_id)
 
                 else:
+                    gd.debuginfo(prj="mt", info=f'')
                     flat_grads_list = list(flat_grads.split(len(flat_grads) // self._world_size))
                     recieved_grad = torch.zeros_like(flat_grads_list[0])
                     dist.reduce_scatter(recieved_grad, flat_grads_list, group=self.dp_pg)
 
                     if recieved_grad.dtype != grad_dtype:
+                        gd.debuginfo(prj="mt", info=f'')
                         recieved_grad = recieved_grad.to(grad_dtype)
 
                     grad_in_bucket_current_rank = self._bucket_store.get_grad()[self._local_rank]
@@ -306,14 +320,19 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
                     for grad in grad_in_bucket_current_rank:
                         param_id = self._bucket_store.get_param_id_of_grad(grad)
                         if len(self._grad_store.get_partitioned_gradients_by_param_id(group_id, param_id)) < 1:
+                            gd.debuginfo(prj="mt", info=f'param_id={param_id}, param_id={param_id}, grad={infoTensor(grad)}')
                             self._grad_store.append_gradients_by_param_id(grad, group_id, param_id)
                         else:
+                            gd.debuginfo(prj="mt", info=f'param_id={param_id}, param_id={param_id}, grad={infoTensor(grad)}')
                             self._grad_store.add_gradients_by_param_id(grad, 0, group_id, param_id)
 
                 self._bucket_store.reset()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _add_to_bucket(self, param, group_id):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         param_size = param.numel()
+        gd.debuginfo(prj="mt", info=f'param_size={param_size}')
 
         # check if the bucket is full
         # if full, will reduce the grads already in the bucket
@@ -323,10 +342,15 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
             self._bucket_store.num_elements_in_bucket() + param_size > self._reduce_bucket_size
             or group_id != self._bucket_store.current_group_id
         ):
+            gd.debuginfo(prj="mt", info=f'')
             self._run_reduction()
 
         padding_size = self._param_store.get_param_padding_size(param)
+        gd.debuginfo(prj="mt", info=f'padding_size={padding_size}')
+
         self._bucket_store.add_param_grad(group_id, param, padding_size)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     ################################
     # torch.optim.Optimizer methods
@@ -385,6 +409,7 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
         :param set_to_none: Whether set the gradient to None. Default value is True.
         :type set_to_none: bool
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.mixed_precision_mixin is not None:
             self.mixed_precision_mixin.pre_zero_grad()
         for _, param_group in self._working_param_groups.items():
@@ -395,6 +420,8 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
                     if param.grad is not None:
                         param.grad.detach()
                         param.grad.zero_()
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     ####################
     # Update Parameter #
@@ -493,7 +520,7 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
         Returns:
             float: The total norm of given gradients
         """
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if len(gradients) == 0:
             return 0.0
 
@@ -517,7 +544,7 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
                 total_norm_exponentiated_cuda, op=torch.distributed.ReduceOp.SUM, group=self.dp_pg
             )
             total_norm = total_norm_exponentiated_cuda.item() ** (1.0 / norm_type)
-
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return total_norm
 
     #############################
@@ -525,6 +552,7 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
     #############################
 
     def _unscale_and_clip_grads(self, grad_groups_flat, total_norm):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # compute combined scale factor for this group
         div_scale = 1.0
         if self.mixed_precision_mixin is not None:
@@ -539,12 +567,15 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
         for grad in grad_groups_flat:
             grad.data.mul_(1.0 / div_scale)
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     ############################
     # Gradient Synchronization #
     ############################
 
     # this method is used to sync gradient manually
     def sync_grad(self):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         for group_id in range(self.num_param_groups):
             param_group = self._working_param_groups[group_id]
             for param in param_group:
@@ -553,17 +584,24 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
 
         self._run_reduction()
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def _reduce_grad(self, partition_grad):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # if not overlapping communication (no reduction hook is attached) when zero1
         # we need to manually reduce these gradients
         if not partition_grad and not self._overlap_communication:
+            gd.debuginfo(prj="mt", info=f'')
             self.sync_grad()
         else:
+            gd.debuginfo(prj="mt", info=f'')
             self._run_reduction()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     # this context comes from pytorch DDP
     @contextmanager
     def no_sync(self):
+        gd.debuginfo(prj="mt", info=f'')
         old_require_grad_sync = self.require_grad_sync
         self.require_grad_sync = False
         try:
@@ -576,6 +614,7 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
     ##############
 
     def _pack_state(self, state: Dict) -> Dict:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         # comes from pytorch optimizer.state_dict()
         param_mappings = {}
         start_index = 0
@@ -594,6 +633,8 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
         # Remap state to use order indices as keys
         packed_state = {(param_mappings[id(k)] if isinstance(k, torch.Tensor) else k): v for k, v in state.items()}
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
         return {"state": packed_state, "param_groups": param_groups}
 
     def state_dict(self) -> Dict:
@@ -602,6 +643,7 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
         Returns:
             Dict: the pytorch form state_dict
         """
+        gd.debuginfo(prj="mt", info=f'')
         zero_state = dict()
         for param, state in self.optim.state.items():
             zero_state[param] = copy.deepcopy(state)
@@ -627,6 +669,7 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
         Args:
             state_dict (dict): A pytorch form state_dict
         """
+        gd.debuginfo(prj="mt", info=f'')
         zero_state_dict = copy.deepcopy(state_dict)
         for param_idx, state in zero_state_dict["state"].items():
             for k, v in state.items():
@@ -651,6 +694,7 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
         Yields:
             Iterator[OrderedDict]: A generator of state dict shard
         """
+        gd.debuginfo(prj="mt", info=f'')
         ret_block = dict()
         ret_block_size = 0
 
@@ -692,6 +736,7 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
         Args:
             model (nn.Module): The model to update master params
         """
+        gd.debuginfo(prj="mt", info=f'')
         for p in model.parameters():
             p_id = id(p)
             if p_id in self._param_store.working_to_master_param:
@@ -703,7 +748,9 @@ class LowLevelZeroOptimizer(OptimizerWrapper):
                 master_param.copy_(working_param.chunk(self._world_size)[self._local_rank])
 
     def get_working_to_master_map(self) -> Dict[int, torch.Tensor]:
+        gd.debuginfo(prj="mt", info=f'')
         return self._param_store.working_to_master_param
 
     def get_master_to_working_map(self) -> Dict[int, torch.Tensor]:
+        gd.debuginfo(prj="mt", info=f'')
         return self._param_store.master_to_working_param

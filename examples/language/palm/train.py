@@ -23,7 +23,7 @@ from colossalai.utils import get_current_device
 from pydebug import gd, infoTensor
 # constants
 
-NUM_BATCHES = int(10)
+NUM_BATCHES = int(100)
 WARMUP_BATCHES = 1
 GRADIENT_ACCUMULATE_EVERY = 1
 LEARNING_RATE = 2e-4
@@ -108,7 +108,7 @@ colossalai.launch_from_torch(config={})
 
 def generate_dataset(dummy_data: bool = False):
     if not dummy_data:
-        with gzip.open("./data/enwik8.gz") as file:
+        with gzip.open("/data/enwik8.gz") as file:
             X = np.fromstring(file.read(int(95e6)), dtype=np.uint8)
             trX, vaX = np.split(X, [int(90e6)])
             data_train, data_val = torch.from_numpy(trX), torch.from_numpy(vaX)
@@ -164,7 +164,7 @@ if args.distplan == "colossalai":
     ctx = LazyInitContext(default_device=get_current_device()) if args.plugin == "gemini" else nullcontext()
 
     with ctx:
-        model = PaLM(num_tokens=50304, dim=4096, depth=64)
+        model = PaLM(num_tokens=20000, dim=1024, depth=12)
         model = AutoregressiveWrapper(model, max_seq_len=SEQ_LEN)
 
     # optimizer
@@ -185,7 +185,7 @@ get_tflops_func = partial(get_tflops, numel, args.batch_size, SEQ_LEN)
 # training
 model.train()
 tflops_list = []
-for i in tqdm.tqdm(range(NUM_BATCHES), mininterval=10.0, desc="training"):
+for i in tqdm.tqdm(range(NUM_BATCHES), mininterval=1, desc="training"):
     if args.distplan == "colossalai":
         optimizer.zero_grad()
         start = time()
@@ -227,6 +227,8 @@ for i in tqdm.tqdm(range(NUM_BATCHES), mininterval=10.0, desc="training"):
 
 tflops_list.sort()
 median_index = ((NUM_BATCHES - WARMUP_BATCHES) >> 1) + WARMUP_BATCHES
+print(f"median_index={median_index}")
+print(f"len of tflops_list={len(tflops_list)}")
 gd.debuginfo(prj="mt", info=f"Median TFLOPS is {tflops_list[median_index]:.3f}")
 
 # TODO

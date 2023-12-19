@@ -40,6 +40,7 @@ def main():
     else:
         colossalai.launch_from_slurm(config=args.config, host=args.host, port=29500, seed=42)
     # logger = get_dist_logger()
+    logger = None
 
     data_path = None if args.use_dummy_dataset else os.environ["DATA"]
     gd.debuginfo(prj="mt", info=f"Build data loader from path {data_path}")

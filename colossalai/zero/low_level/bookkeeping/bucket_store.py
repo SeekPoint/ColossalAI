@@ -51,7 +51,7 @@ class BucketStore(BaseStore):
             param (Tensor): The parameter
             padding_size (int): The padding size of the parameter
         """
-
+        gd.debuginfo(prj="mt", info=f'')
         self._param_list.append(param)
         self._padding_size.append(padding_size)
         self._num_elements_in_bucket += param.numel() + padding_size

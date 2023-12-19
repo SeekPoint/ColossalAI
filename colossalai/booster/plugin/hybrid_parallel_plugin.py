@@ -871,14 +871,20 @@ class HybridParallelPlugin(PipelinePluginBase):
         lr_scheduler: Optional[LRScheduler] = None,
     ) -> Tuple[Module, OptimizerWrapper, Callable, DataLoader, LRScheduler]:
         param_info = get_param_info(optimizer)
-        gd.debuginfo(prj="mt", info=f'param_info={param_info}')
-
+        for k, v in param_info.items():
+            gd.debuginfo(prj="mt", info=f'len of param_info[{k}]={len(v)}')
+            gd.debuginfo(prj="mt", info=f'param_info[{k}]={v}')
+        gd.debuginfo(prj="mt", info=f'-------------------------------------')
         if not isinstance(model, ModelWrapper):
             use_ddp = self.dp_size > 1 and self.pp_size == 1 and self.zero_stage == 0
             gd.debuginfo(prj="mt", info=f'use_ddp={use_ddp}')
-            model = HybridParallelModule(
-                model, self.precision, self.shard_config, self.dp_group, use_ddp, self.ddp_config, self.custom_policy
-            )
+            model = HybridParallelModule(model,
+                                         self.precision,
+                                         self.shard_config,
+                                         self.dp_group,
+                                         use_ddp,
+                                         self.ddp_config,
+                                         self.custom_policy)
             gd.debuginfo(prj="mt", info=f'model={model}')
 
         if optimizer is not None and not isinstance(optimizer, OptimizerWrapper):
@@ -927,6 +933,7 @@ class HybridParallelPlugin(PipelinePluginBase):
 
             # inject update_master_params
             model.update_master_params = MethodType(optimizer.update_master_params, model)
+            gd.debuginfo(prj="mt", info=f'model.update_master_params={model.update_master_params}')
         return model, optimizer, criterion, dataloader, lr_scheduler
 
     def execute_pipeline(

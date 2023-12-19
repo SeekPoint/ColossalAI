@@ -68,7 +68,6 @@ class LowLevelZeroModel(ModelWrapper, AMPModelMixin):
             args = tree_map(self.convert_fn, args)
             kwargs = tree_map(self.convert_fn, kwargs)
 
-            gd.debuginfo(prj="mt", info=f"kwargs={kwargs}")
             for i, v in enumerate(args):
                 gd.debuginfo(prj="mt", info=f'arg[{i}]={infoTensor(v)}')
 
