@@ -55,10 +55,11 @@ class LowLevelZeroStrategy(DDPStrategy):
         max_norm: float = 0.0,
         norm_type: float = 2.0,
     ) -> None:
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert stage in (1, 2), f'Unsupported stage "{stage}"'
         assert placement_policy in ("cpu", "cuda"), f'Unsupported placement policy "{placement_policy}"'
         assert precision in ("fp32", "fp16"), f'Unsupported precision "{precision}"'
-        gd.debuginfo(prj="mt", info=f'')
+
         plugin_initializer = lambda: LowLevelZeroPlugin(
             stage=stage,
             precision=precision,
@@ -75,8 +76,10 @@ class LowLevelZeroStrategy(DDPStrategy):
             max_norm=max_norm,
             norm_type=norm_type,
         )
-
+        gd.debuginfo(prj="mt", info=f'====================================================')
         super().__init__(seed, plugin_initializer)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _post_init(self) -> None:
         assert isinstance(
@@ -150,7 +153,7 @@ class GeminiStrategy(DDPStrategy):
         max_norm: float = 0.0,
         norm_type: float = 2.0,
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
         # TODO(ver217): support shard_init when using from_pretrained()
         if shard_init:
@@ -187,8 +190,10 @@ class GeminiStrategy(DDPStrategy):
             max_norm=max_norm,
             norm_type=norm_type,
         )
-
+        gd.debuginfo(prj="mt", info=f'==================================')
         super().__init__(seed, plugin_initializer)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _post_init(self) -> None:
         assert isinstance(self.plugin, GeminiPlugin), f"{type(self).__name__}'s plugin is not initialized properly."

@@ -356,8 +356,8 @@ def main():
             for step in pbar:
                 if step > 5:
                     break
-                logf = f'epoch{epoch:02}+step{step:04}'
-                gd.emb_start(info=logf)
+                logff = f'epoch{epoch:02}+step{step:04}' # 注意嵌套的重名问题
+                gd.emb_start(info=logff)
                 if use_pipeline:
                     outputs = booster.execute_pipeline(
                         dataloader_iter, model, _criterion, optimizer, return_loss=True, return_outputs=True
@@ -428,7 +428,7 @@ def main():
                     gd.emb_end(info=logf)
 
                     coordinator.print_on_master(f"Saved checkpoint at epoch {epoch} step {step + 1}")
-                gd.emb_end(info=logf)
+                gd.emb_end(info=logff)
 
         # the continue epochs are not resumed, so we need to reset the sampler start index and start step
         dataloader.sampler.set_start_index(0)

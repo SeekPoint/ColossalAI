@@ -36,7 +36,7 @@ class SFTTrainer(SLTrainer):
         max_epochs: int = 2,
         accumulation_steps: int = 8,
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if accumulation_steps > 1:
             assert not isinstance(
                 strategy, GeminiStrategy
@@ -49,9 +49,10 @@ class SFTTrainer(SLTrainer):
 
         self.num_train_step = 0
         self.num_eval_step = 0
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _train(self, epoch: int):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.model.train()
         step_bar = tqdm.trange(
             len(self.train_dataloader) // self.accumulation_steps,
@@ -94,8 +95,10 @@ class SFTTrainer(SLTrainer):
         gd.debuginfo(prj="mt", info=f'')
         step_bar.close()
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def _eval(self, epoch: int):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.eval_dataloader is not None:
             gd.debuginfo(prj="mt", info=f'')
             self.model.eval()
@@ -116,6 +119,8 @@ class SFTTrainer(SLTrainer):
                     self.writer.add_scalar("eval/loss", loss_mean, self.num_eval_step)
                     self.num_eval_step += 1
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def _before_fit(
         self,
         train_dataloader: DataLoader,
@@ -129,7 +134,7 @@ class SFTTrainer(SLTrainer):
             train_dataloader: the dataloader to use for training
             eval_dataloader: the dataloader to use for evaluation
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.train_dataloader = train_dataloader
         self.eval_dataloader = eval_dataloader
 
@@ -151,3 +156,5 @@ class SFTTrainer(SLTrainer):
             self.writer = SummaryWriter(log_dir=log_dir)
 
         self.total_loss = 0
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')

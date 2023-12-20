@@ -31,12 +31,13 @@ class SLTrainer(ABC):
         model: nn.Module,
         optimizer: Optimizer,
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.strategy = strategy
         self.max_epochs = max_epochs
         self.model = model
         self.optimizer = optimizer
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @abstractmethod
     def _train(self, epoch):
@@ -77,13 +78,15 @@ class OnPolicyTrainer(ABC):
         dataloader_pin_memory: bool,
         callbacks: List[Callback] = [],
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.strategy = strategy
         self.data_buffer = data_buffer
         self.sample_buffer = sample_buffer
         self.dataloader_pin_memory = dataloader_pin_memory
         self.callbacks = callbacks
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @contextmanager
     def _fit_ctx(self) -> None:
@@ -176,7 +179,7 @@ class OnPolicyTrainer(ABC):
             num_collect_steps (int): the number of collect steps per episode
             num_update_steps (int): the number of update steps per episode
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self._before_fit(*args, **kwargs)
         with self._fit_ctx():
             for episode in tqdm.trange(num_episodes, desc="Episodes", disable=not is_rank_0()):
@@ -192,3 +195,4 @@ class OnPolicyTrainer(ABC):
                         self._update_phase(update_step)
                     # NOTE: this is for on-policy algorithms
                     self.data_buffer.clear()
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')

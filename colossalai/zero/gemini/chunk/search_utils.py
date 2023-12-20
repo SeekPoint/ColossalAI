@@ -52,7 +52,7 @@ def _get_unused_byte(size_list: List[int], chunk_size: int) -> int:
     Returns:
         int: the unused byte.
     """
-    gd.debuginfo(prj="mt", info=f'')
+    # gd.debuginfo(prj="mt", info=f'')
 
     acc = 0
     left = 0
@@ -138,15 +138,16 @@ def search_chunk_configuration(
     Returns:
         Tuple[Dict, int]: chunk config (a dict of dp_degree -> chunk init args) and its memory chunk waste in byte.
     """
-
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     if memstas is not None:
         param_order = memstas.param_order()
-        gd.debuginfo(prj="mt", info=f'')
+        for i, p in param_order:
+            gd.debuginfo(prj="mt", info=f'param_order[{i}]={infoTensor(p)}')
     else:
         # build the param visited order right now
         param_order = OrderedParamGenerator()
-        gd.debuginfo(prj="mt", info=f'')
         for p in model.parameters():
+            gd.debuginfo(prj="mt", info=f'p={infoTensor(p)}')
             param_order.append(p)
 
     search_range = round(search_range_m * 1024**2)
@@ -172,13 +173,17 @@ def search_chunk_configuration(
             size_dict[dp_degree] = size_list
 
     if filter_exlarge_params:
-        _filter_exlarge_params(model, size_dict)
         gd.debuginfo(prj="mt", info=f'')
+        _filter_exlarge_params(model, size_dict)
 
     max_size = min_chunk_size
+    gd.debuginfo(prj="mt", info=f'max_size={max_size}')
+
     for key in size_dict:
         max_size = max(max_size, max(size_dict[key]))
+        gd.debuginfo(prj="mt", info=f'max_size={max_size}')
     start_size = int(math.ceil(max_size / search_interval) * search_interval)
+    gd.debuginfo(prj="mt", info=f'start_size={start_size}')
 
     min_chunk_waste = float("+inf")
     best_chunk_size = start_size
@@ -191,11 +196,15 @@ def search_chunk_configuration(
             min_chunk_waste = temp_waste
             best_chunk_size = chunk_size
 
+    gd.debuginfo(prj="mt", info=f'best_chunk_size={best_chunk_size}')
+
     # the chunk size needs to be divided by each groups sizes
     best_chunk_size = best_chunk_size + (-best_chunk_size % size_lcm)
+    gd.debuginfo(prj="mt", info=f'best_chunk_size={best_chunk_size}')
+
     for dp_degree in params_dict:
         if dp_degree in config_dict:
             continue
         config_dict[dp_degree] = dict(chunk_size=best_chunk_size, keep_gathered=False)
-
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     return config_dict, total_param_size, min_chunk_waste

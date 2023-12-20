@@ -21,7 +21,6 @@ require_version("transformers>=4.20.0", "To fix: pip install -r requirements.txt
 output_transform_fn = lambda x: x
 criterion = lambda x: x.loss
 
-
 def move_to_cuda(batch, device):
     return {k: v.to(device) for k, v in batch.items()}
 
@@ -49,8 +48,8 @@ def train_epoch(epoch, model, optimizer, _criterion, lr_scheduler, dataloader, b
         for step in pbar:
             if step > 10:
                 break
-            logf = f'Training_epoch{epoch:02}_step{step:04}'
-            gd.emb_start(info=logf)
+            logff = f'Training_epoch{epoch:02}_step{step:04}'
+            gd.emb_start(info=logff)   # 注意嵌套的重名问题
             if use_pipeline:
                 gd.debuginfo(prj="mt", info=f'')
                 outputs = booster.execute_pipeline(
@@ -71,7 +70,7 @@ def train_epoch(epoch, model, optimizer, _criterion, lr_scheduler, dataloader, b
                 for k, v in data.items():
                     gd.debuginfo(prj="mt", info=f'2-data[{k}]={v}')
 
-                logf = f'model_forward_criterion_epoch{epoch:02}_step{step:04}'
+                logf = f'model_forward_criterion_epoch{epoch:02}_step{step:02}'
                 gd.emb_start(info=logf)
                 outputs = model(**data)
                 gd.debuginfo(prj="mt", info=f'outputs={outputs}')
@@ -81,7 +80,7 @@ def train_epoch(epoch, model, optimizer, _criterion, lr_scheduler, dataloader, b
                 gd.emb_end(info=logf)
 
                 # Backward
-                logf = f'boost_backward_epoch{epoch:02}_{step:04}'
+                logf = f'boost_backward_epoch{epoch:02}_step{step:02}'
                 gd.emb_start(info=logf)
                 booster.backward(loss, optimizer)
                 gd.emb_end(info=logf)
@@ -99,7 +98,7 @@ def train_epoch(epoch, model, optimizer, _criterion, lr_scheduler, dataloader, b
             gd.debuginfo(prj="mt", info=f'------------opt 3-----------------')
             lr_scheduler.step()
 
-            gd.emb_end(info=logf)
+            gd.emb_end(info=logff)
 
 
 def main():

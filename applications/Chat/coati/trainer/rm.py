@@ -33,16 +33,17 @@ class RewardModelTrainer(SLTrainer):
         loss_fn: Callable,
         max_epochs: int = 1,
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__(strategy, max_epochs, model, optim)
 
         self.loss_fn = loss_fn
         self.scheduler = lr_scheduler
 
         self.num_train_step = 0
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _eval(self, epoch):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.eval_dataloader is not None:
             gd.debuginfo(prj="mt", info=f'')
             self.model.eval()
@@ -65,9 +66,12 @@ class RewardModelTrainer(SLTrainer):
                 self.writer.add_scalar("eval/dist", self.dist, epoch)
                 self.writer.add_scalar("eval/acc", self.acc, epoch)
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def _train(self, epoch):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.model.train()
+        gd.debuginfo(prj="mt", info=f'===============================')
         step_bar = tqdm.trange(
             len(self.train_dataloader), desc=f"Epoch {epoch + 1}/{self.max_epochs}", disable=not is_rank_0()
         )
@@ -95,6 +99,8 @@ class RewardModelTrainer(SLTrainer):
             step_bar.update()
         step_bar.close()
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def _before_fit(
         self,
         train_dataloader: DataLoader,
@@ -107,7 +113,7 @@ class RewardModelTrainer(SLTrainer):
             train_dataloader (DataLoader): the dataloader to use for training
             eval_dataloader (DataLoader): the dataloader to use for evaluation
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.train_dataloader = train_dataloader
         self.eval_dataloader = eval_dataloader
 
@@ -126,3 +132,5 @@ class RewardModelTrainer(SLTrainer):
             log_dir = os.path.join(log_dir, "rm")
             log_dir = os.path.join(log_dir, time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()))
             self.writer = SummaryWriter(log_dir=log_dir)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')

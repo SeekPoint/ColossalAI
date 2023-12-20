@@ -36,9 +36,10 @@ class DDPStrategy(Strategy):
     """
 
     def __init__(self, seed: int = 42, plugin_initializer: Callable = TorchDDPPlugin) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.seed = seed
         super().__init__(plugin_initializer)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def _try_init_dist(self, force: bool = False) -> None:
         gd.debuginfo(prj="mt", info=f'')

@@ -66,6 +66,8 @@ def evaluate_model(
         gd.debuginfo(prj="mt", info=f'accum_loss={accum_loss}')
 
         for i, batch in enumerate(dataloader):
+            logf = f'evaluate_model_OPT_batch{i:03}'
+            gd.emb_start(info=logf)
             batch = move_to_cuda(batch)
             gd.debuginfo(prj="mt", info=f'The {i}th batch={batch}')
             labels = batch["labels"]
@@ -85,7 +87,7 @@ def evaluate_model(
 
                 if is_pp_last_stage:
                     logits = outputs["outputs"]["logits"]
-                    gd.debuginfo(prj="mt", info=f'logits={logits}')
+                    gd.debuginfo(prj="mt", info=f'logits={infoTensor(logits)}')
 
                     val_loss = outputs["loss"]
                     gd.debuginfo(prj="mt", info=f'val_loss={val_loss}')
@@ -117,7 +119,7 @@ def evaluate_model(
                 accum_loss.add_(val_loss)
 
                 gd.debuginfo(prj="mt", info=f'val_loss={val_loss}')
-                gd.debuginfo(prj="mt", info=f'logits={logits}')
+                gd.debuginfo(prj="mt", info=f'logits={infoTensor(logits)}')
                 gd.debuginfo(prj="mt", info=f'outputs={outputs}')
 
 
@@ -130,7 +132,10 @@ def evaluate_model(
 
                 metric.add_batch(predictions=preds, references=labels)
 
+            gd.emb_start(info=logf)
+
         results = metric.compute()
+        gd.debuginfo(prj="mt", info=f'results={results}')
         dist.all_reduce(accum_loss.div_(len(dataloader)))
         gd.debuginfo(prj="mt", info=f'+++++++++++++++++++++++++++++++++++++++++++')
         if coordinator.is_master() and results is not None:
@@ -189,8 +194,9 @@ def train_epoch(
         for step in pbar:
             if step > 10:
                 break
-            logf = f'Train_OPT_epoch={epoch:02}+step={step:03}'
-            gd.emb_start(info=logf)
+            logff = f'Train_GPT_HBP_epoch{epoch:02}_step{step:02}'
+            gd.emb_start(info=logff)   # 注意嵌套的重名问题
+
             if use_pipeline:
                 outputs = booster.execute_pipeline(
                     train_dataloader_iter, model, _criterion, optimizer, return_loss=True, return_outputs=True
@@ -202,27 +208,46 @@ def train_epoch(
                     pbar.set_postfix({"loss": loss.item()})
             else:
                 data = next(train_dataloader_iter)
-                gd.debuginfo(prj="mt", info=f'data-1={data}')
+                for k, v in data.items():
+                    gd.debuginfo(prj="mt", info=f'1-data[{k}]={v}')
+
                 data = move_to_cuda(data)
-                gd.debuginfo(prj="mt", info=f'data-2={data}')
+                for k, v in data.items():
+                    gd.debuginfo(prj="mt", info=f'2-data[{k}]={v}')
+
+                logf = f'model_forward_criterion_epoch{epoch:02}_step{step:02}'
+                gd.emb_start(info=logf)
 
                 outputs = model(**data)
                 gd.debuginfo(prj="mt", info=f'outputs={outputs}')
 
                 loss = _criterion(outputs, None)
                 gd.debuginfo(prj="mt", info=f'loss={loss}')
+
+                gd.emb_end(info=logf)
+
                 # Backward
+                logf = f'boost_backward_epoch{epoch:02}_step{step:04}'
+                gd.emb_start(info=logf)
                 booster.backward(loss, optimizer)
+                gd.emb_end(info=logf)
+
                 gd.debuginfo(prj="mt", info=f'=================GPT HP 4==============================')
                 pbar.set_postfix({"loss": loss.item()})
 
             gd.debuginfo(prj="mt", info=f'=================GPT HP 5==============================')
+
+            logf = f'optimizer_step_epoch{epoch:02}'
+            gd.emb_start(info=logf)
             optimizer.step()
+            gd.emb_end(info=logf)
+
             gd.debuginfo(prj="mt", info=f'=================GPT HP 6==============================')
             optimizer.zero_grad()
             gd.debuginfo(prj="mt", info=f'=================GPT HP 7==============================')
             lr_scheduler.step()
-            gd.emb_end(info=logf)
+
+            gd.emb_end(info=logff)
 
 
 def main():
@@ -329,13 +354,13 @@ def main():
     cfg.pad_token_id = cfg.eos_token_id
     gd.debuginfo(prj="mt", info=f'cfg={cfg}')
 
+    logf = f'GPT2ForSequenceClassification_model'
+    gd.emb_start(info=logf)
+
     if model_name == "/share/hf_model/gpt2":
         model = GPT2ForSequenceClassification.from_pretrained(model_name, config=cfg).cuda()
     else:
         raise RuntimeError
-
-    logf = f'GPT2ForSequenceClassification_model'
-    gd.emb_start(info=logf)
 
     gd.debuginfo(prj="mt", info=f'model={model}')
 
@@ -433,3 +458,5 @@ if __name__ == "__main__":
     gd.emb_mode(path=logpath, embedded_mode=True)
 
     main()
+
+    gd.emb_mode(embedded_mode=False)

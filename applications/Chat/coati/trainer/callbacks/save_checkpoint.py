@@ -46,15 +46,16 @@ class SaveCheckpoint(Callback):
         actor_optim: Optimizer = None,
         critic_optim: Optimizer = None,
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.path = os.path.join(path, "checkpoint")
         self.interval = interval
         self.strategy = strategy
         self.model_dict = {"actor": [actor, actor_optim], "critic": [critic, critic_optim]}
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def on_episode_end(self, episode: int) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if (episode + 1) % self.interval != 0:
             gd.debuginfo(prj="mt", info=f'')
             return
@@ -77,3 +78,4 @@ class SaveCheckpoint(Callback):
             rank = 0 if is_rank_0() else dist.get_rank()
             optim_path = os.path.join(base_path, f"{model}-optim-rank-{rank}.pt")
             self.strategy.save_optimizer(optimizer=self.model_dict[model][1], path=optim_path, only_rank0=only_rank0)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')

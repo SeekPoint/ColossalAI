@@ -246,7 +246,7 @@ def main():
 
     tflops_list = []
 
-    def train_step():
+    def train_step(step):
         # we just use randomly generated data here
         input_ids, attn_mask = get_data(BATCH_SIZE, SEQ_LEN, VOCAB_SIZE)
         gd.debuginfo(prj="mt", info=f'input_ids={input_ids}')
@@ -256,6 +256,10 @@ def main():
         gd.debuginfo(prj="mt", info=f'=================GPT 3======================================')
 
         start = time()
+
+        logf = f'model_forward_criterion_step{step:02}'
+        gd.emb_start(info=logf)
+
         outputs = model(input_ids, attn_mask)
         gd.debuginfo(prj="mt", info=f'outputs={outputs}')
 
@@ -266,15 +270,17 @@ def main():
         fwd_end = time()
         fwd_time = fwd_end - start
         gd.debuginfo(prj="mt", info=f'{get_mem_info(prefix=f"[{n + 1}/{NUM_STEPS}] Forward ")}')
+        gd.emb_end(info=logf)
 
+        logf = f'model_backward_step{step:02}'
+        gd.emb_start(info=logf)
         booster.backward(loss, optimizer)
-
-        torch.cuda.synchronize()
         gd.debuginfo(prj="mt", info=f'=================GPT 4======================================')
-
+        torch.cuda.synchronize()
         bwd_end = time()
         bwd_time = bwd_end - fwd_end
         gd.debuginfo(prj="mt", info=f'{get_mem_info(prefix=f"[{n + 1}/{NUM_STEPS}] Backward ")}')
+        gd.emb_end(info=logf)
 
         optimizer.step()
         torch.cuda.synchronize()
@@ -308,7 +314,7 @@ def main():
                 break
             logf = f'Train_OPT_step{n:4}'
             gd.emb_start(info=logf)
-            train_step()
+            train_step(n)
             gd.debuginfo(prj="mt", info=f'=================GPT 3======================================')
             prof.step()
             gd.emb_end(info=logf)
@@ -332,3 +338,5 @@ if __name__ == "__main__":
     gd.emb_mode(path=logpath, embedded_mode=True)
 
     main()
+
+    gd.emb_mode(embedded_mode=False)

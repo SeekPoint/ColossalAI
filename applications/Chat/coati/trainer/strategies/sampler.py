@@ -5,7 +5,7 @@ from pydebug import gd, infoTensor
 
 class DistributedSampler:
     def __init__(self, dataset, num_replicas: int, rank: int) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.dataset = dataset
         self.num_replicas = num_replicas
         self.rank = rank
@@ -26,6 +26,8 @@ class DistributedSampler:
         indices = indices[self.rank : self.total_size : self.num_replicas]
         assert len(indices) == self.num_samples
         self.indices = indices
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     def sample(self, batch_size: int) -> list:
         gd.debuginfo(prj="mt", info=f'')

@@ -84,7 +84,7 @@ class PPOTrainer(OnPolicyTrainer):
         callbacks: List[Callback] = [],
         **generate_kwargs,
     ) -> None:
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if isinstance(strategy, GeminiStrategy):
             assert not offload_inference_models, "GeminiPlugin is not compatible with manual model.to('cpu')"
 
@@ -109,6 +109,8 @@ class PPOTrainer(OnPolicyTrainer):
         self.offload_inference_models = offload_inference_models
         self.device = get_current_device()
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def _before_fit(
         self,
         prompt_dataloader: DataLoader,
@@ -121,7 +123,7 @@ class PPOTrainer(OnPolicyTrainer):
             prompt_dataloader (DataLoader): the dataloader to use for prompt data
             pretrain_dataloader (DataLoader): the dataloader to use for pretrain data
         """
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.prompt_dataloader = CycledDataLoader(prompt_dataloader)
         self.pretrain_dataloader = CycledDataLoader(pretrain_dataloader)
 
@@ -141,6 +143,8 @@ class PPOTrainer(OnPolicyTrainer):
             log_dir = os.path.join(log_dir, time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()))
             self.writer = SummaryWriter(log_dir=log_dir)
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def _make_experience(self, collect_step: int) -> Experience:
         gd.debuginfo(prj="mt", info=f'')
         prompts = self.prompt_dataloader.next()
@@ -152,7 +156,7 @@ class PPOTrainer(OnPolicyTrainer):
         return self.experience_maker.make_experience(**prompts, **self.generate_kwargs)
 
     def _training_step(self, experience: Experience):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         self.actor.train()
         self.critic.train()
         # policy loss
@@ -185,7 +189,10 @@ class PPOTrainer(OnPolicyTrainer):
         self.strategy.optimizer_step(self.critic_optim)
         self.critic_optim.zero_grad()
 
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
     def _learn(self, update_step: int):
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if self.offload_inference_models:
             gd.debuginfo(prj="mt", info=f'')
             self.experience_maker.initial_model.to("cpu")
@@ -209,3 +216,5 @@ class PPOTrainer(OnPolicyTrainer):
                 experience.to_device(self.device)
                 self._training_step(experience)
                 self._on_learn_batch_end(experience)
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
