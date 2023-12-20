@@ -132,7 +132,7 @@ def evaluate_model(
 
                 metric.add_batch(predictions=preds, references=labels)
 
-            gd.emb_start(info=logf)
+            gd.emb_end(info=logf)
 
         results = metric.compute()
         gd.debuginfo(prj="mt", info=f'results={results}')

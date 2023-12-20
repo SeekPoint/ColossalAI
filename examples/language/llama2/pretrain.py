@@ -274,6 +274,8 @@ def main():
     config = MODEL_CONFIGS[args.config]
     gd.debuginfo(prj="mt", info=f'config={config}')
 
+    gd.emb_end(info=logf)
+
     # use lazy init when using GeminiPlugin
     init_ctx = (
         LazyInitContext(default_device=get_current_device()) if isinstance(plugin, GeminiPlugin) else nullcontext()
@@ -356,7 +358,7 @@ def main():
             for step in pbar:
                 if step > 5:
                     break
-                logff = f'epoch{epoch:02}+step{step:04}' # 注意嵌套的重名问题
+                logff = f'epoch{epoch:02}_step{step:04}' # 注意嵌套的重名问题
                 gd.emb_start(info=logff)
                 if use_pipeline:
                     outputs = booster.execute_pipeline(
@@ -391,7 +393,7 @@ def main():
                 logf = f'optimizer_step_epoch{epoch:02}'
                 gd.emb_start(info=logf)
                 optimizer.step()
-                gd.emb_end()
+                gd.emb_end(info=logf)
 
                 gd.debuginfo(prj="mt", info=f'=====================llama 7==================================')
                 lr_scheduler.step()
