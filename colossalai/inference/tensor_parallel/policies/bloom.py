@@ -101,4 +101,5 @@ class BloomModelInferPolicy(BloomForCausalLMPolicy):
                 description=method_replacement, policy=policy, target_key=LayerNorm
             )
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy

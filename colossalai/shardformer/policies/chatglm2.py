@@ -186,7 +186,7 @@ class ChatGLMPolicy(Policy):
                 target_key=GLMBlock,
             )
             gd.debuginfo(prj="mt", info=f'')
-
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def postprocess(self):
@@ -262,6 +262,7 @@ class ChatGLMModelPolicy(ChatGLMPolicy):
             self.set_pipeline_forward(
                 model_cls=ChatGLMModel, new_forward=ChatGLMPipelineForwards.chatglm_model_forward, policy=policy
             )
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
@@ -285,6 +286,7 @@ class ChatGLMForConditionalGenerationPolicy(ChatGLMModelPolicy):
                 new_forward=ChatGLMPipelineForwards.chatglm_for_conditional_generation_forward,
                 policy=policy,
             )
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:

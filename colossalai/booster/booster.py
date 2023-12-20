@@ -180,11 +180,9 @@ class Booster:
             loss (torch.Tensor): The loss for backpropagation.
             optimizer (Optimizer): The optimizer to be updated.
         """
-        logf = f'boost_backward'
-        gd.emb_start(info=logf)
+
         # TODO(frank lee): implement this method with plugin
-        optimizer.backward(loss)
-        gd.emb_end(info=logf)
+        optimizer.backward(loss) # booster.backward(loss, optimizer)
 
     def execute_pipeline(
         self,

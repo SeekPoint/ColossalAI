@@ -97,19 +97,25 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
         Save sharded model.
         As there is communication when getting state dict, model.state_dict() must be called on all processes.
         """
-        logf = f'gemini_save_sharded_model'
-        gd.emb_start(info=logf)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
         assert isinstance(model, GeminiDDP), "Please boost the model before saving!"
         if os.path.isfile(checkpoint_path):
-            logging.error(f"Provided path ({checkpoint_path}) should be a directory, not a file")
+            gd.debuginfo(prj="mt", info=f"Provided path ({checkpoint_path}) should be a directory, not a file")
             return
 
         Path(checkpoint_path).mkdir(parents=True, exist_ok=True)
 
         state_dict_shard = model.state_dict_shard(max_shard_size=max_shard_size, only_rank_0=True)
+        gd.debuginfo(prj="mt", info=f'state_dict_shard={state_dict_shard}')
+
         weights_name, save_index_file = get_model_base_filenames(prefix, use_safetensors)
+        gd.debuginfo(prj="mt", info=f'weights_name={weights_name}')
+        gd.debuginfo(prj="mt", info=f'save_index_file={save_index_file}')
+
         index_file = CheckpointIndexFile(checkpoint_path)
+        gd.debuginfo(prj="mt", info=f'index_file={index_file}')
+
 
         # Save shards of optimizer states.
         is_master = self.coordinator.is_master()
@@ -121,18 +127,22 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
             is_master=is_master,
             use_safetensors=use_safetensors,
         )
+        gd.debuginfo(prj="mt", info=f'total_size={total_size}')
 
         # only save the index file on the master rank
         if self.coordinator.is_master():
             gd.debuginfo(prj="mt", info=f'')
             index_file.append_meta_data("total_size", total_size)
             index_file.write_index_file(save_index_file)
+            gd.debuginfo(prj="mt", info=f'index_file={index_file}')
+
             save_config_file(model.unwrap(), checkpoint_path)
             gd.debuginfo(prj="mt", info=f"The model is split into checkpoint shards. "
                 f"You can find where each parameters has been saved in the "
                 f"index located at {save_index_file}.")
 
-        gd.emb_end(info=logf)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+
 
     def load_sharded_model(self,
                            model: GeminiDDP,

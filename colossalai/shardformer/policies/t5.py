@@ -247,6 +247,7 @@ class T5BasePolicy(Policy):
                 target_key=T5LayerCrossAttention,
             )
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def postprocess(self):
@@ -406,6 +407,7 @@ class T5ModelPolicy(T5BasePolicy):
             gd.debuginfo(prj="mt", info=f'')
             self.set_pipeline_forward(model_cls=T5Model, new_forward=T5PipelineForwards.t5_model_forward, policy=policy)
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
@@ -461,6 +463,7 @@ class T5ForConditionalGenerationPolicy(T5BasePolicy):
                 policy=policy,
             )
             gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
@@ -532,6 +535,7 @@ class T5EncoderPolicy(T5BasePolicy):
                 model_cls=T5EncoderModel, new_forward=T5PipelineForwards.t5_encoder_model_forward, policy=policy
             )
             gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:

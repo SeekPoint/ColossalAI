@@ -356,7 +356,7 @@ def main():
             for step in pbar:
                 if step > 5:
                     break
-                logf = f'epoch={epoch}+step={step}'
+                logf = f'epoch{epoch:02}+step{step:04}'
                 gd.emb_start(info=logf)
                 if use_pipeline:
                     outputs = booster.execute_pipeline(
@@ -371,15 +371,28 @@ def main():
                     gd.debuginfo(prj="mt", info=f'batch["input_ids"]={batch["input_ids"]}')
                     gd.debuginfo(prj="mt", info=f'batch["labels"]={batch["labels"]}')
 
+                    logf = f'model_forward_criterion_epoch{epoch:02}_{step:04}'
+                    gd.emb_start(info=logf)
+
                     outputs = model(**batch)
                     gd.debuginfo(prj="mt", info=f'outputs={outputs}')
 
                     loss = outputs[0]
                     gd.debuginfo(prj="mt", info=f'loss={loss}')
+                    gd.emb_end(logf)
 
+                    logf = f'boost_backward_epoch{epoch:02}_step{step:04}'
+                    gd.emb_start(info=logf)
                     booster.backward(loss, optimizer)
+                    gd.emb_end(logf)
+
                 gd.debuginfo(prj="mt", info=f'=====================llama 6==================================')
+
+                logf = f'optimizer_step_epoch{epoch:02}'
+                gd.emb_start(info=logf)
                 optimizer.step()
+                gd.emb_end()
+
                 gd.debuginfo(prj="mt", info=f'=====================llama 7==================================')
                 lr_scheduler.step()
                 gd.debuginfo(prj="mt", info=f'=====================llama 8==================================')
@@ -397,6 +410,10 @@ def main():
                 if args.save_interval > 0 and (step + 1) % args.save_interval == 0:
                     gd.debuginfo(prj="mt", info=f'')
                     coordinator.print_on_master(f"Saving checkpoint")
+
+                    logf = f'llama2_save_sharded_model_at_epoch{epoch:02}'
+                    gd.emb_start(info=logf)
+
                     save(
                         booster,
                         model,
@@ -408,6 +425,8 @@ def main():
                         coordinator,
                         args.save_dir,
                     )
+                    gd.emb_end(info=logf)
+
                     coordinator.print_on_master(f"Saved checkpoint at epoch {epoch} step {step + 1}")
                 gd.emb_end(info=logf)
 

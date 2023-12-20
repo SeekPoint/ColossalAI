@@ -52,36 +52,36 @@ class ConstructorManager:
 
     @staticmethod
     def apply(overwrites: Dict[Callable, Callable]):
-        gd.debuginfo(prj="mt", info=f'_FUNC_IN_OUT_')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         ConstructorManager.overwrites.clear()
         gd.debuginfo(prj="mt", info=f'-1-')
         ConstructorManager.overwrites.update(overwrites)
         gd.debuginfo(prj="mt", info=f'-2-')
         ConstructorManager.redo()
-        gd.debuginfo(prj="mt", info=f'_FUNC_IN_OUT_')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @staticmethod
     def undo():
-        gd.debuginfo(prj="mt", info=f'_FUNC_IN_OUT_')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert ConstructorManager.changed, "No constructor change to undo"
         for name, (new, old) in ConstructorManager.overwrites.items():
             setattr(torch, name, old)
         ConstructorManager.changed = False
-        gd.debuginfo(prj="mt", info=f'_FUNC_IN_OUT_')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @staticmethod
     def redo():
-        gd.debuginfo(prj="mt", info=f'_FUNC_IN_OUT_')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         assert not ConstructorManager.changed, "Constructor already changed"
         for name, (new, old) in ConstructorManager.overwrites.items():
             setattr(torch, name, new)
         ConstructorManager.changed = True
-        gd.debuginfo(prj="mt", info=f'_FUNC_IN_OUT_')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @staticmethod
     @contextmanager
     def disable():
-        gd.debuginfo(prj="mt", info=f'_FUNC_IN_OUT_')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         enabled = ConstructorManager.changed
         if enabled:
             gd.debuginfo(prj="mt", info=f'-----')
@@ -90,14 +90,14 @@ class ConstructorManager:
         if enabled:
             gd.debuginfo(prj="mt", info=f'-----')
             ConstructorManager.redo()
-        gd.debuginfo(prj="mt", info=f'_FUNC_IN_OUT_')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @staticmethod
     def clear():
-        gd.debuginfo(prj="mt", info=f'_FUNC_IN_OUT_')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         if ConstructorManager.changed:
             gd.debuginfo(prj="mt", info=f'-----')
             ConstructorManager.undo()
         gd.debuginfo(prj="mt", info=f'-----')
         ConstructorManager.overwrites.clear()
-        gd.debuginfo(prj="mt", info=f'_FUNC_IN_OUT_')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')

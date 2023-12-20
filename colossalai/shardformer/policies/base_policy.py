@@ -196,6 +196,7 @@ class Policy(ABC):
             policy[target_key] = ModulePolicyDescription(method_replacement=description)
             gd.debuginfo(prj="mt", info=f'')
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[Module]:

@@ -105,6 +105,7 @@ class MixedPrecisionOptimizer(OptimizerWrapper):
     def zero_grad(self, *args, **kwargs):
         gd.debuginfo(prj="mt", info=f'')
         for p in self.working_to_master_map.keys():
+            gd.debuginfo(prj="mt", info=f'p={infoTensor(p)}')
             p.grad = None
         self.mixed_precision.pre_zero_grad()
         return super().zero_grad(*args, **kwargs)
@@ -182,6 +183,7 @@ class MixedPrecisionOptimizer(OptimizerWrapper):
             gd.debuginfo(prj="mt", info=f'')
             self.zero_grad()
             return
+
         # prepare grads
         for group in self.optim.param_groups:
             for p in group["params"]:

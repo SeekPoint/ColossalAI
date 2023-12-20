@@ -71,7 +71,7 @@ class Embedding1D(ParallelModule):
         *args,
         **kwargs,
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
 
         self.num_embeddings = num_embeddings
@@ -105,6 +105,7 @@ class Embedding1D(ParallelModule):
             gd.debuginfo(prj="mt", info=f'')
             with self.randomizer.fork_rng(enable_cpu=True):
                 self.reset_parameters(weight_initializer)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @staticmethod
     def from_native_module(
@@ -216,7 +217,7 @@ class VocabParallelEmbedding1D(ParallelModule):
         *args,
         **kwargs,
     ):
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         super().__init__()
         self.num_embeddings = num_embeddings
         self.embedding_dim = embedding_dim
@@ -256,6 +257,8 @@ class VocabParallelEmbedding1D(ParallelModule):
         if weight is None:
             self.reset_parameters(weight_initializer)
             gd.debuginfo(prj="mt", info=f'')
+
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @staticmethod
     def from_native_module(

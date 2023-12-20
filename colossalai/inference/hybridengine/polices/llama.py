@@ -134,6 +134,7 @@ class LlamaModelInferPolicy(LlamaForCausalLMPolicy):
                 description=method_replacement, policy=policy, target_key=LlamaRMSNorm
             )
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def postprocess(self):

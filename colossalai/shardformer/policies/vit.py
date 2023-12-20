@@ -119,6 +119,7 @@ class ViTPolicy(Policy):
                 policy=policy,
                 target_key=ViTOutput,
             )
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def new_model_class(self):
@@ -180,6 +181,7 @@ class ViTModelPolicy(ViTPolicy):
         if self.shard_config.pipeline_stage_manager is not None:
             gd.debuginfo(prj="mt", info=f'')
             self.set_pipeline_forward(model_cls=ViTModel, pipeline_forward=ViTModel_pipeline_forward, policy=policy)
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
@@ -227,6 +229,7 @@ class ViTForImageClassificationPolicy(ViTPolicy):
             )
             gd.debuginfo(prj="mt", info=f'')
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
@@ -267,6 +270,7 @@ class ViTForMaskedImageModelingPolicy(ViTPolicy):
             )
             gd.debuginfo(prj="mt", info=f'')
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:

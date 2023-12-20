@@ -692,6 +692,7 @@ def get_jit_fused_opt_decoder_layer_forward():
                 (see `past_key_values`).
             past_key_value (`Tuple(torch.FloatTensor)`, *optional*): cached past key and value projection states
         """
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         residual = hidden_states
         gd.debuginfo(prj="mt", info=f'residual={infoTensor(residual)}')
 
@@ -726,6 +727,7 @@ def get_jit_fused_opt_decoder_layer_forward():
         hidden_states_shape = hidden_states.shape
         hidden_states = hidden_states.reshape(-1, hidden_states.size(-1))
         gd.debuginfo(prj="mt", info=f'hidden_states={infoTensor(hidden_states)}')
+        gd.debuginfo(prj="mt", info=f'hidden_states_shape={hidden_states_shape}')
         residual = hidden_states
 
         # 125m, 1.7B, ..., 175B applies layer norm BEFORE attention
@@ -751,7 +753,7 @@ def get_jit_fused_opt_decoder_layer_forward():
             gd.debuginfo(prj="mt", info=f'hidden_states={infoTensor(hidden_states)}')
 
         outputs = (hidden_states,)
-        #gd.debuginfo(prj="mt", info=f'outputs={infoTensor(outputs)}')
+        # gd.debuginfo(prj="mt", info=f'outputs={infoTensor(outputs)}')
 
         if output_attentions:
             outputs += (self_attn_weights,)
@@ -761,8 +763,8 @@ def get_jit_fused_opt_decoder_layer_forward():
             outputs += (present_key_value,)
             gd.debuginfo(prj="mt", info=f'')
 
-        #gd.debuginfo(prj="mt", info=f'outputs={infoTensor(outputs)}')
-
+        # gd.debuginfo(prj="mt", info=f'outputs={infoTensor(outputs)}')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
         return outputs
 
     return forward

@@ -156,20 +156,23 @@ class HybridParallelModule(ModelWrapper):
                 p.grad.div_(self.dp_group.size())
 
     def forward(self, *args, **kwargs):
-        gd.debuginfo(prj="mt", info=f'_FUNC_IN_OUT_ , self.convert_fn={self.convert_fn}')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__ , self.convert_fn={self.convert_fn}')
         if self.convert_fn is not None:
             gd.debuginfo(prj="mt", info=f'1-args={args}')
             args = tree_map(self.convert_fn, args)
             gd.debuginfo(prj="mt", info=f'2-args={args}')
 
-            gd.debuginfo(prj="mt", info=f'1-kwargs={kwargs}')
+            for k, v in kwargs.items():
+                gd.debuginfo(prj="mt", info=f'1-kwargs[{k}]={v}')
             kwargs = tree_map(self.convert_fn, kwargs)
-            gd.debuginfo(prj="mt", info=f'2-kwargs={kwargs}')
+            for k, v in kwargs.items():
+                gd.debuginfo(prj="mt", info=f'2-kwargs[{k}]={v}')
 
-        gd.debuginfo(prj="mt", info=f'_FUNC_IN_OUT_')
-        return super().forward(*args, **kwargs)
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+        return super().forward(*args, **kwargs)  # opt => interface/model.py f# forward  => shardformer/layer/embedding.py
 
     def unwrap(self):
+        gd.debuginfo(prj="mt", info=f'')
         module = super().unwrap()
         gd.debuginfo(prj="mt", info=f'module={module}')
         if isinstance(module, DDP):

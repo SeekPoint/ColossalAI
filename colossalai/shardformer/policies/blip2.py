@@ -333,6 +333,7 @@ class BlipPolicy(Policy):
                 target_key=Blip2QFormerOutput,
             )
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def postprocess(self):

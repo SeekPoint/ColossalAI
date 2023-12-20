@@ -204,7 +204,8 @@ class BertPolicy(Policy):
                 target_key=BertOutput,
             )
             gd.debuginfo(prj="mt", info=f'')
-        gd.debuginfo(prj="mt", info=f'')
+
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def add_lm_head_policy(self, base_policy):
@@ -313,16 +314,18 @@ class BertModelPolicy(BertPolicy):
         gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
         policy = super().module_policy()
-        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         from transformers.models.bert.modeling_bert import BertModel
 
         if self.pipeline_stage_manager:
+            gd.debuginfo(prj="mt", info=f'')
             self.set_pipeline_forward(
                 model_cls=BertModel, new_forward=BertPipelineForwards.bert_model_forward, policy=policy
             )
             gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[Module]:
@@ -343,21 +346,28 @@ class BertForPreTrainingPolicy(BertPolicy):
         gd.debuginfo(prj="mt", info=f'')
 
     def module_policy(self):
+        gd.debuginfo(prj="mt", info=f'')
+
         policy = super().module_policy()
         gd.debuginfo(prj="mt", info=f'policy={policy}')
+
         policy = self.add_lm_head_policy(policy)
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
+
         policy = self.add_lm_prediction_policy(policy)
-        gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
 
         from transformers.models.bert.modeling_bert import BertForPreTraining
 
         if self.pipeline_stage_manager:
+            gd.debuginfo(prj="mt", info=f'')
             self.set_pipeline_forward(
                 model_cls=BertForPreTraining,
                 new_forward=BertPipelineForwards.bert_for_pretraining_forward,
                 policy=policy,
             )
-            gd.debuginfo(prj="mt", info=f'')
+
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[Module]:
@@ -407,6 +417,7 @@ class BertLMHeadModelPolicy(BertPolicy):
                 model_cls=BertLMHeadModel, new_forward=BertPipelineForwards.bert_lm_head_model_forward, policy=policy
             )
             gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[Module]:
@@ -456,6 +467,7 @@ class BertForMaskedLMPolicy(BertPolicy):
                 model_cls=BertForMaskedLM, new_forward=BertPipelineForwards.bert_for_masked_lm_forward, policy=policy
             )
             gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[Module]:
@@ -522,6 +534,7 @@ class BertForSequenceClassificationPolicy(BertPolicy):
             )
             gd.debuginfo(prj="mt", info=f'')
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[Module]:
@@ -577,6 +590,7 @@ class BertForTokenClassificationPolicy(BertPolicy):
                 policy=policy,
             )
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[Module]:
@@ -617,6 +631,7 @@ class BertForNextSentencePredictionPolicy(BertPolicy):
                 policy=policy,
             )
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[Module]:
@@ -671,6 +686,7 @@ class BertForMultipleChoicePolicy(BertPolicy):
                 policy=policy,
             )
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[Module]:
@@ -710,6 +726,7 @@ class BertForQuestionAnsweringPolicy(BertPolicy):
                 policy=policy,
             )
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[Module]:

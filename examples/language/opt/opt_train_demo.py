@@ -32,10 +32,15 @@ def train_epoch(epoch, model, optimizer, _criterion, lr_scheduler, dataloader, b
     use_pipeline = isinstance(booster.plugin, HybridParallelPlugin) and booster.plugin.pp_size > 1
     is_pp_last_stage = use_pipeline and booster.plugin.stage_manager.is_last_stage()
     total_step = len(dataloader)
-
+    gd.debuginfo(prj="mt", info=f'use_pipeline={use_pipeline}')
+    gd.debuginfo(prj="mt", info=f'is_pp_last_stage={is_pp_last_stage}')
+    gd.debuginfo(prj="mt", info=f'total_step={total_step}')
     model.train()
+    gd.debuginfo(prj="mt", info=f'------------model.train done-----------------')
     optimizer.zero_grad()
+    gd.debuginfo(prj="mt", info=f'------------optimizer.zero_grad done-----------------')
     dataloader = iter(dataloader)
+    gd.debuginfo(prj="mt", info=f'dataloader={dataloader}')
     with tqdm(range(total_step),
               desc=f"Epoch [{epoch + 1}]",
               disable=not (coordinator.is_master() or is_pp_last_stage)) \
@@ -44,7 +49,7 @@ def train_epoch(epoch, model, optimizer, _criterion, lr_scheduler, dataloader, b
         for step in pbar:
             if step > 10:
                 break
-            logf = f'Training_epoch{epoch:02}_{step:04}'
+            logf = f'Training_epoch{epoch:02}_step{step:04}'
             gd.emb_start(info=logf)
             if use_pipeline:
                 gd.debuginfo(prj="mt", info=f'')
@@ -58,23 +63,39 @@ def train_epoch(epoch, model, optimizer, _criterion, lr_scheduler, dataloader, b
                     gd.debuginfo(prj="mt", info=f'loss={loss}')
                     pbar.set_postfix({"loss": loss.item()})
             else:
+                gd.debuginfo(prj="mt", info=f'')
                 data = next(dataloader)
+                for k, v in data.items():
+                    gd.debuginfo(prj="mt", info=f'1-data[{k}]={v}')
                 data = move_to_cuda(data, device='cuda')
-                gd.debuginfo(prj="mt", info=f'data={data}')
+                for k, v in data.items():
+                    gd.debuginfo(prj="mt", info=f'2-data[{k}]={v}')
+
+                logf = f'model_forward_criterion_epoch{epoch:02}_step{step:04}'
+                gd.emb_start(info=logf)
                 outputs = model(**data)
                 gd.debuginfo(prj="mt", info=f'outputs={outputs}')
-
+                gd.debuginfo(prj="mt", info=f'++++++++++++++++++++++++++++++++++++++++++')
                 loss = _criterion(outputs, None)
                 gd.debuginfo(prj="mt", info=f'loss={loss}')
+                gd.emb_end(info=logf)
 
                 # Backward
+                logf = f'boost_backward_epoch{epoch:02}_{step:04}'
+                gd.emb_start(info=logf)
                 booster.backward(loss, optimizer)
+                gd.emb_end(info=logf)
                 pbar.set_postfix({"loss": loss.item()})
 
             gd.debuginfo(prj="mt", info=f'------------opt 1-----------------')
+            logf = f'optimizer_step_epoch{epoch:02}'
+            gd.emb_start(info=logf)
             optimizer.step()
+            gd.emb_end(info=logf)
+
             gd.debuginfo(prj="mt", info=f'------------opt 2-----------------')
             optimizer.zero_grad()
+
             gd.debuginfo(prj="mt", info=f'------------opt 3-----------------')
             lr_scheduler.step()
 

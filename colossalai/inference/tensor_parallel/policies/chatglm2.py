@@ -53,6 +53,7 @@ class ChatGLM2InferPolicy(ChatGLMModelPolicy):
         )
 
         # for rmsnorm and others, we need to check the shape
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def postprocess(self):
@@ -75,6 +76,7 @@ class ChatGLM2ForConditionalGenerationInferPolicy(ChatGLM2InferPolicy):
         self.append_or_create_method_replacement(
             description=method_replacement, policy=policy, target_key=ChatGLMForConditionalGeneration
         )
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def postprocess(self):

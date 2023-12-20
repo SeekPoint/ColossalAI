@@ -403,7 +403,7 @@ def save_config_file(model: nn.Module, checkpoint_path: str, is_master: bool = T
         checkpoint_path (str): Path to the checkpoint directory.
         is_master (bool): Whether current rank is main process.
     """
-    gd.debuginfo(prj="mt", info=f'')
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
     try:
         from transformers.modeling_utils import PreTrainedModel, get_parameter_dtype
         from transformers.modeling_utils import unwrap_model as unwrap_huggingface_model
@@ -412,20 +412,31 @@ def save_config_file(model: nn.Module, checkpoint_path: str, is_master: bool = T
     if not isinstance(model, PreTrainedModel):
         return
 
+    gd.debuginfo(prj="mt", info=f'1-model={model}')
     model = unwrap_huggingface_model(model)
+    gd.debuginfo(prj="mt", info=f'2-model={model}')
 
     # save the string version of dtype to the config, e.g. convert torch.float32 => "float32"
     dtype = get_parameter_dtype(model)
     model.config.torch_dtype = str(dtype).split(".")[1]
+
+    gd.debuginfo(prj="mt", info=f'dtype={dtype}')
+    gd.debuginfo(prj="mt", info=f'model.config.torch_dtype={model.config.torch_dtype}')
+    gd.debuginfo(prj="mt", info=f'model.__class__.__name__={model.__class__.__name__}')
 
     # Attach architecture to the config
     model.config.architectures = [model.__class__.__name__]
 
     # Save the config
     if is_master:
+        gd.debuginfo(prj="mt", info=f'')
         model.config.save_pretrained(checkpoint_path)
+
         if model.can_generate():
+            gd.debuginfo(prj="mt", info=f'')
             model.generation_config.save_pretrained(checkpoint_path)
+
+    gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
 
 def save_dtensor(name: str, tensor: torch.Tensor, index_file: "CheckpointIndexFile", use_safetensors: bool) -> None:

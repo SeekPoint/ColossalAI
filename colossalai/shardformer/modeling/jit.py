@@ -17,7 +17,9 @@ def get_jit_fused_dropout_add_func():
 
     def self_dropout_add(self, x: torch.Tensor, residual: torch.Tensor, prob: float, training: bool) -> torch.Tensor:
         bias = torch.zeros_like(x)
+        gd.debuginfo(prj="mt", info=f'bias={infoTensor(bias)}')
         if training:
+            gd.debuginfo(prj="mt", info=f'')
             return bias_dropout_add_fused_train(x, bias, residual, prob)
         return bias_dropout_add_fused_inference(x, bias, residual, prob)
 

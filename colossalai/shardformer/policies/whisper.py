@@ -256,6 +256,7 @@ class WhisperPolicy(Policy):
             )
             gd.debuginfo(prj="mt", info=f'')
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def add_lm_head_policy(self, base_policy):
@@ -297,7 +298,8 @@ class WhisperPolicy(Policy):
 
         # in the case of whisperEncoderModel, set decoder starting stage to num_stages since it doesn't exist
         if num_decoder_layers == 0:
-            return Policy.distribute_layers(num_encoder_layers, num_stages), num_stages
+            gd.debuginfo(prj="mt", info=f'policy={policy}')
+        return policy.distribute_layers(num_encoder_layers, num_stages), num_stages
 
         # the number of stages distributed between encoder and decoder is optmized in this way:
         # num_encoder_stages = argmin(abs(num_encoder_layers / encoder_stages - num_decoder_layers / decoder_stages))
@@ -322,10 +324,12 @@ class WhisperPolicy(Policy):
         """
         if stage < decoder_starting_stage:
             gd.debuginfo(prj="mt", info=f'')
-            return Policy.get_stage_index(layers_per_stage[:decoder_starting_stage], stage)
+            gd.debuginfo(prj="mt", info=f'policy={policy}')
+        return policy.get_stage_index(layers_per_stage[:decoder_starting_stage], stage)
         else:
             gd.debuginfo(prj="mt", info=f'')
-            return Policy.get_stage_index(layers_per_stage[decoder_starting_stage:], stage - decoder_starting_stage)
+            gd.debuginfo(prj="mt", info=f'policy={policy}')
+        return policy.get_stage_index(layers_per_stage[decoder_starting_stage:], stage - decoder_starting_stage)
 
     def get_held_layers(self) -> List[nn.Module]:
         assert self.pipeline_stage_manager is not None, "pipeline_stage_manager is None"
@@ -466,6 +470,7 @@ class WhisperModelPolicy(WhisperPolicy):
             )
             gd.debuginfo(prj="mt", info=f'')
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
@@ -498,6 +503,7 @@ class WhisperForConditionalGenerationPolicy(WhisperPolicy):
                 policy=policy,
             )
             gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def postprocess(self):
@@ -576,6 +582,7 @@ class WhisperForAudioClassificationPolicy(WhisperPolicy):
                 policy=policy,
             )
             gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:

@@ -222,6 +222,7 @@ class SamPolicy(Policy):
                 target_key=SamVisionAttention,
             )
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def postprocess(self):

@@ -131,6 +131,7 @@ class LlamaPolicy(Policy):
                 target_key=LlamaAttention,
             )
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def postprocess(self):
@@ -203,6 +204,7 @@ class LlamaModelPolicy(LlamaPolicy):
             self.set_pipeline_forward(
                 model_cls=LlamaModel, new_forward=LlamaPipelineForwards.llama_model_forward, policy=policy
             )
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[Module]:
@@ -244,6 +246,7 @@ class LlamaForCausalLMPolicy(LlamaPolicy):
             )
             gd.debuginfo(prj="mt", info=f'')
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[Module]:
@@ -308,6 +311,7 @@ class LlamaForSequenceClassificationPolicy(LlamaPolicy):
             )
             gd.debuginfo(prj="mt", info=f'')
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[Module]:

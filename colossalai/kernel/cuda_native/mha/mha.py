@@ -112,7 +112,15 @@ class ColoAttention(torch.nn.Module):
                 seq_len_info_q = SeqLenInfo.materialize(size=(batch_size, tgt_len), device=query.device)
                 seq_len_info_kv = SeqLenInfo.materialize(attn_mask=attn_mask, device=query.device)
                 gd.debuginfo(prj="mt", info=f'seq_len_info_q={seq_len_info_q}')
-                gd.debuginfo(prj="mt", info=f'seq_len_info_kv={seq_len_info_kv}')
+                # gd.debuginfo(prj="mt", info=f'seq_len_info_kv={seq_len_info_kv}')
+                '''
+mha.py f# forward L#: 109 I#     === OPT
+seq_len_info_kv=SeqLenInfo(seqlens=[31, 35, 28, 35, 33, 25, 27, 36, 34, 31, 30, 37, 29, 39, 32, 37], 
+indices=tensor([  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,.....981], device='cuda:0'), 
+max_seqlen=tensor(39, device='cuda:0', dtype=torch.int32), 
+cu_seqlens=tensor([  0,  31,  66,  94, 129, 162, 187, 214, 250, 284, 315, 345, 382, 411,450, 482, 519], 
+device='cuda:0', dtype=torch.int32))
+                '''
 
                 if batch_size > 1:
                     query = rearrange(query, "b s ... -> c (b s) ...", c=1)

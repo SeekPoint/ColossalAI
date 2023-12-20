@@ -176,6 +176,7 @@ class BloomPolicy(Policy):
                 target_key=BloomGelu,
             )
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def postprocess(self):
@@ -244,6 +245,7 @@ class BloomModelPolicy(BloomPolicy):
             self.set_pipeline_forward(
                 model_cls=BloomModel, new_forward=BloomPipelineForwards.bloom_model_forward, policy=policy
             )
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[Module]:
@@ -279,6 +281,7 @@ class BloomForCausalLMPolicy(BloomPolicy):
             self.set_pipeline_forward(
                 model_cls=BloomForCausalLM, new_forward=BloomPipelineForwards.bloom_for_causal_lm_forward, policy=policy
             )
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[Module]:
@@ -335,6 +338,7 @@ class BloomForSequenceClassificationPolicy(BloomPolicy):
                 policy=policy,
             )
             gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[Module]:
@@ -383,6 +387,7 @@ class BloomForTokenClassificationPolicy(BloomPolicy):
             )
             gd.debuginfo(prj="mt", info=f'')
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[Module]:
@@ -416,6 +421,7 @@ class BloomForQuestionAnsweringPolicy(BloomPolicy):
                 policy=policy,
             )
             gd.debuginfo(prj="mt", info=f'')
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[Module]:

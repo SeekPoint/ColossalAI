@@ -144,6 +144,7 @@ class OPTPolicy(Policy):
                 target_key=OPTDecoderLayer,
             )
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def postprocess(self):
@@ -217,6 +218,7 @@ class OPTModelPolicy(OPTPolicy):
             self.set_pipeline_forward(
                 model_cls=OPTModel, new_forward=OPTPipelineForwards.opt_model_forward, policy=policy
             )
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
@@ -250,6 +252,7 @@ class OPTForCausalLMPolicy(OPTPolicy):
             )
             gd.debuginfo(prj="mt", info=f'')
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
@@ -307,6 +310,7 @@ class OPTForSequenceClassificationPolicy(OPTPolicy):
             )
             gd.debuginfo(prj="mt", info=f'')
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
@@ -343,6 +347,7 @@ class OPTForQuestionAnsweringPolicy(OPTPolicy):
             )
             gd.debuginfo(prj="mt", info=f'')
 
+        gd.debuginfo(prj="mt", info=f'policy={policy}')
         return policy
 
     def get_held_layers(self) -> List[nn.Module]:
