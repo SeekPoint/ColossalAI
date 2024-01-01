@@ -19,6 +19,7 @@ class HostInfo:
         self.hostname = hostname
         self.port = port
         self.is_local_host = HostInfo.is_host_localhost(hostname, port)
+        # 一台机器两张卡，一个true，一个false
         gd.debuginfo(prj="mt", info=f'self.is_local_host={self.is_local_host}')
         gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
@@ -50,6 +51,15 @@ class HostInfo:
         localhost = socket.gethostname()
         localaddrs = socket.getaddrinfo(localhost, port)
         targetaddrs = socket.getaddrinfo(hostname, port)
+
+        '''
+        
+mt F# /ColossalAI/colossalai/cli/launcher/hostinfo.py L#: 54 f# is_host_localhost I# hostname=MZ32-00
+mt F# /ColossalAI/colossalai/cli/launcher/hostinfo.py L#: 55 f# is_host_localhost I# localhost=MZ32-00
+hostinfo.py L#: 56 f# is_host_localhost I# localaddrs=[(<AddressFamily.AF_INET: 2>, <SocketKind.SOCK_STREAM: 1>, 6, '', ('192.168.1.11', 22)), (<AddressFamily.AF_INET: 2>, <SocketKind.SOCK_DGRAM: 2>, 17, '', ('192.168.1.11', 22)), (<AddressFamily.AF_INET: 2>, <SocketKind.SOCK_RAW: 3>, 0, '', ('192.168.1.11', 22))]
+hostinfo.py L#: 57 f# is_host_localhost I#targetaddrs=[(<AddressFamily.AF_INET: 2>, <SocketKind.SOCK_STREAM: 1>, 6, '', ('192.168.1.11', 22)), (<AddressFamily.AF_INET: 2>, <SocketKind.SOCK_DGRAM: 2>, 17, '', ('192.168.1.11', 22)), (<AddressFamily.AF_INET: 2>, <SocketKind.SOCK_RAW: 3>, 0, '', ('192.168.1.11', 22))]
+
+        '''
 
         gd.debuginfo(prj="mt", info=f'hostname={hostname}')
         gd.debuginfo(prj="mt", info=f'localhost={localhost}')

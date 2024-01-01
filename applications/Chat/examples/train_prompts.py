@@ -251,7 +251,7 @@ if __name__ == "__main__":
 
     gd.prjenable('ALL')  #打开项目flag
 
-    logpath = f'/workspace/yk_repo/ColossalAI/_log_tmps_chat_PROMPTS_/'
+    logpath = f'/logColossalAI/_log_tmps_chat_PROMPTS_/'
     if not os.path.exists(logpath):
         os.makedirs(logpath)
 

@@ -316,6 +316,11 @@ def launch_multi_processes(args: Config) -> None:
         )
 
         gd.debuginfo(prj="mt", info=f'The {node_id} th cmd={cmd}')
+        '''
+        
+run.py L#: 318 f# launch_multi_processes I# The 0 th cmd=torchrun --nproc_per_node=2 --nnodes=2 --node_rank=0 --master_addr=192.168.1.11 --master_port=29500 pretrain.py
+run.py L#: 318 f# launch_multi_processes I# The 1 th cmd=torchrun --nproc_per_node=2 --nnodes=2 --node_rank=1 --master_addr=192.168.1.11 --master_port=29500 pretrain.py
+        '''
 
         runner.send(hostinfo=hostinfo, cmd=cmd)
 

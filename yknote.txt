@@ -88,9 +88,13 @@ Epoch 0:  12%|█▏        | 445/3634
 
 --master_port=29502  ===失败后重试需要修改！因为已经打开被占用
 
-colossalai run --nproc_per_node 2 --host 192.168.1.11,192.168.1.12 --master_addr 192.168.1.11 pretrain.py  ===XXX失败
+colossalai run --nproc_per_node 2 --host 192.168.1.11,192.168.1.12 --master_port=29507 --master_addr 192.168.1.11 pretrain.py  ===XXX失败
 colossalai run --nproc_per_node 2 --hostfile ./hostfile --master_addr 192.168.1.11 pretrain.py
 --hostfile ./hostfile
+
+清理log rm -rf f /logColossalAI/_log_tmps_llama2_/
+
+
 
 ===transformers==4.34.0
 
@@ -143,3 +147,11 @@ bash run.sh  ==== passed
 
 
 
+++++++++++++++++++++++++++
+ # execute on the remote machine
+fab_conn.run(cmds, hide=False)
+错误：exception: not a valid RSA private key file
+解决 # https://stackoverflow.com/questions/54612609/paramiko-not-a-valid-rsa-private-key-file
+You should make a copy of id_rsa and convert it to RSA type with ssh-keygen.
+To Convert "BEGIN OPENSSH PRIVATE KEY" to "BEGIN RSA PRIVATE KEY"
+ssh-keygen -p -m PEM -f ~/.ssh/id_rsa

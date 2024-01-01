@@ -26,17 +26,19 @@ def run_on_host(
     """
     gd.debuginfo(prj="mt", info=f'workdir={workdir}, hostname={hostinfo.hostname}, port={hostinfo.port}')
     fab_conn = fabric.Connection(hostinfo.hostname, port=hostinfo.port)
+    gd.debuginfo(prj="mt", info=f'fab_conn={fab_conn}')
     finish = False
     env_msg = " ".join([f'{k}="{v}"' for k, v in env.items()])
     gd.debuginfo(prj="mt", info=f'env_msg={env_msg}')
 
-    hostinfo.is_local_host = True  # 默认false，引起了 #  exception: not a valid RSA private key file
-    assert 0
+    # hostinfo.is_local_host = True
+    # 默认false，由于其他配置错误-引起了 #  exception: not a valid RSA private key file
+    # 这样做法是错误的，暂时避开了remote上执行命令，导致后续报错！！！！
 
     # keep listening until exit
     while not finish:
         # receive cmd
-        cmds = recv_conn.recv()
+        cmds = recv_conn.rec
         gd.debuginfo(prj="mt", info=f'cmds={cmds}')
 
         if cmds == "exit":
@@ -54,14 +56,17 @@ def run_on_host(
                     # propagate the runtime environment
                     with fab_conn.prefix(f"export {env_msg}"):
                         if hostinfo.is_local_host:
-                            gd.debuginfo(prj="mt")
+                            gd.debuginfo(prj="mt", info=f'local cmds={cmds}')
 
                             # execute on the local machine
                             fab_conn.local(cmds, hide=False)
                         else:
-                            gd.debuginfo(prj="mt")
+                            fab_conn.run("ls -a", hide=False)
+                            gd.debuginfo(prj="mt", info=f'remote cmds={cmds}')
                             # execute on the remote machine
                             fab_conn.run(cmds, hide=False)
+                            ##  exception: not a valid RSA private key file
+                            # https://stackoverflow.com/questions/54612609/paramiko-not-a-valid-rsa-private-key-file
 
                     gd.debuginfo(prj="mt")
                     send_conn.send("success")
@@ -103,6 +108,7 @@ class MultiNodeRunner:
         gd.debuginfo(prj="mt", info=f'')
         for hostinfo in host_info_list:
             gd.debuginfo(prj="mt", info=f'hostinfo={hostinfo}')
+            # hostinfo=hostname: 192.168.1.11, port: None  hostinfo=hostname: 192.168.1.12, port: None
             master_send_conn, worker_recv_conn = Pipe()
             master_recv_conn, worker_send_conn = Pipe()
             p = Process(target=run_on_host, args=(hostinfo, workdir, worker_recv_conn, worker_send_conn, env))

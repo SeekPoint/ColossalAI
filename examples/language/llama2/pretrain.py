@@ -446,7 +446,7 @@ if __name__ == "__main__":
 
     gd.prjenable('ALL')  #打开项目flag
 
-    logpath = f'/workspace/yk_repo/ColossalAI/_log_tmps_llama2_/'
+    logpath = f'/logColossalAI/_log_tmps_llama2_/'
 
     if not os.path.exists(logpath):
         os.makedirs(logpath)
