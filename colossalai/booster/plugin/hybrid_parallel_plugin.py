@@ -156,7 +156,8 @@ class HybridParallelModule(ModelWrapper):
                 p.grad.div_(self.dp_group.size())
 
     def forward(self, *args, **kwargs):
-        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__ , self.convert_fn={self.convert_fn}')
+        gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
+        gd.debuginfo(prj="mt", info=f'self.convert_fn={self.convert_fn}')
         if self.convert_fn is not None:
             gd.debuginfo(prj="mt", info=f'1-args={args}')
             args = tree_map(self.convert_fn, args)

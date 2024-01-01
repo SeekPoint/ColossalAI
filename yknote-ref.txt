@@ -1,0 +1,85 @@
+使用Colossal-AI复现Pathways Language Model
+https://zhuanlan.zhihu.com/p/502439313
+https://github.com/hpcaitech/PaLM-colossalai
+
+
+官方
+https://www.zhihu.com/org/lu-chen-ke-ji
+https://colossalai.org/zh-Hans/docs/get_started/installation
+
+
+
+
+
+mt F# ai/zero/gemini/chunk/manager.py L#: 257 f# __sub_memory_usage
+Epoch 0:   0%|          | 0/1817 [00:03<?, ?it/s]
+Traceback (most recent call last):
+  File "pretrain.py", line 456, in <module>
+    main()
+  File "pretrain.py", line 388, in main
+    booster.backward(loss, optimizer)
+  File "/ColossalAI/colossalai/booster/booster.py", line 185, in backward
+    optimizer.backward(loss) # booster.backward(loss, optimizer)
+  File "/ColossalAI/colossalai/zero/gemini/gemini_optimizer.py", line 303, in backward
+    self.module.backward(loss)
+  File "/ColossalAI/colossalai/zero/gemini/gemini_ddp.py", line 365, in backward
+    loss.backward()
+  File "/usr/local/lib/python3.8/dist-packages/torch/_tensor.py", line 479, in backward
+    return handle_torch_function(
+  File "/usr/local/lib/python3.8/dist-packages/torch/overrides.py", line 1534, in handle_torch_function
+    result = torch_func_method(public_api, types, args, kwargs)
+  File "/ColossalAI/colossalai/tensor/colo_tensor.py", line 87, in __torch_function__
+    return backward_tensor.backward(**tensor_kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/torch/_tensor.py", line 488, in backward
+    torch.autograd.backward(
+  File "/usr/local/lib/python3.8/dist-packages/torch/autograd/__init__.py", line 197, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/ColossalAI/colossalai/zero/gemini/gemini_ddp.py", line 413, in grad_handle
+    reduced = self.chunk_manager.reduce_chunk(grad_chunk)
+  File "/ColossalAI/colossalai/zero/gemini/chunk/manager.py", line 155, in reduce_chunk
+    chunk.reduce()
+  File "/ColossalAI/colossalai/zero/gemini/chunk/chunk.py", line 418, in reduce
+    dist.all_reduce(self.cuda_global_chunk, group=self.torch_pg)
+  File "/usr/local/lib/python3.8/dist-packages/torch/distributed/distributed_c10d.py", line 1541, in all_reduce
+    work.wait()
+RuntimeError: [../third_party/gloo/gloo/transport/tcp/pair.cc:598] Connection closed by peer [192.168.1.11]:2453
+Traceback (most recent call last):
+  File "pretrain.py", line 456, in <module>
+
+
+
+==========================================================================
+
+
+
+
+mt F# ai/booster/plugin/gemini_plugin.py L#: 415 f# configure
+mt F# ai/zero/gemini/gemini_ddp.py L#: 81 I# __init____FUNC__IN_0000000__
+mt F# ai/zero/gemini/chunk/utils.py L#: 30 f# init_chunk_manager
+
+MZ32-00:5345:5345 [0] bootstrap.cc:40 NCCL WARN Bootstrap : no socket interface found
+MZ32-00:5345:5345 [0] NCCL INFO init.cc:87 -> 3
+MZ32-00:5345:5345 [0] NCCL INFO init.cc:105 -> 3
+Traceback (most recent call last):
+  File "pretrain.py", line 456, in <module>
+    main()
+  File "pretrain.py", line 317, in main
+    model, optimizer, _, dataloader, lr_scheduler = booster.boost(
+  File "/ColossalAI/colossalai/booster/booster.py", line 150, in boost
+    model, optimizer, criterion, dataloader, lr_scheduler = self.plugin.configure(
+  File "/ColossalAI/colossalai/booster/plugin/gemini_plugin.py", line 426, in configure
+    model = GeminiDDP(model, **self.gemini_config, verbose=self.verbose)
+  File "/ColossalAI/colossalai/zero/gemini/gemini_ddp.py", line 92, in __init__
+    self.chunk_manager = init_chunk_manager(
+  File "/ColossalAI/colossalai/zero/gemini/chunk/utils.py", line 33, in init_chunk_manager
+    dist.barrier()
+  File "/usr/local/lib/python3.8/dist-packages/torch/distributed/distributed_c10d.py", line 3145, in barrier
+    work = default_pg.barrier(opts=opts)
+RuntimeError: NCCL error in: ../torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:1201, internal error, NCCL version 2.14.3
+ncclInternalError: Internal check failed.
+Last error:
+Bootstrap : no socket interface found
+ds F# /ds/DeepSpeed/deepspeed/ops/transformer/inference/triton/matmul_ext.py L#: 21 f# _default_cache_dir
+ds F# /ds/DeepSpeed/deepspeed/ops/transformer/inference/triton/matmul_ext.py L#: 61 f# __init__
+ds F# /ds/DeepSpeed/deepspeed/ops/transformer/inference/triton/matmul_ext.py L#: 64 f# __init__
+ds F# /ds/DeepSpeed/deepspeed/ops/transformer/inference/triton/matmul_ext.py L#: 83 f# load

@@ -76,7 +76,6 @@ more tests:
 4.35.0-4.35.2: same error
 4.34.0-4.34.1: succeed
 
-
 ===================
 跑通
 root@83dccafe7db4:/workspace/yk_repo/ColossalAI/examples/language/llama2# colossalai run --nproc_per_node 3 pretrain.py
@@ -84,6 +83,25 @@ Epoch 0:   2%|▏         | 45/2423
 root@83dccafe7db4:/workspace/yk_repo/ColossalAI/examples/language/llama2# colossalai run --nproc_per_node 2 pretrain.py
 Epoch 0:  12%|█▏        | 445/3634
 可以看出，同样bs下，增加显卡数量可以减少迭代次数，
+
+# 在两个节点上训练
+
+--master_port=29502  ===失败后重试需要修改！因为已经打开被占用
+
+colossalai run --nproc_per_node 2 --host 192.168.1.11,192.168.1.12 --master_addr 192.168.1.11 pretrain.py  ===XXX失败
+colossalai run --nproc_per_node 2 --hostfile ./hostfile --master_addr 192.168.1.11 pretrain.py
+--hostfile ./hostfile
+
+===transformers==4.34.0
+
+查看nccl版本
+python3 -c "import torch;print(torch.cuda.nccl.version())"
+
+colossalai多机多卡训练，机器间通讯不了，或服务
+https://github.com/hpcaitech/ColossalAI/issues/2958
+
+export NCCL_DEBUG=INFO
+export NCCL_SOCKET_IFNAME='en0'
 
 
 =========================可行的例子！！！！！！！！！
@@ -121,7 +139,6 @@ torchrun --standalone --nproc_per_node=3 /workspace/yk_repo/ColossalAI/applicati
 
 root@83dccafe7db4:/workspace/yk_repo/ColossalAI/examples/language/palm#
 bash run.sh  ==== passed
-
 
 
 

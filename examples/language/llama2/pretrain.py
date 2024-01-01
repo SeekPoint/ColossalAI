@@ -144,7 +144,7 @@ def main():
 
     #  465257 大概迭代数  3634-bs128 增大可bs缩短试验时间
     parser.add_argument(
-        "-d", "--dataset", type=str, default="/share/hf_model/RedPajama-Data-1T-Sample", help="Data set path"
+        "-d", "--dataset", type=str, default="/data/hf_model/RedPajama-Data-1T-Sample", help="Data set path"
     )
     parser.add_argument("-e", "--num_epochs", type=int, default=2, help="Number of epochs")
     parser.add_argument("-b", "--batch_size", type=int, default=128, help="Local batch size")
@@ -243,7 +243,7 @@ def main():
     # ==============================
     # Initialize Tokenizer, Dataset and Dataloader
     # ==============================
-    tokenizer = LlamaTokenizer.from_pretrained("/share/hf_model/llama-tokenizer")
+    tokenizer = LlamaTokenizer.from_pretrained("/data/hf_model/llama-tokenizer")
     # follows fast chat: https://github.com/lm-sys/FastChat/blob/main/fastchat/train/train.py#L257
     tokenizer.pad_token = tokenizer.unk_token
 
@@ -358,7 +358,7 @@ def main():
             for step in pbar:
                 if step > 5:
                     break
-                logff = f'epoch{epoch:02}_step{step:04}' # 注意嵌套的重名问题
+                logff = f'epoch{epoch:02}_step{step:02}' # 注意嵌套的重名问题
                 gd.emb_start(info=logff)
                 if use_pipeline:
                     outputs = booster.execute_pipeline(
@@ -373,7 +373,7 @@ def main():
                     gd.debuginfo(prj="mt", info=f'batch["input_ids"]={batch["input_ids"]}')
                     gd.debuginfo(prj="mt", info=f'batch["labels"]={batch["labels"]}')
 
-                    logf = f'model_forward_criterion_epoch{epoch:02}_{step:04}'
+                    logf = f'model_forward_criterion_epoch{epoch:02}_{step:02}'
                     gd.emb_start(info=logf)
 
                     outputs = model(**batch)
@@ -383,14 +383,14 @@ def main():
                     gd.debuginfo(prj="mt", info=f'loss={loss}')
                     gd.emb_end(logf)
 
-                    logf = f'boost_backward_epoch{epoch:02}_step{step:04}'
+                    logf = f'boost_backward_epoch{epoch:02}_step{step:02}'
                     gd.emb_start(info=logf)
                     booster.backward(loss, optimizer)
                     gd.emb_end(logf)
 
                 gd.debuginfo(prj="mt", info=f'=====================llama 6==================================')
 
-                logf = f'optimizer_step_epoch{epoch:02}'
+                logf = f'optimizer.step_epoch{epoch:02}_step{step:02}'
                 gd.emb_start(info=logf)
                 optimizer.step()
                 gd.emb_end(info=logf)
@@ -442,6 +442,7 @@ def main():
 
 if __name__ == "__main__":
     gd.debuginfo(prj='mt', info=f'=================') # 不被计入
+    gd.setIgnore(prj='mt', ignore=20)
 
     gd.prjenable('ALL')  #打开项目flag
 

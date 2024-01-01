@@ -12,7 +12,7 @@ class NetflixDataset(Dataset):
         self.input_ids = []
         self.attn_masks = []
         self.labels = []
-        self.txt_list = netflix_descriptions = load_dataset("/share/hf_model/netflix-shows", split="train")[
+        self.txt_list = netflix_descriptions = load_dataset("/data/hf_model/netflix-shows", split="train")[
             "description"
         ]
         self.max_length = max([len(self.tokenizer.encode(description)) for description in netflix_descriptions])

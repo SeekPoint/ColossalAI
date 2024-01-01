@@ -70,7 +70,7 @@ RUN conda install -y cmake && \
 
 
 
-llama遇到错误
+# llama遇到错误
 # 因为 module 'torch' has no attribute 'fx' 错误，
 # 升级到 torch 1.13.1, 但是他没有cu113配套的，只有cu117的，修改dockerfile，重修编译
 # cudatoolkit=11.7 11.6 并不存在， cudatoolkit=11.8无法和 torch 1.13.1 配套

@@ -213,6 +213,7 @@ def train(args):
 
 if __name__ == "__main__":
     gd.debuginfo(prj='mt', info=f'=================') # 不被计入
+    gd.setIgnore(prj='mt', ignore=20)
 
     gd.prjenable('ALL')  #打开项目flag
 

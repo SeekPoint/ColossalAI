@@ -103,10 +103,11 @@ def run(
         # run with hostfile excluding the hosts selected
         colossalai run --hostfile <file_path> --master_addr host1 --exclude host2  --nprocs_per_node 4 train.py
     """
+    gd.debuginfo(prj="mt")
     if not user_script.endswith(".py"):
         click.echo(f"Error: invalid Python file {user_script}. Did you use a wrong option? Try colossalai run --help")
         exit()
-
+    gd.prjenable('ALL')  # 打开项目flag
     args_dict = locals()
     args = Config(args_dict)
     args.user_args = list(args.user_args)

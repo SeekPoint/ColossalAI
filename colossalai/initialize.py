@@ -44,7 +44,9 @@ def launch(
     Raises:
         Exception: Raise exception when config type is wrong
     """
-    gd.debuginfo(prj="mt", info=f'')
+    gd.debuginfo(prj="mt", info=f'backend={backend}')
+    # backend = 'gloo'
+
     if rank == 0:
         gd.debuginfo(prj="mt", info=f"`config` is deprecated and will be removed soon.")
 
@@ -102,7 +104,6 @@ def launch_from_slurm(
         seed=seed,
         verbose=verbose,
     )
-
 
 def launch_from_openmpi(
     config: Union[str, Path, Config, Dict],

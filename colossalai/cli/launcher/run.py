@@ -223,29 +223,39 @@ def launch_multi_processes(args: Config) -> None:
         args (Config): the arguments taken from command line
 
     """
+    gd.debuginfo(prj="mt", info=f'Config={Config}')
+
     assert isinstance(args, Config)
 
     if args.nproc_per_node is None:
         click.echo("--nproc_per_node did not receive any value")
+        gd.debuginfo(prj="mt", info=f'--nproc_per_node did not receive any value')
         exit()
 
     # cannot accept hosts and hostfile at the same time
     if args.host and args.hostfile:
         click.echo("Error: hostfile and hosts are mutually exclusive, only one is required")
+        gd.debuginfo(prj="mt", info=f'Error: hostfile and hosts are mutually exclusive, only one is required')
 
     # check if hostfile is given
     if args.hostfile:
         device_pool = fetch_hostfile(args.hostfile, ssh_port=args.ssh_port)
+        gd.debuginfo(prj="mt", info=f'device_pool={device_pool}')
+
         active_device_pool = parse_device_filter(device_pool, args.include, args.exclude)
+        gd.debuginfo(prj="mt", info=f'1-active_device_pool={active_device_pool}')
 
         if args.num_nodes > 0:
             # only keep the first num_nodes to execute jobs
             updated_active_device_pool = HostInfoList()
             for count, hostinfo in enumerate(active_device_pool):
+                gd.debuginfo(prj="mt", info=f'The {count} th hostinfo={hostinfo}')
                 if args.num_nodes == count:
                     break
                 updated_active_device_pool.append(hostinfo)
             active_device_pool = updated_active_device_pool
+
+        gd.debuginfo(prj="mt", info=f'2-active_device_pool={active_device_pool}')
     else:
         active_device_pool = None
 
@@ -254,6 +264,7 @@ def launch_multi_processes(args: Config) -> None:
     # use hosts if hostfile is not given
     if args.host and active_device_pool is None:
         active_device_pool = HostInfoList()
+        gd.debuginfo(prj="mt", info=f'3-active_device_pool={active_device_pool}')
         host_list = args.host.strip().split(NODE_SEP)
         for hostname in host_list:
             hostinfo = HostInfo(hostname=hostname, port=args.ssh_port)
@@ -263,12 +274,16 @@ def launch_multi_processes(args: Config) -> None:
         # run on local node if not hosts or hostfile is given
         # add local node to host info list
         active_device_pool = HostInfoList()
+        gd.debuginfo(prj="mt", info=f'4-active_device_pool={active_device_pool}')
         localhost_info = HostInfo(hostname="127.0.0.1", port=args.ssh_port)
         active_device_pool.append(localhost_info)
+    gd.debuginfo(prj="mt", info=f'5-active_device_pool={active_device_pool}')
 
     # launch distributed processes
     runner = MultiNodeRunner()
     curr_path = os.path.abspath(".")
+
+    gd.debuginfo(prj="mt", info=f'curr_path={curr_path}')
 
     # collect current path env
     env = dict()
@@ -277,12 +292,15 @@ def launch_multi_processes(args: Config) -> None:
         if v and "\n" not in v:
             env[k] = v
 
+    gd.debuginfo(prj="mt", info=f'env={env}')
+
     # establish remote connection
     runner.connect(host_info_list=active_device_pool, workdir=curr_path, env=env)
 
     # overwrite master addr when num_nodes > 1 and not specified
     if len(active_device_pool) > 1 and args.master_addr == "127.0.0.1":
         args.master_addr = active_device_pool.hostinfo_list[0].hostname
+        gd.debuginfo(prj="mt", info=f'args.master_addr={args.master_addr}')
 
     # execute distributed launching command
     for node_id, hostinfo in enumerate(active_device_pool):
@@ -296,16 +314,23 @@ def launch_multi_processes(args: Config) -> None:
             num_nodes=len(active_device_pool),
             extra_launch_args=args.extra_launch_args,
         )
+
+        gd.debuginfo(prj="mt", info=f'The {node_id} th cmd={cmd}')
+
         runner.send(hostinfo=hostinfo, cmd=cmd)
 
     # start training
     msg_from_node = runner.recv_from_all()
+    gd.debuginfo(prj="mt", info=f'A: msg_from_node={msg_from_node}')
+
     has_error = False
 
     # print node status
     click.echo("\n====== Training on All Nodes =====")
+
     for hostname, msg in msg_from_node.items():
         click.echo(f"{hostname}: {msg}")
+        gd.debuginfo(prj="mt", info=f'A: hostname={hostname}, msg={msg}')
 
         # check if a process failed
         if msg == "failure":
@@ -316,11 +341,13 @@ def launch_multi_processes(args: Config) -> None:
 
     # receive the stop status
     msg_from_node = runner.recv_from_all()
+    gd.debuginfo(prj="mt", info=f'B: msg_from_node={msg_from_node}')
 
     # print node status
     click.echo("\n====== Stopping All Nodes =====")
     for hostname, msg in msg_from_node.items():
         click.echo(f"{hostname}: {msg}")
+        gd.debuginfo(prj="mt", info=f'B: hostname={hostname}, msg={msg}')
 
     # give the process an exit code
     # so that it behaves like a normal process

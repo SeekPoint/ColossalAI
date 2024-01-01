@@ -6,7 +6,7 @@ import fabric
 
 from .hostinfo import HostInfo, HostInfoList
 
-
+# Process(target=run_on_host  引起调用， 所以run_on_host(搜索不到
 def run_on_host(
     hostinfo: HostInfo,
     workdir: str,
@@ -24,15 +24,20 @@ def run_on_host(
         send_conn (multiprocessing.connection.Connection): send messages to the master receiver
         env (dict): a dictionary for environment variables
     """
-    gd.debuginfo(prj="mt", info=f'')
+    gd.debuginfo(prj="mt", info=f'workdir={workdir}, hostname={hostinfo.hostname}, port={hostinfo.port}')
     fab_conn = fabric.Connection(hostinfo.hostname, port=hostinfo.port)
     finish = False
     env_msg = " ".join([f'{k}="{v}"' for k, v in env.items()])
+    gd.debuginfo(prj="mt", info=f'env_msg={env_msg}')
+
+    hostinfo.is_local_host = True  # 默认false，引起了 #  exception: not a valid RSA private key file
+    assert 0
 
     # keep listening until exit
     while not finish:
         # receive cmd
         cmds = recv_conn.recv()
+        gd.debuginfo(prj="mt", info=f'cmds={cmds}')
 
         if cmds == "exit":
             # exit from the loop
@@ -41,23 +46,33 @@ def run_on_host(
         else:
             # execute the commands
             try:
+                gd.debuginfo(prj="mt")
+
                 # cd to execute directory
                 with fab_conn.cd(workdir):
+
                     # propagate the runtime environment
                     with fab_conn.prefix(f"export {env_msg}"):
                         if hostinfo.is_local_host:
+                            gd.debuginfo(prj="mt")
+
                             # execute on the local machine
                             fab_conn.local(cmds, hide=False)
                         else:
+                            gd.debuginfo(prj="mt")
                             # execute on the remote machine
                             fab_conn.run(cmds, hide=False)
+
+                    gd.debuginfo(prj="mt")
                     send_conn.send("success")
             except Exception as e:
-                click.echo(
+                click.echo(     #  exception: not a valid RSA private key file
                     f"Error: failed to run {cmds} on {hostinfo.hostname}, is localhost: {hostinfo.is_local_host}, exception: {e}"
                 )
+                gd.debuginfo(prj="mt")
                 send_conn.send("failure")
 
+    gd.debuginfo(prj="mt")
     # shutdown
     send_conn.send("finish")
     fab_conn.close()
@@ -87,6 +102,7 @@ class MultiNodeRunner:
         """
         gd.debuginfo(prj="mt", info=f'')
         for hostinfo in host_info_list:
+            gd.debuginfo(prj="mt", info=f'hostinfo={hostinfo}')
             master_send_conn, worker_recv_conn = Pipe()
             master_recv_conn, worker_send_conn = Pipe()
             p = Process(target=run_on_host, args=(hostinfo, workdir, worker_recv_conn, worker_send_conn, env))

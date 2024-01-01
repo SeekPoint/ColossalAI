@@ -19,6 +19,7 @@ class HostInfo:
         self.hostname = hostname
         self.port = port
         self.is_local_host = HostInfo.is_host_localhost(hostname, port)
+        gd.debuginfo(prj="mt", info=f'self.is_local_host={self.is_local_host}')
         gd.debuginfo(prj="mt", info=f'__FUNC_IN_OUT__')
 
     @staticmethod
@@ -35,18 +36,25 @@ class HostInfo:
         """
         gd.debuginfo(prj="mt", info=f'')
         if port is None:
+            gd.debuginfo(prj="mt", info=f'')
             port = 22  # no port specified, lets just use the ssh port
 
         # socket.getfqdn("127.0.0.1") does not return localhost
         # on some users' machines
         # thus, we directly return True if hostname is localhost, 127.0.0.1 or 0.0.0.0
         if hostname in ("localhost", "127.0.0.1", "0.0.0.0"):
+            gd.debuginfo(prj="mt", info=f'')
             return True
 
         hostname = socket.getfqdn(hostname)
         localhost = socket.gethostname()
         localaddrs = socket.getaddrinfo(localhost, port)
         targetaddrs = socket.getaddrinfo(hostname, port)
+
+        gd.debuginfo(prj="mt", info=f'hostname={hostname}')
+        gd.debuginfo(prj="mt", info=f'localhost={localhost}')
+        gd.debuginfo(prj="mt", info=f'localaddrs={localaddrs}')
+        gd.debuginfo(prj="mt", info=f'targetaddrs={targetaddrs}')
 
         return localaddrs == targetaddrs
 

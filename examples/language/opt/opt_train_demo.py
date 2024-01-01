@@ -48,7 +48,7 @@ def train_epoch(epoch, model, optimizer, _criterion, lr_scheduler, dataloader, b
         for step in pbar:
             if step > 10:
                 break
-            logff = f'Training_epoch{epoch:02}_step{step:04}'
+            logff = f'Training_epoch{epoch:02}_step{step:02}'
             gd.emb_start(info=logff)   # 注意嵌套的重名问题
             if use_pipeline:
                 gd.debuginfo(prj="mt", info=f'')
@@ -87,7 +87,7 @@ def train_epoch(epoch, model, optimizer, _criterion, lr_scheduler, dataloader, b
                 pbar.set_postfix({"loss": loss.item()})
 
             gd.debuginfo(prj="mt", info=f'------------opt 1-----------------')
-            logf = f'optimizer_step_epoch{epoch:02}'
+            logf = f'optimizer.step_epoch{epoch:02}_step{step:02}'
             gd.emb_start(info=logf)
             optimizer.step()
             gd.emb_end(info=logf)
@@ -237,6 +237,7 @@ def main():
 
 if __name__ == "__main__":
     gd.debuginfo(prj='mt', info=f'=================') # 不被计入
+    gd.setIgnore(prj='mt', ignore=20)
 
     gd.prjenable('ALL')  #打开项目flag
 

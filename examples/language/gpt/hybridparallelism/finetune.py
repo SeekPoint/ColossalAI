@@ -227,7 +227,7 @@ def train_epoch(
                 gd.emb_end(info=logf)
 
                 # Backward
-                logf = f'boost_backward_epoch{epoch:02}_step{step:04}'
+                logf = f'boost_backward_epoch{epoch:02}_step{step:02}'
                 gd.emb_start(info=logf)
                 booster.backward(loss, optimizer)
                 gd.emb_end(info=logf)
@@ -237,7 +237,7 @@ def train_epoch(
 
             gd.debuginfo(prj="mt", info=f'=================GPT HP 5==============================')
 
-            logf = f'optimizer_step_epoch{epoch:02}'
+            logf = f'optimizer.step_epoch{epoch:02}_step{step:02}'
             gd.emb_start(info=logf)
             optimizer.step()
             gd.emb_end(info=logf)
@@ -447,6 +447,7 @@ def main():
 
 if __name__ == "__main__":
     gd.debuginfo(prj='mt', info=f'=================')  # 不被计入
+    gd.setIgnore(prj='mt', ignore=20)
 
     gd.prjenable('ALL')  # 打开项目flag
 
