@@ -71,13 +71,17 @@ pip install -e .
 
 module 'torch' has no attribute 'fx' 错误，
 解决
-root@83dccafe7db4:/workspace/yk_repo/ColossalAI/examples/language/llama2# pip install transformers==4.34.0 -i https://pypi.tuna.tsinghua.edu.cn/simple
+root@83dccafe7db4:/workspace/yk_repo/ColossalAI/examples/language/llama2#
+pip install transformers==4.34.0 -i https://pypi.tuna.tsinghua.edu.cn/simple
+
 more tests:
 4.35.0-4.35.2: same error
 4.34.0-4.34.1: succeed
 
 ===================
 跑通
+mkdir -p /logColossalAI/_log_tmps_llama2_/
+
 root@83dccafe7db4:/workspace/yk_repo/ColossalAI/examples/language/llama2# colossalai run --nproc_per_node 3 pretrain.py
 Epoch 0:   2%|▏         | 45/2423
 root@83dccafe7db4:/workspace/yk_repo/ColossalAI/examples/language/llama2# colossalai run --nproc_per_node 2 pretrain.py
@@ -88,7 +92,7 @@ Epoch 0:  12%|█▏        | 445/3634
 
 --master_port=29502  ===失败后重试需要修改！因为已经打开被占用
 
-colossalai run --nproc_per_node 2 --host 192.168.1.11,192.168.1.12 --master_port=29507 --master_addr 192.168.1.11 pretrain.py  ===XXX失败
+colossalai run --nproc_per_node 2 --host 192.168.1.11,192.168.1.12 --master_port=29507 --master_addr 192.168.1.11 pretrain.py
 colossalai run --nproc_per_node 2 --hostfile ./hostfile --master_addr 192.168.1.11 pretrain.py
 --hostfile ./hostfile
 
@@ -155,3 +159,4 @@ fab_conn.run(cmds, hide=False)
 You should make a copy of id_rsa and convert it to RSA type with ssh-keygen.
 To Convert "BEGIN OPENSSH PRIVATE KEY" to "BEGIN RSA PRIVATE KEY"
 ssh-keygen -p -m PEM -f ~/.ssh/id_rsa
+以上先基于C:\yk_repo\ds\DeepSpeedExamples\yknote-多机多卡.txt配置

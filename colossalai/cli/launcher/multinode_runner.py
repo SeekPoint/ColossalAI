@@ -38,7 +38,7 @@ def run_on_host(
     # keep listening until exit
     while not finish:
         # receive cmd
-        cmds = recv_conn.rec
+        cmds = recv_conn.recv()
         gd.debuginfo(prj="mt", info=f'cmds={cmds}')
 
         if cmds == "exit":
